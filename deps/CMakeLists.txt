@@ -1,10 +1,17 @@
 #armadillo first
+add_custom_target(armadillo_headers
+        COMMAND tar xf
+        ${CMAKE_CURRENT_SOURCE_DIR}/armadillo-3.0.2.tar.gz -C
+        ${CMAKE_CURRENT_BINARY_DIR})
 
-message("ADDING ARMADILLO")
+message(STATUS "${CMAKE_CURRENT_BINARY_DIR}/armadillo-3.0.2/include")
 
-execute_process(COMMAND tar xf ${CMAKE_CURRENT_SOURCE_DIR}/armadillo-3.0.2.tar.gz)
-set(ARMADILLO_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/armadillo-3.0.2/" )
-set(ARMADILLO_PREFIX ${ARMADILLO_PREFIX} PARENT_SCOPE)
+set(ARMADILLO_INCLUDES "${CMAKE_CURRENT_BINARY_DIR}/armadillo-3.0.2/include"
+        PARENT_SCOPE)
 
-set(ARMADILLO_LIBS ${ARMADILLO_PREFIX}/libarmadillo.so PARENT_SCOPE)
-set(ARMADILLO_INCLUDES ${ARMADILLO_PREFIX}/include PARENT_SCOPE)
+#nlopt second
+
+find_library(nlopt REQUIRED
+        NAMES nlopt libnlopt
+        HINTS "/usr/lib/"
+        )

@@ -3,12 +3,10 @@ project(lagrange_cpp)
 set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(deps)
-message(${ARMADILLO_INCLUDES})
+message(STATUS "${ARMADILLO_INCLUDES}")
 set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
 
 link_directories(/usr/local/lib)
-
-
 
 enable_language(Fortran)
 
@@ -62,5 +60,12 @@ add_executable(lagrange_cpp
         src/my_expokit.f
         src/my_matexp.f)
 
-target_include_directories(lagrange_cpp PRIVATE ${INCLUDE_DIRS})
+#set(CMAKE_Fortran_FLAGS_DEBUG "-std=legacy")
+#set(CMAKE_Fortran_FLAGS "-std=legacy")
+
+set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
+set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
+
+target_include_directories(lagrange_cpp PRIVATE ${ARMADILLO_INCLUDES})
 target_link_libraries(lagrange_cpp gsl nlopt gslcblas ${ARMADILLO_LIBS})
+add_dependencies(lagrange_cpp armadillo_headers)
