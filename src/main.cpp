@@ -17,6 +17,7 @@
 #include <math.h>
 #include <float.h>
 #include <iomanip>
+#include <chrono>
 
 using namespace std;
 
@@ -39,6 +40,7 @@ using namespace std;
 #endif
 
 int main(int argc, char *argv[]) {
+    auto start_time = chrono::high_resolution_clock::now();
     if (argc != 2) {
         cout << "you need more arguments." << endl;
         cout << "usage: lagrange configfile" << endl;
@@ -711,5 +713,8 @@ int main(int argc, char *argv[]) {
             delete intrees[i];
         }
     }
+    auto end_time = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration = end_time - start_time;
+    cout<<"Analysis took: "<< duration.count() << "s" << std::endl;
     return 0;
 }
