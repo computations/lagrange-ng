@@ -16,10 +16,10 @@ using namespace std;
 #include "node.h"
 #include "tree.h"
 
-class TreeReader{
+class TreeReader {
 public:
-	TreeReader();
-	Tree * readTree(string tree);
+  TreeReader();
+  Tree *readTree(string tree);
 };
 
 #endif /* TREE_READER_H_ */

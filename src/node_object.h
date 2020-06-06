@@ -11,15 +11,15 @@
 #include <string>
 using namespace std;
 
-class NodeObject{
+class NodeObject {
 
 public:
-	NodeObject() {}
+  NodeObject() {}
 
-	virtual ~NodeObject() {}
+  virtual ~NodeObject() {}
 
-	virtual NodeObject * clone() const = 0;
-	virtual string type() {return "base";}
+  virtual NodeObject *clone() const = 0;
+  virtual string type() { return "base"; }
 };
 
 #endif /* NODE_OBJECT_H_ */

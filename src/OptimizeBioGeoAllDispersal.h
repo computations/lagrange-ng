@@ -16,23 +16,24 @@ using namespace std;
 
 #include <gsl/gsl_vector.h>
 
-class OptimizeBioGeoAllDispersal{
-	private:
-		BioGeoTree * tree;
-		RateModel * rm;
-		vector< vector< vector<double> > > D_mask;
-		int maxiterations;
-		double stoppingprecision;
-		bool marginal;
-		int nareas;
-		double GetLikelihoodWithOptimizedDispersalExtinction(const gsl_vector * variables);
-		static double GetLikelihoodWithOptimizedDispersalExtinction_gsl(const gsl_vector * variables, void *obj);
+class OptimizeBioGeoAllDispersal {
+private:
+  BioGeoTree *tree;
+  RateModel *rm;
+  vector<vector<vector<double>>> D_mask;
+  int maxiterations;
+  double stoppingprecision;
+  bool marginal;
+  int nareas;
+  double
+  GetLikelihoodWithOptimizedDispersalExtinction(const gsl_vector *variables);
+  static double
+  GetLikelihoodWithOptimizedDispersalExtinction_gsl(const gsl_vector *variables,
+                                                    void *obj);
 
-	public:
-		OptimizeBioGeoAllDispersal(BioGeoTree * intree,RateModel * inrm, bool marg);
-		vector<double> optimize_global_dispersal_extinction();
-
-
+public:
+  OptimizeBioGeoAllDispersal(BioGeoTree *intree, RateModel *inrm, bool marg);
+  vector<double> optimize_global_dispersal_extinction();
 };
 
 #endif /* OPTIMIZEBIOGEOALLDISPERSAL_H_ */

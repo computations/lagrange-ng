@@ -8,5 +8,4 @@
 #ifndef TREE_UTILS_H_
 #define TREE_UTILS_H_
 
-
 #endif /* TREE_UTILS_H_ */

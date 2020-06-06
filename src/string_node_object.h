@@ -12,15 +12,14 @@
 #include <string>
 using namespace std;
 
-class StringNodeObject: public string, public NodeObject{
+class StringNodeObject : public string, public NodeObject {
 public:
-	StringNodeObject(const char * value): string(value) {}
-	StringNodeObject(const string & value): string(value) {}
-	virtual ~StringNodeObject() {}
+  StringNodeObject(const char *value) : string(value) {}
+  StringNodeObject(const string &value) : string(value) {}
+  virtual ~StringNodeObject() {}
 
 public:
-
-	StringNodeObject * clone() const { return new StringNodeObject(*this); }
+  StringNodeObject *clone() const { return new StringNodeObject(*this); }
 };
 
 #endif /* NODE_OBJECT_H_ */

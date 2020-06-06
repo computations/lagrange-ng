@@ -11,16 +11,15 @@
 #include "node_object.h"
 using namespace std;
 
-class DoubleNodeObject: public NodeObject{
+class DoubleNodeObject : public NodeObject {
 public:
-	DoubleNodeObject(const double * value): double(value) {}
-	DoubleNodeObject(const double & value): double(value) {}
+  DoubleNodeObject(const double *value) : double(value) {}
+  DoubleNodeObject(const double &value) : double(value) {}
 
-	virtual ~DoubleNodeObject() {}
+  virtual ~DoubleNodeObject() {}
 
 public:
-
-	DoubleNodeObject * clone() const { return new DoubleNodeObject(*this); }
+  DoubleNodeObject *clone() const { return new DoubleNodeObject(*this); }
 };
 
 #endif /* NODE_OBJECT_H_ */
