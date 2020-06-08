@@ -38,6 +38,10 @@ class experiment:
     def path(self):
         return os.path.abspath(self._root_path)
 
+    @property
+    def datasets(self):
+        return self._datasets
+
     @staticmethod
     def _internal_run(ds, prog, progress_bar, task):
         progress_bar.update(task, advance=1.0)

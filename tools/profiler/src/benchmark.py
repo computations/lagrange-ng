@@ -9,6 +9,9 @@ import sys
 import csv
 import rich
 import rich.progress
+import yaml
+import subprocess
+import flamegraph
 
 
 def make_datasets(taxa_count, length, ds_count):
@@ -18,10 +21,12 @@ def make_datasets(taxa_count, length, ds_count):
     ]
 
 
-def run(prefix, regions, taxa, iters, procs, program_path, profile):
+def run(prefix, regions, taxa, iters, procs, program_path, profile,
+        flamegraph_cmd):
     if os.path.exists(prefix):
         print("Prefix already exists")
         sys.exit(1)
+    os.makedirs(prefix)
 
     exp_program = [
         program.lagrange(binary_path=os.path.abspath(program_path),
@@ -36,10 +41,28 @@ def run(prefix, regions, taxa, iters, procs, program_path, profile):
 
         total_datasets = len(regions) * len(taxa)
         total_work = total_datasets * iters
+        extra_work = 1
+        if profile:
+            extra_work += 1
         overall_task = progress_bar.add_task("Overall...",
-                                             total=total_datasets + 1)
-        make_task = progress_bar.add_task("Making Datasets...",
+                                             total=total_datasets + extra_work)
+        make_task = progress_bar.add_task("Making datasets...",
                                           total=total_datasets)
+
+        with open(os.path.join(prefix, 'parameters.yaml'), 'w') as yamlfile:
+            yamlfile.write(
+                yaml.dump(
+                    {
+                        'prefix': prefix,
+                        'regions': regions,
+                        'taxa': taxa,
+                        'iters': iters,
+                        'procs': procs,
+                        'program_path': program_path,
+                        'profile': profile,
+                    },
+                    explicit_start=True,
+                    explicit_end=True))
 
         for r, t in itertools.product(regions, taxa):
             exp_path = os.path.join(prefix,
@@ -65,3 +88,14 @@ def run(prefix, regions, taxa, iters, procs, program_path, profile):
                                         fieldnames=results[0].header())
                 for result in results:
                     writer.writerow(result.write_row())
+        else:
+            fg_work = len(exp) * len(exp[0].datasets)
+            fg_task = progress_bar.add_task("Making Flamegraphs...",
+                                            total=fg_work)
+
+            for e in exp:
+                for d in e.datasets:
+                    flamegraph.build(d)
+                    progress_bar.update(fg_task, advance=1.0)
+
+            progress_bar.update(overall_task, advance=1.0)
