@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(deps)
 message(STATUS "${ARMADILLO_INCLUDES}")
 set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 link_directories(/usr/local/lib)
 
 enable_language(Fortran)
 
-add_executable(lagrange_cpp
+set(LAGRANGE_SOURCES
         src/AncSplit.cpp
         src/AncSplit.h
         src/BayesianBioGeo.cpp
@@ -60,12 +61,35 @@ add_executable(lagrange_cpp
         src/my_expokit.f
         src/my_matexp.f)
 
+add_executable(lagrange ${LAGRANGE_SOURCES})
+add_executable(lagrange_debug ${LAGRANGE_SOURCES})
+add_executable(lagrange_profile ${LAGRANGE_SOURCES})
+
 #set(CMAKE_Fortran_FLAGS_DEBUG "-std=legacy")
 #set(CMAKE_Fortran_FLAGS "-std=legacy")
 
+# These flags are required for the expmkit code
 set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
 set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
 
-target_include_directories(lagrange_cpp PRIVATE ${ARMADILLO_INCLUDES})
-target_link_libraries(lagrange_cpp gsl nlopt gslcblas ${ARMADILLO_LIBS})
-add_dependencies(lagrange_cpp armadillo_headers)
+set(LAGRANGE_DEBUG_FLAGS -Og -g -fno-omit-frame-pointer)
+list(APPEND ${LAGRANGE_DEBUG_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG})
+set(LAGRANGE_PROFILE_FLAGS -O3 -fno-omit-frame-pointer)
+list(APPEND ${LAGRANGE_PROFILE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
+set(LAGRANGE_RELEASE_FLAGS -O3)
+list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
+
+target_include_directories(lagrange PRIVATE ${ARMADILLO_INCLUDES})
+target_link_libraries(lagrange gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS})
+add_dependencies(lagrange armadillo_headers)
+
+target_include_directories(lagrange_debug PRIVATE ${ARMADILLO_INCLUDES})
+target_link_libraries(lagrange_debug gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_compile_options(lagrange_debug PRIVATE ${LAGRANGE_DEBUG_FLAGS})
+add_dependencies(lagrange_debug armadillo_headers)
+
+target_include_directories(lagrange_profile PRIVATE ${ARMADILLO_INCLUDES})
+target_link_libraries(lagrange_profile gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_compile_options(lagrange_profile PRIVATE ${LAGRANGE_PROFILE_FLAGS})
+add_dependencies(lagrange_profile armadillo_headers)
