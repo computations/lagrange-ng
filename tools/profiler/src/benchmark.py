@@ -12,6 +12,9 @@ import rich.progress
 import yaml
 import subprocess
 import flamegraph
+import pandas
+import seaborn
+import matplotlib
 
 
 def make_datasets(taxa_count, length, ds_count):
@@ -86,8 +89,23 @@ def run(prefix, regions, taxa, iters, procs, program_path, profile,
             with open(os.path.join(prefix, 'results.csv'), 'w') as csv_file:
                 writer = csv.DictWriter(csv_file,
                                         fieldnames=results[0].header())
+                writer.writeheader()
                 for result in results:
                     writer.writerow(result.write_row())
+
+            dataframe = pandas.read_csv(os.path.join(prefix, 'results.csv'))
+            seaborn.set_style("whitegrid")
+            plot = seaborn.FacetGrid(dataframe,
+                                     row="taxa",
+                                     col="regions",
+                                     height=7,
+                                     sharex=False,
+                                     margin_titles=True).map(seaborn.distplot,
+                                                             "time",
+                                                             hist=False,
+                                                             rug=True)
+            plot.savefig(os.path.join(prefix, 'times.png'))
+
         else:
             fg_work = len(exp) * len(exp[0].datasets)
             fg_task = progress_bar.add_task("Making Flamegraphs...",
