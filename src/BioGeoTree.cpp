@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
+#include <exception>
 #include <functional>
 #include <iostream>
 #include <numeric>
@@ -658,6 +659,7 @@ vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node &node,
     }
     return LHOODS;
   }
+  throw std::runtime_error{"calculate_ancstate_reverse was called on a tip"};
 }
 
 /**********************************************************
