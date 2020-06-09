@@ -31,20 +31,20 @@ public:
 
 class RateModel {
 private:
-  bool globalext;
-  int nareas;
-  int numthreads;
-  vector<string> labels;
-  vector<double> periods;
+  bool _global_ext;
+  int _area_count;
+  int _thread_count;
+  vector<string> _labels;
+  vector<double> _periods;
   vector<vector<int>> dists;
-  unordered_map<vector<int>, vector<vector<vector<int>>>> iter_dists;
+  unordered_map<vector<int>, vector<vector<vector<int>>>> _iter_dists;
   unordered_map<vector<int>, string> distsmap;
   unordered_map<vector<int>, int> distsintmap;
   unordered_map<int, vector<int>> intdistsmap;
   vector<vector<vector<double>>> D;
   vector<vector<vector<double>>> Dmask;
   vector<vector<double>> E;
-  vector<vector<vector<double>>> Q;
+  vector<vector<vector<double>>> _rate_matrix;
   vector<vector<vector<double>>> QT; // transposed for sparse
   vector<vector<vector<double>>> P;
   vector<int> nzs;
@@ -82,7 +82,7 @@ public:
   unordered_map<int, vector<int>> *get_int_dists_map();
   vector<vector<vector<int>>> *get_iter_dist_splits(vector<int> &dist);
   void remove_dist(vector<int> dist);
-  bool sparse;
+  bool _sparse;
   int get_num_areas();
   int get_num_periods();
   /*

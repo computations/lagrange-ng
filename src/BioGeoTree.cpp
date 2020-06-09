@@ -161,12 +161,12 @@ void BioGeoTree::set_excluded_dist(vector<int> ind, Node *node) {
 }
 
 Superdouble BioGeoTree::eval_likelihood(bool marginal) {
-  if (rootratemodel->sparse == true) {
+  if (rootratemodel->_sparse == true) {
     columns = new vector<int>(rootratemodel->getDists()->size());
     whichcolumns = new vector<int>();
   }
   ancdist_conditional_lh(*tree->getRoot(), marginal);
-  if (rootratemodel->sparse == true) {
+  if (rootratemodel->_sparse == true) {
     delete columns;
     delete whichcolumns;
   }
@@ -318,7 +318,7 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
     }
     ancdist_conditional_lh(*c1, marginal);
     ancdist_conditional_lh(*c2, marginal);
-    bool sparse = rootratemodel->sparse;
+    bool sparse = rootratemodel->_sparse;
     vector<Superdouble> v1;
     vector<Superdouble> v2;
     if (sparse == true) {
