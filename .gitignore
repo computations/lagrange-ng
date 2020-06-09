@@ -3,3 +3,4 @@ build/*
 *.tar.gz
 bin/*
 compile_commands.json
+.clangd/*
