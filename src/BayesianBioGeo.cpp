@@ -33,10 +33,10 @@ inline double MIN(const double &a, const double &b) {
 
 BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree, RateModel *inrm, bool marg,
                                int gen)
-    : tree(intree), rm(inrm), gens(gen), marginal(marg) {
+    : _tree(intree), _rate_model(inrm), _generations(gen), _marginal(marg) {
   gsl_rng_env_setup();
-  T = gsl_rng_default;
-  r = gsl_rng_alloc(T);
+  _rng_type = gsl_rng_default;
+  _rng = gsl_rng_alloc(_rng_type);
 }
 
 void BayesianBioGeo::run_global_dispersal_extinction() {
@@ -64,64 +64,60 @@ void BayesianBioGeo::run_global_dispersal_extinction() {
 
   ofstream outfile("test.txt");
 
-  params = vector<double>(2);
-  prevparams = vector<double>(2);
-  for (unsigned int i = 0; i < params.size(); i++) {
-    params[i] = 0.1;
+  _params = vector<double>(2);
+  _prev_params = vector<double>(2);
+  for (unsigned int i = 0; i < _params.size(); i++) {
+    _params[i] = 0.1;
   }
-  rm->setup_D(0.1);
-  rm->setup_E(0.1);
-  rm->setup_Q();
-  tree->update_default_model(rm);
-  prevlike = -tree->eval_likelihood(marginal);
+  _rate_model->setup_D(0.1);
+  _rate_model->setup_E(0.1);
+  _rate_model->setup_Q();
+  _tree->update_default_model(_rate_model);
+  prevlike = -_tree->eval_likelihood(_marginal);
   prevprior = 1;
-  for (unsigned int i = 0; i < params.size(); i++) {
-    prevprior *= calculate_pdf(params[i]);
+  for (unsigned int i = 0; i < _params.size(); i++) {
+    prevprior *= calculate_pdf(_params[i]);
   }
   cout << "intial like: " << prevlike << endl;
   int iter = 0;
-  while (iter < gens) {
-    double dispersal = params[0];
-    double extinction = params[1];
-    rm->setup_D(dispersal);
-    rm->setup_E(extinction);
-    rm->setup_Q();
-    tree->update_default_model(rm);
-    curlike = -tree->eval_likelihood(marginal);
+  while (iter < _generations) {
+    double dispersal = _params[0];
+    double extinction = _params[1];
+    _rate_model->setup_D(dispersal);
+    _rate_model->setup_E(extinction);
+    _rate_model->setup_Q();
+    _tree->update_default_model(_rate_model);
+    curlike = -_tree->eval_likelihood(_marginal);
     /*
      * calcprior
      */
     curprior = 1;
-    for (unsigned int i = 0; i < params.size(); i++) {
-      curprior *= calculate_pdf(params[i]);
+    for (unsigned int i = 0; i < _params.size(); i++) {
+      curprior *= calculate_pdf(_params[i]);
     }
 
     /*
      * check to keep
      */
-    double testr = gsl_ran_flat(r, 0, 1);
+    double testr = gsl_ran_flat(_rng, 0, 1);
     double test =
         MIN(1, hastings * (curprior / prevprior) * (exp(curlike - prevlike)));
 
     if (iter > 100)
       trials[rot] += 1;
-    // cout << "- "<< prevlike << " " <<  curlike  << " " << hastings << " " <<
-    // test << " " << testr; cout << " " << rot << " " << dispersal << " " <<
-    // extinction << endl;
     if (testr < test) {
       prevprior = curprior;
       prevlike = curlike;
       prevpost = curpost;
-      prevparams[rot] = params[rot];
+      _prev_params[rot] = _params[rot];
       if (iter > 100)
         success[rot] += 1;
     }
     /*
      * pick next params
      */
-    // params[rot] = calculate_sliding(prevparams[rot],sliding[rot]);
-    params[rot] =
-        calculate_sliding_log(prevparams[rot], sliding[rot], &hastings);
+    _params[rot] =
+        calculate_sliding_log(_prev_params[rot], sliding[rot], &hastings);
     if (iter % 5 == 0) {
       rot += 1;
     }
@@ -130,16 +126,16 @@ void BayesianBioGeo::run_global_dispersal_extinction() {
     }
     if (iter % 100 == 0 && iter > 100) {
       cout << iter << " " << prevlike;
-      for (unsigned int i = 0; i < params.size(); i++) {
-        cout << " " << prevparams[i];
+      for (unsigned int i = 0; i < _params.size(); i++) {
+        cout << " " << _prev_params[i];
       }
-      for (unsigned int i = 0; i < params.size(); i++) {
+      for (unsigned int i = 0; i < _params.size(); i++) {
         cout << " " << success[i] / trials[i];
       }
       cout << endl;
       outfile << iter << "\t" << prevlike;
-      for (unsigned int i = 0; i < params.size(); i++) {
-        outfile << "\t" << prevparams[i];
+      for (unsigned int i = 0; i < _params.size(); i++) {
+        outfile << "\t" << _prev_params[i];
       }
       outfile << endl;
     }
@@ -154,13 +150,13 @@ double BayesianBioGeo::calculate_pdf(double value) {
 
 double BayesianBioGeo::calculate_sliding(double value, double sliding) {
   // return abs(gsl_ran_flat(r,value - (sliding/2),value + (sliding/2)));
-  return abs(value + gsl_ran_gaussian(r, sliding));
+  return abs(value + gsl_ran_gaussian(_rng, sliding));
   // cauchy
 }
 
 double BayesianBioGeo::calculate_sliding_log(double value, double sliding,
                                              double *hastings) {
-  double newv = log(value) + gsl_ran_gaussian(r, sliding);
+  double newv = log(value) + gsl_ran_gaussian(_rng, sliding);
   newv = abs(exp(newv));
   *hastings = 1 * newv / value;
   return newv;

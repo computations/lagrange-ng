@@ -21,14 +21,14 @@ using namespace std;
 
 class BayesianBioGeo {
 private:
-  BioGeoTree *tree;
-  RateModel *rm;
-  int gens;
-  bool marginal;
-  vector<double> params;
-  vector<double> prevparams;
-  const gsl_rng_type *T;
-  gsl_rng *r;
+  BioGeoTree *_tree;
+  RateModel *_rate_model;
+  int _generations;
+  bool _marginal;
+  vector<double> _params;
+  vector<double> _prev_params;
+  const gsl_rng_type *_rng_type;
+  gsl_rng *_rng;
   double calculate_pdf(double value);
   double calculate_sliding(double value, double sliding);
   double calculate_sliding_log(double value, double sliding, double *hastings);
