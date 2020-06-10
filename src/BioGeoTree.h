@@ -21,51 +21,30 @@ using namespace std;
 #include "tree.h"
 #include "vector_node_object.h"
 
-#include <armadillo>
-using namespace arma;
-
-// octave usage
-//#include <octave/oct.h>
-
 class BioGeoTree {
 private:
-  Tree *tree;
-  vector<double> periods;
-  string age;
-  string dc;
-  string en;
-  string andc;
-  vector<int> *columns;
-  vector<int> *whichcolumns;
-  RateModel *rootratemodel;
-  unordered_map<int, vector<int>> *distmap; // a map of int and dist
-  bool store_p_matrices;
-  bool use_stored_matrices;
+  Tree *_tree;
+  vector<double> _periods;
+  const string _dist_conditionals_key = "dist_conditionals";
+  const string _anc_dist_conditionals_key = "anc_dist_conditionals";
+  vector<int> *_columns;
+  vector<int> *_which_columns;
+  RateModel *_root_ratemodel;
+  bool _store_p_matrices;
+  bool _use_stored_matrices;
 
   // reverse bits
-  string revB;
-  bool rev;
+  const string _reverse_bits_key = "revB";
+  bool _reverse;
   // end reverse bits
 
   // stochastic mapping bits
-  string rev_exp_number;
-  string rev_exp_time;
-  bool stochastic;
+  bool _stocastic;
   // map of period int and then branch length Superdouble
-  unordered_map<int, map<double, mat>> stored_EN_matrices;
-  unordered_map<int, map<double, cx_mat>> stored_EN_CX_matrices;
-  unordered_map<int, map<double, mat>> stored_ER_matrices;
+  unordered_map<int, map<double, mat>> _stored_EN_matrices;
+  unordered_map<int, map<double, cx_mat>> _stored_EN_CX_matrices;
+  unordered_map<int, map<double, mat>> _stored_ER_matrices;
   // end mapping bits
-
-  /*
-   * benchmark variables
-   */
-  clock_t cl1;
-  clock_t cl2;
-  clock_t c3;
-  clock_t c4;
-  clock_t c5;
-  clock_t c6;
 
 public:
   BioGeoTree(Tree *tr, vector<double> ps);
