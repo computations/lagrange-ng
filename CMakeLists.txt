@@ -47,8 +47,6 @@ set(LAGRANGE_SOURCES
         src/tree.h
         src/tree_reader.cpp
         src/tree_reader.h
-        src/tree_utils.cpp
-        src/tree_utils.h
         src/Utils.cpp
         src/Utils.h
         src/vector_node_object.h
