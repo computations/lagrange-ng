@@ -8,8 +8,6 @@
 #ifndef RATEMODEL_H_
 #define RATEMODEL_H_
 
-//#include "AncSplit.h"
-
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -19,14 +17,12 @@ using namespace std;
 #include <armadillo>
 using namespace arma;
 
-// octave usage
-//#include <octave/oct.h>
-
 namespace std {
 template <> struct hash<std::vector<int>> {
 public:
   size_t operator()(const std::vector<int> &vec) const;
 };
+
 } // namespace std
 
 class RateModel {
@@ -44,7 +40,8 @@ private:
   vector<vector<vector<double>>> _dispersal_params_mask;
   vector<vector<double>> _extinction_params;
   vector<vector<vector<double>>> _rate_matrix;
-  vector<vector<vector<double>>> _rate_matrix_transposed; // transposed for sparse
+  vector<vector<vector<double>>>
+      _rate_matrix_transposed; // transposed for sparse
   vector<int> nzs;
   vector<vector<int>> ia_s;
   vector<vector<int>> ja_s;
@@ -74,7 +71,6 @@ public:
   string P_repr(int period);
   vector<vector<int>> enumerate_dists();
   vector<vector<vector<int>>> iter_dist_splits(vector<int> &dist);
-  // vector<AncSplit> iter_ancsplits(vector<int> dist);
   vector<vector<int>> *getDists();
   unordered_map<vector<int>, int> *get_dists_int_map();
   unordered_map<int, vector<int>> *get_int_dists_map();
@@ -97,11 +93,6 @@ public:
   // this should be used for getting the eigenvectors and eigenvalues
   bool get_eigenvec_eigenval_from_Q(cx_mat *eigenvalues, cx_mat *eigenvectors,
                                     int period);
-  // bool get_eigenvec_eigenval_from_Q_octave(ComplexMatrix * eigenvalues,
-  // ComplexMatrix * eigenvectors, int period);
-
-  // REQUIRES BOOST
-  // vector<vector<double > > setup_P(int period, double t);
 };
 
 #endif /* RATEMATRIX_H_ */

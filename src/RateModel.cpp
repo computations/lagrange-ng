@@ -27,9 +27,6 @@ using namespace std;
 #include <armadillo>
 using namespace arma;
 
-// octave usage
-//#include <octave/oct.h>
-
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
     : _global_ext(ge), _area_count(na), _thread_count(0), _periods(pers),
       _sparse(sp) {}
@@ -53,7 +50,7 @@ void RateModel::setup_dists() {
     _dists.push_back(a[f]);
   }
   /*
-   calculate the distribution map
+   * calculate the distribution map
    */
   for (unsigned int i = 0; i < _dists.size(); i++) {
     _dists_int_map[_dists[i]] = i;
@@ -67,7 +64,7 @@ void RateModel::setup_dists() {
   iter_all_dist_splits();
 
   /*
-   print out a visual representation of the matrix
+   * print out a visual representation of the matrix
    */
   if (VERBOSE) {
     cout << "dists" << endl;
@@ -87,7 +84,6 @@ void RateModel::setup_dists() {
 void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
   if (include == true) {
     _dists = indists;
-    //		if(calculate_vector_int_sum(&dists[0]) > 0){
     if (accumulate(_dists[0].begin(), _dists[0].end(), 0) > 0) {
       vector<int> empt;
       for (unsigned int i = 0; i < _dists[0].size(); i++) {
@@ -108,7 +104,6 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
       int f = pos->first;
       bool inh = false;
       for (unsigned int j = 0; j < indists.size(); j++) {
-        // if(is_vector_int_equal_to_vector_int(indists[j],a[f])){
         if (indists[j] == a[f]) {
           inh = true;
         }
@@ -145,9 +140,6 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
     }
   }
 }
-
-/*
-void RateModel::remove_dist(vector<int> dist);*/
 
 /*
  * just give Dmask a bunch of ones
@@ -249,21 +241,18 @@ void RateModel::setup_Q() {
   _rate_matrix = vector<vector<vector<double>>>(_periods.size(), rows);
   for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
     for (unsigned int i = 0; i < _dists.size(); i++) {     // dists
-      // int s1 = calculate_vector_int_sum(&dists[i]);
       int s1 = accumulate(_dists[i].begin(), _dists[i].end(), 0);
       if (s1 > 0) {
         for (unsigned int j = 0; j < _dists.size(); j++) { // dists
           int sxor = calculate_vector_int_sum_xor(_dists[i], _dists[j]);
           if (sxor == 1) {
-            // int s2 = calculate_vector_int_sum(&dists[j]);
             int s2 = accumulate(_dists[j].begin(), _dists[j].end(), 0);
             int dest = locate_vector_int_single_xor(_dists[i], _dists[j]);
             double rate = 0.0;
             if (s1 < s2) {
               for (unsigned int src = 0; src < _dists[i].size(); src++) {
                 if (_dists[i][src] != 0) {
-                  rate +=
-                      _dispersal_params[p][src][dest]; //* Dmask[p][src][dest];
+                  rate += _dispersal_params[p][src][dest];
                 }
               }
             } else {
@@ -384,30 +373,6 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
     }
   }
 
-  // filter out impossible dists
-  // vector<vector<int> > dis = enumerate_dists();
-  /*
-  for (unsigned int i=0;i<dists.size();i++){
-          //if (calculate_vector_int_sum(&dists[i]) > 0){
-          if(accumulate(dists[i].begin(),dists[i].end(),0) > 0){
-                  for(unsigned int j=0;j<dists[i].size();j++){
-                          if(dists[i][j]==1){//present
-                                  double sum1
-  =calculate_vector_double_sum(Dmask[period][j]); double sum2 = 0.0;
-                                  for(unsigned int
-  k=0;k<Dmask[period].size();k++){ sum2 += Dmask[period][k][j];
-                                  }
-                                  if(sum1+sum2 == 0){
-                                          for(unsigned int
-  k=0;k<p[period].size();k++){ p[period][k] = p[period][k]*0.0;
-                                          }
-                                          break;
-                                  }
-                          }
-                  }
-          }
-  }*/
-
   /*
    if store_p_matrices we will store them
    */
@@ -470,9 +435,7 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   }
 
   // filter out impossible dists
-  // vector<vector<int> > dis = enumerate_dists();
   for (unsigned int i = 0; i < _dists.size(); i++) {
-    // if (calculate_vector_int_sum(&dists[i]) > 0){
     if (accumulate(_dists[i].begin(), _dists[i].end(), 0) > 0) {
       for (unsigned int j = 0; j < _dists[i].size(); j++) {
         if (_dists[i][j] == 1) { // present
@@ -523,7 +486,6 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   int *ia = new int[nz];
   int *ja = new int[nz];
   double *a = new double[nz];
-  // convert_matrix_to_coo_for_fortran(QT[period],1,ia,ja,a);
   std::copy(ia_s[period].begin(), ia_s[period].end(), ia);
   std::copy(ja_s[period].begin(), ja_s[period].end(), ja);
   std::copy(a_s[period].begin(), a_s[period].end(), a);
@@ -571,78 +533,6 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   }
   return p;
 }
-
-/*
-        for returning all columns for pthread fortran sparse matrix calculation
-
-        NOT GOING TO BE FASTER UNTIL THE FORTRAN CODE GOES TO C
- *
-vector<vector<double > > RateModel::setup_pthread_sparse_P(int period, double t,
-vector<int> & columns){ struct sparse_thread_data thread_data_array[numthreads];
-        for(int i=0;i<numthreads;i++){
-                vector <int> st_cols;
-                if((i+1) < numthreads){
-                        for(unsigned int
-j=(i*(columns.size()/numthreads));j<((columns.size()/numthreads))*(i+1);j++){
-                                st_cols.push_back(columns[j]);
-                        }
-                }else{//last one
-                        for(unsigned int
-j=(i*(columns.size()/numthreads));j<columns.size();j++){
-                                st_cols.push_back(columns[j]);
-                        }
-                }
-//		cout << "spliting: " << st_cols.size() << endl;
-                thread_data_array[i].thread_id = i;
-                thread_data_array[i].columns = st_cols;
-                vector<vector<double> > presults;
-                thread_data_array[i].presults = presults;
-                thread_data_array[i].t = t;
-                thread_data_array[i].period = period;
-                thread_data_array[i].rm = this;
-        }
-        pthread_t threads[numthreads];
-        void *status;
-        int rc;
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        for(int i=0; i <numthreads; i++){
-//		cout << "thread: " << i <<endl;
-                rc = pthread_create(&threads[i], &attr,
-sparse_column_pmatrix_pthread_go, (void *) &thread_data_array[i]); if (rc){
-                        printf("ERROR; return code from pthread_create() is
-%d\n", rc); exit(-1);
-                }
-        }
-        pthread_attr_destroy(&attr);
-        for(int i=0;i<numthreads; i++){
-//		cout << "joining: " << i << endl;
-                pthread_join( threads[i], &status);
-                if (rc){
-                        printf("ERROR; return code from pthread_join() is %d\n",
-rc); exit(-1);
-                }
-//		printf("Completed join with thread %d status= %ld\n",i,
-(long)status);
-        }
-
-        //	bring em back and combine for keep_seqs and keep_rc
-
-        vector<vector<double> > preturn (Q[period].size(),
-vector<double>(Q[period].size())); for (int i=0;i<numthreads; i++){ for(unsigned
-int j=0;j<thread_data_array[i].columns.size();j++){
-                        preturn[thread_data_array[i].columns[j]] =
-thread_data_array[i].presults[j];
-                }
-        }
-        for(unsigned int i=0;i<Q[period].size();i++){
-                if(count(columns.begin(),columns.end(),i) == 0){
-                        preturn[i] = vector<double>(Q[period].size(),0);
-                }
-        }
-        return preturn;
-}*/
 
 vector<vector<vector<int>>> RateModel::iter_dist_splits(vector<int> &dist) {
   vector<vector<vector<int>>> ret;
@@ -742,11 +632,8 @@ bool RateModel::get_eigenvec_eigenval_from_Q(cx_mat *eigval, cx_mat *eigvec,
   for (unsigned int i = 0; i < _rate_matrix[period].size(); i++) {
     for (unsigned int j = 0; j < _rate_matrix[period].size(); j++) {
       tQ(i, j) = _rate_matrix[period][i][j];
-      // cout << Q[0][i][j] << " ";
     }
-    // cout << endl;
   }
-  // cout << endl;
   cx_colvec eigva;
   cx_mat eigve;
   eig_gen(eigva, eigve, tQ);
@@ -768,77 +655,3 @@ bool RateModel::get_eigenvec_eigenval_from_Q(cx_mat *eigval, cx_mat *eigvec,
   }
   return isImag;
 }
-
-// trying not to use octave at the moment
-/*
- *
- * bool RateModel::get_eigenvec_eigenval_from_Q_octave(ComplexMatrix * eigval,
-ComplexMatrix * eigvec, int period){ ComplexMatrix tQ =
-ComplexMatrix(int(Q[period].size()),int(Q[period].size())); for(unsigned int
-i=0;i<Q[period].size();i++){ for(unsigned int j=0;j<Q[period].size();j++){
-                        tQ(i,j) = Q[period][i][j];
-        //		cout << Q[0][i][j] << " ";
-                }
-        //	cout << endl;
-        }
-        //cout << endl;
-        EIG eig = EIG(tQ);
-        bool isImag = false;
-        for(unsigned int i=0;i<Q[period].size();i++){
-                for(unsigned int j=0;j<Q[period].size();j++){
-                        if(i==j){
-                                (*eigval)(i,j) = eig.eigenvalues()(i);
-                        }else{
-                                (*eigval)(i,j) = 0;
-                        }
-                        (*eigvec)(i,j) = eig.eigenvectors()(i,j);
-                        if(imag((*eigvec)(i,j)) > 0 || imag((*eigval)(i,j)))
-                                isImag = true;
-                }
-        }
-        return isImag;
-        //cout <<(eig.eigenvalues() * eig.eigenvectors()) << endl;
-}*/
-
-/**/
-
-// REQUIRES BOOST AND IS SLOWER BUT TO ACTIVATE UNCOMMENT
-/*vector<vector<double > > RateModel::setup_P(int period, double t){
-        //
-        //return P, the matrix of dist-to-dist transition probabilities,
-        //from the model's rate matrix (Q) over a time duration (t)
-        //
-        vector<vector<double> > p = QMatrixToPmatrix(Q[period], t);
-
-        //filter out impossible dists
-        //vector<vector<int> > dis = enumerate_dists();
-        for (unsigned int i=0;i<dists.size();i++){
-                //if (calculate_vector_int_sum(&dists[i]) > 0){
-                if(accumulate(dists[i].begin(),dists[i].end(),0) > 0){
-                        for(unsigned int j=0;j<dists[i].size();j++){
-                                if(dists[i][j]==1){//present
-                                        double sum1
-=calculate_vector_double_sum(Dmask[period][j]); double sum2 = 0.0; for(unsigned
-int k=0;k<Dmask[period].size();k++){ sum2 += Dmask[period][k][j];
-                                        }
-                                        if(sum1+sum2 == 0){
-                                                for(unsigned int
-k=0;k<p[period].size();k++){ p[period][k] = p[period][k]*0.0;
-                                                }
-                                                break;
-                                        }
-                                }
-                        }
-                }
-        }
-        if(VERBOSE){
-                cout << "p " << period << " "<< t << endl;
-                for (unsigned int i=0;i<p.size();i++){
-                        for (unsigned int j=0;j<p[i].size();j++){
-                                cout << p[i][j] << " ";
-                        }
-                        cout << endl;
-                }
-        }
-        return p;
-}*/
