@@ -34,7 +34,7 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
         if (k != j) {
           nlopt_D_mask[i][j][k] = x[count];
           if (nlopt_D_mask[i][j][k] <= 0) {
-            return 100000000;
+            return std::numeric_limits<double>::max();
           }
           count += 1;
         }
@@ -43,18 +43,16 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
   }
   double like;
   if (dispersal <= 0 || extinction <= 0)
-    return 100000000;
+    return std::numeric_limits<double>::max();
   if (dispersal > 100 || extinction > 100)
-    return 100000000;
+    return std::numeric_limits<double>::max();
   nlopt_inrm->setup_D_provided(dispersal, nlopt_D_mask);
   nlopt_inrm->setup_E(extinction);
   nlopt_inrm->setup_Q();
   nlopt_intree->update_default_model(nlopt_inrm);
   like = nlopt_intree->eval_likelihood(true);
   if (like < 0 || like == std::numeric_limits<double>::infinity())
-    like = 100000000;
-  // cout << "dis: "<< dispersal << " ext: " << extinction << " like: "<< like
-  // << endl;
+    like = std::numeric_limits<double>::max();
   return like;
 }
 
@@ -87,7 +85,6 @@ vector<double> optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
   nlopt_set_min_objective(
       opt, get_likelihood_with_optimized_dispersal_extinction, NULL);
   nlopt_set_xtol_rel(opt, 1e-7);
-  // nlopt_set_ftol_abs(opt, 1e-1);
   nlopt_result res = nlopt_optimize(opt, init_x, &f);
   cout << "result ouput status: " << res << endl;
   vector<double> results;
