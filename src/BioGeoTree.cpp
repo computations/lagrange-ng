@@ -50,10 +50,10 @@ BioGeoTree::BioGeoTree(Tree *tr, vector<double> ps)
       store_p_matrices(false), use_stored_matrices(false), revB("revB"),
       rev(false), rev_exp_number("rev_exp_number"),
       rev_exp_time("rev_exp_time"), stochastic(false),
-      stored_EN_matrices(unordered_map<int, unordered_map<double, mat>>()),
+      stored_EN_matrices(unordered_map<int, map<double, mat>>()),
       stored_EN_CX_matrices(
-          unordered_map<int, unordered_map<double, cx_mat>>()),
-      stored_ER_matrices(unordered_map<int, unordered_map<double, mat>>()) {
+          unordered_map<int, map<double, cx_mat>>()),
+      stored_ER_matrices(unordered_map<int, map<double, mat>>()) {
 
   /*
    * initialize each node with segments

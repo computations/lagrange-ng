@@ -36,17 +36,15 @@ private:
   int _thread_count;
   vector<string> _labels;
   vector<double> _periods;
-  vector<vector<int>> dists;
+  vector<vector<int>> _dists;
   unordered_map<vector<int>, vector<vector<vector<int>>>> _iter_dists;
-  unordered_map<vector<int>, string> distsmap;
-  unordered_map<vector<int>, int> distsintmap;
-  unordered_map<int, vector<int>> intdistsmap;
-  vector<vector<vector<double>>> D;
-  vector<vector<vector<double>>> Dmask;
-  vector<vector<double>> E;
+  unordered_map<vector<int>, int> _dists_int_map;
+  unordered_map<int, vector<int>> _int_dists_map;
+  vector<vector<vector<double>>> _dispersal_params;
+  vector<vector<vector<double>>> _dispersal_params_mask;
+  vector<vector<double>> _extinction_params;
   vector<vector<vector<double>>> _rate_matrix;
-  vector<vector<vector<double>>> QT; // transposed for sparse
-  vector<vector<vector<double>>> P;
+  vector<vector<vector<double>>> _rate_matrix_transposed; // transposed for sparse
   vector<int> nzs;
   vector<vector<int>> ia_s;
   vector<vector<int>> ja_s;

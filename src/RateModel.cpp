@@ -45,21 +45,21 @@ void RateModel::setup_dists() {
     for (unsigned int i = 0; i < a[0].size(); i++) {
       empt.push_back(0);
     }
-    dists.push_back(empt);
+    _dists.push_back(empt);
   }
   map<int, vector<int>>::iterator pos;
   for (pos = a.begin(); pos != a.end(); ++pos) {
     int f = pos->first;
-    dists.push_back(a[f]);
+    _dists.push_back(a[f]);
   }
   /*
    calculate the distribution map
    */
-  for (unsigned int i = 0; i < dists.size(); i++) {
-    distsintmap[dists[i]] = i;
+  for (unsigned int i = 0; i < _dists.size(); i++) {
+    _dists_int_map[_dists[i]] = i;
   }
-  for (unsigned int i = 0; i < dists.size(); i++) {
-    intdistsmap[i] = dists[i];
+  for (unsigned int i = 0; i < _dists.size(); i++) {
+    _int_dists_map[i] = _dists[i];
   }
   /*
    * precalculate the iterdists
@@ -71,10 +71,10 @@ void RateModel::setup_dists() {
    */
   if (VERBOSE) {
     cout << "dists" << endl;
-    for (unsigned int j = 0; j < dists.size(); j++) {
+    for (unsigned int j = 0; j < _dists.size(); j++) {
       cout << j << " ";
-      for (unsigned int i = 0; i < dists[j].size(); i++) {
-        cout << dists[j][i];
+      for (unsigned int i = 0; i < _dists[j].size(); i++) {
+        cout << _dists[j][i];
       }
       cout << endl;
     }
@@ -86,21 +86,21 @@ void RateModel::setup_dists() {
  */
 void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
   if (include == true) {
-    dists = indists;
+    _dists = indists;
     //		if(calculate_vector_int_sum(&dists[0]) > 0){
-    if (accumulate(dists[0].begin(), dists[0].end(), 0) > 0) {
+    if (accumulate(_dists[0].begin(), _dists[0].end(), 0) > 0) {
       vector<int> empt;
-      for (unsigned int i = 0; i < dists[0].size(); i++) {
+      for (unsigned int i = 0; i < _dists[0].size(); i++) {
         empt.push_back(0);
       }
-      dists.push_back(empt);
+      _dists.push_back(empt);
     }
   } else { // exclude is sent
     vector<int> empt;
     for (int i = 0; i < _area_count; i++) {
       empt.push_back(0);
     }
-    dists.push_back(empt);
+    _dists.push_back(empt);
 
     map<int, vector<int>> a = iterate_all_bv(_area_count);
     map<int, vector<int>>::iterator pos;
@@ -114,17 +114,17 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
         }
       }
       if (inh == false)
-        dists.push_back(a[f]);
+        _dists.push_back(a[f]);
     }
   }
   /*
    calculate the distribution map
    */
-  for (unsigned int i = 0; i < dists.size(); i++) {
-    distsintmap[dists[i]] = i;
+  for (unsigned int i = 0; i < _dists.size(); i++) {
+    _dists_int_map[_dists[i]] = i;
   }
-  for (unsigned int i = 0; i < dists.size(); i++) {
-    intdistsmap[i] = dists[i];
+  for (unsigned int i = 0; i < _dists.size(); i++) {
+    _int_dists_map[i] = _dists[i];
   }
   /*
   precalculate the iterdists
@@ -136,10 +136,10 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
    */
   if (VERBOSE) {
     cout << "dists" << endl;
-    for (unsigned int j = 0; j < dists.size(); j++) {
+    for (unsigned int j = 0; j < _dists.size(); j++) {
       cout << j << " ";
-      for (unsigned int i = 0; i < dists[j].size(); i++) {
-        cout << dists[j][i];
+      for (unsigned int i = 0; i < _dists[j].size(); i++) {
+        cout << _dists[j][i];
       }
       cout << endl;
     }
@@ -156,34 +156,36 @@ void RateModel::remove_dist(vector<int> dist);*/
 void RateModel::setup_Dmask() {
   vector<double> cols(_area_count, 1);
   vector<vector<double>> rows(_area_count, cols);
-  Dmask = vector<vector<vector<double>>>(_periods.size(), rows);
+  _dispersal_params_mask =
+      vector<vector<vector<double>>>(_periods.size(), rows);
 }
 
 void RateModel::set_Dmask_cell(int period, int area, int area2, double prob,
                                bool sym) {
-  Dmask[period][area][area2] = prob;
+  _dispersal_params_mask[period][area][area2] = prob;
   if (sym)
-    Dmask[period][area2][area] = prob;
+    _dispersal_params_mask[period][area2][area] = prob;
 }
 
 void RateModel::setup_D(double d) {
   vector<double> cols(_area_count, 1 * d);
   vector<vector<double>> rows(_area_count, cols);
-  D = vector<vector<vector<double>>>(_periods.size(), rows);
-  for (unsigned int i = 0; i < D.size(); i++) {
-    for (unsigned int j = 0; j < D[i].size(); j++) {
-      D[i][j][j] = 0.0;
-      for (unsigned int k = 0; k < D[i][j].size(); k++) {
-        D[i][j][k] = D[i][j][k] * Dmask[i][j][k];
+  _dispersal_params = vector<vector<vector<double>>>(_periods.size(), rows);
+  for (unsigned int i = 0; i < _dispersal_params.size(); i++) {
+    for (unsigned int j = 0; j < _dispersal_params[i].size(); j++) {
+      _dispersal_params[i][j][j] = 0.0;
+      for (unsigned int k = 0; k < _dispersal_params[i][j].size(); k++) {
+        _dispersal_params[i][j][k] =
+            _dispersal_params[i][j][k] * _dispersal_params_mask[i][j][k];
       }
     }
   }
   if (VERBOSE) {
     cout << "D" << endl;
-    for (unsigned int i = 0; i < D.size(); i++) {
-      for (unsigned int j = 0; j < D[i].size(); j++) {
-        for (unsigned int k = 0; k < D[i][j].size(); k++) {
-          cout << D[i][j][k] << " ";
+    for (unsigned int i = 0; i < _dispersal_params.size(); i++) {
+      for (unsigned int j = 0; j < _dispersal_params[i].size(); j++) {
+        for (unsigned int k = 0; k < _dispersal_params[i][j].size(); k++) {
+          cout << _dispersal_params[i][j][k] << " ";
         }
         cout << endl;
       }
@@ -202,21 +204,23 @@ void RateModel::setup_D_provided(double d,
                                  vector<vector<vector<double>>> &D_mask_in) {
   vector<double> cols(_area_count, 1 * d);
   vector<vector<double>> rows(_area_count, cols);
-  D = vector<vector<vector<double>>>(_periods.size(), rows);
-  for (unsigned int i = 0; i < D.size(); i++) {
-    for (unsigned int j = 0; j < D[i].size(); j++) {
-      D[i][j][j] = 0.0;
-      for (unsigned int k = 0; k < D[i][j].size(); k++) {
-        D[i][j][k] = D[i][j][k] * Dmask[i][j][k] * D_mask_in[i][j][k];
+  _dispersal_params = vector<vector<vector<double>>>(_periods.size(), rows);
+  for (unsigned int i = 0; i < _dispersal_params.size(); i++) {
+    for (unsigned int j = 0; j < _dispersal_params[i].size(); j++) {
+      _dispersal_params[i][j][j] = 0.0;
+      for (unsigned int k = 0; k < _dispersal_params[i][j].size(); k++) {
+        _dispersal_params[i][j][k] = _dispersal_params[i][j][k] *
+                                     _dispersal_params_mask[i][j][k] *
+                                     D_mask_in[i][j][k];
       }
     }
   }
   if (VERBOSE) {
     cout << "D" << endl;
-    for (unsigned int i = 0; i < D.size(); i++) {
-      for (unsigned int j = 0; j < D[i].size(); j++) {
-        for (unsigned int k = 0; k < D[i][j].size(); k++) {
-          cout << D[i][j][k] << " ";
+    for (unsigned int i = 0; i < _dispersal_params.size(); i++) {
+      for (unsigned int j = 0; j < _dispersal_params[i].size(); j++) {
+        for (unsigned int k = 0; k < _dispersal_params[i][j].size(); k++) {
+          cout << _dispersal_params[i][j][k] << " ";
         }
         cout << endl;
       }
@@ -227,11 +231,11 @@ void RateModel::setup_D_provided(double d,
 
 void RateModel::setup_E(double e) {
   vector<double> cols(_area_count, 1 * e);
-  E = vector<vector<double>>(_periods.size(), cols);
+  _extinction_params = vector<vector<double>>(_periods.size(), cols);
 }
 
 void RateModel::set_Qdiag(int period) {
-  for (unsigned int i = 0; i < dists.size(); i++) {
+  for (unsigned int i = 0; i < _dists.size(); i++) {
     double sum = (calculate_vector_double_sum(_rate_matrix[period][i]) -
                   _rate_matrix[period][i][i]) *
                  -1.0;
@@ -240,29 +244,30 @@ void RateModel::set_Qdiag(int period) {
 }
 
 void RateModel::setup_Q() {
-  vector<double> cols(dists.size(), 0);
-  vector<vector<double>> rows(dists.size(), cols);
+  vector<double> cols(_dists.size(), 0);
+  vector<vector<double>> rows(_dists.size(), cols);
   _rate_matrix = vector<vector<vector<double>>>(_periods.size(), rows);
   for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
-    for (unsigned int i = 0; i < dists.size(); i++) {      // dists
+    for (unsigned int i = 0; i < _dists.size(); i++) {     // dists
       // int s1 = calculate_vector_int_sum(&dists[i]);
-      int s1 = accumulate(dists[i].begin(), dists[i].end(), 0);
+      int s1 = accumulate(_dists[i].begin(), _dists[i].end(), 0);
       if (s1 > 0) {
-        for (unsigned int j = 0; j < dists.size(); j++) { // dists
-          int sxor = calculate_vector_int_sum_xor(dists[i], dists[j]);
+        for (unsigned int j = 0; j < _dists.size(); j++) { // dists
+          int sxor = calculate_vector_int_sum_xor(_dists[i], _dists[j]);
           if (sxor == 1) {
             // int s2 = calculate_vector_int_sum(&dists[j]);
-            int s2 = accumulate(dists[j].begin(), dists[j].end(), 0);
-            int dest = locate_vector_int_single_xor(dists[i], dists[j]);
+            int s2 = accumulate(_dists[j].begin(), _dists[j].end(), 0);
+            int dest = locate_vector_int_single_xor(_dists[i], _dists[j]);
             double rate = 0.0;
             if (s1 < s2) {
-              for (unsigned int src = 0; src < dists[i].size(); src++) {
-                if (dists[i][src] != 0) {
-                  rate += D[p][src][dest]; //* Dmask[p][src][dest];
+              for (unsigned int src = 0; src < _dists[i].size(); src++) {
+                if (_dists[i][src] != 0) {
+                  rate +=
+                      _dispersal_params[p][src][dest]; //* Dmask[p][src][dest];
                 }
               }
             } else {
-              rate = E[p][dest];
+              rate = _extinction_params[p][dest];
             }
             _rate_matrix[p][i][j] = rate;
           }
@@ -275,13 +280,15 @@ void RateModel::setup_Q() {
    * sparse needs to be transposed for matrix exponential calculation
    */
   if (_sparse == true) {
-    vector<double> cols(dists.size(), 0);
-    vector<vector<double>> rows(dists.size(), cols);
-    QT = vector<vector<vector<double>>>(_periods.size(), rows);
-    for (unsigned int p = 0; p < QT.size(); p++) {        // periods
-      for (unsigned int i = 0; i < dists.size(); i++) {   // dists
-        for (unsigned int j = 0; j < dists.size(); j++) { // dists
-          QT[p][j][i] = _rate_matrix[p][i][j];
+    vector<double> cols(_dists.size(), 0);
+    vector<vector<double>> rows(_dists.size(), cols);
+    _rate_matrix_transposed =
+        vector<vector<vector<double>>>(_periods.size(), rows);
+    for (unsigned int p = 0; p < _rate_matrix_transposed.size();
+         p++) {                                            // periods
+      for (unsigned int i = 0; i < _dists.size(); i++) {   // dists
+        for (unsigned int j = 0; j < _dists.size(); j++) { // dists
+          _rate_matrix_transposed[p][j][i] = _rate_matrix[p][i][j];
         }
       }
     }
@@ -299,7 +306,8 @@ void RateModel::setup_Q() {
       vector<int> ja = vector<int>(nzs[p]);
       vector<double> a = vector<double>(nzs[p]);
       convert_matrix_to_coo_for_fortran_vector(
-          QT[p], ia, ja, a); // need to multiply these all these by t
+          _rate_matrix_transposed[p], ia, ja,
+          a); // need to multiply these all these by t
       ia_s.push_back(ia);
       ja_s.push_back(ja);
       a_s.push_back(a);
@@ -463,15 +471,17 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
 
   // filter out impossible dists
   // vector<vector<int> > dis = enumerate_dists();
-  for (unsigned int i = 0; i < dists.size(); i++) {
+  for (unsigned int i = 0; i < _dists.size(); i++) {
     // if (calculate_vector_int_sum(&dists[i]) > 0){
-    if (accumulate(dists[i].begin(), dists[i].end(), 0) > 0) {
-      for (unsigned int j = 0; j < dists[i].size(); j++) {
-        if (dists[i][j] == 1) { // present
-          double sum1 = calculate_vector_double_sum(Dmask[period][j]);
+    if (accumulate(_dists[i].begin(), _dists[i].end(), 0) > 0) {
+      for (unsigned int j = 0; j < _dists[i].size(); j++) {
+        if (_dists[i][j] == 1) { // present
+          double sum1 =
+              calculate_vector_double_sum(_dispersal_params_mask[period][j]);
           double sum2 = 0.0;
-          for (unsigned int k = 0; k < Dmask[period].size(); k++) {
-            sum2 += Dmask[period][k][j];
+          for (unsigned int k = 0; k < _dispersal_params_mask[period].size();
+               k++) {
+            sum2 += _dispersal_params_mask[period][k][j];
           }
           if (sum1 + sum2 == 0) {
             for (unsigned int k = 0; k < p[period].size(); k++) {
@@ -646,7 +656,7 @@ vector<vector<vector<int>>> RateModel::iter_dist_splits(vector<int> &dist) {
       if (dist[i] == 1) {
         vector<int> x(dist.size(), 0);
         x[i] = 1;
-        int cou = count(dists.begin(), dists.end(), x);
+        int cou = count(_dists.begin(), _dists.end(), x);
         if (cou > 0) {
           left.push_back(x);
           right.push_back(dist);
@@ -660,7 +670,7 @@ vector<vector<vector<int>>> RateModel::iter_dist_splits(vector<int> &dist) {
               y.push_back(1);
             }
           }
-          int cou2 = count(dists.begin(), dists.end(), y);
+          int cou2 = count(_dists.begin(), _dists.end(), y);
           if (cou2 > 0) {
             left.push_back(x);
             right.push_back(y);
@@ -689,19 +699,19 @@ vector<vector<vector<int>>> RateModel::iter_dist_splits(vector<int> &dist) {
 }
 
 void RateModel::iter_all_dist_splits() {
-  for (unsigned int i = 0; i < dists.size(); i++) {
-    _iter_dists[dists[i]] = iter_dist_splits(dists[i]);
+  for (unsigned int i = 0; i < _dists.size(); i++) {
+    _iter_dists[_dists[i]] = iter_dist_splits(_dists[i]);
   }
 }
 
-vector<vector<int>> *RateModel::getDists() { return &dists; }
+vector<vector<int>> *RateModel::getDists() { return &_dists; }
 
 unordered_map<vector<int>, int> *RateModel::get_dists_int_map() {
-  return &distsintmap;
+  return &_dists_int_map;
 }
 
 unordered_map<int, vector<int>> *RateModel::get_int_dists_map() {
-  return &intdistsmap;
+  return &_int_dists_map;
 }
 
 vector<vector<vector<int>>> *

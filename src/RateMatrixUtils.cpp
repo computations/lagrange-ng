@@ -118,7 +118,7 @@ int get_vector_int_index_from_multi_vector_int(vector<int> *in,
   cout << "the distribution " << dstring
        << " is not included in the possible distributions" << endl;
   exit(0);
-  return NULL;
+  return 0;
 }
 
 vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
@@ -192,8 +192,6 @@ void print_vector_double(vector<double> &in) {
   }
   cout << endl;
 }
-
-inline bool IsMoreThanZero(double &i) { return (i != 0); }
 
 int get_size_for_coo(vector<vector<double>> &inmatrix, double t) {
   int count = 0;

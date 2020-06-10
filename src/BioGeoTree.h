@@ -52,9 +52,9 @@ private:
   string rev_exp_time;
   bool stochastic;
   // map of period int and then branch length Superdouble
-  unordered_map<int, unordered_map<double, mat>> stored_EN_matrices;
-  unordered_map<int, unordered_map<double, cx_mat>> stored_EN_CX_matrices;
-  unordered_map<int, unordered_map<double, mat>> stored_ER_matrices;
+  unordered_map<int, map<double, mat>> stored_EN_matrices;
+  unordered_map<int, map<double, cx_mat>> stored_EN_CX_matrices;
+  unordered_map<int, map<double, mat>> stored_ER_matrices;
   // end mapping bits
 
   /*
