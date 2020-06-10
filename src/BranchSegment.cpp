@@ -12,36 +12,27 @@
 using namespace std;
 
 BranchSegment::BranchSegment(double dur, int per)
-    : duration(dur), period(per), model(NULL), fossilareaindices(vector<int>()),
-      startdistint(-666), distconds(NULL), ancdistconds(NULL) {}
+    : _duration(dur), _period(per), _model(NULL), _fossil_area_indices(vector<int>()),
+      _start_dist(-666), distconds(NULL), ancdistconds(NULL) {}
 
-void BranchSegment::setModel(RateModel *mod) { model = mod; }
-
-/*void BranchSegment::setStartDist(vector<int> sd){
-        startdist = sd;
-}*/
+void BranchSegment::setModel(RateModel *mod) { _model = mod; }
 
 void BranchSegment::clearStartDist() {
-  // startdist.clear();
-  startdistint = -666; // null is -666
+  _start_dist = -666; // null is -666
 }
 
-double BranchSegment::getDuration() { return duration; }
+double BranchSegment::getDuration() { return _duration; }
 
-int BranchSegment::getPeriod() { return period; }
-/*
-vector<int> BranchSegment::getStartDist(){
-        return startdist;
-}*/
+int BranchSegment::getPeriod() { return _period; }
 
-void BranchSegment::set_start_dist_int(int d) { startdistint = d; }
+void BranchSegment::set_start_dist_int(int d) { _start_dist = d; }
 
-int BranchSegment::get_start_dist_int() { return startdistint; }
+int BranchSegment::get_start_dist_int() { return _start_dist; }
 
-RateModel *BranchSegment::getModel() { return model; }
+RateModel *BranchSegment::getModel() { return _model; }
 
-vector<int> BranchSegment::getFossilAreas() { return fossilareaindices; }
+vector<int> BranchSegment::getFossilAreas() { return _fossil_area_indices; }
 
 void BranchSegment::setFossilArea(int area) {
-  fossilareaindices.push_back(area);
+  _fossil_area_indices.push_back(area);
 }

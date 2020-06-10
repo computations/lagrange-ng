@@ -21,20 +21,18 @@ using namespace std;
 
 class BranchSegment {
 private:
-  double duration;
-  int period;
-  RateModel *model;
-  vector<int> fossilareaindices;
-  int startdistint;
+  double _duration;
+  int _period;
+  RateModel *_model;
+  vector<int> _fossil_area_indices;
+  int _start_dist;
 
 public:
   BranchSegment(double dur, int per);
   void setModel(RateModel *mod);
-  // void setStartDist(vector<int> sd);
   void clearStartDist();
   double getDuration();
   int getPeriod();
-  // vector<int> getStartDist();
   void set_start_dist_int(int d);
   int get_start_dist_int();
   RateModel *getModel();
