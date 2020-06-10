@@ -77,7 +77,6 @@ long comb(int m, int n) {
   m = m - 1;
   n = n - 1;
   while (n != 0) {
-    //# assert (result * m) % i == 0
     result = result * m / i;
     i = i + 1;
     n = n - 1;
@@ -107,7 +106,6 @@ vector<int> comb_at_index(int m, int n, int i) {
     }
     m = m - 1;
   }
-  // assert i == 0
   return result;
 }
 
@@ -139,7 +137,6 @@ vector<vector<int>> iterate(int M, int N) {
       }
       m = m - 1;
     }
-    // assert i == 0;
     results.push_back(result);
   }
   return results;
