@@ -17,12 +17,12 @@ using namespace std;
 
 class Tree {
 private:
-  Node *root;
-  vector<Node *> nodes;
-  vector<Node *> internalNodes;
-  vector<Node *> externalNodes;
-  int internalNodeCount;
-  int externalNodeCount;
+  Node *_root;
+  vector<Node *> _nodes;
+  vector<Node *> _internal_nodes;
+  vector<Node *> _external_nodes;
+  int _internal_node_count;
+  int _external_node_count;
 
   void processReRoot(Node *node);
   void exchangeInfo(Node *node1, Node *node2);
