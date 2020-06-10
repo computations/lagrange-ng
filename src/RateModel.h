@@ -42,9 +42,9 @@ private:
   vector<vector<vector<double>>> _rate_matrix;
   vector<vector<vector<double>>> _rate_matrix_transposed;
   vector<int> _active_zone_counts;
-  vector<vector<int>> ia_s;
-  vector<vector<int>> ja_s;
-  vector<vector<double>> a_s;
+  vector<vector<int>> _ia_s;
+  vector<vector<int>> _ja_s;
+  vector<vector<double>> _a_s;
   void iter_all_dist_splits();
 
 public:

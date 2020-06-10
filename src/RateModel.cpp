@@ -287,9 +287,9 @@ void RateModel::setup_Q() {
       _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p], 1);
     }
     // setup matrix
-    ia_s.clear();
-    ja_s.clear();
-    a_s.clear();
+    _ia_s.clear();
+    _ja_s.clear();
+    _a_s.clear();
     for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
       vector<int> ia = vector<int>(_active_zone_counts[p]);
       vector<int> ja = vector<int>(_active_zone_counts[p]);
@@ -297,9 +297,9 @@ void RateModel::setup_Q() {
       convert_matrix_to_coo_for_fortran_vector(
           _rate_matrix_transposed[p], ia, ja,
           a); // need to multiply these all these by t
-      ia_s.push_back(ia);
-      ja_s.push_back(ja);
-      a_s.push_back(a);
+      _ia_s.push_back(ia);
+      _ja_s.push_back(ja);
+      _a_s.push_back(a);
     }
   }
   if (VERBOSE) {
@@ -487,9 +487,9 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   int *ia = new int[current_zone_count];
   int *ja = new int[current_zone_count];
   double *a = new double[current_zone_count];
-  std::copy(ia_s[period].begin(), ia_s[period].end(), ia);
-  std::copy(ja_s[period].begin(), ja_s[period].end(), ja);
-  std::copy(a_s[period].begin(), a_s[period].end(), a);
+  std::copy(_ia_s[period].begin(), _ia_s[period].end(), ia);
+  std::copy(_ja_s[period].begin(), _ja_s[period].end(), ja);
+  std::copy(_a_s[period].begin(), _a_s[period].end(), a);
   double *v = new double[n];
   for (int i = 0; i < n; i++) {
     v[i] = 0;
