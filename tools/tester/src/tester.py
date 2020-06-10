@@ -120,7 +120,9 @@ def get_lagrange_ext(filename):
 
 def order_bgkey_bgstates(files):
     if len(files) != 2:
-        raise Exception("This function requires a list of two arguements")
+        raise Exception(
+            "This function requires a list of two arguements, got {}".format(
+                len(files)))
     if get_lagrange_ext(files[0]) == '.bgkey':
         return (files[0], files[1])
     return (files[1], files[0])
@@ -142,8 +144,13 @@ def select_expected(path, files):
 
 
 def select_experiment(path, files):
-    bgkey, bgstates = order_bgkey_bgstates(
-        select_bgkey_bgstates(select_files_with_prefix('lagrange_exp', files)))
+    try:
+        bgkey, bgstates = order_bgkey_bgstates(
+            select_bgkey_bgstates(
+                select_files_with_prefix('lagrange_exp', files)))
+    except:
+        raise Exception("Failed to find the experiment files in: '{}'".format(
+            ','.join(files)))
     return (os.path.join(path, bgkey), os.path.join(path, bgstates))
 
 
@@ -151,7 +158,8 @@ def compare_results_expected(path):
     files = [
         f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
     ]
-    expected_results = lagrange.lagrange_results(*select_expected(path, files))
+    expected_results = lagrange.lagrange_results(
+        *select_experiment(path, files))
     experiment_results = lagrange.lagrange_results(
         *select_expected(path, files))
     return experiment_results == expected_results
@@ -215,7 +223,7 @@ def run(prefix, archive, program):
                 runner.run(path, config_file)
                 progress.update(test_task, advance=1.0)
                 if not compare_results_expected(path):
-                    failed_paths.add(path)
+                    failed_paths.append(path)
     if len(failed_paths) != 0:
         console.print("failed paths:", failed_paths)
     else:
