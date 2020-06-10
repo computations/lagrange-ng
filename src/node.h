@@ -20,17 +20,17 @@ using namespace std;
 
 class Node {
 private:
-  double BL;     // branch lengths
-  double height; // could be from tip or from root
-  int number;
-  string name;
-  Node *parent;
-  vector<Node *> children;
-  map<string, NodeObject *> assoc;
-  map<string, vector<Superdouble>> assocDV;
-  string comment;
-  vector<BranchSegment> *segs;
-  vector<vector<int>> *excluded_dists;
+  double _branch_length; // branch lengths
+  double _height;        // could be from tip or from root
+  int _number;
+  string _label;
+  Node *_parent;
+  vector<Node *> _children;
+  map<string, NodeObject *> _label_map;
+  map<string, vector<Superdouble>> _label_map_superdouble;
+  string _comment;
+  vector<BranchSegment> *_branch_segments;
+  vector<vector<int>> *_excluded_dists;
 
 public:
   Node();
