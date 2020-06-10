@@ -282,18 +282,18 @@ void RateModel::setup_Q() {
       }
     }
     // setting up the coo numbs
-    nzs = vector<int>(_rate_matrix.size(), 0);
+    _active_zone_counts = vector<int>(_rate_matrix.size(), 0);
     for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
-      nzs[p] = get_size_for_coo(_rate_matrix[p], 1);
+      _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p], 1);
     }
     // setup matrix
     ia_s.clear();
     ja_s.clear();
     a_s.clear();
     for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
-      vector<int> ia = vector<int>(nzs[p]);
-      vector<int> ja = vector<int>(nzs[p]);
-      vector<double> a = vector<double>(nzs[p]);
+      vector<int> ia = vector<int>(_active_zone_counts[p]);
+      vector<int> ja = vector<int>(_active_zone_counts[p]);
+      vector<double> a = vector<double>(_active_zone_counts[p]);
       convert_matrix_to_coo_for_fortran_vector(
           _rate_matrix_transposed[p], ia, ja,
           a); // need to multiply these all these by t
@@ -482,10 +482,11 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
                                                        int column) {
   int n = _rate_matrix[period].size();
   int m = _area_count - 1;
-  int nz = nzs[period]; // get_size_for_coo(Q[period],1);
-  int *ia = new int[nz];
-  int *ja = new int[nz];
-  double *a = new double[nz];
+  int current_zone_count =
+      _active_zone_counts[period]; // get_size_for_coo(Q[period],1);
+  int *ia = new int[current_zone_count];
+  int *ja = new int[current_zone_count];
+  double *a = new double[current_zone_count];
   std::copy(ia_s[period].begin(), ia_s[period].end(), ia);
   std::copy(ja_s[period].begin(), ja_s[period].end(), ja);
   std::copy(a_s[period].begin(), a_s[period].end(), a);
@@ -508,7 +509,7 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   int itrace = 0;
   double *res = new double[n]; // only needs resulting columns
   wrapsingledmexpv_(&n, &m, &t1, v, w, &tol, &anorm, wsp, &lwsp, iwsp, &liwsp,
-                    &itrace, &iflag, ia, ja, a, &nz, res);
+                    &itrace, &iflag, ia, ja, a, &current_zone_count, res);
 
   vector<double> p(_rate_matrix[period].size());
   int count = 0;

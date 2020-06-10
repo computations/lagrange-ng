@@ -40,9 +40,8 @@ private:
   vector<vector<vector<double>>> _dispersal_params_mask;
   vector<vector<double>> _extinction_params;
   vector<vector<vector<double>>> _rate_matrix;
-  vector<vector<vector<double>>>
-      _rate_matrix_transposed; // transposed for sparse
-  vector<int> nzs;
+  vector<vector<vector<double>>> _rate_matrix_transposed;
+  vector<int> _active_zone_counts;
   vector<vector<int>> ia_s;
   vector<vector<int>> ja_s;
   vector<vector<double>> a_s;
