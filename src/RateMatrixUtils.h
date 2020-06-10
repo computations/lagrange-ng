@@ -97,30 +97,5 @@ void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
 vector<int> get_columns_for_sparse(vector<double> &, RateModel *);
 vector<int> get_columns_for_sparse(vector<Superdouble> &, RateModel *);
 
-/*
-        this is for pthread sparse columns
 
-        PRETTY MUCH USELESS UNTIL IMPLEMENTED MATEXP STUFF IN C++
- */
-struct sparse_thread_data {
-  int thread_id;
-  vector<int> columns;
-  vector<vector<double>> presults;
-  RateModel *rm;
-  double t;
-  int period;
-};
-
-void *sparse_column_pmatrix_pthread_go(void *threadarg);
-
-/*
- * REQUIRES BOOST -- UNCOMMENT TO REACTIVATE
- */
-/*
- * this constructs a P matrix using a Q matrix
- */
-
-// vector< vector<double> > QMatrixToPmatrix(vector< vector<double> > & Q,
-// double t); void calcMatExp(int * ia,int * ja, double * a, int n);
-
-#endif /* RATEMATRIXUTILS_H_ */
+#endif

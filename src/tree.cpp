@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <exception>
 
 using namespace std;
 
@@ -252,7 +253,7 @@ void Tree::processRoot() {
   externalNodes.clear();
   internalNodeCount = 0;
   externalNodeCount = 0;
-  if (&root == NULL)
+  if (root == NULL)
     return;
   postOrderProcessRoot(root);
 }
@@ -319,11 +320,14 @@ void Tree::pruneExternalNode(Node *node) {
    */
   double bl = 0;
   Node *parent = node->getParent();
-  Node *other = NULL;
+  Node *other = nullptr;
   for (int i = 0; i < parent->getChildCount(); i++) {
     if (&parent->getChild(i) != node) {
       other = &parent->getChild(i);
     }
+  }
+  if(other == nullptr){
+    throw std::runtime_error{"Failed to find the other node when pruning"};
   }
   bl = other->getBL() + parent->getBL();
   Node *mparent = parent->getParent();

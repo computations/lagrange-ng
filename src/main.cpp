@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     string line;
     while (getline(ifs, line)) {
       if (line.size() > 0) {
-        if (&line[0] != "#") {
+        if (line[0] != '#') {
           vector<string> tokens;
           string del("=");
           tokens.clear();

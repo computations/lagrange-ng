@@ -85,15 +85,6 @@ int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2) {
   return location;
 }
 
-/*bool is_vector_int_equal_to_vector_int(vector<int> & in ,vector<int> & in2){
-        bool x = true;
-        for(unsigned int i=0;i<in.size();i++){
-                if(in[i] != in2[i])
-                        x = false;
-        }
-        return x;
-}*/
-
 int get_vector_int_index_from_multi_vector_int(vector<int> *in,
                                                vector<vector<int>> *in2) {
   int ret = 0;
@@ -153,7 +144,6 @@ vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> &dist) {
     int nsplits = splits->at(0).size();
     double weight = 1.0 / nsplits;
     for (unsigned int i = 0; i < splits->at(0).size(); i++) {
-      // AncSplit an(rm,dist,splits->at(0)[i],splits->at(1)[i],weight);
       AncSplit an(rm, (*distsmap)[dist], (*distsmap)[splits->at(0)[i]],
                   (*distsmap)[splits->at(1)[i]], weight);
       ans.push_back(an);
@@ -198,13 +188,10 @@ int get_size_for_coo(vector<vector<double>> &inmatrix, double t) {
   int size = inmatrix.size();
   for (int i = 0; i < size; i++) {
     for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
-      //			if(inmatrix[i][j]*t != 0){
       if (inmatrix[i][j] != 0) {
         count += 1;
       }
     }
-    // count += (int) count_if (inmatrix[i].begin(), inmatrix[i].end(),
-    // IsMoreThanZero);
   }
   return count;
 }
@@ -215,8 +202,6 @@ void convert_matrix_to_coo_for_fortran(vector<vector<double>> &inmatrix,
   for (unsigned int i = 0; i < inmatrix.size(); i++) {
     for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
       if (inmatrix[i][j] != 0.0) {
-        // cout << count << " " <<  i << " "<< j << " "<< inmatrix[i][j]*t <<
-        // endl;
         ia[count] = i + 1;
         ja[count] = j + 1;
         a[count] = inmatrix[i][j];
@@ -233,8 +218,6 @@ void convert_matrix_to_coo_for_fortran_vector(vector<vector<double>> &inmatrix,
   for (unsigned int i = 0; i < inmatrix.size(); i++) {
     for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
       if (inmatrix[i][j] != 0.0) {
-        // cout << count << " " <<  i << " "<< j << " "<< inmatrix[i][j]*t <<
-        // endl;
         ia[count] = i + 1;
         ja[count] = j + 1;
         a[count] = inmatrix[i][j];
@@ -328,83 +311,3 @@ vector<int> get_columns_for_sparse(vector<Superdouble> &inc, RateModel *rm) {
   }
   return ret;
 }
-
-/*
-        this is for parallel sparse matrix calculation
- */
-void *sparse_column_pmatrix_pthread_go(void *threadarg) {
-  struct sparse_thread_data *my_data;
-  my_data = (struct sparse_thread_data *)threadarg;
-  int thread_id;
-  vector<int> columns;
-  int period;
-  double t;
-  vector<vector<double>> presults;
-  RateModel *rm;
-  rm = my_data->rm;
-  columns = my_data->columns;
-  thread_id = my_data->thread_id;
-  period = my_data->period;
-  t = my_data->t;
-  /*
-          get each column
-   */
-  for (unsigned int i = 0; i < columns.size(); i++) {
-    presults.push_back(rm->setup_sparse_single_column_P(period, t, columns[i]));
-  }
-  my_data->presults = presults;
-  return 0;
-}
-
-// REQUIRES BOOST AND IS SLOWER BUT TO ACTIVATE UNCOMMENT
-
-/*#include "expm.h"
-#include <boost/numeric/ublas/lu.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/traits.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-vector< vector<double> > QMatrixToPmatrix(vector< vector<double> > & Q, double
-t){ using namespace boost::numeric::ublas; matrix<double> H(Q.size(),Q.size());
-        for(unsigned int i=0; i<Q.size(); i++){
-                for (unsigned int j=0; j<Q.size(); j++){
-                        H(i,j)=Q[i][j]*t;
-                }
-        }
-        matrix<double> U (Q.size(), Q.size());
-        U = expm_pad(H);
-        std::vector<std::vector<double> > P (Q.size(),
-std::vector<double>(Q.size())); for(unsigned int i=0; i<Q.size(); i++){ for
-(unsigned int j=0; j<Q.size(); j++){ P[i][j] = U(i,j);
-                }
-        }
-        //for(unsigned int i=0; i<P.size(); i++){
-        //	double sum = 0.0;
-        //	for (unsigned int j=0; j<P[i].size(); j++){
-        //		sum += P[i][j];
-        //	}
-        //	for (unsigned int j=0; j<P[i].size(); j++){
-        //		P[i][j] = (P[i][j]/sum);
-        //	}
-        //}
-        return P;
-}
-
-void calcMatExp(int * ia,int * ja, double * a, int n){
-        using namespace boost::numeric::ublas;
-        matrix<double> H(n/2,n/2);
-        int count = 0;
-        for(unsigned int i=0; i<n/2; i++){
-                for (unsigned int j=0; j<n/2; j++){
-                        H(i,j)=a[count];
-                        count += 1;
-                }
-        }
-        matrix<double> U (n/2,n/2);
-        U = expm_pad(H);
-        for(unsigned int i=0; i<n/2; i++){
-                for (unsigned int j=0; j<n/2; j++){
-                        cout << U(i,j) << " ";
-                }cout << endl;
-        }
-}*/

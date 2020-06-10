@@ -63,12 +63,9 @@ void TrimSpaces(string &str) {
 long comb(int m, int n) {
   /*m, n -> number of combinations of m items, n at a time.
 
-m >= n >= 0 required.
+  m >= n >= 0 required.
    */
 
-  if (!m >= n && n >= 0) {
-    // raise ValueError("m >= n >= 0 required: " + `m, n`)
-  }
   if (n > (m >> 1)) {
     n = m - n;
   }
@@ -115,9 +112,6 @@ vector<int> comb_at_index(int m, int n, int i) {
 }
 
 vector<vector<int>> iterate(int M, int N) {
-  if (!M >= N and N >= 1) {
-    // raise ValueError("m >= n >= 1 required: " + `M, N`)
-  }
   long ncombs = long(comb(M, N));
   vector<vector<int>> results;
   for (int x = 0; x < ncombs; x++) {
