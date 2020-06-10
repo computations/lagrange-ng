@@ -18,16 +18,16 @@
 #define ANCSPLIT_H_
 
 #include <vector>
-// using namespace std;
+#include <memory>
 
 #include "RateModel.h"
 #include "superdouble.h"
 
 class AncSplit {
 private:
-  RateModel *model;
-  double weight;
-  Superdouble likelihood;
+  RateModel *_model;
+  double _weight;
+  Superdouble _likelihood;
 
 public:
   AncSplit(RateModel *mod, int, int, int, Superdouble);

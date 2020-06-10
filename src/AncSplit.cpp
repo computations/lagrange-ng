@@ -22,13 +22,13 @@ using namespace std;
 
 AncSplit::AncSplit(RateModel *mod, int dist, int ldesc, int rdesc,
                    Superdouble we)
-    : model(mod), weight(we), likelihood(0), ancdistint(dist),
+    : _model(mod), _weight(we), _likelihood(0), ancdistint(dist),
       ldescdistint(ldesc), rdescdistint(rdesc) {}
 
-RateModel *AncSplit::getModel() { return model; }
+RateModel *AncSplit::getModel() { return _model; }
 
-double AncSplit::getWeight() { return weight; }
+double AncSplit::getWeight() { return _weight; }
 
-Superdouble AncSplit::getLikelihood() { return likelihood; }
+Superdouble AncSplit::getLikelihood() { return _likelihood; }
 
-void AncSplit::setLikelihood(Superdouble li) { likelihood = li; }
+void AncSplit::setLikelihood(Superdouble li) { _likelihood = li; }
