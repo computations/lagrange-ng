@@ -34,8 +34,6 @@ set(LAGRANGE_SOURCES
         src/node_object.h
         src/OptimizeBioGeo.cpp
         src/OptimizeBioGeo.h
-        src/OptimizeBioGeoAllDispersal.cpp
-        src/OptimizeBioGeoAllDispersal.h
         src/OptimizeBioGeoAllDispersal_nlopt.cpp
         src/OptimizeBioGeoAllDispersal_nlopt.h
         src/RateMatrixUtils.cpp

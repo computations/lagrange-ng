@@ -28,7 +28,6 @@ using namespace std;
 #include "BioGeoTreeTools.h"
 #include "InputReader.h"
 #include "OptimizeBioGeo.h"
-#include "OptimizeBioGeoAllDispersal.h"
 #include "OptimizeBioGeoAllDispersal_nlopt.h"
 #include "RateMatrixUtils.h"
 #include "RateModel.h"
