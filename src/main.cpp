@@ -44,7 +44,6 @@ int main(int argc, char *argv[]) {
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;
-    // cout << DBL_MIN << " " << DBL_EPSILON << endl;
     exit(0);
   } else {
     string treefile;
@@ -448,7 +447,6 @@ int main(int argc, char *argv[]) {
           if (isnot == false) {
             bgt.set_excluded_dist(rm.getDists()->at(k),
                                   mrcanodeint[(*fnit).first]);
-            // bgt.set_excluded_dist(rm.getDists()->at(k),intrees[0]->getNode(mrcanodeint[(*fnit).first]));
           }
         }
         cout << "fixing " << (*fnit).first << " = ";
@@ -467,7 +465,6 @@ int main(int argc, char *argv[]) {
         if (fossiltype[k] == "n" || fossiltype[k] == "N") {
           bgt.setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],
                                        areanamemap[fossilarea[k]]);
-          // bgt.setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],areanamemap[fossilarea[k]]);
           cout << "Setting node fossil at mrca: " << fossilmrca[k]
                << " at area: " << fossilarea[k] << endl;
         } else {
@@ -509,9 +506,6 @@ int main(int argc, char *argv[]) {
           cout << "Optimizing (simplex) -ln likelihood with all dispersal "
                   "parameters free."
                << endl;
-          // OptimizeBioGeoAllDispersal opt(&bgt,&rm,marginal);
-          // vector<double> disextrm  =
-          // opt.optimize_global_dispersal_extinction();
           vector<double> disextrm =
               optimize_dispersal_extinction_all_nlopt(&bgt, &rm);
           cout << "dis: " << disextrm[0] << " ext: " << disextrm[1] << endl;
@@ -596,7 +590,6 @@ int main(int argc, char *argv[]) {
               unordered_map<vector<int>, vector<AncSplit>> ras =
                   bgt.calculate_ancsplit_reverse(
                       *intrees[i]->getInternalNode(j), marginal);
-              // bgt.ancstate_calculation_all_dists(*intrees[i]->getNode(j),marginal);
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
                                  areanamemaprev, &rm);
               cout << endl;
@@ -662,7 +655,6 @@ int main(int argc, char *argv[]) {
               delete intrees[i]->getInternalNode(j)->getObject("state");
           }
         }
-        // cout << bgt.ti/CLOCKS_PER_SEC << " secs for anc" << endl;
         /*
          * stochastic mapping calculations
          * REQUIRES that ancestral calculation be done
@@ -684,7 +676,6 @@ int main(int argc, char *argv[]) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
                 vector<Superdouble> rsm = bgt.calculate_reverse_stochmap(
                     *intrees[i]->getNode(j), true);
-                // cout << calculate_vector_double_sum(rsm) / totlike << endl;
                 VectorNodeObject<double> stres(1);
                 stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
                 intrees[i]->getNode(j)->assocObject("stoch", stres);
@@ -738,11 +729,6 @@ int main(int argc, char *argv[]) {
             // need to output object "stoch"
             outStochTimeFile << intrees[i]->getRoot()->getNewickOBL("stoch")
                              << ";" << endl;
-            // tt.get_string_from_dist_int((*rm.get_dists_int_map())[stochastic_number_from_tos[k][0]],areanamemaprev,&rm)<<
-            // "->"
-            //<<
-            //tt.get_string_from_dist_int((*rm.get_dists_int_map())[stochastic_number_from_tos[k][1]],areanamemaprev,&rm)
-            //<< ";"<< endl;
             outStochTimeFile.close();
             for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j)->getObject("stoch") != NULL)
