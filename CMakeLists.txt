@@ -61,9 +61,6 @@ add_executable(lagrange ${LAGRANGE_SOURCES})
 add_executable(lagrange_debug ${LAGRANGE_SOURCES})
 add_executable(lagrange_profile ${LAGRANGE_SOURCES})
 
-#set(CMAKE_Fortran_FLAGS_DEBUG "-std=legacy")
-#set(CMAKE_Fortran_FLAGS "-std=legacy")
-
 # These flags are required for the expmkit code
 set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
 set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
@@ -75,17 +72,18 @@ list(APPEND ${LAGRANGE_PROFILE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 set(LAGRANGE_RELEASE_FLAGS -O3)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 
-target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES} ${ARMADILLO_INCLUDES})
-target_link_libraries(lagrange gsl nlopt gslcblas ${ARMADILLO_LIBS})
+set(LINALG_LIBS gsl cblas lapack)
+set(OPT_LIBS nlopt)
+set(LAGRANGE_LIBS ${LINALG_LIBS} ${OPT_LIBS})
+
+target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES})
+target_link_libraries(lagrange ${LAGRANGE_LIBS})
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS})
-add_dependencies(lagrange armadillo_headers)
 
-target_include_directories(lagrange_debug PRIVATE ${BLAZE_INCLUDES} ${ARMADILLO_INCLUDES})
-target_link_libraries(lagrange_debug gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_include_directories(lagrange_debug PRIVATE ${BLAZE_INCLUDES})
+target_link_libraries(lagrange_debug ${LAGRANGE_LIBS})
 target_compile_options(lagrange_debug PRIVATE ${LAGRANGE_DEBUG_FLAGS})
-add_dependencies(lagrange_debug armadillo_headers)
 
-target_include_directories(lagrange_profile PRIVATE ${BLAZE_INCLUDES} ${ARMADILLO_INCLUDES})
-target_link_libraries(lagrange_profile gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_include_directories(lagrange_profile PRIVATE ${BLAZE_INCLUDES})
+target_link_libraries(lagrange_profile ${LAGRANGE_LIBS})
 target_compile_options(lagrange_profile PRIVATE ${LAGRANGE_PROFILE_FLAGS})
-add_dependencies(lagrange_profile armadillo_headers)

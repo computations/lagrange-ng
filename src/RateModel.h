@@ -14,8 +14,16 @@
 #include <vector>
 using namespace std;
 
-#include <armadillo>
-using namespace arma;
+#include <blaze/Math.h>
+#include <blaze/math/DynamicMatrix.h>
+#include <blaze/math/DynamicVector.h>
+
+typedef blaze::DynamicMatrix<double, blaze::columnMajor> lagrange_matrix_t;
+typedef blaze::DynamicMatrix<std::complex<double>, blaze::columnMajor>
+    lagrange_complex_matrix_t;
+typedef blaze::DynamicVector<double, blaze::columnVector> lagrange_col_vector_t;
+typedef blaze::DynamicVector<std::complex<double>, blaze::columnVector>
+    lagrange_complex_col_vector_t;
 
 namespace std {
 template <> struct hash<std::vector<int>> {
@@ -90,7 +98,8 @@ public:
    */
   vector<vector<vector<double>>> &get_Q();
   // this should be used for getting the eigenvectors and eigenvalues
-  bool get_eigenvec_eigenval_from_Q(cx_mat *eigenvalues, cx_mat *eigenvectors,
+  bool get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigenvalues,
+                                    lagrange_complex_matrix_t &eigenvectors,
                                     int period);
 };
 

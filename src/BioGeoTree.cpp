@@ -43,9 +43,7 @@ BioGeoTree::BioGeoTree(Tree *tr, vector<double> ps)
     : _tree(tr), _periods(ps), _columns(nullptr), _which_columns(nullptr),
       _root_ratemodel(nullptr), _store_p_matrices(false),
       _use_stored_matrices(false), _reverse(false), _stocastic(false),
-      _stored_EN_matrices(unordered_map<int, map<double, mat>>()),
-      _stored_EN_CX_matrices(unordered_map<int, map<double, cx_mat>>()),
-      _stored_ER_matrices(unordered_map<int, map<double, mat>>()) {
+      _stored_EN_matrices{}, _stored_EN_CX_matrices{}, _stored_ER_matrices{} {
 
   /*
    * initialize each node with segments
@@ -500,8 +498,8 @@ void BioGeoTree::reverse(Node &node) {
       vector<vector<double>> *p =
           &rm->stored_p_matrices[tsegs->at(ts).getPeriod()]
                                 [tsegs->at(ts).getDuration()];
-      mat *EN = NULL;
-      mat *ER = NULL;
+      blaze::DynamicMatrix<double> *EN = nullptr;
+      blaze::DynamicMatrix<double> *ER = nullptr;
       vector<Superdouble> tempmoveAer(tempA);
       vector<Superdouble> tempmoveAen(tempA);
       if (_stocastic == true) {
@@ -516,9 +514,6 @@ void BioGeoTree::reverse(Node &node) {
                                  [tsegs->at(ts).getDuration()];
         ER = &_stored_ER_matrices[tsegs->at(ts).getPeriod()]
                                  [tsegs->at(ts).getDuration()];
-        cx_mat *EN_CX = NULL;
-        EN_CX = &_stored_EN_CX_matrices[tsegs->at(ts).getPeriod()]
-                                       [tsegs->at(ts).getDuration()];
       }
       for (unsigned int j = 0; j < dists->size(); j++) {
         if (accumulate(dists->at(j).begin(), dists->at(j).end(), 0) > 0) {
@@ -640,36 +635,37 @@ void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from, int to) {
     for (unsigned int l = 0; l < tsegs->size(); l++) {
       int per = (*tsegs)[l].getPeriod();
       double dur = (*tsegs)[l].getDuration();
-      cx_mat eigvec(ndists, ndists);
-      eigvec.fill(0);
-      cx_mat eigval(ndists, ndists);
-      eigval.fill(0);
+
+      lagrange_complex_matrix_t eigvec(ndists, ndists, 0.0);
+      lagrange_complex_matrix_t eigval(ndists, ndists, 0.0);
+
       bool isImag =
-          _root_ratemodel->get_eigenvec_eigenval_from_Q(&eigval, &eigvec, per);
-      mat Ql(ndists, ndists);
-      Ql.fill(0);
+          _root_ratemodel->get_eigenvec_eigenval_from_Q(eigval, eigvec, per);
+
+      lagrange_complex_matrix_t Ql(ndists, ndists, 0.0);
+
       Ql(from, to) = _root_ratemodel->get_Q()[per][from][to];
-      mat W(ndists, ndists);
-      W.fill(0);
+
+      lagrange_matrix_t W(ndists, ndists, 0.0);
       W(from, from) = 1;
-      cx_mat summed(ndists, ndists);
-      summed.fill(0);
-      cx_mat summedR(ndists, ndists);
-      summedR.fill(0);
+
+      lagrange_complex_matrix_t summed(ndists, ndists, 0.0);
+      lagrange_complex_matrix_t summedR(ndists, ndists, 0.0);
       for (int i = 0; i < ndists; i++) {
-        mat Ei(ndists, ndists);
-        Ei.fill(0);
+        lagrange_matrix_t Ei(ndists, ndists, 0.0);
         Ei(i, i) = 1;
-        cx_mat Si(ndists, ndists);
-        Si = eigvec * Ei * inv(eigvec);
+
+        lagrange_complex_matrix_t Si(ndists, ndists);
+        Si = eigvec * Ei * blaze::inv(eigvec);
+
         for (int j = 0; j < ndists; j++) {
-          cx_double dij = (eigval(i, i) - eigval(j, j)) * dur;
-          mat Ej(ndists, ndists);
-          Ej.fill(0);
+          std::complex<double> dij = (eigval(i, i) - eigval(j, j)) * dur;
+          lagrange_matrix_t Ej(ndists, ndists, 0.0);
           Ej(j, j) = 1;
-          cx_mat Sj(ndists, ndists);
-          Sj = eigvec * Ej * inv(eigvec);
-          cx_double Iijt = 0;
+
+          lagrange_complex_matrix_t Sj(ndists, ndists);
+          Sj = eigvec * Ej * blaze::inv(eigvec);
+          std::complex<double> Iijt = 0;
           if (abs(dij) > 10) {
             Iijt = (exp(eigval(i, i) * dur) - exp(eigval(j, j) * dur)) /
                    (eigval(i, i) - eigval(j, j));

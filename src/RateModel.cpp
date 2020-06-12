@@ -24,9 +24,6 @@
 #include <vector>
 using namespace std;
 
-#include <armadillo>
-using namespace arma;
-
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
     : _global_ext(ge), _area_count(na), _thread_count(0), _periods(pers),
       _sparse(sp) {}
@@ -623,36 +620,40 @@ inline double roundto(double in) { return floor(in * (1000) + 0.5) / (1000); }
 /*
  * this should be used to caluculate the eigenvalues and eigenvectors
  * as U * Q * U-1 -- eigen decomposition
- *
- * this should use the armadillo library
  */
-bool RateModel::get_eigenvec_eigenval_from_Q(cx_mat *eigval, cx_mat *eigvec,
+bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
+                                             lagrange_complex_matrix_t &eigvec,
                                              int period) {
-  mat tQ(int(_rate_matrix[period].size()), int(_rate_matrix[period].size()));
-  tQ.fill(0);
+
+  size_t row_size = _rate_matrix[period].size();
+  lagrange_matrix_t tQ(row_size, row_size, 0.0);
+
   for (unsigned int i = 0; i < _rate_matrix[period].size(); i++) {
     for (unsigned int j = 0; j < _rate_matrix[period].size(); j++) {
       tQ(i, j) = _rate_matrix[period][i][j];
     }
   }
-  cx_colvec eigva;
-  cx_mat eigve;
-  eig_gen(eigva, eigve, tQ);
+
+  lagrange_complex_col_vector_t eigva;
+  lagrange_complex_matrix_t eigve;
+  blaze::eigen(tQ, eigva, eigve);
+
   bool isImag = false;
   for (unsigned int i = 0; i < _rate_matrix[period].size(); i++) {
     for (unsigned int j = 0; j < _rate_matrix[period].size(); j++) {
-      if (i == j)
-        (*eigval)(i, j) = eigva(i);
-      else
-        (*eigval)(i, j) = 0;
-      (*eigvec)(i, j) = eigve(i, j);
-      if (imag((*eigvec)(i, j)) > 0 || imag((*eigval)(i, j)))
+      if (i == j) {
+        eigval(i, j) = eigva[i];
+      } else {
+        eigval(i, j) = 0;
+      }
+      eigvec(i, j) = eigve(i, j);
+      if (imag(eigvec(i, j)) > 0 || imag(eigval(i, j)))
         isImag = true;
     }
   }
   if (VERBOSE) {
     cout << eigva << endl;
-    cout << tQ - ((*eigvec) * (*eigval) * inv(*eigvec)) << endl;
+    cout << tQ - ((eigvec) * (eigval) * blaze::inv(eigvec)) << endl;
   }
   return isImag;
 }

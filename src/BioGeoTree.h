@@ -21,6 +21,8 @@ using namespace std;
 #include "tree.h"
 #include "vector_node_object.h"
 
+#include <blaze/math/DynamicMatrix.h>
+
 class BioGeoTree {
 private:
   Tree *_tree;
@@ -41,9 +43,9 @@ private:
   // stochastic mapping bits
   bool _stocastic;
   // map of period int and then branch length Superdouble
-  unordered_map<int, map<double, mat>> _stored_EN_matrices;
-  unordered_map<int, map<double, cx_mat>> _stored_EN_CX_matrices;
-  unordered_map<int, map<double, mat>> _stored_ER_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<double>>> _stored_EN_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<std::complex<double>>>> _stored_EN_CX_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<double>>> _stored_ER_matrices;
   // end mapping bits
 
 public:
