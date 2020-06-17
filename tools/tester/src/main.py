@@ -23,4 +23,5 @@ if __name__ == "__main__":
         print("Using the tempdir:", tempdir.name)
         args.prefix = tempdir.name
 
+    args.program = os.path.abspath(args.program)
     tester.run(args.prefix, args.archive, args.program)
