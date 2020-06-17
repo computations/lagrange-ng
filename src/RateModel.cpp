@@ -326,6 +326,49 @@ void wrapdgpadm_(int *ideg, int *m, double *t, double *H, int *ldh, double *wsp,
                  int *lwsp, int *ipiv, int *iexph, int *ns, int *iflag);
 }
 
+vector<vector<double>> RateModel::setup_fortran_P(int period, double t, bool store_p_matrices){
+  auto& prob_vector = _rate_matrix[period];
+  size_t row_size = prob_vector.size();
+
+  lagrange_matrix_t prob_matrix(row_size, row_size);
+
+  for (size_t i = 0; i < row_size; ++i){
+    for (size_t j = 0; j < row_size; ++j){
+      prob_matrix(i, j) = prob_vector[i][j] * t;
+    }
+  }
+
+  lagrange_matrix_t b = matexp(prob_matrix);
+  /* we need to normalize the matrix */
+  for (size_t i = 0; i < row_size; ++i){
+    double sum = 0.0;
+    for(size_t j = 0; j < row_size; ++j){
+      sum += b(i,j);
+    }
+    for(size_t j = 0; j < row_size; ++j){
+      b(i,j) /= sum;
+    }
+  }
+
+  vector<vector<double>> ret_vector;
+  ret_vector.reserve(row_size);
+  for(size_t i = 0; i < row_size; ++i){
+    ret_vector.emplace_back(row_size);
+  }
+  for(size_t i = 0; i < row_size; ++i){
+    for(size_t j = 0; j < row_size; ++j){
+      ret_vector[i][j] = b(i,j);
+    }
+  }
+
+  if (store_p_matrices == true) {
+    stored_p_matrices[period][t] = ret_vector;
+  }
+
+  return ret_vector;
+}
+
+#if 0
 /*
  * runs the basic padm fortran expokit full matrix exp
  */
@@ -388,6 +431,7 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
   }
   return prob_matrix;
 }
+#endif
 
 /*
  * runs the sparse matrix fortran expokit matrix exp
