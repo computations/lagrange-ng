@@ -8,6 +8,7 @@ import lagrange
 import rich
 import rich.console
 import rich.progress
+import yaml
 
 
 def file_type(filename):
@@ -224,7 +225,10 @@ def run(prefix, archive, program):
                 progress.update(test_task, advance=1.0)
                 if not compare_results_expected(path):
                     failed_paths.append(path)
+    with open(os.path.join("failed_paths.yaml"), "w") as outfile:
+        outfile.write(yaml.dump(failed_paths))
     if len(failed_paths) != 0:
-        console.print("failed paths:", failed_paths)
+        console.print("failed paths:", sorted(failed_paths))
+        console.print("Total of {} paths failed".format(len(failed_paths)))
     else:
         console.print("[bold green]All Clear!")
