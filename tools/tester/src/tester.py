@@ -225,7 +225,7 @@ def run(prefix, archive, program):
                 progress.update(test_task, advance=1.0)
                 if not compare_results_expected(path):
                     failed_paths.append(path)
-    with open(os.path.join("failed_paths.yaml"), "w") as outfile:
+    with open(os.path.join(prefix, "failed_paths.yaml"), "w") as outfile:
         outfile.write(yaml.dump(failed_paths))
     if len(failed_paths) != 0:
         console.print("failed paths:", sorted(failed_paths))
