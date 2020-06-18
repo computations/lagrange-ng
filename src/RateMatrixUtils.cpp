@@ -183,12 +183,11 @@ void print_vector_double(vector<double> &in) {
   cout << endl;
 }
 
-int get_size_for_coo(vector<vector<double>> &inmatrix) {
+int get_size_for_coo(const lagrange_matrix_t &inmatrix) {
   int count = 0;
-  int size = inmatrix.size();
-  for (int i = 0; i < size; i++) {
-    for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
-      if (inmatrix[i][j] != 0) {
+  for (size_t i = 0; i < inmatrix.columns(); ++i) {
+    for (auto it = inmatrix.begin(i); it != inmatrix.end(i); ++it) {
+      if (*it != 0) {
         count += 1;
       }
     }
@@ -196,31 +195,31 @@ int get_size_for_coo(vector<vector<double>> &inmatrix) {
   return count;
 }
 
-void convert_matrix_to_coo_for_fortran(vector<vector<double>> &inmatrix,
+void convert_matrix_to_coo_for_fortran(const lagrange_matrix_t &inmatrix,
                                        int *ia, int *ja, double *a) {
   int count = 0;
-  for (unsigned int i = 0; i < inmatrix.size(); i++) {
-    for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
-      if (inmatrix[i][j] != 0.0) {
+  for (unsigned int i = 0; i < inmatrix.rows(); i++) {
+    for (unsigned int j = 0; j < inmatrix.columns(); j++) {
+      if (inmatrix(i,j) != 0.0) {
         ia[count] = i + 1;
         ja[count] = j + 1;
-        a[count] = inmatrix[i][j];
+        a[count] = inmatrix(i,j);
         count += 1;
       }
     }
   }
 }
 
-void convert_matrix_to_coo_for_fortran_vector(vector<vector<double>> &inmatrix,
+void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
                                               vector<int> &ia, vector<int> &ja,
                                               vector<double> &a) {
   int count = 0;
-  for (unsigned int i = 0; i < inmatrix.size(); i++) {
-    for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
-      if (inmatrix[i][j] != 0.0) {
+  for (size_t i = 0; i < inmatrix.rows(); ++i) {
+    for (size_t j = 0; j < inmatrix.columns(); ++j) {
+      if (inmatrix(i,j) != 0.0) {
         ia[count] = i + 1;
         ja[count] = j + 1;
-        a[count] = inmatrix[i][j];
+        a[count] = inmatrix(i,j);
         count += 1;
       }
     }

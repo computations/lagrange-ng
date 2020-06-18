@@ -47,8 +47,10 @@ private:
   vector<vector<vector<double>>> _dispersal_params;
   vector<vector<vector<double>>> _dispersal_params_mask;
   vector<vector<double>> _extinction_params;
-  vector<vector<vector<double>>> _rate_matrix;
-  vector<vector<vector<double>>> _rate_matrix_transposed;
+
+  vector<lagrange_matrix_t> _rate_matrix;
+  vector<lagrange_matrix_t> _rate_matrix_transposed;
+
   vector<int> _active_zone_counts;
   vector<vector<int>> _ia_s;
   vector<vector<int>> _ja_s;
@@ -96,7 +98,7 @@ public:
   /*
    * get things from stmap
    */
-  vector<vector<vector<double>>> &get_Q();
+  vector<lagrange_matrix_t> &get_Q();
   // this should be used for getting the eigenvectors and eigenvalues
   bool get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigenvalues,
                                     lagrange_complex_matrix_t &eigenvectors,

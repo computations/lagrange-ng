@@ -86,16 +86,15 @@ processRateMatrixConfigFile(string filename, int numareas, int nperiods);
 
   WILL PROBABLY CHANGE WHEN MOVED TO C++ CLASSES FOR MATEXP
  */
-int get_size_for_coo(vector<vector<double>> &inm);
-void convert_matrix_to_coo_for_fortran(vector<vector<double>> &inmatrix,
+int get_size_for_coo(const lagrange_matrix_t &);
+void convert_matrix_to_coo_for_fortran(const lagrange_matrix_t &inmatrix,
                                        int *ia, int *ja, double *a);
-void convert_matrix_to_coo_for_fortran_vector(vector<vector<double>> &inmatrix,
+void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
                                               vector<int> &ia, vector<int> &ja,
                                               vector<double> &a);
 void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
                                               double t, double *H);
 vector<int> get_columns_for_sparse(vector<double> &, RateModel *);
 vector<int> get_columns_for_sparse(vector<Superdouble> &, RateModel *);
-
 
 #endif

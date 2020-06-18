@@ -225,64 +225,68 @@ void RateModel::setup_E(double e) {
 
 void RateModel::set_Qdiag(int period) {
   for (unsigned int i = 0; i < _dists.size(); i++) {
-    double sum = (calculate_vector_double_sum(_rate_matrix[period][i]) -
-                  _rate_matrix[period][i][i]) *
-                 -1.0;
-    _rate_matrix[period][i][i] = sum;
+    double sum = 0.0;
+    for (size_t j = 0; j < _dists.size(); j++) {
+      sum += _rate_matrix[period](i, j);
+    }
+    sum -= _rate_matrix[period](i, i);
+    sum *= -1;
+
+    _rate_matrix[period](i, i) = sum;
   }
 }
 
 void RateModel::setup_Q() {
-  vector<double> cols(_dists.size(), 0);
-  vector<vector<double>> rows(_dists.size(), cols);
-  _rate_matrix = vector<vector<vector<double>>>(_periods.size(), rows);
-  for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
-    for (unsigned int i = 0; i < _dists.size(); i++) {     // dists
-      int s1 = accumulate(_dists[i].begin(), _dists[i].end(), 0);
+  _rate_matrix = vector<lagrange_matrix_t>(_periods.size(),
+                                           {_dists.size(), _dists.size(), 0.0});
+  for (unsigned int period = 0; period < _rate_matrix.size();
+       period++) {                                                    // periods
+    for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) { // dists
+      int s1 = accumulate(_dists[dist_i].begin(), _dists[dist_i].end(), 0);
       if (s1 > 0) {
-        for (unsigned int j = 0; j < _dists.size(); j++) { // dists
-          int sxor = calculate_vector_int_sum_xor(_dists[i], _dists[j]);
+        for (unsigned int dist_j = 0; dist_j < _dists.size();
+             dist_j++) { // dists
+          int sxor =
+              calculate_vector_int_sum_xor(_dists[dist_i], _dists[dist_j]);
           if (sxor == 1) {
-            int s2 = accumulate(_dists[j].begin(), _dists[j].end(), 0);
-            int dest = locate_vector_int_single_xor(_dists[i], _dists[j]);
+            int s2 =
+                accumulate(_dists[dist_j].begin(), _dists[dist_j].end(), 0);
+            int dest =
+                locate_vector_int_single_xor(_dists[dist_i], _dists[dist_j]);
             double rate = 0.0;
             if (s1 < s2) {
-              for (unsigned int src = 0; src < _dists[i].size(); src++) {
-                if (_dists[i][src] != 0) {
-                  rate += _dispersal_params[p][src][dest];
+              for (unsigned int src = 0; src < _dists[dist_i].size(); src++) {
+                if (_dists[dist_i][src] != 0) {
+                  rate += _dispersal_params[period][src][dest];
                 }
               }
             } else {
-              rate = _extinction_params[p][dest];
+              rate = _extinction_params[period][dest];
             }
-            _rate_matrix[p][i][j] = rate;
+            _rate_matrix[period](dist_i, dist_j) = rate;
           }
         }
       }
     }
-    set_Qdiag(p);
+    set_Qdiag(period);
   }
+
   /*
    * sparse needs to be transposed for matrix exponential calculation
    */
+
   if (_sparse == true) {
-    vector<double> tmp_cols(_dists.size(), 0);
-    vector<vector<double>> tmp_rows(_dists.size(), tmp_cols);
-    _rate_matrix_transposed =
-        vector<vector<vector<double>>>(_periods.size(), tmp_rows);
-    for (unsigned int p = 0; p < _rate_matrix_transposed.size();
-         p++) {                                            // periods
-      for (unsigned int i = 0; i < _dists.size(); i++) {   // dists
-        for (unsigned int j = 0; j < _dists.size(); j++) { // dists
-          _rate_matrix_transposed[p][j][i] = _rate_matrix[p][i][j];
-        }
-      }
+    _rate_matrix_transposed = vector<lagrange_matrix_t>(_periods.size());
+    for (unsigned int p = 0; p < _rate_matrix_transposed.size(); p++) {
+      _rate_matrix_transposed[p] = blaze::trans(_rate_matrix[p]);
     }
+
     // setting up the coo numbs
     _active_zone_counts = vector<int>(_rate_matrix.size(), 0);
     for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
       _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p]);
     }
+
     // setup matrix
     _ia_s.clear();
     _ja_s.clear();
@@ -291,20 +295,20 @@ void RateModel::setup_Q() {
       vector<int> ia = vector<int>(_active_zone_counts[p]);
       vector<int> ja = vector<int>(_active_zone_counts[p]);
       vector<double> a = vector<double>(_active_zone_counts[p]);
-      convert_matrix_to_coo_for_fortran_vector(
-          _rate_matrix_transposed[p], ia, ja,
-          a); // need to multiply these all these by t
+      convert_matrix_to_coo_for_fortran_vector(_rate_matrix_transposed[p], ia,
+                                               ja, a);
       _ia_s.push_back(ia);
       _ja_s.push_back(ja);
       _a_s.push_back(a);
     }
   }
+
   if (VERBOSE) {
     cout << "Q" << endl;
     for (unsigned int i = 0; i < _rate_matrix.size(); i++) {
-      for (unsigned int j = 0; j < _rate_matrix[i].size(); j++) {
-        for (unsigned int k = 0; k < _rate_matrix[i][j].size(); k++) {
-          cout << _rate_matrix[i][j][k] << " ";
+      for (unsigned int j = 0; j < _rate_matrix[i].columns(); j++) {
+        for (unsigned int k = 0; k < _rate_matrix[i].rows(); k++) {
+          cout << _rate_matrix[i](j, k) << " ";
         }
         cout << endl;
       }
@@ -326,38 +330,35 @@ void wrapdgpadm_(int *ideg, int *m, double *t, double *H, int *ldh, double *wsp,
                  int *lwsp, int *ipiv, int *iexph, int *ns, int *iflag);
 }
 
-vector<vector<double>> RateModel::setup_fortran_P(int period, double t, bool store_p_matrices){
-  auto& prob_vector = _rate_matrix[period];
-  size_t row_size = prob_vector.size();
+vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
+                                                  bool store_p_matrices) {
+  auto &cur_rate_matrix = _rate_matrix[period];
+  size_t row_size = cur_rate_matrix.rows();
 
-  lagrange_matrix_t prob_matrix(row_size, row_size);
+  lagrange_matrix_t prob_matrix(cur_rate_matrix);
+  prob_matrix *= t;
 
-  for (size_t i = 0; i < row_size; ++i){
-    for (size_t j = 0; j < row_size; ++j){
-      prob_matrix(i, j) = prob_vector[i][j] * t;
-    }
-  }
 
   lagrange_matrix_t b = matexp(prob_matrix);
   /* we need to normalize the matrix */
-  for (size_t i = 0; i < row_size; ++i){
+  for (size_t i = 0; i < row_size; ++i) {
     double sum = 0.0;
-    for(size_t j = 0; j < row_size; ++j){
-      sum += b(i,j);
+    for (size_t j = 0; j < row_size; ++j) {
+      sum += b(i, j);
     }
-    for(size_t j = 0; j < row_size; ++j){
-      b(i,j) /= sum;
+    for (size_t j = 0; j < row_size; ++j) {
+      b(i, j) /= sum;
     }
   }
 
   vector<vector<double>> ret_vector;
   ret_vector.reserve(row_size);
-  for(size_t i = 0; i < row_size; ++i){
+  for (size_t i = 0; i < row_size; ++i) {
     ret_vector.emplace_back(row_size);
   }
-  for(size_t i = 0; i < row_size; ++i){
-    for(size_t j = 0; j < row_size; ++j){
-      ret_vector[i][j] = b(i,j);
+  for (size_t i = 0; i < row_size; ++i) {
+    for (size_t j = 0; j < row_size; ++j) {
+      ret_vector[i][j] = b(i, j);
     }
   }
 
@@ -437,8 +438,8 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
  * runs the sparse matrix fortran expokit matrix exp
  */
 vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
-  int n = _rate_matrix[period].size();
-  int m = _rate_matrix[period].size() - 1; // tweak
+  int n = _rate_matrix[period].columns();
+  int m = _rate_matrix[period].columns() - 1; // tweak
   int nz = get_size_for_coo(_rate_matrix[period]);
   int *ia = new int[nz];
   int *ja = new int[nz];
@@ -465,13 +466,13 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   wrapalldmexpv_(&n, &m, &t1, v, w, &tol, &anorm, wsp, &lwsp, iwsp, &liwsp,
                  &itrace, &iflag, ia, ja, a, &nz, res);
 
-  vector<vector<double>> p(_rate_matrix[period].size(),
-                           vector<double>(_rate_matrix[period].size()));
-  int count = 0;
+  vector<vector<double>> p(_rate_matrix[period].rows(),
+                           vector<double>(_rate_matrix[period].rows()));
+
+  double* res_ptr = res;
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
-      p[j][i] = res[count];
-      count += 1;
+      p[j][i] = *(res_ptr++);
     }
   }
 
@@ -521,7 +522,7 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
  */
 vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
                                                        int column) {
-  int n = _rate_matrix[period].size();
+  int n = _rate_matrix[period].rows();
   int m = _area_count - 1;
   int current_zone_count =
       _active_zone_counts[period]; // get_size_for_coo(Q[period],1);
@@ -552,7 +553,7 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   wrapsingledmexpv_(&n, &m, &t1, v, w, &tol, &anorm, wsp, &lwsp, iwsp, &liwsp,
                     &itrace, &iflag, ia, ja, a, &current_zone_count, res);
 
-  vector<double> p(_rate_matrix[period].size());
+  vector<double> p(_rate_matrix[period].rows());
   int count = 0;
   for (int i = 0; i < n; i++) {
     p[i] = res[count];
@@ -655,7 +656,7 @@ int RateModel::get_num_areas() { return _area_count; }
 
 int RateModel::get_num_periods() { return _periods.size(); }
 
-vector<vector<vector<double>>> &RateModel::get_Q() { return _rate_matrix; }
+vector<lagrange_matrix_t> &RateModel::get_Q() { return _rate_matrix; }
 
 inline int signof(double d) { return d >= 0 ? 1 : -1; }
 
@@ -669,12 +670,12 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
                                              lagrange_complex_matrix_t &eigvec,
                                              int period) {
 
-  size_t row_size = _rate_matrix[period].size();
+  size_t row_size = _rate_matrix[period].rows();
   lagrange_matrix_t tQ(row_size, row_size, 0.0);
 
-  for (unsigned int i = 0; i < _rate_matrix[period].size(); i++) {
-    for (unsigned int j = 0; j < _rate_matrix[period].size(); j++) {
-      tQ(i, j) = _rate_matrix[period][i][j];
+  for (unsigned int i = 0; i < _rate_matrix[period].rows(); i++) {
+    for (unsigned int j = 0; j < _rate_matrix[period].columns(); j++) {
+      tQ(i, j) = _rate_matrix[period](i,j);
     }
   }
 
@@ -683,8 +684,8 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
   blaze::eigen(tQ, eigva, eigve);
 
   bool isImag = false;
-  for (unsigned int i = 0; i < _rate_matrix[period].size(); i++) {
-    for (unsigned int j = 0; j < _rate_matrix[period].size(); j++) {
+  for (unsigned int i = 0; i < _rate_matrix[period].rows(); i++) {
+    for (unsigned int j = 0; j < _rate_matrix[period].columns(); j++) {
       if (i == j) {
         eigval(i, j) = eigva[i];
       } else {
@@ -697,7 +698,7 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
   }
   if (VERBOSE) {
     cout << eigva << endl;
-    cout << tQ - ((eigvec) * (eigval) * blaze::inv(eigvec)) << endl;
+    cout << tQ - ((eigvec) * (eigval)*blaze::inv(eigvec)) << endl;
   }
   return isImag;
 }

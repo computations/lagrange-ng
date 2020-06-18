@@ -628,7 +628,7 @@ void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from, int to) {
 
       lagrange_complex_matrix_t Ql(ndists, ndists, 0.0);
 
-      Ql(from, to) = _root_ratemodel->get_Q()[per][from][to];
+      Ql(from, to) = _root_ratemodel->get_Q()[per](from,to);
 
       lagrange_matrix_t W(ndists, ndists, 0.0);
       W(from, from) = 1;
