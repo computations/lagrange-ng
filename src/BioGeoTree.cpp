@@ -170,29 +170,33 @@ Superdouble BioGeoTree::eval_likelihood(bool marginal) {
 vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
                                              bool sparse) {
   vector<Superdouble> distconds;
-  vector<BranchSegment> *tsegs = node.getSegVector();
+  vector<BranchSegment> *time_segments = node.getSegVector();
 
-  distconds = *tsegs->at(0).distconds;
-  for (unsigned int i = 0; i < tsegs->size(); i++) {
+  distconds = *time_segments->at(0).distconds;
+
+  for (unsigned int i = 0; i < time_segments->size(); i++) {
+
     for (unsigned int j = 0; j < distconds.size(); j++) {
-      tsegs->at(i).distconds->at(j) = distconds.at(j);
+      time_segments->at(i).distconds->at(j) = distconds.at(j);
     }
-    RateModel *rm = tsegs->at(i).getModel();
-    vector<Superdouble> *v =
-        new vector<Superdouble>(_root_ratemodel->getDists()->size(), 0);
+
+    RateModel *rm = time_segments->at(i).getModel();
+    vector<Superdouble> v(_root_ratemodel->getDists()->size(), 0);
     vector<int> distrange;
-    if (tsegs->at(i).get_start_dist_int() != -666) {
-      int ind1 = tsegs->at(i).get_start_dist_int();
+
+    if (time_segments->at(i).get_start_dist_int() != -666) {
+      int ind1 = time_segments->at(i).get_start_dist_int();
       distrange.push_back(ind1);
-    } else if (tsegs->at(i).getFossilAreas().size() > 0) {
+    } else if (time_segments->at(i).getFossilAreas().size() > 0) {
       for (unsigned int j = 0; j < _root_ratemodel->getDists()->size(); j++) {
         distrange.push_back(j);
       }
       for (unsigned int k = 0; k < distrange.size(); k++) {
         bool flag = true;
-        for (unsigned int x = 0; x < tsegs->at(i).getFossilAreas().size();
-             x++) {
-          if (tsegs->at(i).getFossilAreas()[x] == 1 && distrange.at(x) == 0) {
+        for (unsigned int x = 0;
+             x < time_segments->at(i).getFossilAreas().size(); x++) {
+          if (time_segments->at(i).getFossilAreas()[x] == 1 &&
+              distrange.at(x) == 0) {
             flag = false;
           }
         }
@@ -212,16 +216,16 @@ vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
       if (sparse == false) {
         vector<vector<double>> p;
         if (_use_stored_matrices == false) {
-          p = rm->setup_fortran_P(tsegs->at(i).getPeriod(),
-                                  tsegs->at(i).getDuration(),
+          p = rm->setup_fortran_P(time_segments->at(i).getPeriod(),
+                                  time_segments->at(i).getDuration(),
                                   _store_p_matrices);
         } else {
-          p = rm->stored_p_matrices[tsegs->at(i).getPeriod()]
-                                   [tsegs->at(i).getDuration()];
+          p = rm->stored_p_matrices[time_segments->at(i).getPeriod()]
+                                   [time_segments->at(i).getDuration()];
         }
         for (unsigned int j = 0; j < distrange.size(); j++) {
           for (unsigned int k = 0; k < distconds.size(); k++) {
-            v->at(distrange[j]) += (distconds.at(k) * p[distrange[j]][k]);
+            v[distrange[j]] += (distconds.at(k) * p[distrange[j]][k]);
           }
         }
       } else { // sparse
@@ -236,53 +240,32 @@ vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
               inthere = true;
             vector<double> p;
             if (inthere == true) {
-              p = rm->setup_sparse_single_column_P(tsegs->at(i).getPeriod(),
-                                                   tsegs->at(i).getDuration(),
-                                                   distrange[j]);
+              p = rm->setup_sparse_single_column_P(
+                  time_segments->at(i).getPeriod(),
+                  time_segments->at(i).getDuration(), distrange[j]);
             } else {
               p = vector<double>(distconds.size(), 0);
             }
             for (unsigned int k = 0; k < distconds.size(); k++) {
-              v->at(distrange[j]) += (distconds.at(k) * p[k]);
+              v.at(distrange[j]) += (distconds.at(k) * p[k]);
             }
           }
         }
       }
     }
-    /*
-     * joint reconstruction
-     * NOT FINISHED YET -- DONT USE
-     */
-    else {
-      if (sparse == false) {
-        vector<vector<double>> p =
-            rm->setup_fortran_P(tsegs->at(i).getPeriod(),
-                                tsegs->at(i).getDuration(), _store_p_matrices);
-        for (unsigned int j = 0; j < distrange.size(); j++) {
-          Superdouble maxnum = 0;
-          for (unsigned int k = 0; k < distconds.size(); k++) {
-            Superdouble tx = (distconds.at(k) * p[distrange[j]][k]);
-            maxnum = MAX(tx, maxnum);
-          }
-          v->at(distrange[j]) = maxnum;
-        }
-      } else { // sparse
-      }
-    }
     for (unsigned int j = 0; j < distconds.size(); j++) {
-      distconds[j] = v->at(j);
+      distconds[j] = v[j];
     }
     if (_store_p_matrices == true) {
-      tsegs->at(i).seg_sp_alphas = distconds;
+      time_segments->at(i).seg_sp_alphas = distconds;
     }
-    delete v;
   }
   /*
    * if store is true we want to store the conditionals for each node
    * for possible use in ancestral state reconstruction
    */
   if (_store_p_matrices == true) {
-    tsegs->at(0).alphas = distconds;
+    time_segments->at(0).alphas = distconds;
   }
   return distconds;
 }
