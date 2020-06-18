@@ -275,6 +275,7 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
   if (node.isExternal() == false) { // is not a tip
     Node *c1 = &node.getChild(0);
     Node *c2 = &node.getChild(1);
+    /*
     RateModel *model;
     if (node.hasParent() == true) {
       vector<BranchSegment> *tsegs = node.getSegVector();
@@ -282,6 +283,7 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
     } else {
       model = _root_ratemodel;
     }
+    */
     ancdist_conditional_lh(*c1, marginal);
     ancdist_conditional_lh(*c2, marginal);
     bool sparse = _root_ratemodel->_sparse;
@@ -535,7 +537,7 @@ void BioGeoTree::reverse(Node &node) {
  */
 
 unordered_map<vector<int>, vector<AncSplit>>
-BioGeoTree::calculate_ancsplit_reverse(Node &node, bool marg) {
+BioGeoTree::calculate_ancsplit_reverse(Node &node) {
   vector<Superdouble> *Bs = node.getDoubleVector(_reverse_bits_key);
   unordered_map<vector<int>, vector<AncSplit>> ret;
   for (unsigned int j = 0; j < _root_ratemodel->getDists()->size(); j++) {
@@ -569,8 +571,7 @@ BioGeoTree::calculate_ancsplit_reverse(Node &node, bool marg) {
 /*
  * calculates the ancestral area over all the possible splits
  */
-vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node &node,
-                                                           bool marg) {
+vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node &node) {
   if (node.isExternal() == false) { // is not a tip
     vector<Superdouble> *Bs = node.getDoubleVector(_reverse_bits_key);
     vector<vector<int>> *dists = _root_ratemodel->getDists();
@@ -690,7 +691,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
     vector<BranchSegment> *tsegs = node.getSegVector();
     vector<vector<int>> *dists = _root_ratemodel->getDists();
     vector<Superdouble> totalExp(dists->size(), 0);
-    for (int t = 0; t < tsegs->size(); t++) {
+    for (size_t t = 0; t < tsegs->size(); t++) {
       if (t == 0) {
         vector<Superdouble> Bs;
         if (time)
@@ -723,7 +724,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
             }
           }
         }
-        for (int i = 0; i < dists->size(); i++) {
+        for (size_t i = 0; i < dists->size(); i++) {
           totalExp[i] = LHOODS[i];
         }
       } else {
@@ -744,7 +745,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
             }
           }
         }
-        for (int i = 0; i < dists->size(); i++) {
+        for (size_t i = 0; i < dists->size(); i++) {
           totalExp[i] += LHOODS[i];
         }
       }
@@ -755,7 +756,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
     vector<BranchSegment> *tsegs = node.getSegVector();
     vector<vector<int>> *dists = _root_ratemodel->getDists();
     vector<Superdouble> totalExp(dists->size(), 0);
-    for (int t = 0; t < tsegs->size(); t++) {
+    for (size_t t = 0; t < tsegs->size(); t++) {
       if (t == 0) {
         vector<Superdouble> Bs;
         if (time)
@@ -772,7 +773,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
             }
           }
         }
-        for (int i = 0; i < dists->size(); i++) {
+        for (size_t i = 0; i < dists->size(); i++) {
           totalExp[i] = LHOODS[i];
         }
       } else {
@@ -792,7 +793,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
             }
           }
         }
-        for (int i = 0; i < dists->size(); i++) {
+        for (size_t i = 0; i < dists->size(); i++) {
           totalExp[i] += LHOODS[i];
         }
       }

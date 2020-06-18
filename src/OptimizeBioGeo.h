@@ -20,7 +20,7 @@ class OptimizeBioGeo {
 private:
   BioGeoTree *_tree;
   RateModel *_rate_model;
-  const int _max_iterations = 100;
+  const size_t _max_iterations = 100;
   const double _abs_tol = 0.0001;
   bool _marginal;
   double

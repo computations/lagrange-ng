@@ -65,6 +65,8 @@ add_executable(lagrange_profile ${LAGRANGE_SOURCES})
 set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
 set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
 
+set(WARNING_FLAGS -Wall -Wextra -Wshadow)
+
 set(LAGRANGE_DEBUG_FLAGS -Og -g -fno-omit-frame-pointer)
 list(APPEND ${LAGRANGE_DEBUG_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG})
 set(LAGRANGE_PROFILE_FLAGS -O3 -fno-omit-frame-pointer)
@@ -78,12 +80,15 @@ set(LAGRANGE_LIBS ${LINALG_LIBS} ${OPT_LIBS})
 
 target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES})
 target_link_libraries(lagrange ${LAGRANGE_LIBS})
-target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS})
+target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
+        ${WARNING_FLAGS})
 
 target_include_directories(lagrange_debug PRIVATE ${BLAZE_INCLUDES})
 target_link_libraries(lagrange_debug ${LAGRANGE_LIBS})
-target_compile_options(lagrange_debug PRIVATE ${LAGRANGE_DEBUG_FLAGS})
+target_compile_options(lagrange_debug PRIVATE ${LAGRANGE_DEBUG_FLAGS}
+        ${WARNING_FLAGS})
 
 target_include_directories(lagrange_profile PRIVATE ${BLAZE_INCLUDES})
 target_link_libraries(lagrange_profile ${LAGRANGE_LIBS})
-target_compile_options(lagrange_profile PRIVATE ${LAGRANGE_PROFILE_FLAGS})
+target_compile_options(lagrange_profile PRIVATE ${LAGRANGE_PROFILE_FLAGS}
+        ${WARNING_FLAGS})

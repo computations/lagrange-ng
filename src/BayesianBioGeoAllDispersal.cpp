@@ -48,9 +48,7 @@ BayesianBioGeoAllDispersal::BayesianBioGeoAllDispersal(BioGeoTree *intree,
 void BayesianBioGeoAllDispersal::run_global_dispersal_extinction() {
   double prevlike = 0;
   double prevprior = 1;
-  double prevpost = 0;
   double curlike = 0;
-  double curpost = 0;
   double curprior = 0;
 
   int nareas = _rate_model->get_num_areas();
@@ -70,7 +68,7 @@ void BayesianBioGeoAllDispersal::run_global_dispersal_extinction() {
     success[i] = 0;
   }
 
-  int rot = 1;
+  size_t rot = 1;
   double hastings = 1;
 
   ofstream outfile("test.txt");
@@ -126,7 +124,6 @@ void BayesianBioGeoAllDispersal::run_global_dispersal_extinction() {
     if (testr < test) {
       prevprior = curprior;
       prevlike = curlike;
-      prevpost = curpost;
       _prev_params = _params;
       if (iter > 1000)
         success[rot] += 1;

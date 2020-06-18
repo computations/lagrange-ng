@@ -42,9 +42,9 @@ BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree, RateModel *inrm, bool marg,
 void BayesianBioGeo::run_global_dispersal_extinction() {
   double prevlike = 0;
   double prevprior = 0;
-  double prevpost = 0;
+  //double prevpost = 0;
   double curlike = 0;
-  double curpost = 0;
+  //double curpost = 0;
   double curprior = 0;
 
   vector<double> sliding(2);
@@ -108,7 +108,7 @@ void BayesianBioGeo::run_global_dispersal_extinction() {
     if (testr < test) {
       prevprior = curprior;
       prevlike = curlike;
-      prevpost = curpost;
+      //prevpost = curpost;
       _prev_params[rot] = _params[rot];
       if (iter > 100)
         success[rot] += 1;

@@ -266,10 +266,10 @@ void RateModel::setup_Q() {
    * sparse needs to be transposed for matrix exponential calculation
    */
   if (_sparse == true) {
-    vector<double> cols(_dists.size(), 0);
-    vector<vector<double>> rows(_dists.size(), cols);
+    vector<double> tmp_cols(_dists.size(), 0);
+    vector<vector<double>> tmp_rows(_dists.size(), tmp_cols);
     _rate_matrix_transposed =
-        vector<vector<vector<double>>>(_periods.size(), rows);
+        vector<vector<vector<double>>>(_periods.size(), tmp_rows);
     for (unsigned int p = 0; p < _rate_matrix_transposed.size();
          p++) {                                            // periods
       for (unsigned int i = 0; i < _dists.size(); i++) {   // dists
@@ -281,7 +281,7 @@ void RateModel::setup_Q() {
     // setting up the coo numbs
     _active_zone_counts = vector<int>(_rate_matrix.size(), 0);
     for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
-      _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p], 1);
+      _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p]);
     }
     // setup matrix
     _ia_s.clear();
@@ -439,11 +439,11 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
 vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   int n = _rate_matrix[period].size();
   int m = _rate_matrix[period].size() - 1; // tweak
-  int nz = get_size_for_coo(_rate_matrix[period], 1);
+  int nz = get_size_for_coo(_rate_matrix[period]);
   int *ia = new int[nz];
   int *ja = new int[nz];
   double *a = new double[nz];
-  convert_matrix_to_coo_for_fortran(_rate_matrix[period], t, ia, ja, a);
+  convert_matrix_to_coo_for_fortran(_rate_matrix[period], ia, ja, a);
   double *v = new double[n];
   for (int i = 0; i < n; i++) {
     v[i] = 0;

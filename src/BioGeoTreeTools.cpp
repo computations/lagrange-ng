@@ -28,7 +28,7 @@ Tree *BioGeoTreeTools::getTreeFromString(string treestring) {
   return tr.readTree(treestring);
 }
 
-vector<Node *> BioGeoTreeTools::getAncestors(Tree &tree, Node &nodeId) {
+vector<Node *> BioGeoTreeTools::getAncestors(Node &nodeId) {
   vector<Node *> nodes;
   Node *current = &nodeId;
   while (current->hasParent()) {

@@ -43,9 +43,12 @@ private:
   // stochastic mapping bits
   bool _stocastic;
   // map of period int and then branch length Superdouble
-  unordered_map<int, map<double, blaze::DynamicMatrix<double>>> _stored_EN_matrices;
-  unordered_map<int, map<double, blaze::DynamicMatrix<std::complex<double>>>> _stored_EN_CX_matrices;
-  unordered_map<int, map<double, blaze::DynamicMatrix<double>>> _stored_ER_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<double>>>
+      _stored_EN_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<std::complex<double>>>>
+      _stored_EN_CX_matrices;
+  unordered_map<int, map<double, blaze::DynamicMatrix<double>>>
+      _stored_ER_matrices;
   // end mapping bits
 
 public:
@@ -76,8 +79,8 @@ public:
   void prepare_ancstate_reverse();
   void reverse(Node &);
   unordered_map<vector<int>, vector<AncSplit>>
-  calculate_ancsplit_reverse(Node &node, bool marg);
-  vector<Superdouble> calculate_ancstate_reverse(Node &node, bool marg);
+  calculate_ancsplit_reverse(Node &node);
+  vector<Superdouble> calculate_ancstate_reverse(Node &node);
   ~BioGeoTree();
   // need to override these at some point
   BioGeoTree(const BioGeoTree &L); // copy constructor

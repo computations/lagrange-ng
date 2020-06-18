@@ -25,7 +25,7 @@ using namespace std;
 class BioGeoTreeTools {
 public:
   Tree *getTreeFromString(string treestring);
-  vector<Node *> getAncestors(Tree &tree, Node &node);
+  vector<Node *> getAncestors(Node &node);
 
   void summarizeSplits(Node *node,
                        unordered_map<vector<int>, vector<AncSplit>> &ans,

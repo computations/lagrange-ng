@@ -89,7 +89,7 @@ int get_vector_int_index_from_multi_vector_int(vector<int> *in,
                                                vector<vector<int>> *in2) {
   int ret = 0;
   for (unsigned int i = 0; i < in2->size(); i++) {
-    int sum = 0;
+    size_t sum = 0;
     for (unsigned int j = 0; j < in2->at(i).size(); j++) {
       if (in2->at(i)[j] == in->at(j))
         sum += 1;
@@ -183,7 +183,7 @@ void print_vector_double(vector<double> &in) {
   cout << endl;
 }
 
-int get_size_for_coo(vector<vector<double>> &inmatrix, double t) {
+int get_size_for_coo(vector<vector<double>> &inmatrix) {
   int count = 0;
   int size = inmatrix.size();
   for (int i = 0; i < size; i++) {
@@ -197,7 +197,7 @@ int get_size_for_coo(vector<vector<double>> &inmatrix, double t) {
 }
 
 void convert_matrix_to_coo_for_fortran(vector<vector<double>> &inmatrix,
-                                       double t, int *ia, int *ja, double *a) {
+                                       int *ia, int *ja, double *a) {
   int count = 0;
   for (unsigned int i = 0; i < inmatrix.size(); i++) {
     for (unsigned int j = 0; j < inmatrix[i].size(); j++) {

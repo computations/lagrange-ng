@@ -56,7 +56,7 @@ vector<double> OptimizeBioGeo::optimize_global_dispersal_extinction() {
   gsl_multimin_fminimizer *s = NULL;
   gsl_vector *ss, *x;
   size_t np = 2;
-  size_t iter = 0, i;
+  size_t iter = 0;
   int status;
   double size;
   /* Initial vertex size vector */

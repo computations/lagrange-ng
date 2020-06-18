@@ -24,6 +24,9 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
                                                           const double *x,
                                                           double *g,
                                                           void *state) {
+  (void)n;
+  (void)g;
+  (void)state;
   double dispersal = x[0];
   double extinction = x[1];
   int count = 2;
@@ -70,15 +73,13 @@ vector<double> optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
 
   double f;
   double low[numparams];
-  double up[numparams];
+  //double up[numparams];
 
   for (int i = 0; i < numparams; i++) {
     init_x[i] = 0.01;
     low[i] = 1e-7;
-    up[i] = HUGE_VAL;
+    //up[i] = HUGE_VAL;
   }
-
-  int rc, maxnfeval = 20000;
 
   nlopt_opt opt = nlopt_create(NLOPT_LN_SBPLX, numparams);
   nlopt_set_lower_bounds(opt, low);

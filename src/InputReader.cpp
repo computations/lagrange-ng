@@ -103,9 +103,9 @@ void InputReader::checkData(unordered_map<string, vector<int>> data,
       exit(0);
     }
   }
-  for (int j = 0; j < dataspecies.size(); j++) {
+  for (size_t j = 0; j < dataspecies.size(); j++) {
     int count = 0;
-    for (int k = 0; k < treespecies.size(); k++) {
+    for (size_t k = 0; k < treespecies.size(); k++) {
       if (dataspecies[j] == treespecies[k]) {
         count += 1;
       }

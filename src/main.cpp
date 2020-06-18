@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
     vector<string> ancstates; // string should be the mrca or if it is just
                               // _all_
     // then everything will be computed
-    bool treecolors;
     vector<string> areacolors;
     vector<string> fossilmrca;
     vector<string> fossiltype;
@@ -181,8 +180,6 @@ int main(int argc, char *argv[]) {
               TrimSpaces(searchtokens[j]);
               periods.push_back(atof(searchtokens[j].c_str()));
             }
-          } else if (!strcmp(tokens[0].c_str(), "treecolors")) {
-            treecolors = true;
           } else if (!strcmp(tokens[0].c_str(), "mrca")) {
             vector<string> searchtokens;
             Tokenize(tokens[1], searchtokens, ",     ");
@@ -514,29 +511,29 @@ int main(int argc, char *argv[]) {
           vector<vector<vector<double>>> D_mask =
               vector<vector<vector<double>>>(periods.size(), rows);
           int count = 2;
-          for (unsigned int i = 0; i < D_mask.size(); i++) {
-            for (unsigned int j = 0; j < D_mask[i].size(); j++) {
-              D_mask[i][j][j] = 0.0;
-              for (unsigned int k = 0; k < D_mask[i][j].size(); k++) {
-                if (k != j) {
-                  D_mask[i][j][k] = disextrm[count];
+          for (unsigned int ii = 0; ii < D_mask.size(); ii++) {
+            for (unsigned int jj = 0; jj < D_mask[ii].size(); jj++) {
+              D_mask[ii][jj][jj] = 0.0;
+              for (unsigned int kk = 0; kk < D_mask[ii][jj].size(); kk++) {
+                if (kk != jj) {
+                  D_mask[ii][jj][kk] = disextrm[count];
                   count += 1;
                 }
               }
             }
           }
           cout << "D_mask" << endl;
-          for (unsigned int i = 0; i < D_mask.size(); i++) {
-            cout << periods.at(i) << endl;
+          for (unsigned int ii = 0; ii < D_mask.size(); ii++) {
+            cout << periods.at(ii) << endl;
             cout << "\t";
-            for (unsigned int j = 0; j < D_mask[i].size(); j++) {
+            for (unsigned int j = 0; j < D_mask[ii].size(); j++) {
               cout << areanames[j] << "\t";
             }
             cout << endl;
-            for (unsigned int j = 0; j < D_mask[i].size(); j++) {
+            for (unsigned int j = 0; j < D_mask[ii].size(); j++) {
               cout << areanames[j] << "\t";
-              for (unsigned int k = 0; k < D_mask[i][j].size(); k++) {
-                cout << D_mask[i][j][k] << "\t";
+              for (unsigned int k = 0; k < D_mask[ii][j].size(); k++) {
+                cout << D_mask[ii][j][k] << "\t";
               }
               cout << endl;
             }
@@ -589,7 +586,7 @@ int main(int argc, char *argv[]) {
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
                   bgt.calculate_ancsplit_reverse(
-                      *intrees[i]->getInternalNode(j), marginal);
+                      *intrees[i]->getInternalNode(j));
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
                                  areanamemaprev, &rm);
               cout << endl;
@@ -598,7 +595,7 @@ int main(int argc, char *argv[]) {
               cout << "Ancestral states for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
               vector<Superdouble> rast = bgt.calculate_ancstate_reverse(
-                  *intrees[i]->getInternalNode(j), marginal);
+                  *intrees[i]->getInternalNode(j));
               totlike = calculate_vector_Superdouble_sum(rast);
               tt.summarizeAncState(intrees[i]->getInternalNode(j), rast,
                                    areanamemaprev, &rm);
@@ -619,15 +616,14 @@ int main(int argc, char *argv[]) {
             if (splits) {
               cout << "Ancestral splits for: " << ancstates[j] << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
-                  bgt.calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]],
-                                                 marginal);
+                  bgt.calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]]);
               tt.summarizeSplits(mrcanodeint[ancstates[j]], ras, areanamemaprev,
                                  &rm);
             }
             if (states) {
               cout << "Ancestral states for: " << ancstates[j] << endl;
-              vector<Superdouble> rast = bgt.calculate_ancstate_reverse(
-                  *mrcanodeint[ancstates[j]], marginal);
+              vector<Superdouble> rast =
+                  bgt.calculate_ancstate_reverse(*mrcanodeint[ancstates[j]]);
               tt.summarizeAncState(mrcanodeint[ancstates[j]], rast,
                                    areanamemaprev, &rm);
             }
