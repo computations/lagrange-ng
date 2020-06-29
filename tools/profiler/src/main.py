@@ -49,7 +49,6 @@ if __name__ == "__main__":
         commit_string = datetime.datetime.now().strftime('%Y-%m-%d') + "_"\
                 + git_describe(repo) + "_"\
                 + util.make_random_nonce()
-        rich.print("Placing results in [red bold]{}[/red bold]".format(commit_string))
 
         if args.profile:
             args.prefix = os.path.abspath(
@@ -57,6 +56,8 @@ if __name__ == "__main__":
         else:
             args.prefix = os.path.abspath(
                 os.path.join(SOURCE_DIR, '../timings', commit_string))
+        rich.print("Placing results in [red bold]{}[/red bold]".
+                format(os.path.relpath(args.prefix)))
 
     benchmark.run(args.prefix, args.regions, args.taxa, args.iters, args.procs,
                   args.program, args.profile, flamegraph_cmd)
