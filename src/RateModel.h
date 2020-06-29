@@ -57,6 +57,8 @@ private:
   vector<vector<double>> _a_s;
   void iter_all_dist_splits();
 
+  lagrange_matrix_t compute_matrix_exponential_ss(lagrange_matrix_t A) const;
+
 public:
   RateModel(int na, bool ge, vector<double> pers, bool);
   void set_nthreads(int nthreads);

@@ -13,8 +13,10 @@
 //#include "AncSplit.h"
 
 #include <algorithm>
+#include <blaze/math/IdentityMatrix.h>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <math.h>
 #include <numeric>
@@ -338,8 +340,7 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
   lagrange_matrix_t prob_matrix(cur_rate_matrix);
   prob_matrix *= t;
 
-
-  lagrange_matrix_t b = matexp(prob_matrix);
+  lagrange_matrix_t b = compute_matrix_exponential_ss(prob_matrix);
   /* we need to normalize the matrix */
   for (size_t i = 0; i < row_size; ++i) {
     double sum = 0.0;
@@ -367,6 +368,37 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
   }
 
   return ret_vector;
+}
+
+lagrange_matrix_t
+RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
+  size_t rows = A.rows();
+  int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A)));
+  A /= std::pow(2.0, scale_exp);
+  // q is a magic parameter that controls the number of iterations of the loop
+  // higher is more accurate, with each increase of q decreasing error by 4
+  // orders of magnitude. Anything above 12 is probably snake oil.
+  int q = 3;
+  double c = 0.5;
+  blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
+  lagrange_matrix_t X = A;
+  lagrange_matrix_t N = I + c * A;
+  lagrange_matrix_t D = I - c * A;
+
+  // Using fortran indexing, and we started an iteration ahead to skip some
+  // setup
+  for (int i = 2; i <= q; ++i) {
+    c = c * (q - i + 1) / (i * (2 * q - i + 1));
+    X = A * X;
+    N += c * X;
+    double sign = 1.0 - ((i % 2) * 2.0);
+    D += sign * c * X;
+  }
+  A = blaze::inv(D) * N;
+  for (int i = 0; i < scale_exp; ++i){
+    A *= A;
+  }
+  return A;
 }
 
 #if 0
@@ -469,7 +501,7 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   vector<vector<double>> p(_rate_matrix[period].rows(),
                            vector<double>(_rate_matrix[period].rows()));
 
-  double* res_ptr = res;
+  double *res_ptr = res;
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       p[j][i] = *(res_ptr++);
@@ -675,7 +707,7 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
 
   for (unsigned int i = 0; i < _rate_matrix[period].rows(); i++) {
     for (unsigned int j = 0; j < _rate_matrix[period].columns(); j++) {
-      tQ(i, j) = _rate_matrix[period](i,j);
+      tQ(i, j) = _rate_matrix[period](i, j);
     }
   }
 
