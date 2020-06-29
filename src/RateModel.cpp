@@ -370,6 +370,8 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
   return ret_vector;
 }
 
+/* TODO: Actually compute Horner's method for some particular values of q
+ */
 lagrange_matrix_t
 RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
   size_t rows = A.rows();
@@ -378,7 +380,7 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
   // orders of magnitude. Anything above 12 is probably snake oil.
-  int q = 3;
+  constexpr int q = 3;
   double c = 0.5;
   blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
   lagrange_matrix_t X = A;
