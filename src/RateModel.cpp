@@ -382,6 +382,7 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
   // orders of magnitude. Anything above 12 is probably snake oil.
   constexpr int q = 3;
   double c = 0.5;
+  double sign = -1.0;
   blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
   lagrange_matrix_t X = A;
   lagrange_matrix_t N = I + c * A;
@@ -393,7 +394,7 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     X = A * X;
     N += c * X;
-    double sign = 1.0 - ((i % 2) * 2.0);
+    sign *= -1.0;
     D += sign * c * X;
   }
   A = blaze::inv(D) * N;
