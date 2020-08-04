@@ -17,7 +17,7 @@ using namespace std;
 #include <nlopt.h>
 
 BioGeoTree *nlopt_intree;
-RateModel *nlopt_inrm;
+std::shared_ptr<RateModel> nlopt_inrm;
 vector<vector<vector<double>>> nlopt_D_mask;
 
 double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
@@ -59,8 +59,9 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
   return like;
 }
 
-vector<double> optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
-                                                       RateModel *init_rm) {
+vector<double>
+optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
+                                        std::shared_ptr<RateModel> init_rm) {
   nlopt_intree = init_tree;
   nlopt_inrm = init_rm;
   int nareas = init_rm->get_num_areas();
@@ -73,12 +74,12 @@ vector<double> optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
 
   double f;
   double low[numparams];
-  //double up[numparams];
+  // double up[numparams];
 
   for (int i = 0; i < numparams; i++) {
     init_x[i] = 0.01;
     low[i] = 1e-7;
-    //up[i] = HUGE_VAL;
+    // up[i] = HUGE_VAL;
   }
 
   nlopt_opt opt = nlopt_create(NLOPT_LN_SBPLX, numparams);

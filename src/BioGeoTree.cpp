@@ -99,7 +99,7 @@ void BioGeoTree::set_store_p_matrices(bool i) { _store_p_matrices = i; }
 
 void BioGeoTree::set_use_stored_matrices(bool i) { _use_stored_matrices = i; }
 
-void BioGeoTree::set_default_model(RateModel *mod) {
+void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
   for (int i = 0; i < _tree->getNodeCount(); i++) {
     vector<BranchSegment> *tsegs = _tree->getNode(i)->getSegVector();
@@ -124,7 +124,7 @@ void BioGeoTree::set_default_model(RateModel *mod) {
   delete ancdistconds;
 }
 
-void BioGeoTree::update_default_model(RateModel *mod) {
+void BioGeoTree::update_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
 
   for (int i = 0; i < _tree->getNodeCount(); i++) {
@@ -140,7 +140,7 @@ void BioGeoTree::set_tip_conditionals(
   int numofleaves = _tree->getExternalNodeCount();
   for (int i = 0; i < numofleaves; i++) {
     vector<BranchSegment> *tsegs = _tree->getExternalNode(i)->getSegVector();
-    RateModel *mod = tsegs->at(0).getModel();
+    std::shared_ptr<RateModel> mod = tsegs->at(0).getModel();
     int ind1 = get_vector_int_index_from_multi_vector_int(
         &distrib_data[_tree->getExternalNode(i)->getName()], mod->getDists());
     tsegs->at(0).distconds->at(ind1) = 1.0;
@@ -180,7 +180,7 @@ vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
       time_segments->at(i).distconds->at(j) = distconds.at(j);
     }
 
-    RateModel *rm = time_segments->at(i).getModel();
+    std::shared_ptr<RateModel> rm = time_segments->at(i).getModel();
     vector<Superdouble> v(_root_ratemodel->getDists()->size(), 0);
     vector<int> distrange;
 
@@ -479,7 +479,7 @@ void BioGeoTree::reverse(Node &node) {
       for (unsigned int j = 0; j < dists->size(); j++) {
         revconds->at(j) = 0;
       }
-      RateModel *rm = tsegs->at(ts).getModel();
+      std::shared_ptr<RateModel> rm = tsegs->at(ts).getModel();
       vector<vector<double>> *p =
           &rm->stored_p_matrices[tsegs->at(ts).getPeriod()]
                                 [tsegs->at(ts).getDuration()];

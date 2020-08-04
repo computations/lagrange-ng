@@ -40,7 +40,7 @@ vector<Node *> BioGeoTreeTools::getAncestors(Node &nodeId) {
 
 void BioGeoTreeTools::summarizeSplits(
     Node *node, unordered_map<vector<int>, vector<AncSplit>> &ans,
-    unordered_map<int, string> &areanamemaprev, RateModel *rm) {
+    unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
   Superdouble best(0);
   Superdouble sum(0);
   vector<pair<Superdouble, string>> printstring;
@@ -146,7 +146,7 @@ void BioGeoTreeTools::summarizeSplits(
 
 void BioGeoTreeTools::summarizeAncState(
     Node *node, vector<Superdouble> &ans,
-    unordered_map<int, string> &areanamemaprev, RateModel *rm) {
+    unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
   // Superdouble best(ans[1]);
   Superdouble best(ans[1]); // use ans[1] because ans[0] is just 0
   Superdouble sum(0);
@@ -206,7 +206,7 @@ void BioGeoTreeTools::summarizeAncState(
 }
 
 string BioGeoTreeTools::get_string_from_dist_int(
-    int dist, unordered_map<int, string> &areanamemaprev, RateModel *rm) {
+    int dist, unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
   unordered_map<int, vector<int>> *distmap = rm->get_int_dists_map();
   vector<int> bestancdist = (*distmap)[dist];
 

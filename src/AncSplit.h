@@ -25,13 +25,13 @@
 
 class AncSplit {
 private:
-  RateModel *_model;
+  std::shared_ptr<RateModel> _model;
   double _weight;
   Superdouble _likelihood;
 
 public:
-  AncSplit(RateModel *mod, int, int, int, Superdouble);
-  RateModel *getModel();
+  AncSplit(std::shared_ptr<RateModel> mod, int, int, int, Superdouble);
+  std::shared_ptr<RateModel> getModel();
   double getWeight();
   Superdouble getLikelihood();
   void setLikelihood(Superdouble li);

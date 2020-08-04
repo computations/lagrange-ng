@@ -14,6 +14,7 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <numeric>
 #include <sstream>
 #include <stdio.h>
@@ -136,7 +137,8 @@ vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
 /*
  TODO: change this to store to memory instead of creating them
  */
-vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> &dist) {
+vector<AncSplit> iter_ancsplits(std::shared_ptr<RateModel> rm,
+                                vector<int> &dist) {
   vector<AncSplit> ans;
   vector<vector<vector<int>>> *splits = rm->get_iter_dist_splits(dist);
   auto distsmap = rm->get_dists_int_map();
@@ -152,7 +154,7 @@ vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> &dist) {
   return ans;
 }
 
-void iter_ancsplits_just_int(RateModel *rm, vector<int> &dist,
+void iter_ancsplits_just_int(std::shared_ptr<RateModel> rm, vector<int> &dist,
                              vector<int> &leftdists, vector<int> &rightdists,
                              double &weight) {
   leftdists.clear();
@@ -200,10 +202,10 @@ void convert_matrix_to_coo_for_fortran(const lagrange_matrix_t &inmatrix,
   int count = 0;
   for (unsigned int i = 0; i < inmatrix.rows(); i++) {
     for (unsigned int j = 0; j < inmatrix.columns(); j++) {
-      if (inmatrix(i,j) != 0.0) {
+      if (inmatrix(i, j) != 0.0) {
         ia[count] = i + 1;
         ja[count] = j + 1;
-        a[count] = inmatrix(i,j);
+        a[count] = inmatrix(i, j);
         count += 1;
       }
     }
@@ -216,10 +218,10 @@ void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
   int count = 0;
   for (size_t i = 0; i < inmatrix.rows(); ++i) {
     for (size_t j = 0; j < inmatrix.columns(); ++j) {
-      if (inmatrix(i,j) != 0.0) {
+      if (inmatrix(i, j) != 0.0) {
         ia[count] = i + 1;
         ja[count] = j + 1;
-        a[count] = inmatrix(i,j);
+        a[count] = inmatrix(i, j);
         count += 1;
       }
     }
@@ -275,7 +277,8 @@ processRateMatrixConfigFile(string filename, int numareas, int nperiods) {
 /*
  * need to make this much faster
  */
-vector<int> get_columns_for_sparse(vector<double> &inc, RateModel *rm) {
+vector<int> get_columns_for_sparse(vector<double> &inc,
+                                   std::shared_ptr<RateModel> rm) {
   vector<int> ret(inc.size(), 0);
   for (unsigned int i = 0; i < inc.size(); i++) {
     if (inc[i] > 0.0000000001) {
@@ -293,7 +296,8 @@ vector<int> get_columns_for_sparse(vector<double> &inc, RateModel *rm) {
   return ret;
 }
 
-vector<int> get_columns_for_sparse(vector<Superdouble> &inc, RateModel *rm) {
+vector<int> get_columns_for_sparse(vector<Superdouble> &inc,
+                                   std::shared_ptr<RateModel> rm) {
   vector<int> ret(inc.size(), 0);
   for (unsigned int i = 0; i < inc.size(); i++) {
     if (inc[i] > Superdouble(0.0000000001)) {

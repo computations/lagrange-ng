@@ -12,10 +12,11 @@
 using namespace std;
 
 BranchSegment::BranchSegment(double dur, int per)
-    : _duration(dur), _period(per), _model(NULL), _fossil_area_indices(vector<int>()),
-      _start_dist(-666), distconds(NULL), ancdistconds(NULL) {}
+    : _duration(dur), _period(per), _model(NULL),
+      _fossil_area_indices(vector<int>()), _start_dist(-666), distconds(NULL),
+      ancdistconds(NULL) {}
 
-void BranchSegment::setModel(RateModel *mod) { _model = mod; }
+void BranchSegment::setModel(std::shared_ptr<RateModel> mod) { _model = mod; }
 
 void BranchSegment::clearStartDist() {
   _start_dist = -666; // null is -666
@@ -29,7 +30,7 @@ void BranchSegment::set_start_dist_int(int d) { _start_dist = d; }
 
 int BranchSegment::get_start_dist_int() { return _start_dist; }
 
-RateModel *BranchSegment::getModel() { return _model; }
+std::shared_ptr<RateModel> BranchSegment::getModel() { return _model; }
 
 vector<int> BranchSegment::getFossilAreas() { return _fossil_area_indices; }
 

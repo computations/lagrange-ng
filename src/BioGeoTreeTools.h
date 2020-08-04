@@ -30,13 +30,13 @@ public:
   void summarizeSplits(Node *node,
                        unordered_map<vector<int>, vector<AncSplit>> &ans,
                        unordered_map<int, string> &areanamemaprev,
-                       RateModel *rm);
+                       std::shared_ptr<RateModel> rm);
   void summarizeAncState(Node *node, vector<Superdouble> &ans,
                          unordered_map<int, string> &areanamemaprev,
-                         RateModel *rm);
+                         std::shared_ptr<RateModel> rm);
   string get_string_from_dist_int(int dist,
                                   unordered_map<int, string> &areanamemaprev,
-                                  RateModel *rm);
+                                  std::shared_ptr<RateModel> rm);
 };
 
 #endif /* PHYLOTREE_H_ */

@@ -31,7 +31,8 @@ inline double MIN(const double &a, const double &b) {
 }
 } // namespace
 
-BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree, RateModel *inrm, bool marg,
+BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree,
+                               std::shared_ptr<RateModel> inrm, bool marg,
                                int gen)
     : _tree(intree), _rate_model(inrm), _generations(gen), _marginal(marg) {
   gsl_rng_env_setup();
@@ -42,9 +43,9 @@ BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree, RateModel *inrm, bool marg,
 void BayesianBioGeo::run_global_dispersal_extinction() {
   double prevlike = 0;
   double prevprior = 0;
-  //double prevpost = 0;
+  // double prevpost = 0;
   double curlike = 0;
-  //double curpost = 0;
+  // double curpost = 0;
   double curprior = 0;
 
   vector<double> sliding(2);
@@ -108,7 +109,7 @@ void BayesianBioGeo::run_global_dispersal_extinction() {
     if (testr < test) {
       prevprior = curprior;
       prevlike = curlike;
-      //prevpost = curpost;
+      // prevpost = curpost;
       _prev_params[rot] = _params[rot];
       if (iter > 100)
         success[rot] += 1;

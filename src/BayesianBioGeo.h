@@ -11,6 +11,7 @@
 #define BAYESIANBIOGEO_H_
 
 #include <vector>
+#include <memory>
 using namespace std;
 
 #include <gsl/gsl_randist.h>
@@ -22,7 +23,7 @@ using namespace std;
 class BayesianBioGeo {
 private:
   BioGeoTree *_tree;
-  RateModel *_rate_model;
+  std::shared_ptr<RateModel> _rate_model;
   int _generations;
   bool _marginal;
   vector<double> _params;
@@ -34,7 +35,7 @@ private:
   double calculate_sliding_log(double value, double sliding, double *hastings);
 
 public:
-  BayesianBioGeo(BioGeoTree *intree, RateModel *inrm, bool marg, int gen);
+  BayesianBioGeo(BioGeoTree *intree, std::shared_ptr<RateModel> inrm, bool marg, int gen);
   void run_global_dispersal_extinction();
 };
 

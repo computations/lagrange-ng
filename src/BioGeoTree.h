@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 using namespace std;
 
 #include "AncSplit.h"
@@ -31,7 +32,7 @@ private:
   const string _anc_dist_conditionals_key = "anc_dist_conditionals";
   vector<int> *_columns;
   vector<int> *_which_columns;
-  RateModel *_root_ratemodel;
+  std::shared_ptr<RateModel> _root_ratemodel;
   bool _store_p_matrices;
   bool _use_stored_matrices;
 
@@ -55,8 +56,8 @@ public:
   BioGeoTree(Tree *tr, vector<double> ps);
   void set_store_p_matrices(bool);
   void set_use_stored_matrices(bool);
-  void set_default_model(RateModel *mod);
-  void update_default_model(RateModel *mod);
+  void set_default_model(std::shared_ptr<RateModel> mod);
+  void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
   void set_excluded_dist(vector<int> ind, Node *node);
   void set_tip_conditionals(unordered_map<string, vector<int>> distrib_data);

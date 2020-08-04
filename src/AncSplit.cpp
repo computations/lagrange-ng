@@ -17,15 +17,16 @@
 #include "AncSplit.h"
 #include "RateModel.h"
 #include "superdouble.h"
+#include <memory>
 #include <vector>
 using namespace std;
 
-AncSplit::AncSplit(RateModel *mod, int dist, int ldesc, int rdesc,
-                   Superdouble we)
+AncSplit::AncSplit(std::shared_ptr<RateModel> mod, int dist, int ldesc,
+                   int rdesc, Superdouble we)
     : _model(mod), _weight(we), _likelihood(0), ancdistint(dist),
       ldescdistint(ldesc), rdescdistint(rdesc) {}
 
-RateModel *AncSplit::getModel() { return _model; }
+std::shared_ptr<RateModel> AncSplit::getModel() { return _model; }
 
 double AncSplit::getWeight() { return _weight; }
 

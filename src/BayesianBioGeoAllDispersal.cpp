@@ -32,7 +32,7 @@ inline double MIN(const double &a, const double &b) {
 } // namespace
 
 BayesianBioGeoAllDispersal::BayesianBioGeoAllDispersal(BioGeoTree *intree,
-                                                       RateModel *inrm,
+                                                       std::shared_ptr<RateModel> inrm,
                                                        bool marg, int gen)
     : _tree(intree), _rate_model(inrm), _generations(gen), _marginal(marg) {
   int nareas = _rate_model->get_num_areas();

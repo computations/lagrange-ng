@@ -15,6 +15,7 @@
 #include "AncSplit.h"
 #include "RateModel.h"
 #include "superdouble.h"
+#include <memory>
 #include <vector>
 using namespace std;
 
@@ -48,7 +49,7 @@ int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2);
   ancestral splits and should ONLY be used for calculating ancestral
   state values. otherwise the one returning only the ints should be returned
  */
-vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> &dist);
+vector<AncSplit> iter_ancsplits(std::shared_ptr<RateModel> rm, vector<int> &dist);
 
 /*
   like the above function but without using AncSplits object, and should be
@@ -56,7 +57,7 @@ vector<AncSplit> iter_ancsplits(RateModel *rm, vector<int> &dist);
   output is the leftdists and rightdists which are the index of the distribution
   in the ratemodel->getdists
  */
-void iter_ancsplits_just_int(RateModel *rm, vector<int> &dist,
+void iter_ancsplits_just_int(std::shared_ptr<RateModel> rm, vector<int> &dist,
                              vector<int> &leftdists, vector<int> &rightdists,
                              double &weight);
 
@@ -94,7 +95,7 @@ void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
                                               vector<double> &a);
 void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
                                               double t, double *H);
-vector<int> get_columns_for_sparse(vector<double> &, RateModel *);
-vector<int> get_columns_for_sparse(vector<Superdouble> &, RateModel *);
+vector<int> get_columns_for_sparse(vector<double> &, std::shared_ptr<RateModel>);
+vector<int> get_columns_for_sparse(vector<Superdouble> &, std::shared_ptr<RateModel>);
 
 #endif

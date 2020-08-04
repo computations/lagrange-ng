@@ -22,7 +22,7 @@ using namespace std;
 class BayesianBioGeoAllDispersal {
 private:
   BioGeoTree *_tree;
-  RateModel *_rate_model;
+  std::shared_ptr<RateModel> _rate_model;
   int _generations;
   bool _marginal;
   vector<double> _params;
@@ -35,7 +35,8 @@ private:
   double calculate_sliding_log(double value, double sliding, double *hastings);
 
 public:
-  BayesianBioGeoAllDispersal(BioGeoTree *intree, RateModel *inrm, bool marg,
+  BayesianBioGeoAllDispersal(BioGeoTree *intree,
+                             std::shared_ptr<RateModel> inrm, bool marg,
                              int gen);
   void run_global_dispersal_extinction();
 };
