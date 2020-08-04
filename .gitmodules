@@ -5,3 +5,6 @@
 [submodule "tools"]
 	path = tools
 	url = https://github.com/computations/lagrange_tools
+[submodule "deps/nlopt"]
+	path = deps/nlopt
+	url = https://github.com/stevengj/nlopt

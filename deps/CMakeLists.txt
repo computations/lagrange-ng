@@ -1,9 +1,11 @@
 # nlopt first
 
-find_library(nlopt REQUIRED
-        NAMES nlopt libnlopt
-        HINTS "/usr/lib/"
-        )
+#   find_library(nlopt REQUIRED
+#           NAMES nlopt libnlopt
+#           HINTS "/usr/lib/"
+#           )
+
+add_subdirectory(nlopt)
 
 # blaze second
 
