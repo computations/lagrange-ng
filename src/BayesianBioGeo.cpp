@@ -31,7 +31,7 @@ inline double MIN(const double &a, const double &b) {
 }
 } // namespace
 
-BayesianBioGeo::BayesianBioGeo(BioGeoTree *intree,
+BayesianBioGeo::BayesianBioGeo(std::shared_ptr<BioGeoTree> intree,
                                std::shared_ptr<RateModel> inrm, bool marg,
                                int gen)
     : _tree(intree), _rate_model(inrm), _generations(gen), _marginal(marg) {
