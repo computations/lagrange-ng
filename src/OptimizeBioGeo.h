@@ -18,7 +18,7 @@ using namespace std;
 
 class OptimizeBioGeo {
 private:
-  BioGeoTree *_tree;
+  std::shared_ptr<BioGeoTree> _tree;
   std::shared_ptr<RateModel> _rate_model;
   const size_t _max_iterations = 100;
   const double _abs_tol = 0.0001;
@@ -30,7 +30,7 @@ private:
                                                     void *obj);
 
 public:
-  OptimizeBioGeo(BioGeoTree *intree, std::shared_ptr<RateModel> inrm, bool marg);
+  OptimizeBioGeo(std::shared_ptr<BioGeoTree> intree, std::shared_ptr<RateModel> inrm, bool marg);
   vector<double> optimize_global_dispersal_extinction();
 };
 

@@ -412,7 +412,7 @@ int main(int argc, char *argv[]) {
      * start calculating on all trees
      */
     for (unsigned int i = 0; i < intrees.size(); i++) {
-      BioGeoTree bgt(intrees[i], periods);
+      auto bgt = std::make_shared<BioGeoTree>(intrees[i], periods);
       /*
        * record the mrcas
        */
@@ -443,7 +443,7 @@ int main(int argc, char *argv[]) {
               isnot = false;
           }
           if (isnot == false) {
-            bgt.set_excluded_dist(rm->getDists()->at(k),
+            bgt->set_excluded_dist(rm->getDists()->at(k),
                                   mrcanodeint[(*fnit).first]);
           }
         }
@@ -452,21 +452,21 @@ int main(int argc, char *argv[]) {
       }
 
       cout << "setting default model..." << endl;
-      bgt.set_default_model(rm);
+      bgt->set_default_model(rm);
       cout << "setting up tips..." << endl;
-      bgt.set_tip_conditionals(data);
+      bgt->set_tip_conditionals(data);
 
       /*
        * setting up fossils
        */
       for (unsigned int k = 0; k < fossiltype.size(); k++) {
         if (fossiltype[k] == "n" || fossiltype[k] == "N") {
-          bgt.setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],
+          bgt->setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],
                                        areanamemap[fossilarea[k]]);
           cout << "Setting node fossil at mrca: " << fossilmrca[k]
                << " at area: " << fossilarea[k] << endl;
         } else {
-          bgt.setFossilatBranchByMRCA_id(mrcanodeint[fossilmrca[k]],
+          bgt->setFossilatBranchByMRCA_id(mrcanodeint[fossilmrca[k]],
                                          areanamemap[fossilarea[k]],
                                          fossilage[k]);
           cout << "Setting branch fossil at mrca: " << fossilmrca[k]
@@ -480,7 +480,7 @@ int main(int argc, char *argv[]) {
        */
       cout << "starting likelihood calculations" << endl;
       cout << "initial -ln likelihood: "
-           << double(bgt.eval_likelihood(marginal)) << endl;
+           << double(bgt->eval_likelihood(marginal)) << endl;
 
       /*
        * optimize likelihood
@@ -489,23 +489,23 @@ int main(int argc, char *argv[]) {
       if (estimate == true) {
         if (estimate_dispersal_mask == false) {
           cout << "Optimizing (simplex) -ln likelihood." << endl;
-          OptimizeBioGeo opt(&bgt, rm, marginal);
+          OptimizeBioGeo opt(bgt, rm, marginal);
           vector<double> disext = opt.optimize_global_dispersal_extinction();
           cout << "dis: " << disext[0] << " ext: " << disext[1] << endl;
           rm->setup_D(disext[0]);
           rm->setup_E(disext[1]);
           rm->setup_Q();
-          bgt.update_default_model(rm);
-          bgt.set_store_p_matrices(true);
+          bgt->update_default_model(rm);
+          bgt->set_store_p_matrices(true);
           cout << "final -ln likelihood: "
-               << double(bgt.eval_likelihood(marginal)) << endl;
-          bgt.set_store_p_matrices(false);
+               << double(bgt->eval_likelihood(marginal)) << endl;
+          bgt->set_store_p_matrices(false);
         } else { // optimize all the dispersal matrix
           cout << "Optimizing (simplex) -ln likelihood with all dispersal "
                   "parameters free."
                << endl;
           vector<double> disextrm =
-              optimize_dispersal_extinction_all_nlopt(&bgt, rm);
+              optimize_dispersal_extinction_all_nlopt(bgt, rm);
           cout << "dis: " << disextrm[0] << " ext: " << disextrm[1] << endl;
           vector<double> cols(rm->get_num_areas(), 0);
           vector<vector<double>> rows(rm->get_num_areas(), cols);
@@ -543,30 +543,30 @@ int main(int argc, char *argv[]) {
           rm->setup_D_provided(disextrm[0], D_mask);
           rm->setup_E(disextrm[1]);
           rm->setup_Q();
-          bgt.update_default_model(rm);
-          bgt.set_store_p_matrices(true);
-          nlnlike = bgt.eval_likelihood(marginal);
+          bgt->update_default_model(rm);
+          bgt->set_store_p_matrices(true);
+          nlnlike = bgt->eval_likelihood(marginal);
           cout << "final -ln likelihood: " << double(nlnlike) << endl;
-          bgt.set_store_p_matrices(false);
+          bgt->set_store_p_matrices(false);
         }
       } else {
         rm->setup_D(dispersal);
         rm->setup_E(extinction);
         rm->setup_Q();
-        bgt.update_default_model(rm);
-        bgt.set_store_p_matrices(true);
+        bgt->update_default_model(rm);
+        bgt->set_store_p_matrices(true);
         cout << "final -ln likelihood: "
-             << double(bgt.eval_likelihood(marginal)) << endl;
-        bgt.set_store_p_matrices(false);
+             << double(bgt->eval_likelihood(marginal)) << endl;
+        bgt->set_store_p_matrices(false);
       }
 
       /*
        * testing BAYESIAN
        */
       if (bayesian == true) {
-        // BayesianBioGeo bayes(&bgt,&rm,marginal,numreps);
+        // BayesianBioGeo bayes(&bgt->&rm,marginal,numreps);
         // bayes.run_global_dispersal_extinction();
-        BayesianBioGeoAllDispersal bayes(&bgt, rm, marginal, numreps);
+        BayesianBioGeoAllDispersal bayes(bgt, rm, marginal, numreps);
         bayes.run_global_dispersal_extinction();
       }
 
@@ -574,9 +574,9 @@ int main(int argc, char *argv[]) {
        * ancestral splits calculation
        */
       if (ancstates.size() > 0) {
-        bgt.set_use_stored_matrices(true);
+        bgt->set_use_stored_matrices(true);
 
-        bgt.prepare_ancstate_reverse();
+        bgt->prepare_ancstate_reverse();
         Superdouble totlike = 0; // calculate_vector_double_sum(rast) , should
                                  // be the same for every node
 
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]) {
               cout << "Ancestral splits for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
-                  bgt.calculate_ancsplit_reverse(
+                  bgt->calculate_ancsplit_reverse(
                       *intrees[i]->getInternalNode(j));
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
                                  areanamemaprev, rm);
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]) {
             if (states) {
               cout << "Ancestral states for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
-              vector<Superdouble> rast = bgt.calculate_ancstate_reverse(
+              vector<Superdouble> rast = bgt->calculate_ancstate_reverse(
                   *intrees[i]->getInternalNode(j));
               totlike = calculate_vector_Superdouble_sum(rast);
               tt.summarizeAncState(intrees[i]->getInternalNode(j), rast,
@@ -617,14 +617,14 @@ int main(int argc, char *argv[]) {
             if (splits) {
               cout << "Ancestral splits for: " << ancstates[j] << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
-                  bgt.calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]]);
+                  bgt->calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]]);
               tt.summarizeSplits(mrcanodeint[ancstates[j]], ras, areanamemaprev,
                                  rm);
             }
             if (states) {
               cout << "Ancestral states for: " << ancstates[j] << endl;
               vector<Superdouble> rast =
-                  bgt.calculate_ancstate_reverse(*mrcanodeint[ancstates[j]]);
+                  bgt->calculate_ancstate_reverse(*mrcanodeint[ancstates[j]]);
               tt.summarizeAncState(mrcanodeint[ancstates[j]], rast,
                                    areanamemaprev, rm);
             }
@@ -663,15 +663,15 @@ int main(int argc, char *argv[]) {
                         (*rm->get_dists_int_map())[stochastic_time_dists[k]],
                         areanamemaprev, rm)
                  << endl;
-            bgt.prepare_stochmap_reverse_all_nodes(
+            bgt->prepare_stochmap_reverse_all_nodes(
                 (*rm->get_dists_int_map())[stochastic_time_dists[k]],
                 (*rm->get_dists_int_map())[stochastic_time_dists[k]]);
-            bgt.prepare_ancstate_reverse();
+            bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochtime.tre").c_str(),
                                   ios::app);
             for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
-                vector<Superdouble> rsm = bgt.calculate_reverse_stochmap(
+                vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
                     *intrees[i]->getNode(j), true);
                 VectorNodeObject<double> stres(1);
                 stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
@@ -707,15 +707,15 @@ int main(int argc, char *argv[]) {
                                                                            [1]],
                        areanamemaprev, rm)
                 << endl;
-            bgt.prepare_stochmap_reverse_all_nodes(
+            bgt->prepare_stochmap_reverse_all_nodes(
                 (*rm->get_dists_int_map())[stochastic_number_from_tos[k][0]],
                 (*rm->get_dists_int_map())[stochastic_number_from_tos[k][1]]);
-            bgt.prepare_ancstate_reverse();
+            bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochnumber.tre").c_str(),
                                   ios::app);
             for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
-                vector<Superdouble> rsm = bgt.calculate_reverse_stochmap(
+                vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
                     *intrees[i]->getNode(j), false);
                 // cout << calculate_vector_double_sum(rsm) / totlike << endl;
                 VectorNodeObject<double> stres(1);

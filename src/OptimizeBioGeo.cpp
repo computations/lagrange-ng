@@ -17,7 +17,8 @@ using namespace std;
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_vector.h>
 
-OptimizeBioGeo::OptimizeBioGeo(BioGeoTree *intree, std::shared_ptr<RateModel> inrm, bool marg)
+OptimizeBioGeo::OptimizeBioGeo(std::shared_ptr<BioGeoTree> intree,
+                               std::shared_ptr<RateModel> inrm, bool marg)
     : _tree(intree), _rate_model(inrm), _marginal(marg) {}
 
 double OptimizeBioGeo::GetLikelihoodWithOptimizedDispersalExtinction(

@@ -18,7 +18,7 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
                                                           const double *x,
                                                           double *g,
                                                           void *state);
-vector<double> optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
+vector<double> optimize_dispersal_extinction_all_nlopt(std::shared_ptr<BioGeoTree> init_tree,
                                                        std::shared_ptr<RateModel> init_rm);
 
 #endif /* OPTIMIZEBIOGEOALLDISPERSAL_H_ */

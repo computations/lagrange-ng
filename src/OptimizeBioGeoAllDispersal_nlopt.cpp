@@ -16,7 +16,7 @@ using namespace std;
 
 #include <nlopt.h>
 
-BioGeoTree *nlopt_intree;
+std::shared_ptr<BioGeoTree> nlopt_intree;
 std::shared_ptr<RateModel> nlopt_inrm;
 vector<vector<vector<double>>> nlopt_D_mask;
 
@@ -60,7 +60,7 @@ double get_likelihood_with_optimized_dispersal_extinction(unsigned n,
 }
 
 vector<double>
-optimize_dispersal_extinction_all_nlopt(BioGeoTree *init_tree,
+optimize_dispersal_extinction_all_nlopt(std::shared_ptr<BioGeoTree> init_tree,
                                         std::shared_ptr<RateModel> init_rm) {
   nlopt_intree = init_tree;
   nlopt_inrm = init_rm;
