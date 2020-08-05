@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <memory>
 
 using namespace std;
 
@@ -18,8 +19,8 @@ using namespace std;
 
 TreeReader::TreeReader() {}
 
-Tree *TreeReader::readTree(string trees) {
-  Tree *tree = new Tree();
+std::shared_ptr<Tree> TreeReader::readTree(string trees) {
+  auto tree = std::make_shared<Tree>();
   string pb = trees;
   unsigned int x = 0;
   char nextChar = pb.c_str()[x];

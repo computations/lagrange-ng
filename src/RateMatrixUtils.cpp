@@ -17,6 +17,7 @@
 #include <memory>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -58,10 +59,10 @@ Superdouble calculate_vector_Superdouble_sum(vector<Superdouble> &in) {
 /*
  * only used because sometimes will send a null
  */
-int calculate_vector_int_sum(vector<int> *in) {
+int calculate_vector_int_sum(const vector<int> &in) {
   int sum = 0;
-  for (unsigned int i = 0; i < in->size(); i++) {
-    sum += in->at(i);
+  for (unsigned int i = 0; i < in.size(); i++) {
+    sum += in.at(i);
   }
   return sum;
 }
@@ -86,31 +87,31 @@ int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2) {
   return location;
 }
 
-int get_vector_int_index_from_multi_vector_int(vector<int> *in,
-                                               vector<vector<int>> *in2) {
+int get_vector_int_index_from_multi_vector_int(const vector<int> &in,
+                                               const vector<vector<int>> &in2) {
   int ret = 0;
-  for (unsigned int i = 0; i < in2->size(); i++) {
+  for (unsigned int i = 0; i < in2.size(); i++) {
     size_t sum = 0;
-    for (unsigned int j = 0; j < in2->at(i).size(); j++) {
-      if (in2->at(i)[j] == in->at(j))
+    if (in2[i].size() != in.size()) {
+      throw std::invalid_argument{"Input vectors are not of compatible sizes"};
+    }
+    for (unsigned int j = 0; j < in2[i].size(); j++) {
+      if (in2[i][j] == in[j])
         sum += 1;
     }
-    if (sum == in->size()) {
+    if (sum == in.size()) {
       ret = i;
       return ret;
-      break;
     }
   }
   string dstring;
-  for (unsigned int j = 0; j < in->size(); j++) {
+  for (unsigned int j = 0; j < in.size(); j++) {
     stringstream ss;
-    ss << in->at(j);
+    ss << in.at(j);
     dstring.append(ss.str());
   }
-  cout << "the distribution " << dstring
-       << " is not included in the possible distributions" << endl;
-  exit(0);
-  return 0;
+  throw std::runtime_error{std::string("the distribution ") + dstring +
+                           +" is not included in the possible distributions"};
 }
 
 vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
@@ -140,14 +141,14 @@ vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
 vector<AncSplit> iter_ancsplits(std::shared_ptr<RateModel> rm,
                                 vector<int> &dist) {
   vector<AncSplit> ans;
-  vector<vector<vector<int>>> *splits = rm->get_iter_dist_splits(dist);
+  auto splits = rm->get_iter_dist_splits(dist);
   auto distsmap = rm->get_dists_int_map();
-  if (splits->at(0).size() > 0) {
-    int nsplits = splits->at(0).size();
+  if (splits.at(0).size() > 0) {
+    int nsplits = splits.at(0).size();
     double weight = 1.0 / nsplits;
-    for (unsigned int i = 0; i < splits->at(0).size(); i++) {
-      AncSplit an(rm, (*distsmap)[dist], (*distsmap)[splits->at(0)[i]],
-                  (*distsmap)[splits->at(1)[i]], weight);
+    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
+      AncSplit an(rm, distsmap[dist], distsmap[splits.at(0)[i]],
+                  distsmap[splits.at(1)[i]], weight);
       ans.push_back(an);
     }
   }
@@ -159,14 +160,14 @@ void iter_ancsplits_just_int(std::shared_ptr<RateModel> rm, vector<int> &dist,
                              double &weight) {
   leftdists.clear();
   rightdists.clear();
-  vector<vector<vector<int>>> *splits = rm->get_iter_dist_splits(dist);
+  auto splits = rm->get_iter_dist_splits(dist);
   auto distsmap = rm->get_dists_int_map();
-  if (splits->at(0).size() > 0) {
-    int nsplits = splits->at(0).size();
+  if (splits.at(0).size() > 0) {
+    int nsplits = splits.at(0).size();
     weight = 1.0 / nsplits;
-    for (unsigned int i = 0; i < splits->at(0).size(); i++) {
-      leftdists.push_back((*distsmap)[splits->at(0)[i]]);
-      rightdists.push_back((*distsmap)[splits->at(1)[i]]);
+    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
+      leftdists.push_back(distsmap[splits.at(0)[i]]);
+      rightdists.push_back(distsmap[splits.at(1)[i]]);
     }
   }
 }
@@ -283,9 +284,9 @@ vector<int> get_columns_for_sparse(vector<double> &inc,
   for (unsigned int i = 0; i < inc.size(); i++) {
     if (inc[i] > 0.0000000001) {
       ret[i] = 1;
-      vector<int> dis = rm->getDists()->at(i);
+      vector<int> dis = rm->getDists().at(i);
       for (unsigned int j = 0; j < inc.size(); j++) {
-        vector<int> dis2 = rm->getDists()->at(j);
+        vector<int> dis2 = rm->getDists().at(j);
         int sum = calculate_vector_int_sum_xor(dis, dis2);
         if (sum == 1) {
           ret[j] = 1;
@@ -302,9 +303,9 @@ vector<int> get_columns_for_sparse(vector<Superdouble> &inc,
   for (unsigned int i = 0; i < inc.size(); i++) {
     if (inc[i] > Superdouble(0.0000000001)) {
       ret[i] = 1;
-      vector<int> dis = rm->getDists()->at(i);
+      vector<int> dis = rm->getDists().at(i);
       for (unsigned int j = 0; j < inc.size(); j++) {
-        vector<int> dis2 = rm->getDists()->at(j);
+        vector<int> dis2 = rm->getDists().at(j);
         int sum = calculate_vector_int_sum_xor(dis, dis2);
         if (sum == 1) {
           ret[j] = 1;

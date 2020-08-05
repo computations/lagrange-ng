@@ -11,9 +11,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <memory>
 #include <map>
 #include <math.h>
+#include <memory>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
      */
     InputReader ir;
     cout << "reading tree..." << endl;
-    vector<Tree *> intrees;
+    vector<std::shared_ptr<Tree>> intrees;
     ir.readMultipleTreeFile(treefile, intrees);
     cout << "reading data..." << endl;
     unordered_map<string, vector<int>> data =
@@ -436,15 +436,15 @@ int main(int argc, char *argv[]) {
       for (fnit = fixnodewithmrca.begin(); fnit != fixnodewithmrca.end();
            fnit++) {
         vector<int> dista = (*fnit).second;
-        for (unsigned int k = 0; k < rm->getDists()->size(); k++) {
+        for (unsigned int k = 0; k < rm->getDistsSize(); k++) {
           bool isnot = true;
           for (unsigned int j = 0; j < dista.size(); j++) {
-            if (dista[j] != rm->getDists()->at(k)[j])
+            if (dista[j] != rm->getDists().at(k)[j])
               isnot = false;
           }
           if (isnot == false) {
-            bgt->set_excluded_dist(rm->getDists()->at(k),
-                                  mrcanodeint[(*fnit).first]);
+            bgt->set_excluded_dist(rm->getDists().at(k),
+                                   mrcanodeint[(*fnit).first]);
           }
         }
         cout << "fixing " << (*fnit).first << " = ";
@@ -462,13 +462,13 @@ int main(int argc, char *argv[]) {
       for (unsigned int k = 0; k < fossiltype.size(); k++) {
         if (fossiltype[k] == "n" || fossiltype[k] == "N") {
           bgt->setFossilatNodeByMRCA_id(mrcanodeint[fossilmrca[k]],
-                                       areanamemap[fossilarea[k]]);
+                                        areanamemap[fossilarea[k]]);
           cout << "Setting node fossil at mrca: " << fossilmrca[k]
                << " at area: " << fossilarea[k] << endl;
         } else {
           bgt->setFossilatBranchByMRCA_id(mrcanodeint[fossilmrca[k]],
-                                         areanamemap[fossilarea[k]],
-                                         fossilage[k]);
+                                          areanamemap[fossilarea[k]],
+                                          fossilage[k]);
           cout << "Setting branch fossil at mrca: " << fossilmrca[k]
                << " at area: " << fossilarea[k] << " at age: " << fossilage[k]
                << endl;
@@ -660,12 +660,12 @@ int main(int argc, char *argv[]) {
           cout << "calculating stochastic mapping time spent" << endl;
           for (unsigned int k = 0; k < stochastic_time_dists.size(); k++) {
             cout << tt.get_string_from_dist_int(
-                        (*rm->get_dists_int_map())[stochastic_time_dists[k]],
+                        rm->get_dists_int_map().at(stochastic_time_dists[k]),
                         areanamemaprev, rm)
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
-                (*rm->get_dists_int_map())[stochastic_time_dists[k]],
-                (*rm->get_dists_int_map())[stochastic_time_dists[k]]);
+                rm->get_dists_int_map().at(stochastic_time_dists[k]),
+                rm->get_dists_int_map().at(stochastic_time_dists[k]));
             bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochtime.tre").c_str(),
                                   ios::app);
@@ -682,7 +682,7 @@ int main(int argc, char *argv[]) {
             outStochTimeFile
                 << intrees[i]->getRoot()->getNewickOBL("stoch")
                 << tt.get_string_from_dist_int(
-                       (*rm->get_dists_int_map())[stochastic_time_dists[k]],
+                       rm->get_dists_int_map().at(stochastic_time_dists[k]),
                        areanamemaprev, rm)
                 << ";" << endl;
             outStochTimeFile.close();
@@ -696,20 +696,19 @@ int main(int argc, char *argv[]) {
           cout << "calculating stochastic mapping number of transitions"
                << endl;
           for (unsigned int k = 0; k < stochastic_number_from_tos.size(); k++) {
-            cout
-                << tt.get_string_from_dist_int(
-                       (*rm->get_dists_int_map())[stochastic_number_from_tos[k]
-                                                                           [0]],
-                       areanamemaprev, rm)
-                << " -> "
-                << tt.get_string_from_dist_int(
-                       (*rm->get_dists_int_map())[stochastic_number_from_tos[k]
-                                                                           [1]],
-                       areanamemaprev, rm)
-                << endl;
+            cout << tt.get_string_from_dist_int(
+                        rm->get_dists_int_map()
+                            .at(stochastic_number_from_tos[k][0]),
+                        areanamemaprev, rm)
+                 << " -> "
+                 << tt.get_string_from_dist_int(
+                        rm->get_dists_int_map()
+                            .at(stochastic_number_from_tos[k][1]),
+                        areanamemaprev, rm)
+                 << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
-                (*rm->get_dists_int_map())[stochastic_number_from_tos[k][0]],
-                (*rm->get_dists_int_map())[stochastic_number_from_tos[k][1]]);
+                rm->get_dists_int_map().at(stochastic_number_from_tos[k][0]),
+                rm->get_dists_int_map().at(stochastic_number_from_tos[k][1]));
             bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochnumber.tre").c_str(),
                                   ios::app);
@@ -738,9 +737,6 @@ int main(int argc, char *argv[]) {
          */
       }
       // need to delete the biogeostuff
-    }
-    for (unsigned int i = 0; i < intrees.size(); i++) {
-      delete intrees[i];
     }
   }
   auto end_time = chrono::high_resolution_clock::now();

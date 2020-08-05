@@ -26,12 +26,12 @@ using namespace std;
 
 class BioGeoTree {
 private:
-  Tree *_tree;
+  std::shared_ptr<Tree> _tree;
   vector<double> _periods;
   const string _dist_conditionals_key = "dist_conditionals";
   const string _anc_dist_conditionals_key = "anc_dist_conditionals";
-  vector<int> *_columns;
-  vector<int> *_which_columns;
+  std::shared_ptr<vector<int>> _columns;
+  std::shared_ptr<vector<int>> _which_columns;
   std::shared_ptr<RateModel> _root_ratemodel;
   bool _store_p_matrices;
   bool _use_stored_matrices;
@@ -53,7 +53,7 @@ private:
   // end mapping bits
 
 public:
-  BioGeoTree(Tree *tr, vector<double> ps);
+  BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps);
   void set_store_p_matrices(bool);
   void set_use_stored_matrices(bool);
   void set_default_model(std::shared_ptr<RateModel> mod);

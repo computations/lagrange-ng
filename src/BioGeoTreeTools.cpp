@@ -23,7 +23,7 @@ using namespace std;
 #include "tree_reader.h"
 #include "vector_node_object.h"
 
-Tree *BioGeoTreeTools::getTreeFromString(string treestring) {
+std::shared_ptr<Tree> BioGeoTreeTools::getTreeFromString(string treestring) {
   TreeReader tr;
   return tr.readTree(treestring);
 }
@@ -45,7 +45,7 @@ void BioGeoTreeTools::summarizeSplits(
   Superdouble sum(0);
   vector<pair<Superdouble, string>> printstring;
   int areasize = (*ans.begin()).first.size();
-  unordered_map<int, vector<int>> *distmap = rm->get_int_dists_map();
+  auto distmap = rm->get_int_dists_map();
   vector<int> bestldist;
   vector<int> bestrdist;
   unordered_map<vector<int>, vector<AncSplit>>::iterator it;
@@ -57,12 +57,12 @@ void BioGeoTreeTools::summarizeSplits(
       if (first == true) {
         first = false;
         best = tans[i].getLikelihood();
-        bestldist = (*distmap)[tans[i].ldescdistint]; // tans[i].getLDescDist();
-        bestrdist = (*distmap)[tans[i].rdescdistint]; // tans[i].getRDescDist();
+        bestldist = (distmap)[tans[i].ldescdistint]; // tans[i].getLDescDist();
+        bestrdist = (distmap)[tans[i].rdescdistint]; // tans[i].getRDescDist();
       } else if (tans[i].getLikelihood() > best) {
         best = tans[i].getLikelihood();
-        bestldist = (*distmap)[tans[i].ldescdistint]; // tans[i].getLDescDist();
-        bestrdist = (*distmap)[tans[i].rdescdistint]; // tans[i].getRDescDist();
+        bestldist = (distmap)[tans[i].ldescdistint]; // tans[i].getLDescDist();
+        bestrdist = (distmap)[tans[i].rdescdistint]; // tans[i].getRDescDist();
       }
       // cout << -log(tans[i].getLikelihood()) << endl;
       sum += tans[i].getLikelihood();
@@ -80,11 +80,11 @@ void BioGeoTreeTools::summarizeSplits(
              // tans[i].getLDescDist().size();
              m++) {
           // if(tans[i].getLDescDist()[m] == 1){
-          if ((*distmap)[tans[i].ldescdistint][m] == 1) {
+          if ((distmap)[tans[i].ldescdistint][m] == 1) {
             tdisstring += areanamemaprev[m];
             count1 += 1;
             if (count1 <
-                calculate_vector_int_sum(&(*distmap)[tans[i].ldescdistint])) {
+                calculate_vector_int_sum((distmap)[tans[i].ldescdistint])) {
               tdisstring += "_";
             }
           }
@@ -94,11 +94,11 @@ void BioGeoTreeTools::summarizeSplits(
         for (int m = 0; m < areasize;
              // tans[i].getRDescDist().size();
              m++) {
-          if ((*distmap)[tans[i].rdescdistint][m] == 1) {
+          if ((distmap)[tans[i].rdescdistint][m] == 1) {
             tdisstring += areanamemaprev[m];
             count1 += 1;
             if (count1 <
-                calculate_vector_int_sum(&(*distmap)[tans[i].rdescdistint])) {
+                calculate_vector_int_sum((distmap)[tans[i].rdescdistint])) {
               tdisstring += "_";
             }
           }
@@ -152,14 +152,14 @@ void BioGeoTreeTools::summarizeAncState(
   Superdouble sum(0);
   map<Superdouble, string> printstring;
   int areasize = rm->get_num_areas();
-  unordered_map<int, vector<int>> *distmap = rm->get_int_dists_map();
+  unordered_map<int, vector<int>> distmap = rm->get_int_dists_map();
   vector<int> bestancdist;
   Superdouble zero(0);
   for (unsigned int i = 1; i < ans.size();
        i++) { // 1 because 0 is just the 0 all extinct one
     if (ans[i] >= best && ans[i] != zero) { // added != 0, need to test
       best = ans[i];
-      bestancdist = (*distmap)[i];
+      bestancdist = (distmap)[i];
     }
     sum += ans[i];
   }
@@ -170,10 +170,10 @@ void BioGeoTreeTools::summarizeAncState(
       string tdisstring = "";
       int count1 = 0;
       for (int m = 0; m < areasize; m++) {
-        if ((*distmap)[i][m] == 1) {
+        if ((distmap)[i][m] == 1) {
           tdisstring += areanamemaprev[m];
           count1 += 1;
-          if (count1 < calculate_vector_int_sum(&(*distmap)[i])) {
+          if (count1 < calculate_vector_int_sum((distmap)[i])) {
             tdisstring += "_";
           }
         }
@@ -207,8 +207,8 @@ void BioGeoTreeTools::summarizeAncState(
 
 string BioGeoTreeTools::get_string_from_dist_int(
     int dist, unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
-  unordered_map<int, vector<int>> *distmap = rm->get_int_dists_map();
-  vector<int> bestancdist = (*distmap)[dist];
+  unordered_map<int, vector<int>> distmap = rm->get_int_dists_map();
+  vector<int> bestancdist = (distmap)[dist];
 
   StringNodeObject disstring = "";
   int count = 0;

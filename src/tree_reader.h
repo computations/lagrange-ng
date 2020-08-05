@@ -19,7 +19,7 @@ using namespace std;
 class TreeReader {
 public:
   TreeReader();
-  Tree *readTree(string tree);
+  std::shared_ptr<Tree> readTree(string tree);
 };
 
 #endif /* TREE_READER_H_ */

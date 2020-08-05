@@ -398,7 +398,7 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
     D += sign * c * X;
   }
   A = blaze::inv(D) * N;
-  for (int i = 0; i < scale_exp; ++i){
+  for (int i = 0; i < scale_exp; ++i) {
     A *= A;
   }
   return A;
@@ -672,19 +672,21 @@ void RateModel::iter_all_dist_splits() {
   }
 }
 
-vector<vector<int>> *RateModel::getDists() { return &_dists; }
+const vector<vector<int>> &RateModel::getDists() { return _dists; }
 
-unordered_map<vector<int>, int> *RateModel::get_dists_int_map() {
-  return &_dists_int_map;
+size_t RateModel::getDistsSize() const { return _dists.size(); }
+
+const unordered_map<vector<int>, int> &RateModel::get_dists_int_map() {
+  return _dists_int_map;
 }
 
-unordered_map<int, vector<int>> *RateModel::get_int_dists_map() {
-  return &_int_dists_map;
+const unordered_map<int, vector<int>> &RateModel::get_int_dists_map() {
+  return _int_dists_map;
 }
 
-vector<vector<vector<int>>> *
-RateModel::get_iter_dist_splits(vector<int> &dist) {
-  return &_iter_dists[dist];
+const vector<vector<vector<int>>> &
+RateModel::get_iter_dist_splits(const vector<int> &dist) const {
+  return _iter_dists.at(dist);
 }
 
 int RateModel::get_num_areas() { return _area_count; }

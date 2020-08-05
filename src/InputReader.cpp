@@ -23,14 +23,15 @@ using namespace std;
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
 
-void InputReader::readMultipleTreeFile(string filename, vector<Tree *> &ret) {
+void InputReader::readMultipleTreeFile(string filename,
+                                       vector<std::shared_ptr<Tree>> &ret) {
   TreeReader tr;
   ifstream ifs(filename.c_str());
   string temp;
   int count = 1;
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
-      Tree *intree = tr.readTree(temp);
+      auto intree = tr.readTree(temp);
       cout << "Tree " << count << " has " << intree->getExternalNodeCount()
            << " leaves." << endl;
       ret.push_back(intree);
@@ -82,8 +83,8 @@ InputReader::readStandardInputData(string filename) {
   return data;
 }
 
-void InputReader::checkData(unordered_map<string, vector<int>> data,
-                            vector<Tree *> trees) {
+void InputReader::checkData(const unordered_map<string, vector<int>> &data,
+                            const vector<std::shared_ptr<Tree>> &trees) {
   vector<string> dataspecies;
   unordered_map<string, vector<int>>::const_iterator itr;
   for (itr = data.begin(); itr != data.end(); ++itr) {

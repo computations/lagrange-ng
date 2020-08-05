@@ -82,10 +82,12 @@ public:
   string P_repr(int period);
   vector<vector<int>> enumerate_dists();
   vector<vector<vector<int>>> iter_dist_splits(vector<int> &dist);
-  vector<vector<int>> *getDists();
-  unordered_map<vector<int>, int> *get_dists_int_map();
-  unordered_map<int, vector<int>> *get_int_dists_map();
-  vector<vector<vector<int>>> *get_iter_dist_splits(vector<int> &dist);
+  const vector<vector<int>> &getDists();
+  size_t getDistsSize() const;
+  const unordered_map<vector<int>, int> &get_dists_int_map();
+  const unordered_map<int, vector<int>> &get_int_dists_map();
+  const vector<vector<vector<int>>> &
+  get_iter_dist_splits(const vector<int> &dist) const;
   void remove_dist(vector<int> dist);
   bool _sparse;
   int get_num_areas();

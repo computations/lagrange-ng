@@ -18,9 +18,10 @@ using namespace std;
 class InputReader {
 public:
   InputReader();
-  void readMultipleTreeFile(string filename, vector<Tree *> &);
+  void readMultipleTreeFile(string filename, vector<std::shared_ptr<Tree>> &);
   unordered_map<string, vector<int>> readStandardInputData(string filename);
-  void checkData(unordered_map<string, vector<int>>, vector<Tree *>);
+  void checkData(const unordered_map<string, vector<int>> &,
+                 const vector<std::shared_ptr<Tree>> &);
   int nareas;
   int nspecies;
 };
