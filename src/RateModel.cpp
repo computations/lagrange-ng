@@ -107,8 +107,9 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
           inh = true;
         }
       }
-      if (inh == false)
+      if (inh == false) {
         _dists.push_back(a[f]);
+      }
     }
   }
   /*
