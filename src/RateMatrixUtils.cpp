@@ -162,6 +162,9 @@ void iter_ancsplits_just_int(std::shared_ptr<RateModel> rm, vector<int> &dist,
   rightdists.clear();
   auto splits = rm->get_iter_dist_splits(dist);
   auto distsmap = rm->get_dists_int_map();
+  size_t dists_size = splits[0].size() * splits[0][0].size();
+  leftdists.reserve(dists_size);
+  rightdists.reserve(dists_size);
   if (splits.at(0).size() > 0) {
     int nsplits = splits.at(0).size();
     weight = 1.0 / nsplits;
