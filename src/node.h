@@ -73,6 +73,14 @@ public:
   vector<vector<int>> *getExclDistVector();
   void deleteExclDistVector();
   NodeObject *getObject(string name);
+
+  double getMaxHeightRecursive() const;
+  double getMaxHeight() const;
+  void setHeightRecursive(double height);
+  void setHeightRecursive();
+  void pruneNode(Node *n);
+
+  Node *getMCRA(const std::vector<Node *>);
 };
 
 #endif /* NODE_H_ */

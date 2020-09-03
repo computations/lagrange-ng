@@ -6,10 +6,10 @@
  */
 
 #include <cstring>
+#include <exception>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <exception>
 
 using namespace std;
 
@@ -24,9 +24,9 @@ Tree::Tree()
 }
 
 Tree::Tree(Node *inroot)
-    : _root(inroot), _nodes(vector<Node *>()), _internal_nodes(vector<Node *>()),
-      _external_nodes(vector<Node *>()), _internal_node_count(0),
-      _external_node_count(0) {
+    : _root(inroot), _nodes(vector<Node *>()),
+      _internal_nodes(vector<Node *>()), _external_nodes(vector<Node *>()),
+      _internal_node_count(0), _external_node_count(0) {
   _root = inroot;
   processRoot();
 }
@@ -223,22 +223,14 @@ void Tree::setHeightFromRootToNode(Node &inNode, double newHeight) {
   }
 }
 
+double Tree::getLongestPathRootToTip() const {
+  return _root->getMaxHeightRecursive();
+}
+
 /*
  * only makes sense for ultrametric trees
  */
-void Tree::setHeightFromTipToNodes() {
-  for (int i = 0; i < _external_node_count; i++) {
-    double curh = 0.0;
-    Node *cur = getExternalNode(i);
-    cur->setHeight(curh);
-    while (cur->getParent() != NULL) {
-      curh += cur->getBL();
-      cur = cur->getParent();
-      if (cur->getHeight() < curh)
-        cur->setHeight(curh);
-    }
-  }
-}
+void Tree::setHeightFromTipToNodes() { _root->setHeightRecursive(); }
 
 /*
  * private
@@ -303,71 +295,12 @@ void Tree::pruneExternalNode(Node *node) {
   if (node->isInternal()) {
     return;
   }
-  /*
-   * how this works
-   *
-   * get the parent = parent
-   * get the parent of the parent = mparent
-   * remove parent from mparent
-   * add !node from parent to mparent
-   *
-   * doesn't yet take care if node.parent == root
-   * or polytomy
-   */
-  double bl = 0;
-  Node *parent = node->getParent();
-  Node *other = nullptr;
-  for (int i = 0; i < parent->getChildCount(); i++) {
-    if (&parent->getChild(i) != node) {
-      other = &parent->getChild(i);
-    }
-  }
-  if(other == nullptr){
-    throw std::runtime_error{"Failed to find the other node when pruning"};
-  }
-  bl = other->getBL() + parent->getBL();
-  Node *mparent = parent->getParent();
-  if (mparent != NULL) {
-    mparent->addChild(*other);
-    other->setBL(bl);
-    for (int i = 0; i < mparent->getChildCount(); i++) {
-      if (&mparent->getChild(i) == parent) {
-        mparent->removeChild(*parent);
-        break;
-      }
-    }
-  }
-  delete node;
+  _root->pruneNode(node);
   processRoot();
 }
 
-Node *Tree::getMRCATraverse(Node *curn1, Node *curn2) {
-  Node *mrca = NULL;
-  // get path to root for first node
-  vector<Node *> path1;
-  Node *parent = curn1;
-  path1.push_back(parent);
-  while (parent != NULL) {
-    path1.push_back(parent);
-    if (parent->getParent() != NULL)
-      parent = parent->getParent();
-    else
-      break;
-  }
-  // find first match between this node and the first one
-  parent = curn2;
-  bool x = true;
-  while (x == true) {
-    for (unsigned int i = 0; i < path1.size(); i++) {
-      if (parent == path1.at(i)) {
-        mrca = parent;
-        x = false;
-        break;
-      }
-    }
-    parent = parent->getParent();
-  }
-  return mrca;
+Node *Tree::getMRCATraverse(Node *n1, Node *n2) {
+  return _root->getMCRA({n1, n2});
 }
 
 /*

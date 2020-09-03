@@ -65,7 +65,7 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
       vector<double> pers(_periods);
       double anc = _tree->getNode(i)->getParent()->getHeight();
       double des = _tree->getNode(i)->getHeight();
-      // assert anc > des:q
+      // assert anc > des
       double t = des;
       if (pers.size() > 0) {
         for (unsigned int j = 0; j < pers.size(); j++) {

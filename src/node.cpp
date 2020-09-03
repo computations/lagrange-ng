@@ -200,8 +200,7 @@ string Node::getNewickOBL(string obj) {
       ret = ret + "(";
     ret = ret + getChild(i).getNewickOBL(obj);
     std::ostringstream o;
-    double bl =
-        (*(VectorNodeObject<double> *)getChild(i).getObject(obj))[0];
+    double bl = (*(VectorNodeObject<double> *)getChild(i).getObject(obj))[0];
     o << bl;
     ret = ret + ":" + o.str();
 
@@ -272,3 +271,70 @@ void Node::deleteExclDistVector() { delete _excluded_dists; }
  */
 
 NodeObject *Node::getObject(string name) { return _label_map[name]; }
+
+double Node::getMaxHeightRecursive() const {
+  double max_height = 0.0;
+  for (auto &c : _children) {
+    max_height = std::max(max_height, c->getMaxHeightRecursive());
+  }
+  return max_height + _branch_length;
+}
+
+double Node::getMaxHeight() const {
+  double max_height = 0.0;
+  for (auto &c : _children) {
+    max_height = std::max(max_height, c->getMaxHeightRecursive());
+  }
+  return max_height;
+}
+
+void Node::setHeightRecursive() {
+  _height = getMaxHeight();
+  for (auto &c : _children) {
+    c->setHeightRecursive();
+  }
+}
+
+void Node::pruneNode(Node *n) {
+  for (auto it = _children.begin(); it != _children.end(); ++it) {
+    if (*it == n) {
+      delete *it;
+      _children.erase(it);
+      if (_children.size() == 1) {
+        auto child = _children[0];
+        double tmp_branch_length = _branch_length + child->_branch_length;
+        (*this) = child;
+        _branch_length = tmp_branch_length;
+        setHeightRecursive();
+      }
+      return;
+    }
+  }
+  for (auto &c : _children) {
+    c->pruneNode(n);
+  }
+}
+
+Node *Node::getMCRA(const std::vector<Node *> leaves) {
+  if (_children.size() == 0) {
+    for (auto &n : leaves) {
+      if (n == this) {
+        return this;
+      }
+    }
+    return nullptr;
+  } else {
+    Node *mcra = nullptr;
+    for (auto &c : _children) {
+      auto tmp_mcra = c->getMCRA(leaves);
+      if (tmp_mcra != nullptr) {
+        // if this is our second match, then we can return with this pointer.
+        if (mcra != nullptr) {
+          return this;
+        }
+        mcra = tmp_mcra;
+      }
+    }
+    return mcra;
+  }
+}

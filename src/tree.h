@@ -54,6 +54,7 @@ public:
   Node *getMRCA(vector<string> innodes);
   Node *getMRCA(vector<Node *> innodes);
   void processRoot();
+  double getLongestPathRootToTip() const;
 
   void setHeightFromRootToNodes();
   void setHeightFromTipToNodes();
