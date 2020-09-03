@@ -57,6 +57,7 @@ set(LAGRANGE_SOURCES
         src/my_expokit.f
         src/my_matexp.f)
 
+
 add_executable(lagrange ${LAGRANGE_SOURCES})
 add_executable(lagrange_debug ${LAGRANGE_SOURCES})
 add_executable(lagrange_profile ${LAGRANGE_SOURCES})
@@ -71,7 +72,7 @@ set(LAGRANGE_DEBUG_FLAGS -Og -g -fno-omit-frame-pointer)
 list(APPEND ${LAGRANGE_DEBUG_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG})
 set(LAGRANGE_PROFILE_FLAGS -O3 -fno-omit-frame-pointer)
 list(APPEND ${LAGRANGE_PROFILE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
-set(LAGRANGE_RELEASE_FLAGS -O3)
+set(LAGRANGE_RELEASE_FLAGS -O3 -DBLAZE_USE_VECTORIZATION=1 -g)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 
 set(LINALG_LIBS gsl cblas lapack)
