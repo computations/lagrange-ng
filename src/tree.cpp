@@ -17,39 +17,43 @@ using namespace std;
 #include "tree.h"
 
 Tree::Tree()
-    : _root(NULL), _nodes(vector<Node *>()), _internal_nodes(vector<Node *>()),
-      _external_nodes(vector<Node *>()), _internal_node_count(0),
+    : _root(NULL), _nodes(vector<std::shared_ptr<Node>>()),
+      _internal_nodes(vector<std::shared_ptr<Node>>()),
+      _external_nodes(vector<std::shared_ptr<Node>>()), _internal_node_count(0),
       _external_node_count(0) {
   processRoot();
 }
 
-Tree::Tree(Node *inroot)
-    : _root(inroot), _nodes(vector<Node *>()),
-      _internal_nodes(vector<Node *>()), _external_nodes(vector<Node *>()),
-      _internal_node_count(0), _external_node_count(0) {
+Tree::Tree(std::shared_ptr<Node> inroot)
+    : _root(inroot), _nodes(vector<std::shared_ptr<Node>>()),
+      _internal_nodes(vector<std::shared_ptr<Node>>()),
+      _external_nodes(vector<std::shared_ptr<Node>>()), _internal_node_count(0),
+      _external_node_count(0) {
   _root = inroot;
   processRoot();
 }
 
-void Tree::addExternalNode(Node *tn) {
+void Tree::addExternalNode(std::shared_ptr<Node> tn) {
   _external_nodes.push_back(tn);
   _external_node_count = _external_nodes.size();
   _nodes.push_back(tn);
 }
 
-void Tree::addInternalNode(Node *tn) {
+void Tree::addInternalNode(std::shared_ptr<Node> tn) {
   _internal_nodes.push_back(tn);
   _internal_node_count = _internal_nodes.size();
   _nodes.push_back(tn);
 }
 
-Node *Tree::getExternalNode(int num) { return _external_nodes.at(num); }
+std::shared_ptr<Node> Tree::getExternalNode(int num) {
+  return _external_nodes.at(num);
+}
 
 /*
  * could precompute this, check for run time differences
  */
-Node *Tree::getExternalNode(string &name) {
-  Node *ret = NULL;
+std::shared_ptr<Node> Tree::getExternalNode(string &name) {
+  std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _external_nodes.size(); i++) {
     if (_external_nodes.at(i)->getName() == name)
       ret = _external_nodes.at(i);
@@ -57,13 +61,15 @@ Node *Tree::getExternalNode(string &name) {
   return ret;
 }
 
-Node *Tree::getInternalNode(int num) { return _internal_nodes.at(num); }
+std::shared_ptr<Node> Tree::getInternalNode(int num) {
+  return _internal_nodes.at(num);
+}
 
 /*
  * could precompute this, check for run time differences
  */
-Node *Tree::getInternalNode(string &name) {
-  Node *ret = NULL;
+std::shared_ptr<Node> Tree::getInternalNode(string &name) {
+  std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _internal_nodes.size(); i++) {
     if (_internal_nodes.at(i)->getName() == name)
       ret = _internal_nodes.at(i);
@@ -71,22 +77,22 @@ Node *Tree::getInternalNode(string &name) {
   return ret;
 }
 
-int Tree::getExternalNodeCount() { return _external_node_count; }
+unsigned int Tree::getExternalNodeCount() { return _external_node_count; }
 
-int Tree::getInternalNodeCount() { return _internal_node_count; }
+unsigned int Tree::getInternalNodeCount() { return _internal_node_count; }
 
-Node *Tree::getNode(int num) { return _nodes.at(num); }
+std::shared_ptr<Node> Tree::getNode(int num) { return _nodes.at(num); }
 
-int Tree::getNodeCount() { return _nodes.size(); }
+unsigned int Tree::getNodeCount() { return _nodes.size(); }
 
-Node *Tree::getRoot() { return _root; }
+std::shared_ptr<Node> Tree::getRoot() { return _root; }
 
-void Tree::setRoot(Node *inroot) { _root = inroot; }
+void Tree::setRoot(std::shared_ptr<Node> inroot) { _root = inroot; }
 
-void Tree::unRoot(Node &inroot) {
+void Tree::unRoot(std::shared_ptr<Node> inroot) {
   processRoot();
   if (getRoot()->getChildCount() < 3) {
-    tritomyRoot(&inroot);
+    tritomyRoot(inroot);
   }
   processRoot();
 }
@@ -94,25 +100,30 @@ void Tree::unRoot(Node &inroot) {
 /*
  * seems to be working but check for leaks
  */
-void Tree::reRoot(Node *inroot) {
+void Tree::reRoot(std::shared_ptr<Node> outgroup) {
+  if (!findNode(outgroup)) {
+    throw std::runtime_error{
+        "Outgroup is not part of this tree, cannot reroot"};
+  }
   processRoot();
   if (getRoot()->getChildCount() < 3) {
-    tritomyRoot(inroot); // not sure if this should actually be the inroot
-                         // instead of NULL
+    tritomyRoot(outgroup); // not sure if this should actually be the inroot
+                           // instead of NULL
   }
-  // cout << this->root->getNewick(false) << endl;
-  if (_root == inroot) {
+  if (_root == outgroup) {
     cout << "you asked to root at the current root" << endl;
   } else {
-    Node *tempParent = inroot->getParent();
-    Node *newRoot = new Node(tempParent);
-    newRoot->addChild(*inroot);
-    inroot->setParent(*newRoot);
-    tempParent->removeChild(*inroot);
-    tempParent->addChild(*newRoot);
-    newRoot->setParent(*tempParent);
-    newRoot->setBL(inroot->getBL() / 2);
-    inroot->setBL(inroot->getBL() / 2);
+
+    std::shared_ptr<Node> tempParent = getParent(outgroup);
+    auto newRoot = std::make_shared<Node>(*tempParent);
+
+    newRoot->addChild(std::shared_ptr<Node>(outgroup));
+    // outgroup->setParent(newRoot);
+    tempParent->removeChild(outgroup);
+    tempParent->addChild(std::shared_ptr<Node>(newRoot));
+    // newRoot->setParent(tempParent);
+    newRoot->setBL(outgroup->getBL() / 2);
+    outgroup->setBL(outgroup->getBL() / 2);
     processReRoot(newRoot);
     setRoot(newRoot);
     processRoot();
@@ -122,40 +133,40 @@ void Tree::reRoot(Node *inroot) {
 /*
  * seems to be working now
  */
-void Tree::tritomyRoot(Node *toberoot) {
-  Node *curroot = getRoot();
+void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
+  std::shared_ptr<Node> curroot = getRoot();
   if (toberoot == NULL) {
-    if (curroot->getChild(0).isInternal()) {
-      Node *currootCH = &curroot->getChild(0);
+    if (curroot->getChild(0)->isInternal()) {
+      std::shared_ptr<Node> currootCH = curroot->getChild(0);
       double nbl = currootCH->getBL();
-      curroot->getChild(1).setBL(curroot->getChild(1).getBL() + nbl);
-      curroot->removeChild(*currootCH);
+      curroot->getChild(1)->setBL(curroot->getChild(1)->getBL() + nbl);
+      curroot->removeChild(currootCH);
       for (int i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     } else {
-      Node *currootCH = &curroot->getChild(1);
+      std::shared_ptr<Node> currootCH = curroot->getChild(1);
       double nbl = currootCH->getBL();
-      curroot->getChild(0).setBL(curroot->getChild(0).getBL() + nbl);
-      curroot->removeChild(*currootCH);
+      curroot->getChild(0)->setBL(curroot->getChild(0)->getBL() + nbl);
+      curroot->removeChild(currootCH);
       for (int i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     }
   } else {
-    if (&curroot->getChild(1) == toberoot) {
-      Node *currootCH = &curroot->getChild(0);
+    if (curroot->getChild(1) == toberoot) {
+      std::shared_ptr<Node> currootCH = curroot->getChild(0);
       double nbl = currootCH->getBL();
-      curroot->getChild(1).setBL(curroot->getChild(1).getBL() + nbl);
-      curroot->removeChild(*currootCH);
+      curroot->getChild(1)->setBL(curroot->getChild(1)->getBL() + nbl);
+      curroot->removeChild(currootCH);
       for (int i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     } else {
-      Node *currootCH = &curroot->getChild(1);
+      std::shared_ptr<Node> currootCH = curroot->getChild(1);
       double nbl = currootCH->getBL();
-      curroot->getChild(0).setBL(curroot->getChild(0).getBL() + nbl);
-      curroot->removeChild(*currootCH);
+      curroot->getChild(0)->setBL(curroot->getChild(0)->getBL() + nbl);
+      curroot->removeChild(currootCH);
       for (int i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
@@ -163,63 +174,37 @@ void Tree::tritomyRoot(Node *toberoot) {
   }
 }
 
-Node *Tree::getMRCA(vector<string> innodes) {
-  Node *mrca = NULL;
-  if (innodes.size() == 1)
-    return getExternalNode(innodes[0]);
-  else {
-    vector<string> outgroup;
-    for (unsigned int i = 0; i < innodes.size(); i++) {
-      outgroup.push_back(innodes.at(i));
-    }
-    Node *cur1 = getExternalNode(outgroup.at(0));
-    outgroup.erase(outgroup.begin());
-    Node *cur2 = NULL;
-    Node *tempmrca = NULL;
-    while (outgroup.size() > 0) {
-      cur2 = getExternalNode(outgroup.at(0));
-      outgroup.erase(outgroup.begin());
-      tempmrca = getMRCATraverse(cur1, cur2);
-      cur1 = tempmrca;
-    }
-    mrca = cur1;
+std::shared_ptr<Node> Tree::getMRCA(vector<string> outgroup) {
+  if (outgroup.size() == 1) {
+    return getExternalNode(outgroup[0]);
   }
-  return mrca;
+  std::shared_ptr<Node> mcra;
+  std::vector<std::shared_ptr<Node>> outgroup_nodes;
+  outgroup_nodes.reserve(outgroup.size());
+  for (auto &o : outgroup) {
+    outgroup_nodes.push_back(getExternalNode(o));
+  }
+  return getMRCA(outgroup_nodes);
 }
 
-Node *Tree::getMRCA(vector<Node *> innodes) {
-  Node *mrca = NULL;
-  if (innodes.size() == 1)
-    return innodes[0];
-  else {
-    Node *cur1 = innodes.at(0);
-    innodes.erase(innodes.begin());
-    Node *cur2 = NULL;
-    Node *tempmrca = NULL;
-    while (innodes.size() > 0) {
-      cur2 = innodes.at(0);
-      innodes.erase(innodes.begin());
-      tempmrca = getMRCATraverse(cur1, cur2);
-      cur1 = tempmrca;
-    }
-    mrca = cur1;
-  }
-  return mrca;
+std::shared_ptr<Node> Tree::getMRCA(vector<std::shared_ptr<Node>> outgroup) {
+  return getMRCAWithNode(_root, outgroup);
 }
 
 void Tree::setHeightFromRootToNodes() {
-  setHeightFromRootToNode(*_root, _root->getBL());
+  setHeightFromRootToNode(_root, _root->getBL());
 }
 
-void Tree::setHeightFromRootToNode(Node &inNode, double newHeight) {
-  if (inNode.isRoot() == false) {
-    newHeight += inNode.getBL();
-    inNode.setHeight(newHeight);
+void Tree::setHeightFromRootToNode(std::shared_ptr<Node> inNode,
+                                   double newHeight) {
+  if (inNode->isRoot() == false) {
+    newHeight += inNode->getBL();
+    inNode->setHeight(newHeight);
   } else {
-    inNode.setHeight(newHeight);
+    inNode->setHeight(newHeight);
   }
-  for (int i = 0; i < inNode.getChildCount(); i++) {
-    setHeightFromRootToNode(inNode.getChild(i), newHeight);
+  for (int i = 0; i < inNode->getChildCount(); i++) {
+    setHeightFromRootToNode(inNode->getChild(i), newHeight);
   }
 }
 
@@ -241,28 +226,29 @@ void Tree::processRoot() {
   _external_nodes.clear();
   _internal_node_count = 0;
   _external_node_count = 0;
-  if (_root == NULL)
+  if (_root == nullptr)
     return;
   postOrderProcessRoot(_root);
 }
 
-void Tree::processReRoot(Node *node) {
+void Tree::processReRoot(std::shared_ptr<Node> node) {
   if (node->isRoot() || node->isExternal()) {
     return;
   }
-  if (node->getParent() != NULL) {
-    processReRoot(node->getParent());
+  if (getParent(node) != nullptr) {
+    processReRoot(getParent(node));
   }
   // Exchange branch label, length et cetera
-  exchangeInfo(node->getParent(), node);
+  exchangeInfo(getParent(node), node);
   // Rearrange topology
-  Node *parent = node->getParent();
-  node->addChild(*parent);
-  parent->removeChild(*node);
-  parent->setParent(*node);
+  std::shared_ptr<Node> parent = getParent(node);
+  node->addChild(parent);
+  parent->removeChild(node);
+  // parent->setParent(node);
 }
 
-void Tree::exchangeInfo(Node *node1, Node *node2) {
+void Tree::exchangeInfo(std::shared_ptr<Node> node1,
+                        std::shared_ptr<Node> node2) {
   string swaps;
   double swapd;
   swaps = node1->getName();
@@ -274,12 +260,12 @@ void Tree::exchangeInfo(Node *node1, Node *node2) {
   node2->setBL(swapd);
 }
 
-void Tree::postOrderProcessRoot(Node *node) {
-  if (node == NULL)
+void Tree::postOrderProcessRoot(std::shared_ptr<Node> node) {
+  if (node == nullptr)
     return;
   if (node->getChildCount() > 0) {
     for (int i = 0; i < node->getChildCount(); i++) {
-      postOrderProcessRoot(&node->getChild(i));
+      postOrderProcessRoot(node->getChild(i));
     }
   }
   if (node->isExternal()) {
@@ -291,7 +277,7 @@ void Tree::postOrderProcessRoot(Node *node) {
   }
 }
 
-void Tree::pruneExternalNode(Node *node) {
+void Tree::pruneExternalNode(std::shared_ptr<Node> node) {
   if (node->isInternal()) {
     return;
   }
@@ -299,19 +285,14 @@ void Tree::pruneExternalNode(Node *node) {
   processRoot();
 }
 
-Node *Tree::getMRCATraverse(Node *n1, Node *n2) {
-  return _root->getMCRA({n1, n2});
-}
-
 /*
  * end private
  */
 
-Tree::~Tree() {
-  for (int i = 0; i < _internal_node_count; i++) {
-    delete getInternalNode(i);
-  }
-  for (int i = 0; i < _external_node_count; i++) {
-    delete getExternalNode(i);
-  }
+Tree::~Tree() { _root.reset(); }
+
+bool Tree::findNode(std::shared_ptr<Node> n) { return _root->findNode(n); }
+
+std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) {
+  return getParentWithNode(_root, n);
 }

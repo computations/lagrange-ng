@@ -18,7 +18,7 @@ using namespace std;
 
 class TreeReader {
 public:
-  TreeReader();
+  TreeReader() {}
   std::shared_ptr<Tree> readTree(string tree);
 };
 

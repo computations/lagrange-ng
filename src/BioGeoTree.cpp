@@ -49,7 +49,7 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
    * initialize each node with segments
    */
   cout << "initializing nodes..." << endl;
-  for (int i = 0; i < _tree->getNodeCount(); i++) {
+  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
     if (_tree->getNode(i)->getBL() < 0.000001)
       _tree->getNode(i)->setBL(0.000001);
     _tree->getNode(i)->initSegVector();
@@ -60,20 +60,54 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
    */
   _tree->setHeightFromTipToNodes();
   cout << "initializing branch segments..." << endl;
+
+  for (size_t i = 0; i < _tree->getInternalNodeCount(); ++i) {
+    auto current_node = _tree->getInternalNode(i);
+    for (auto child : current_node->getChildren()) {
+      double ancestor_height = current_node->getHeight();
+      double descendant_height = child->getHeight();
+      double t = descendant_height;
+
+      if (_periods.size() > 0) {
+        double s = 0;
+        if (_periods.size() == 1) {
+          s = _periods[0];
+        }
+        for (size_t j = 0; j < _periods.size(); j++) {
+          s += _periods[j];
+          if (t < s) {
+            double duration = min(s - t, ancestor_height - t);
+            if (duration > 0) {
+              BranchSegment tseg = BranchSegment(duration, j);
+              child->getSegVector()->push_back(tseg);
+            }
+            t += duration; // TODO: make sure that this is all working
+          }
+          if (t > ancestor_height || _periods[j] > t) {
+            break;
+          }
+        }
+      } else {
+        BranchSegment tseg = BranchSegment(current_node->getBL(), 0);
+        current_node->getSegVector()->push_back(tseg);
+      }
+    }
+  }
+
+  /*
   for (int i = 0; i < _tree->getNodeCount(); i++) {
     if (_tree->getNode(i)->hasParent()) {
-      vector<double> pers(_periods);
       double anc = _tree->getNode(i)->getParent()->getHeight();
       double des = _tree->getNode(i)->getHeight();
       // assert anc > des
       double t = des;
-      if (pers.size() > 0) {
-        for (unsigned int j = 0; j < pers.size(); j++) {
+      if (_periods.size() > 0) {
+        for (unsigned int j = 0; j < _periods.size(); j++) {
           double s = 0;
-          if (pers.size() == 1)
-            s = pers[0];
+          if (_periods.size() == 1)
+            s = _periods[0];
           for (unsigned int k = 0; k < j + 1; k++) {
-            s += pers[k];
+            s += _periods[k];
           }
           if (t < s) {
             double duration = min(s - t, anc - t);
@@ -83,7 +117,7 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
             }
             t += duration; // TODO: make sure that this is all working
           }
-          if (t > anc || pers[j] > t) {
+          if (t > anc || _periods[j] > t) {
             break;
           }
         }
@@ -93,6 +127,7 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
       }
     }
   }
+  */
 }
 
 void BioGeoTree::set_store_p_matrices(bool i) { _store_p_matrices = i; }
@@ -101,7 +136,7 @@ void BioGeoTree::set_use_stored_matrices(bool i) { _use_stored_matrices = i; }
 
 void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
-  for (int i = 0; i < _tree->getNodeCount(); i++) {
+  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
     vector<BranchSegment> *tsegs = _tree->getNode(i)->getSegVector();
     for (unsigned int j = 0; j < tsegs->size(); j++) {
       tsegs->at(j).setModel(mod);
@@ -127,7 +162,7 @@ void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
 void BioGeoTree::update_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
 
-  for (int i = 0; i < _tree->getNodeCount(); i++) {
+  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
     vector<BranchSegment> *tsegs = _tree->getNode(i)->getSegVector();
     for (unsigned int j = 0; j < tsegs->size(); j++) {
       tsegs->at(j).setModel(mod);
@@ -147,17 +182,17 @@ void BioGeoTree::set_tip_conditionals(
   }
 }
 
-void BioGeoTree::set_excluded_dist(vector<int> ind, Node *node) {
+void BioGeoTree::set_excluded_dist(vector<int> ind,
+                                   std::shared_ptr<Node> node) {
   node->getExclDistVector()->push_back(ind);
 }
 
 Superdouble BioGeoTree::eval_likelihood(bool marginal) {
   if (_root_ratemodel->_sparse == true) {
-    _columns =
-        std::make_shared<vector<int>>(_root_ratemodel->getDistsSize());
+    _columns = std::make_shared<vector<int>>(_root_ratemodel->getDistsSize());
     _which_columns = std::make_shared<vector<int>>();
   }
-  ancdist_conditional_lh(*_tree->getRoot(), marginal);
+  ancdist_conditional_lh(_tree->getRoot(), marginal);
   if (_root_ratemodel->_sparse == true) {
     if (_columns.unique()) {
       _columns.reset();
@@ -172,10 +207,10 @@ Superdouble BioGeoTree::eval_likelihood(bool marginal) {
               .getLn();
 }
 
-vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
-                                             bool sparse) {
+vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
+                                             bool marginal, bool sparse) {
   vector<Superdouble> distconds;
-  vector<BranchSegment> *time_segments = node.getSegVector();
+  vector<BranchSegment> *time_segments = node->getSegVector();
 
   distconds = *time_segments->at(0).distconds;
 
@@ -275,11 +310,12 @@ vector<Superdouble> BioGeoTree::conditionals(Node &node, bool marginal,
   return distconds;
 }
 
-void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
+void BioGeoTree::ancdist_conditional_lh(std::shared_ptr<Node> node,
+                                        bool marginal) {
   vector<Superdouble> distconds(_root_ratemodel->getDistsSize(), 0);
-  if (node.isExternal() == false) { // is not a tip
-    Node *c1 = &node.getChild(0);
-    Node *c2 = &node.getChild(1);
+  if (node->isExternal() == false) { // is not a tip
+    std::shared_ptr<Node> c1 = node->getChild(0);
+    std::shared_ptr<Node> c2 = node->getChild(1);
     /*
     RateModel *model;
     if (node.hasParent() == true) {
@@ -289,8 +325,8 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
       model = _root_ratemodel;
     }
     */
-    ancdist_conditional_lh(*c1, marginal);
-    ancdist_conditional_lh(*c2, marginal);
+    ancdist_conditional_lh(c1, marginal);
+    ancdist_conditional_lh(c2, marginal);
     bool sparse = _root_ratemodel->_sparse;
     vector<Superdouble> v1;
     vector<Superdouble> v2;
@@ -321,8 +357,8 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
       _columns->at(0) = 0;
     }
 
-    v1 = conditionals(*c1, marginal, sparse);
-    v2 = conditionals(*c2, marginal, sparse);
+    v1 = conditionals(c1, marginal, sparse);
+    v2 = conditionals(c2, marginal, sparse);
 
     auto dists = _root_ratemodel->getDists();
     vector<int> leftdists;
@@ -333,7 +369,7 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
 
       if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
         Superdouble lh = 0.0;
-        vector<vector<int>> *exdist = node.getExclDistVector();
+        vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
           iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
@@ -349,17 +385,17 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
       }
     }
   } else {
-    vector<BranchSegment> *tsegs = node.getSegVector();
+    vector<BranchSegment> *tsegs = node->getSegVector();
     distconds = *tsegs->at(0).distconds;
   }
-  if (node.hasParent() == true) {
-    vector<BranchSegment> *tsegs = node.getSegVector();
+  if (node->hasParent() == true) {
+    vector<BranchSegment> *tsegs = node->getSegVector();
     for (unsigned int i = 0; i < distconds.size(); i++) {
       tsegs->at(0).distconds->at(i) = distconds.at(i);
     }
   } else {
     for (unsigned int i = 0; i < distconds.size(); i++) {
-      node.getDoubleVector(_dist_conditionals_key)->at(i) = distconds.at(i);
+      node->getDoubleVector(_dist_conditionals_key)->at(i) = distconds.at(i);
     }
   }
 }
@@ -373,7 +409,7 @@ void BioGeoTree::ancdist_conditional_lh(Node &node, bool marginal) {
  */
 void BioGeoTree::setFossilatNodeByMRCA(vector<string> nodeNames,
                                        int fossilarea) {
-  Node *mrca = _tree->getMRCA(nodeNames);
+  std::shared_ptr<Node> mrca = _tree->getMRCA(nodeNames);
   auto dists = _root_ratemodel->getDists();
   for (unsigned int i = 0; i < dists.size(); i++) {
     if (dists.at(i).at(fossilarea) == 0) {
@@ -383,7 +419,8 @@ void BioGeoTree::setFossilatNodeByMRCA(vector<string> nodeNames,
   }
 }
 
-void BioGeoTree::setFossilatNodeByMRCA_id(Node *id, int fossilarea) {
+void BioGeoTree::setFossilatNodeByMRCA_id(std::shared_ptr<Node> id,
+                                          int fossilarea) {
   auto dists = _root_ratemodel->getDists();
   for (unsigned int i = 0; i < dists.size(); i++) {
     if (dists.at(i).at(fossilarea) == 0) {
@@ -395,7 +432,7 @@ void BioGeoTree::setFossilatNodeByMRCA_id(Node *id, int fossilarea) {
 
 void BioGeoTree::setFossilatBranchByMRCA(vector<string> nodeNames,
                                          int fossilarea, double age) {
-  Node *mrca = _tree->getMRCA(nodeNames);
+  std::shared_ptr<Node> mrca = _tree->getMRCA(nodeNames);
   vector<BranchSegment> *tsegs = mrca->getSegVector();
   double startage = mrca->getHeight();
   for (unsigned int i = 0; i < tsegs->size(); i++) {
@@ -406,8 +443,8 @@ void BioGeoTree::setFossilatBranchByMRCA(vector<string> nodeNames,
   }
 }
 
-void BioGeoTree::setFossilatBranchByMRCA_id(Node *id, int fossilarea,
-                                            double age) {
+void BioGeoTree::setFossilatBranchByMRCA_id(std::shared_ptr<Node> id,
+                                            int fossilarea, double age) {
   vector<BranchSegment> *tsegs = id->getSegVector();
   double startage = id->getHeight();
 
@@ -423,36 +460,36 @@ void BioGeoTree::setFossilatBranchByMRCA_id(Node *id, int fossilarea,
  forward and reverse stuff for ancestral states
  ************************************************************/
 // add joint
-void BioGeoTree::prepare_ancstate_reverse() { reverse(*_tree->getRoot()); }
+void BioGeoTree::prepare_ancstate_reverse() { reverse(_tree->getRoot()); }
 
 /*
  * called from prepare_ancstate_reverse and that is all
  */
-void BioGeoTree::reverse(Node &node) {
+void BioGeoTree::reverse(std::shared_ptr<Node> node) {
   _reverse = true;
   vector<Superdouble> *revconds =
       new vector<Superdouble>(_root_ratemodel->getDistsSize(),
                               0); // need to delete this at some point
-  if (&node == _tree->getRoot()) {
+  if (node == _tree->getRoot()) {
     for (unsigned int i = 0; i < _root_ratemodel->getDistsSize(); i++) {
       revconds->at(i) = 1.0; // prior
     }
-    node.assocDoubleVector(_reverse_bits_key, *revconds);
+    node->assocDoubleVector(_reverse_bits_key, *revconds);
     delete revconds;
-    for (int i = 0; i < node.getChildCount(); i++) {
-      reverse(node.getChild(i));
+    for (int i = 0; i < node->getChildCount(); i++) {
+      reverse(node->getChild(i));
     }
   } else {
     vector<Superdouble> *parrev =
-        node.getParent()->getDoubleVector(_reverse_bits_key);
+        node->getParent()->getDoubleVector(_reverse_bits_key);
     vector<Superdouble> sisdistconds;
-    if (&node.getParent()->getChild(0) != &node) {
+    if (node->getParent()->getChild(0) != node) {
       vector<BranchSegment> *tsegs =
-          node.getParent()->getChild(0).getSegVector();
+          node->getParent()->getChild(0)->getSegVector();
       sisdistconds = tsegs->at(0).alphas;
     } else {
       vector<BranchSegment> *tsegs =
-          node.getParent()->getChild(1).getSegVector();
+          node->getParent()->getChild(1)->getSegVector();
       sisdistconds = tsegs->at(0).alphas;
     }
     auto dists = _root_ratemodel->getDists();
@@ -462,7 +499,7 @@ void BioGeoTree::reverse(Node &node) {
     vector<Superdouble> tempA(_root_ratemodel->getDistsSize(), 0);
     for (unsigned int i = 0; i < dists.size(); i++) {
       if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-        vector<vector<int>> *exdist = node.getExclDistVector();
+        vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
           iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
@@ -478,7 +515,7 @@ void BioGeoTree::reverse(Node &node) {
     }
 
     // now calculate node B
-    vector<BranchSegment> *tsegs = node.getSegVector();
+    vector<BranchSegment> *tsegs = node->getSegVector();
     vector<Superdouble> tempmoveA(tempA);
     for (int ts = tsegs->size() - 1; ts != -1; ts--) {
       for (unsigned int j = 0; j < dists.size(); j++) {
@@ -528,10 +565,10 @@ void BioGeoTree::reverse(Node &node) {
         tsegs->at(ts).seg_sp_stoch_map_revB_number = tempmoveAen;
       }
     }
-    node.assocDoubleVector(_reverse_bits_key, *revconds);
+    node->assocDoubleVector(_reverse_bits_key, *revconds);
     delete revconds;
-    for (int i = 0; i < node.getChildCount(); i++) {
-      reverse(node.getChild(i));
+    for (int i = 0; i < node->getChildCount(); i++) {
+      reverse(node->getChild(i));
     }
   }
 }
@@ -542,19 +579,19 @@ void BioGeoTree::reverse(Node &node) {
  */
 
 unordered_map<vector<int>, vector<AncSplit>>
-BioGeoTree::calculate_ancsplit_reverse(Node &node) {
-  vector<Superdouble> *Bs = node.getDoubleVector(_reverse_bits_key);
+BioGeoTree::calculate_ancsplit_reverse(std::shared_ptr<Node> node) {
+  vector<Superdouble> *Bs = node->getDoubleVector(_reverse_bits_key);
   unordered_map<vector<int>, vector<AncSplit>> ret;
   for (unsigned int j = 0; j < _root_ratemodel->getDistsSize(); j++) {
     vector<int> dist = _root_ratemodel->getDists().at(j);
     vector<AncSplit> ans = iter_ancsplits(_root_ratemodel, dist);
-    if (node.isExternal() == false) { // is not a tip
-      Node *c1 = &node.getChild(0);
-      Node *c2 = &node.getChild(1);
+    if (node->isExternal() == false) { // is not a tip
+      std::shared_ptr<Node> c1 = node->getChild(0);
+      std::shared_ptr<Node> c2 = node->getChild(1);
       vector<BranchSegment> *tsegs1 = c1->getSegVector();
       vector<BranchSegment> *tsegs2 = c2->getSegVector();
       for (unsigned int i = 0; i < ans.size(); i++) {
-        vector<vector<int>> *exdist = node.getExclDistVector();
+        vector<vector<int>> *exdist = node->getExclDistVector();
         int cou =
             count(exdist->begin(), exdist->end(),
                   _root_ratemodel->get_int_dists_map().at(ans[i].ancdistint));
@@ -576,15 +613,16 @@ BioGeoTree::calculate_ancsplit_reverse(Node &node) {
 /*
  * calculates the ancestral area over all the possible splits
  */
-vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node &node) {
-  if (node.isExternal() == false) { // is not a tip
-    vector<Superdouble> *Bs = node.getDoubleVector(_reverse_bits_key);
+vector<Superdouble>
+BioGeoTree::calculate_ancstate_reverse(std::shared_ptr<Node> node) {
+  if (node->isExternal() == false) { // is not a tip
+    vector<Superdouble> *Bs = node->getDoubleVector(_reverse_bits_key);
     auto dists = _root_ratemodel->getDists();
     vector<int> leftdists;
     vector<int> rightdists;
     double weight;
-    Node *c1 = &node.getChild(0);
-    Node *c2 = &node.getChild(1);
+    std::shared_ptr<Node> c1 = node->getChild(0);
+    std::shared_ptr<Node> c2 = node->getChild(1);
     vector<BranchSegment> *tsegs1 = c1->getSegVector();
     vector<BranchSegment> *tsegs2 = c2->getSegVector();
     vector<Superdouble> v1 = tsegs1->at(0).alphas;
@@ -592,7 +630,7 @@ vector<Superdouble> BioGeoTree::calculate_ancstate_reverse(Node &node) {
     vector<Superdouble> LHOODS(dists.size(), 0);
     for (unsigned int i = 0; i < dists.size(); i++) {
       if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-        vector<vector<int>> *exdist = node.getExclDistVector();
+        vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
           iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
@@ -619,7 +657,7 @@ void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from, int to) {
   _stocastic = true;
   int ndists = _root_ratemodel->getDistsSize();
 
-  for (int k = 0; k < _tree->getNodeCount(); k++) {
+  for (unsigned int k = 0; k < _tree->getNodeCount(); k++) {
     vector<BranchSegment> *tsegs = _tree->getNode(k)->getSegVector();
     for (unsigned int l = 0; l < tsegs->size(); l++) {
       int per = (*tsegs)[l].getPeriod();
@@ -690,10 +728,10 @@ void BioGeoTree::prepare_stochmap_reverse_all_nodes(int from, int to) {
  * called directly after reverse_stochastic
  */
 
-vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
-                                                           bool time) {
-  if (node.isExternal() == false) { // is not a tip
-    vector<BranchSegment> *tsegs = node.getSegVector();
+vector<Superdouble>
+BioGeoTree::calculate_reverse_stochmap(std::shared_ptr<Node> node, bool time) {
+  if (node->isExternal() == false) { // is not a tip
+    vector<BranchSegment> *tsegs = node->getSegVector();
     auto dists = _root_ratemodel->getDists();
     vector<Superdouble> totalExp(dists.size(), 0);
     for (size_t t = 0; t < tsegs->size(); t++) {
@@ -706,8 +744,8 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
         vector<int> leftdists;
         vector<int> rightdists;
         double weight;
-        Node *c1 = &node.getChild(0);
-        Node *c2 = &node.getChild(1);
+        std::shared_ptr<Node> c1 = node->getChild(0);
+        std::shared_ptr<Node> c2 = node->getChild(1);
         vector<BranchSegment> *tsegs1 = c1->getSegVector();
         vector<BranchSegment> *tsegs2 = c2->getSegVector();
         vector<Superdouble> v1 = tsegs1->at(0).alphas;
@@ -715,7 +753,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
         vector<Superdouble> LHOODS(dists.size(), 0);
         for (unsigned int i = 0; i < dists.size(); i++) {
           if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-            vector<vector<int>> *exdist = node.getExclDistVector();
+            vector<vector<int>> *exdist = node->getExclDistVector();
             int cou = count(exdist->begin(), exdist->end(), dists.at(i));
             if (cou == 0) {
               iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
@@ -742,7 +780,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
         vector<Superdouble> LHOODS(dists.size(), 0);
         for (unsigned int i = 0; i < dists.size(); i++) {
           if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-            vector<vector<int>> *exdist = node.getExclDistVector();
+            vector<vector<int>> *exdist = node->getExclDistVector();
             int cou = count(exdist->begin(), exdist->end(), dists.at(i));
             if (cou == 0) {
               LHOODS[i] =
@@ -758,7 +796,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
     // not sure if this should return a Superdouble or not when doing a bigtree
     return totalExp;
   } else {
-    vector<BranchSegment> *tsegs = node.getSegVector();
+    vector<BranchSegment> *tsegs = node->getSegVector();
     auto dists = _root_ratemodel->getDists();
     vector<Superdouble> totalExp(dists.size(), 0);
     for (size_t t = 0; t < tsegs->size(); t++) {
@@ -771,7 +809,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
         vector<Superdouble> LHOODS(dists.size(), 0);
         for (unsigned int i = 0; i < dists.size(); i++) {
           if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-            vector<vector<int>> *exdist = node.getExclDistVector();
+            vector<vector<int>> *exdist = node->getExclDistVector();
             int cou = count(exdist->begin(), exdist->end(), dists.at(i));
             if (cou == 0) {
               LHOODS[i] = Bs.at(i) * (tsegs->at(0).distconds->at(i));
@@ -791,7 +829,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
         vector<Superdouble> LHOODS(dists.size(), 0);
         for (unsigned int i = 0; i < dists.size(); i++) {
           if (accumulate(dists.at(i).begin(), dists.at(i).end(), 0) > 0) {
-            vector<vector<int>> *exdist = node.getExclDistVector();
+            vector<vector<int>> *exdist = node->getExclDistVector();
             int cou = count(exdist->begin(), exdist->end(), dists.at(i));
             if (cou == 0) {
               LHOODS[i] = Bs.at(i) * (alphs[i]);
@@ -811,7 +849,7 @@ vector<Superdouble> BioGeoTree::calculate_reverse_stochmap(Node &node,
  * trash collection
  **********************************************************/
 BioGeoTree::~BioGeoTree() {
-  for (int i = 0; i < _tree->getNodeCount(); i++) {
+  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
     vector<BranchSegment> *tsegs = _tree->getNode(i)->getSegVector();
     for (unsigned int j = 0; j < tsegs->size(); j++) {
       delete tsegs->at(j).distconds;

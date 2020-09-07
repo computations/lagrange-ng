@@ -9,10 +9,10 @@
 #define BIOGEOTREE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <memory>
 using namespace std;
 
 #include "AncSplit.h"
@@ -59,29 +59,31 @@ public:
   void set_default_model(std::shared_ptr<RateModel> mod);
   void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
-  void set_excluded_dist(vector<int> ind, Node *node);
+  void set_excluded_dist(vector<int> ind, std::shared_ptr<Node> node);
   void set_tip_conditionals(unordered_map<string, vector<int>> distrib_data);
-  vector<Superdouble> conditionals(Node &node, bool marg, bool sparse);
+  vector<Superdouble> conditionals(std::shared_ptr<Node> node, bool marg,
+                                   bool sparse);
   // void ancdist_conditional_lh(bpp::Node & node, bool marg);
-  void ancdist_conditional_lh(Node &node, bool marg);
+  void ancdist_conditional_lh(std::shared_ptr<Node> node, bool marg);
 
   /*
           fossil data
    */
   void setFossilatNodeByMRCA(vector<string> nodeNames, int fossilarea);
-  void setFossilatNodeByMRCA_id(Node *id, int fossilarea);
+  void setFossilatNodeByMRCA_id(std::shared_ptr<Node> id, int fossilarea);
   void setFossilatBranchByMRCA(vector<string> nodeNames, int fossilarea,
                                double age);
-  void setFossilatBranchByMRCA_id(Node *id, int fossilarea, double age);
+  void setFossilatBranchByMRCA_id(std::shared_ptr<Node> id, int fossilarea,
+                                  double age);
 
   /*
           for calculating forward and reverse
    */
   void prepare_ancstate_reverse();
-  void reverse(Node &);
+  void reverse(std::shared_ptr<Node>);
   unordered_map<vector<int>, vector<AncSplit>>
-  calculate_ancsplit_reverse(Node &node);
-  vector<Superdouble> calculate_ancstate_reverse(Node &node);
+  calculate_ancsplit_reverse(std::shared_ptr<Node> node);
+  vector<Superdouble> calculate_ancstate_reverse(std::shared_ptr<Node> node);
   ~BioGeoTree();
   // need to override these at some point
   BioGeoTree(const BioGeoTree &L); // copy constructor
@@ -92,8 +94,9 @@ public:
    * mapping)
    */
   void prepare_stochmap_reverse_all_nodes(int, int);
-  vector<Superdouble> calculate_reverse_stochmap(Node &, bool);
-  vector<Superdouble> calculate_reverse_stochmap_TEST(Node &node, bool time);
+  vector<Superdouble> calculate_reverse_stochmap(std::shared_ptr<Node>, bool);
+  vector<Superdouble>
+  calculate_reverse_stochmap_TEST(std::shared_ptr<Node> node, bool time);
 
   /*
           for timing things

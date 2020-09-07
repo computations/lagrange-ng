@@ -22,26 +22,21 @@ using namespace std;
 #include "vector_node_object.h"
 
 Node::Node()
-    : _branch_length(0.0), _height(0.0), _number(0), _label(""), _parent(NULL),
-      _children(vector<Node *>()), _label_map(map<string, NodeObject *>()),
-      _label_map_superdouble(map<string, vector<Superdouble>>()), _comment("") {
-}
+    : _branch_length(0.0), _height(0.0), _number(0), _label(""),
+      _parent(NULL), _children{}, _label_map{}, _label_map_superdouble{},
+      _comment("") {}
 
 Node::Node(Node *inparent)
     : _branch_length(0.0), _height(0.0), _number(0), _label(""),
-      _parent(inparent), _children(vector<Node *>()),
-      _label_map(map<string, NodeObject *>()),
-      _label_map_superdouble(map<string, vector<Superdouble>>()), _comment("") {
-}
+      _parent(inparent), _children{}, _label_map{}, _label_map_superdouble{},
+      _comment("") {}
 
 Node::Node(double bl, int innumber, string inname, Node *inparent)
     : _branch_length(bl), _height(0.0), _number(innumber), _label(inname),
-      _parent(inparent), _children(vector<Node *>()),
-      _label_map(map<string, NodeObject *>()),
-      _label_map_superdouble(map<string, vector<Superdouble>>()), _comment("") {
-}
+      _parent(inparent), _children{}, _label_map{}, _label_map_superdouble{},
+      _comment("") {}
 
-vector<Node *> Node::getChildren() { return _children; }
+vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
 bool Node::isExternal() {
   if (_children.size() < 1)
@@ -71,7 +66,7 @@ bool Node::hasParent() {
     return true;
 }
 
-void Node::setParent(Node &p) { _parent = &p; }
+void Node::setParent(Node *p) { _parent = p; }
 
 int Node::getNumber() { return _number; }
 
@@ -85,33 +80,30 @@ double Node::getHeight() { return _height; }
 
 void Node::setHeight(double he) { _height = he; }
 
-bool Node::hasChild(Node &test) {
-  bool ret = false;
+bool Node::hasChild(std::shared_ptr<Node> test) {
   for (unsigned int i = 0; i < _children.size(); i++) {
-    if (_children.at(i) == &test) {
-      ret = true;
-      break;
+    if (_children.at(i) == test) {
+      return true;
     }
   }
-  return ret;
+  return false;
 }
 
-bool Node::addChild(Node &c) {
+bool Node::addChild(std::shared_ptr<Node> c) {
   if (hasChild(c) == false) {
-    _children.push_back(&c);
-    c.setParent(*this);
+    _children.push_back(c);
+    c->setParent(this);
     return true;
   } else {
     return false;
   }
 }
 
-bool Node::removeChild(Node &c) {
+bool Node::removeChild(std::shared_ptr<Node> c) {
   if (hasChild(c) == true) {
-    for (unsigned int i = 0; i < _children.size(); i++) {
-      if (_children.at(i) == &c) {
-        _children.erase(_children.begin() + i);
-        break;
+    for (auto it = _children.begin(); it != _children.end(); it++) {
+      if (*it == c) {
+        _children.erase(it);
       }
     }
     return true;
@@ -120,7 +112,7 @@ bool Node::removeChild(Node &c) {
   }
 }
 
-Node &Node::getChild(int c) { return *_children.at(c); }
+std::shared_ptr<Node> Node::getChild(int c) { return _children.at(c); }
 
 string Node::getName() { return _label; }
 
@@ -135,10 +127,10 @@ string Node::getNewick(bool bl) {
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0)
       ret = ret + "(";
-    ret = ret + getChild(i).getNewick(bl);
+    ret = ret + getChild(i)->getNewick(bl);
     if (bl == true) {
       std::ostringstream o;
-      o << getChild(i).getBL();
+      o << getChild(i)->getBL();
       ret = ret + ":" + o.str();
     }
     if (i == getChildCount() - 1)
@@ -160,10 +152,10 @@ string Node::getNewick(bool bl, string obj) {
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0)
       ret = ret + "(";
-    ret = ret + getChild(i).getNewick(bl, obj);
+    ret = ret + getChild(i)->getNewick(bl, obj);
     if (bl == true) {
       std::ostringstream o;
-      o << getChild(i).getBL();
+      o << getChild(i)->getBL();
       ret = ret + ":" + o.str();
     }
     if (i == getChildCount() - 1)
@@ -198,9 +190,9 @@ string Node::getNewickOBL(string obj) {
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0)
       ret = ret + "(";
-    ret = ret + getChild(i).getNewickOBL(obj);
+    ret = ret + getChild(i)->getNewickOBL(obj);
     std::ostringstream o;
-    double bl = (*(VectorNodeObject<double> *)getChild(i).getObject(obj))[0];
+    double bl = (*(VectorNodeObject<double> *)getChild(i)->getObject(obj))[0];
     o << bl;
     ret = ret + ":" + o.str();
 
@@ -295,15 +287,14 @@ void Node::setHeightRecursive() {
   }
 }
 
-void Node::pruneNode(Node *n) {
+void Node::pruneNode(std::shared_ptr<Node> n) {
   for (auto it = _children.begin(); it != _children.end(); ++it) {
     if (*it == n) {
-      delete *it;
       _children.erase(it);
       if (_children.size() == 1) {
         auto child = _children[0];
         double tmp_branch_length = _branch_length + child->_branch_length;
-        (*this) = child;
+        (*this) = *child;
         _branch_length = tmp_branch_length;
         setHeightRecursive();
       }
@@ -315,26 +306,54 @@ void Node::pruneNode(Node *n) {
   }
 }
 
-Node *Node::getMCRA(const std::vector<Node *> leaves) {
-  if (_children.size() == 0) {
+std::shared_ptr<Node>
+getMRCAWithNode(const std::shared_ptr<Node> &current,
+                const std::vector<std::shared_ptr<Node>> &leaves) {
+  if (current->_children.size() == 0) {
     for (auto &n : leaves) {
-      if (n == this) {
-        return this;
+      if (n == current) {
+        return current;
       }
     }
-    return nullptr;
+    return {nullptr};
   } else {
-    Node *mcra = nullptr;
-    for (auto &c : _children) {
-      auto tmp_mcra = c->getMCRA(leaves);
-      if (tmp_mcra != nullptr) {
+    std::shared_ptr<Node> mrca = nullptr;
+    for (auto &c : current->_children) {
+      auto tmp_mrca = getMRCAWithNode(c, leaves);
+      if (tmp_mrca != nullptr) {
         // if this is our second match, then we can return with this pointer.
-        if (mcra != nullptr) {
-          return this;
+        if (mrca != nullptr) {
+          return current;
         }
-        mcra = tmp_mcra;
+        mrca = tmp_mrca;
       }
     }
-    return mcra;
+    return mrca;
   }
+}
+
+bool Node::findNode(std::shared_ptr<Node> n) {
+  if (this == n.get()) {
+    return true;
+  }
+  for (auto c : _children) {
+    if (c->findNode(n)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
+                                        std::shared_ptr<Node> n) {
+  for (auto c : current->_children) {
+    if (n == c) {
+      return current;
+    }
+    auto ret = getParentWithNode(c, n);
+    if (ret != nullptr) {
+      return ret;
+    }
+  }
+  return {nullptr};
 }

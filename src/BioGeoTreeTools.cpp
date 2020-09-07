@@ -28,18 +28,9 @@ std::shared_ptr<Tree> BioGeoTreeTools::getTreeFromString(string treestring) {
   return tr.readTree(treestring);
 }
 
-vector<Node *> BioGeoTreeTools::getAncestors(Node &nodeId) {
-  vector<Node *> nodes;
-  Node *current = &nodeId;
-  while (current->hasParent()) {
-    current = current->getParent();
-    nodes.push_back(current);
-  }
-  return nodes;
-}
-
 void BioGeoTreeTools::summarizeSplits(
-    Node *node, unordered_map<vector<int>, vector<AncSplit>> &ans,
+    std::shared_ptr<Node> node,
+    unordered_map<vector<int>, vector<AncSplit>> &ans,
     unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
   Superdouble best(0);
   Superdouble sum(0);
@@ -145,7 +136,7 @@ void BioGeoTreeTools::summarizeSplits(
 }
 
 void BioGeoTreeTools::summarizeAncState(
-    Node *node, vector<Superdouble> &ans,
+    std::shared_ptr<Node> node, vector<Superdouble> &ans,
     unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
   // Superdouble best(ans[1]);
   Superdouble best(ans[1]); // use ans[1] because ans[0] is just 0
@@ -206,7 +197,8 @@ void BioGeoTreeTools::summarizeAncState(
 }
 
 string BioGeoTreeTools::get_string_from_dist_int(
-    int dist, unordered_map<int, string> &areanamemaprev, std::shared_ptr<RateModel> rm) {
+    int dist, unordered_map<int, string> &areanamemaprev,
+    std::shared_ptr<RateModel> rm) {
   unordered_map<int, vector<int>> distmap = rm->get_int_dists_map();
   vector<int> bestancdist = (distmap)[dist];
 

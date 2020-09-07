@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
       /*
        * record the mrcas
        */
-      unordered_map<string, Node *> mrcanodeint;
+      unordered_map<string, std::shared_ptr<Node>> mrcanodeint;
       unordered_map<string, vector<string>>::iterator it;
       for (it = mrcas.begin(); it != mrcas.end(); it++) {
         // records node by number, should maybe just point to node
@@ -581,13 +581,13 @@ int main(int argc, char *argv[]) {
                                  // be the same for every node
 
         if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
-          for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
             if (splits) {
               cout << "Ancestral splits for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
                   bgt->calculate_ancsplit_reverse(
-                      *intrees[i]->getInternalNode(j));
+                      intrees[i]->getInternalNode(j));
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
                                  areanamemaprev, rm);
               cout << endl;
@@ -596,7 +596,7 @@ int main(int argc, char *argv[]) {
               cout << "Ancestral states for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
               vector<Superdouble> rast = bgt->calculate_ancstate_reverse(
-                  *intrees[i]->getInternalNode(j));
+                  intrees[i]->getInternalNode(j));
               totlike = calculate_vector_Superdouble_sum(rast);
               tt.summarizeAncState(intrees[i]->getInternalNode(j), rast,
                                    areanamemaprev, rm);
@@ -617,14 +617,14 @@ int main(int argc, char *argv[]) {
             if (splits) {
               cout << "Ancestral splits for: " << ancstates[j] << endl;
               unordered_map<vector<int>, vector<AncSplit>> ras =
-                  bgt->calculate_ancsplit_reverse(*mrcanodeint[ancstates[j]]);
+                  bgt->calculate_ancsplit_reverse(mrcanodeint[ancstates[j]]);
               tt.summarizeSplits(mrcanodeint[ancstates[j]], ras, areanamemaprev,
                                  rm);
             }
             if (states) {
               cout << "Ancestral states for: " << ancstates[j] << endl;
               vector<Superdouble> rast =
-                  bgt->calculate_ancstate_reverse(*mrcanodeint[ancstates[j]]);
+                  bgt->calculate_ancstate_reverse(mrcanodeint[ancstates[j]]);
               tt.summarizeAncState(mrcanodeint[ancstates[j]], rast,
                                    areanamemaprev, rm);
             }
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
           outTreeFile << intrees[i]->getRoot()->getNewick(true, "split") << ";"
                       << endl;
           outTreeFile.close();
-          for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
             if (intrees[i]->getInternalNode(j)->getObject("split") != NULL)
               delete intrees[i]->getInternalNode(j)->getObject("split");
           }
@@ -647,7 +647,7 @@ int main(int argc, char *argv[]) {
           outTreeFile << intrees[i]->getRoot()->getNewick(true, "state") << ";"
                       << endl;
           outTreeFile.close();
-          for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
             if (intrees[i]->getInternalNode(j)->getObject("state") != NULL)
               delete intrees[i]->getInternalNode(j)->getObject("state");
           }
@@ -669,10 +669,10 @@ int main(int argc, char *argv[]) {
             bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochtime.tre").c_str(),
                                   ios::app);
-            for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
+            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
                 vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
-                    *intrees[i]->getNode(j), true);
+                    intrees[i]->getNode(j), true);
                 VectorNodeObject<double> stres(1);
                 stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
                 intrees[i]->getNode(j)->assocObject("stoch", stres);
@@ -686,7 +686,7 @@ int main(int argc, char *argv[]) {
                        areanamemaprev, rm)
                 << ";" << endl;
             outStochTimeFile.close();
-            for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
+            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j)->getObject("stoch") != NULL)
                 delete intrees[i]->getNode(j)->getObject("stoch");
             }
@@ -697,13 +697,13 @@ int main(int argc, char *argv[]) {
                << endl;
           for (unsigned int k = 0; k < stochastic_number_from_tos.size(); k++) {
             cout << tt.get_string_from_dist_int(
-                        rm->get_dists_int_map()
-                            .at(stochastic_number_from_tos[k][0]),
+                        rm->get_dists_int_map().at(
+                            stochastic_number_from_tos[k][0]),
                         areanamemaprev, rm)
                  << " -> "
                  << tt.get_string_from_dist_int(
-                        rm->get_dists_int_map()
-                            .at(stochastic_number_from_tos[k][1]),
+                        rm->get_dists_int_map().at(
+                            stochastic_number_from_tos[k][1]),
                         areanamemaprev, rm)
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
@@ -712,10 +712,10 @@ int main(int argc, char *argv[]) {
             bgt->prepare_ancstate_reverse();
             outStochTimeFile.open((treefile + ".bgstochnumber.tre").c_str(),
                                   ios::app);
-            for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
+            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
                 vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
-                    *intrees[i]->getNode(j), false);
+                    intrees[i]->getNode(j), false);
                 // cout << calculate_vector_double_sum(rsm) / totlike << endl;
                 VectorNodeObject<double> stres(1);
                 stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
@@ -726,7 +726,7 @@ int main(int argc, char *argv[]) {
             outStochTimeFile << intrees[i]->getRoot()->getNewickOBL("stoch")
                              << ";" << endl;
             outStochTimeFile.close();
-            for (int j = 0; j < intrees[i]->getNodeCount(); j++) {
+            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
               if (intrees[i]->getNode(j)->getObject("stoch") != NULL)
                 delete intrees[i]->getNode(j)->getObject("stoch");
             }

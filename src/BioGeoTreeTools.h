@@ -25,13 +25,12 @@ using namespace std;
 class BioGeoTreeTools {
 public:
   std::shared_ptr<Tree> getTreeFromString(string treestring);
-  vector<Node *> getAncestors(Node &node);
 
-  void summarizeSplits(Node *node,
+  void summarizeSplits(std::shared_ptr<Node> node,
                        unordered_map<vector<int>, vector<AncSplit>> &ans,
                        unordered_map<int, string> &areanamemaprev,
                        std::shared_ptr<RateModel> rm);
-  void summarizeAncState(Node *node, vector<Superdouble> &ans,
+  void summarizeAncState(std::shared_ptr<Node> node, vector<Superdouble> &ans,
                          unordered_map<int, string> &areanamemaprev,
                          std::shared_ptr<RateModel> rm);
   string get_string_from_dist_int(int dist,
