@@ -6,16 +6,12 @@
  */
 
 #include <limits>
-#include <math.h>
-#include <vector>
+#include <cmath>
 using namespace std;
 
-#include "BioGeoTree.h"
 #include "OptimizeBioGeo.h"
-#include "RateModel.h"
 
 #include <gsl/gsl_multimin.h>
-#include <gsl/gsl_vector.h>
 
 OptimizeBioGeo::OptimizeBioGeo(std::shared_ptr<BioGeoTree> intree,
                                std::shared_ptr<RateModel> inrm, bool marg)

@@ -7,9 +7,6 @@
 
 #include <fstream>
 #include <iostream>
-#include <stdlib.h>
-#include <string>
-#include <vector>
 using namespace std;
 
 #include "BioGeoTreeTools.h"
@@ -17,8 +14,6 @@ using namespace std;
 #include "RateMatrixUtils.h"
 #include "Utils.h"
 
-#include "node.h"
-#include "tree.h"
 #include "tree_reader.h"
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
@@ -91,7 +86,7 @@ void InputReader::checkData(const unordered_map<string, vector<int>> &data,
     dataspecies.push_back(itr->first);
   }
   vector<string> treespecies;
-  for (int j = 0; j < trees[0]->getExternalNodeCount(); j++) {
+  for (unsigned int j = 0; j < trees[0]->getExternalNodeCount(); j++) {
     treespecies.push_back(trees[0]->getExternalNode(j)->getName());
     int count = 0;
     for (unsigned int k = 0; k < dataspecies.size(); k++) {

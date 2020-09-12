@@ -8,7 +8,6 @@
 #ifndef BIOGEOTREE_H_
 #define BIOGEOTREE_H_
 
-#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,8 +20,6 @@ using namespace std;
 #include "node.h"
 #include "tree.h"
 #include "vector_node_object.h"
-
-#include <blaze/math/DynamicMatrix.h>
 
 class BioGeoTree {
 private:

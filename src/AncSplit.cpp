@@ -17,8 +17,6 @@
 #include "AncSplit.h"
 #include "RateModel.h"
 #include "superdouble.h"
-#include <memory>
-#include <vector>
 using namespace std;
 
 AncSplit::AncSplit(std::shared_ptr<RateModel> mod, int dist, int ldesc,

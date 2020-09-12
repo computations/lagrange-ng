@@ -8,12 +8,9 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
-#include <string>
-#include <vector>
 
 using namespace std;
 
-#include "node.h"
 #include "tree.h"
 
 Tree::Tree()

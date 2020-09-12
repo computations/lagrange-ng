@@ -6,9 +6,7 @@
  */
 
 #include "BranchSegment.h"
-#include "RateModel.h"
 
-#include <vector>
 using namespace std;
 
 BranchSegment::BranchSegment(double dur, int per)

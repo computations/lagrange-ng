@@ -9,21 +9,11 @@
 
 #include "BayesianBioGeo.h"
 
-#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <map>
-#include <math.h>
-#include <numeric>
-#include <vector>
 using namespace std;
 
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_rng.h>
-
-#include "BioGeoTree.h"
-#include "RateModel.h"
 
 namespace {
 inline double MIN(const double &a, const double &b) {

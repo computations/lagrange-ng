@@ -6,13 +6,10 @@
  */
 
 #include <limits>
-#include <math.h>
-#include <vector>
+#include <cmath>
 using namespace std;
 
-#include "BioGeoTree.h"
 #include "OptimizeBioGeoAllDispersal_nlopt.h"
-#include "RateModel.h"
 
 #include <nlopt.h>
 

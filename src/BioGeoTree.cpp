@@ -6,26 +6,16 @@
  */
 #include <algorithm>
 #include <cmath>
-#include <ctime>
 #include <exception>
 #include <functional>
 #include <iostream>
 #include <numeric>
-#include <string>
-#include <vector>
 
 using namespace std;
 
-#include "AncSplit.h"
 #include "BioGeoTree.h"
 #include "BioGeoTreeTools.h"
-#include "BranchSegment.h"
 #include "RateMatrixUtils.h"
-#include "RateModel.h"
-
-#include "node.h"
-#include "tree.h"
-#include "vector_node_object.h"
 
 //#include "omp.h"
 // octave usage

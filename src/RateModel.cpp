@@ -7,23 +7,18 @@
 
 #define VERBOSE false
 
-#include "RateMatrixUtils.h"
 #include "RateModel.h"
+#include "RateMatrixUtils.h"
 #include "Utils.h"
-//#include "AncSplit.h"
 
 #include <algorithm>
 #include <blaze/math/IdentityMatrix.h>
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <map>
-#include <math.h>
+#include <cmath>
 #include <numeric>
 #include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <vector>
 using namespace std;
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)

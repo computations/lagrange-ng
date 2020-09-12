@@ -16,7 +16,6 @@ using namespace std;
 #include "BranchSegment.h"
 #include "node_object.h"
 #include "superdouble.h"
-#include "vector_node_object.h"
 
 class Node {
 private:

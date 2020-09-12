@@ -7,15 +7,9 @@
 
 #include <memory>
 #include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <vector>
 
 using namespace std;
 
-#include "node.h"
-#include "tree.h"
 #include "tree_reader.h"
 
 enum lexeme_type_t {

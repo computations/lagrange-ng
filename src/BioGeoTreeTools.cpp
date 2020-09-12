@@ -13,13 +13,9 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
-#include <string>
 using namespace std;
 
-#include "node.h"
 #include "string_node_object.h"
-#include "superdouble.h"
-#include "tree.h"
 #include "tree_reader.h"
 #include "vector_node_object.h"
 

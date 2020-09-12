@@ -9,7 +9,6 @@
 #define PHYLOTREE_H_
 
 #include "AncSplit.h"
-#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>

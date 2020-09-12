@@ -7,19 +7,12 @@
 
 #include <cstring>
 #include <iostream>
-#include <map>
 #include <sstream>
-#include <string>
-#include <vector>
 
 using namespace std;
 
-#include "BranchSegment.h"
 #include "node.h"
-#include "node_object.h"
 #include "string_node_object.h"
-#include "superdouble.h"
-#include "vector_node_object.h"
 
 Node::Node()
     : _branch_length(0.0), _height(0.0), _number(0), _label(""),

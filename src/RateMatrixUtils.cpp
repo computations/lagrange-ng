@@ -5,27 +5,19 @@
  * Author: smitty
  */
 
-#include "AncSplit.h"
 #include "RateMatrixUtils.h"
-#include "RateModel.h"
 #include "Utils.h"
 
 #include <algorithm>
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <memory>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
-#include <vector>
 using namespace std;
-
-#ifdef BIGTREE
-#include "gmpfrxx/gmpfrxx.h"
-#endif
 
 #ifdef BIGTREE
 double calculate_vector_mpfr_class_double_sum(vector<mpfr_class> &in) {
