@@ -15,18 +15,13 @@ using namespace std;
 #include "string_node_object.h"
 
 Node::Node()
-    : _branch_length(0.0), _height(0.0), _number(0), _label(""),
-      _parent(NULL), _children{}, _label_map{}, _label_map_superdouble{},
+    : _branch_length(0.0), _height(0.0), _number(0),
+      _label(""), _children{}, _label_map{}, _label_map_superdouble{},
       _comment("") {}
 
-Node::Node(Node *inparent)
-    : _branch_length(0.0), _height(0.0), _number(0), _label(""),
-      _parent(inparent), _children{}, _label_map{}, _label_map_superdouble{},
-      _comment("") {}
-
-Node::Node(double bl, int innumber, string inname, Node *inparent)
-    : _branch_length(bl), _height(0.0), _number(innumber), _label(inname),
-      _parent(inparent), _children{}, _label_map{}, _label_map_superdouble{},
+Node::Node(double bl, int innumber, string inname)
+    : _branch_length(bl), _height(0.0), _number(innumber),
+      _label(inname), _children{}, _label_map{}, _label_map_superdouble{},
       _comment("") {}
 
 vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
@@ -44,22 +39,6 @@ bool Node::isInternal() {
   else
     return false;
 }
-
-bool Node::isRoot() {
-  if (_parent == NULL)
-    return true;
-  else
-    return false;
-}
-
-bool Node::hasParent() {
-  if (_parent == NULL)
-    return false;
-  else
-    return true;
-}
-
-void Node::setParent(Node *p) { _parent = p; }
 
 int Node::getNumber() { return _number; }
 
@@ -85,7 +64,6 @@ bool Node::hasChild(std::shared_ptr<Node> test) {
 bool Node::addChild(std::shared_ptr<Node> c) {
   if (hasChild(c) == false) {
     _children.push_back(c);
-    c->setParent(this);
     return true;
   } else {
     return false;
@@ -198,8 +176,6 @@ string Node::getNewickOBL(string obj) {
     ret = ret + _label;
   return ret;
 }
-
-Node *Node::getParent() { return _parent; }
 
 int Node::getChildCount() { return _children.size(); }
 

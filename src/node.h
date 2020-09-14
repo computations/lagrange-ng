@@ -23,14 +23,6 @@ private:
   double _height;        // could be from tip or from root
   int _number;
   string _label;
-  Node *_parent; // This needs to be a bare pointer, for now, so that we can set
-                 // when we add a child to a node, we don't end up with 2 shared
-                 // pointers pointing to the same memory. There might be a way
-                 // to fix this eventually, but for now, we just say that if all
-                 // the children are shared pointers, then the only way for the
-                 // child to have a parent is for the parent to still be
-                 // allocated. This isn't true, strictly speaking, but for now
-                 // it is good enough.
   vector<std::shared_ptr<Node>> _children;
   map<string, NodeObject *> _label_map;
   map<string, vector<Superdouble>> _label_map_superdouble;
@@ -40,15 +32,11 @@ private:
 
 public:
   Node();
-  Node(Node *parent);
-  Node(double bl, int number, string name, Node *parent);
+  Node(double bl, int number, string name);
 
   vector<std::shared_ptr<Node>> getChildren();
   bool isExternal();
   bool isInternal();
-  bool isRoot();
-  bool hasParent();
-  void setParent(Node *p);
   int getNumber();
   void setNumber(int n);
   double getBL();
@@ -66,7 +54,6 @@ public:
   string getNewick(bool bl);
   string getNewickOBL(string obj);
   string getNewick(bool bl, string obj);
-  Node *getParent();
   int getChildCount();
   void assocObject(string name, NodeObject &obj);
   void assocDoubleVector(string name, vector<Superdouble> &obj);

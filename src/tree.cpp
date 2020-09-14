@@ -194,7 +194,7 @@ void Tree::setHeightFromRootToNodes() {
 
 void Tree::setHeightFromRootToNode(std::shared_ptr<Node> inNode,
                                    double newHeight) {
-  if (inNode->isRoot() == false) {
+  if (inNode != _root) {
     newHeight += inNode->getBL();
     inNode->setHeight(newHeight);
   } else {
@@ -229,7 +229,7 @@ void Tree::processRoot() {
 }
 
 void Tree::processReRoot(std::shared_ptr<Node> node) {
-  if (node->isRoot() || node->isExternal()) {
+  if (node != _root || node->isExternal()) {
     return;
   }
   if (getParent(node) != nullptr) {
@@ -241,7 +241,6 @@ void Tree::processReRoot(std::shared_ptr<Node> node) {
   std::shared_ptr<Node> parent = getParent(node);
   node->addChild(parent);
   parent->removeChild(node);
-  // parent->setParent(node);
 }
 
 void Tree::exchangeInfo(std::shared_ptr<Node> node1,
@@ -290,6 +289,6 @@ Tree::~Tree() { _root.reset(); }
 
 bool Tree::findNode(std::shared_ptr<Node> n) { return _root->findNode(n); }
 
-std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) {
+std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }

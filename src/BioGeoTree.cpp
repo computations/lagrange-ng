@@ -378,7 +378,7 @@ void BioGeoTree::ancdist_conditional_lh(std::shared_ptr<Node> node,
     vector<BranchSegment> *tsegs = node->getSegVector();
     distconds = *tsegs->at(0).distconds;
   }
-  if (node->hasParent() == true) {
+  if (_tree->getParent(node) != nullptr) {
     vector<BranchSegment> *tsegs = node->getSegVector();
     for (unsigned int i = 0; i < distconds.size(); i++) {
       tsegs->at(0).distconds->at(i) = distconds.at(i);
@@ -471,15 +471,15 @@ void BioGeoTree::reverse(std::shared_ptr<Node> node) {
     }
   } else {
     vector<Superdouble> *parrev =
-        node->getParent()->getDoubleVector(_reverse_bits_key);
+        _tree->getParent(node)->getDoubleVector(_reverse_bits_key);
     vector<Superdouble> sisdistconds;
-    if (node->getParent()->getChild(0) != node) {
+    if (_tree->getParent(node)->getChild(0) != node) {
       vector<BranchSegment> *tsegs =
-          node->getParent()->getChild(0)->getSegVector();
+          _tree->getParent(node)->getChild(0)->getSegVector();
       sisdistconds = tsegs->at(0).alphas;
     } else {
       vector<BranchSegment> *tsegs =
-          node->getParent()->getChild(1)->getSegVector();
+          _tree->getParent(node)->getChild(1)->getSegVector();
       sisdistconds = tsegs->at(0).alphas;
     }
     auto dists = _root_ratemodel->getDists();

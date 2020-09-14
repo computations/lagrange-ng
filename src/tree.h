@@ -31,7 +31,6 @@ private:
   double getGreatestDistance(std::shared_ptr<Node> inNode);
 
   bool findNode(std::shared_ptr<Node> n);
-  std::shared_ptr<Node> getParent(std::shared_ptr<Node> n);
 
 public:
   Tree();
@@ -57,6 +56,7 @@ public:
   std::shared_ptr<Node> getMRCA(vector<std::shared_ptr<Node>> innodes);
   void processRoot();
   double getLongestPathRootToTip() const;
+  std::shared_ptr<Node> getParent(std::shared_ptr<Node> n) const;
 
   void setHeightFromRootToNodes();
   void setHeightFromTipToNodes();
