@@ -39,15 +39,15 @@ public:
   vector<int> getFossilAreas();
   void setFossilArea(int area);
 #ifdef BIGTREE
-  VectorNodeObject<mpfr_class> *distconds;
+  std::shared_ptr<VectorNodeObject<mpfr_class>> distconds;
   VectorNodeObject<mpfr_class> alphas;
-  VectorNodeObject<mpfr_class>
-      *ancdistconds; // for ancestral state reconstructions
+  std::shared_ptr<VectorNodeObject<mpfr_class>>
+      ancdistconds; // for ancestral state reconstructions
   VectorNodeObject<mpfr_class> seg_sp_alphas;
   VectorNodeObject<mpfr_class> seg_sp_stoch_map_revB_time;
   VectorNodeObject<mpfr_class> seg_sp_stoch_map_revB_number;
 #else
-  vector<Superdouble> *distconds;
+  std::shared_ptr<vector<Superdouble>> distconds;
   vector<Superdouble> alphas; // alpha for the entire branch -- stored in the
                               // 0th segment for anc calc
   vector<Superdouble> seg_sp_alphas; // alpha for this specific segment, stored
@@ -58,7 +58,8 @@ public:
   vector<Superdouble>
       seg_sp_stoch_map_revB_number; // segment specific rev B, combining the
                                     // tempA and the ENLT
-  vector<Superdouble> *ancdistconds; // for ancestral state reconstructions
+  std::shared_ptr<vector<Superdouble>>
+      ancdistconds; // for ancestral state reconstructions
 #endif
 };
 

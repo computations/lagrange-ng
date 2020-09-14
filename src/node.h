@@ -27,7 +27,7 @@ private:
   map<string, NodeObject *> _label_map;
   map<string, vector<Superdouble>> _label_map_superdouble;
   string _comment;
-  vector<BranchSegment> *_branch_segments;
+  vector<BranchSegment> _branch_segments;
   vector<vector<int>> *_excluded_dists;
 
 public:
@@ -60,8 +60,7 @@ public:
   vector<Superdouble> *getDoubleVector(string name);
   void deleteDoubleVector(string name);
   void initSegVector();
-  vector<BranchSegment> *getSegVector();
-  void deleteSegVector();
+  vector<BranchSegment> &getSegVector();
   void initExclDistVector();
   vector<vector<int>> *getExclDistVector();
   void deleteExclDistVector();

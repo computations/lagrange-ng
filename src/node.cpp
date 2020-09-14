@@ -205,11 +205,9 @@ void Node::deleteDoubleVector(string name) {
   }
 }
 
-void Node::initSegVector() { _branch_segments = new vector<BranchSegment>(); }
+void Node::initSegVector() { _branch_segments = vector<BranchSegment>(); }
 
-vector<BranchSegment> *Node::getSegVector() { return _branch_segments; }
-
-void Node::deleteSegVector() { delete _branch_segments; }
+vector<BranchSegment> &Node::getSegVector() { return _branch_segments; }
 
 void Node::initExclDistVector() { _excluded_dists = new vector<vector<int>>(); }
 

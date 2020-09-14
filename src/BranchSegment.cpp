@@ -10,9 +10,9 @@
 using namespace std;
 
 BranchSegment::BranchSegment(double dur, int per)
-    : _duration(dur), _period(per), _model(NULL),
-      _fossil_area_indices(vector<int>()), _start_dist(-666), distconds(NULL),
-      ancdistconds(NULL) {}
+    : _duration(dur), _period(per), _model(nullptr),
+      _fossil_area_indices(vector<int>()), _start_dist(-666),
+      distconds(nullptr), ancdistconds(nullptr) {}
 
 void BranchSegment::setModel(std::shared_ptr<RateModel> mod) { _model = mod; }
 
