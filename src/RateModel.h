@@ -58,11 +58,16 @@ private:
   void iter_all_dist_splits();
 
   lagrange_matrix_t compute_matrix_exponential_ss(lagrange_matrix_t A) const;
+  lagrange_matrix_t
+  compute_matrix_exponential_eigen(const lagrange_matrix_t &A) const;
+
+  size_t _expm_count;
 
 public:
   RateModel(int na, bool ge, vector<double> pers, bool);
   void set_nthreads(int nthreads);
   int get_nthreads();
+  size_t get_expm_count();
   void setup_dists();
   void setup_dists(vector<vector<int>>, bool);
   void setup_Dmask();

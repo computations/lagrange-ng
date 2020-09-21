@@ -581,7 +581,8 @@ int main(int argc, char *argv[]) {
                                  // be the same for every node
 
         if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
-          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();
+               j++) {
             if (splits) {
               cout << "Ancestral splits for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
@@ -636,7 +637,8 @@ int main(int argc, char *argv[]) {
           outTreeFile << intrees[i]->getRoot()->getNewick(true, "split") << ";"
                       << endl;
           outTreeFile.close();
-          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();
+               j++) {
             if (intrees[i]->getInternalNode(j)->getObject("split") != NULL)
               delete intrees[i]->getInternalNode(j)->getObject("split");
           }
@@ -647,7 +649,8 @@ int main(int argc, char *argv[]) {
           outTreeFile << intrees[i]->getRoot()->getNewick(true, "state") << ";"
                       << endl;
           outTreeFile.close();
-          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();
+               j++) {
             if (intrees[i]->getInternalNode(j)->getObject("state") != NULL)
               delete intrees[i]->getInternalNode(j)->getObject("state");
           }
@@ -738,6 +741,7 @@ int main(int argc, char *argv[]) {
       }
       // need to delete the biogeostuff
     }
+    cout << "expm count: " << rm->get_expm_count() << endl;
   }
   auto end_time = chrono::high_resolution_clock::now();
   chrono::duration<double> duration = end_time - start_time;

@@ -7,23 +7,23 @@
 
 #define VERBOSE false
 
-#include "RateModel.h"
 #include "RateMatrixUtils.h"
+#include "RateModel.h"
 #include "Utils.h"
 
 #include <algorithm>
 #include <blaze/math/IdentityMatrix.h>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <cmath>
 #include <numeric>
 #include <pthread.h>
 using namespace std;
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
-    : _global_ext(ge), _area_count(na), _thread_count(0), _periods(pers),
-      _sparse(sp) {}
+    : _global_ext(ge), _area_count(na), _thread_count(0),
+      _periods(pers), _expm_count{0}, _sparse(sp) {}
 
 void RateModel::set_nthreads(int nthreads) { _thread_count = nthreads; }
 
@@ -336,6 +336,7 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
   lagrange_matrix_t prob_matrix(cur_rate_matrix);
   prob_matrix *= t;
 
+  _expm_count += 1;
   lagrange_matrix_t b = compute_matrix_exponential_ss(prob_matrix);
   /* we need to normalize the matrix */
   for (size_t i = 0; i < row_size; ++i) {
@@ -398,6 +399,21 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
     A *= A;
   }
   return A;
+}
+
+lagrange_matrix_t
+RateModel::compute_matrix_exponential_eigen(const lagrange_matrix_t &A) const {
+  size_t rows = A.rows();
+  lagrange_complex_col_vector_t eigenvalues(rows);
+  lagrange_complex_matrix_t eigenvectors(rows, rows);
+
+  blaze::eigen(A, eigenvalues, eigenvectors);
+  lagrange_complex_matrix_t inverse_eigenvectors = blaze::inv(eigenvectors);
+  eigenvalues = blaze::exp(eigenvalues);
+
+  return blaze::real(
+      (eigenvectors % blaze::expand(blaze::trans(eigenvalues), rows)) *
+      inverse_eigenvectors);
 }
 
 #if 0
@@ -735,3 +751,5 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
   }
   return isImag;
 }
+
+size_t RateModel::get_expm_count() { return _expm_count; }
