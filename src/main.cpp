@@ -23,8 +23,6 @@
 
 using namespace std;
 
-#include "BayesianBioGeo.h"
-#include "BayesianBioGeoAllDispersal.h"
 #include "BioGeoTree.h"
 #include "BioGeoTreeTools.h"
 #include "InputReader.h"
@@ -74,8 +72,6 @@ int main(int argc, char *argv[]) {
     bool states = false;
     int numthreads = 0;
     bool sparse = false;
-    bool bayesian = false;
-    int numreps = 10000;
 
     double dispersal = 0.1;
     double extinction = 0.1;
@@ -281,11 +277,6 @@ int main(int argc, char *argv[]) {
               dists.push_back(dist0);
               dists.push_back(dist1);
               stochastic_number_from_tos.push_back(dists);
-            }
-          } else if (!strcmp(tokens[0].c_str(), "bayesian")) {
-            bayesian = true;
-            if (tokens.size() > 1) {
-              numreps = atoi(tokens[1].c_str());
             }
           } else if (!strcmp(tokens[0].c_str(), "dispersal")) {
             dispersal = atof(tokens[1].c_str());
@@ -561,16 +552,6 @@ int main(int argc, char *argv[]) {
       }
 
       /*
-       * testing BAYESIAN
-       */
-      if (bayesian == true) {
-        // BayesianBioGeo bayes(&bgt->&rm,marginal,numreps);
-        // bayes.run_global_dispersal_extinction();
-        BayesianBioGeoAllDispersal bayes(bgt, rm, marginal, numreps);
-        bayes.run_global_dispersal_extinction();
-      }
-
-      /*
        * ancestral splits calculation
        */
       if (ancstates.size() > 0) {
@@ -590,7 +571,7 @@ int main(int argc, char *argv[]) {
                   bgt->calculate_ancsplit_reverse(
                       intrees[i]->getInternalNode(j));
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
-                                 areanamemaprev, rm);
+                                 areanamemaprev, rm->get_int_dists_map());
               cout << endl;
             }
             if (states) {
@@ -600,7 +581,8 @@ int main(int argc, char *argv[]) {
                   intrees[i]->getInternalNode(j));
               totlike = calculate_vector_Superdouble_sum(rast);
               tt.summarizeAncState(intrees[i]->getInternalNode(j), rast,
-                                   areanamemaprev, rm);
+                                   areanamemaprev, rm->get_int_dists_map(),
+                                   rm->get_num_areas());
               cout << endl;
             }
             // exit(0);
@@ -620,14 +602,15 @@ int main(int argc, char *argv[]) {
               unordered_map<vector<int>, vector<AncSplit>> ras =
                   bgt->calculate_ancsplit_reverse(mrcanodeint[ancstates[j]]);
               tt.summarizeSplits(mrcanodeint[ancstates[j]], ras, areanamemaprev,
-                                 rm);
+                                 rm->get_int_dists_map());
             }
             if (states) {
               cout << "Ancestral states for: " << ancstates[j] << endl;
               vector<Superdouble> rast =
                   bgt->calculate_ancstate_reverse(mrcanodeint[ancstates[j]]);
               tt.summarizeAncState(mrcanodeint[ancstates[j]], rast,
-                                   areanamemaprev, rm);
+                                   areanamemaprev, rm->get_int_dists_map(),
+                                   rm->get_num_areas());
             }
           }
         }
@@ -664,7 +647,7 @@ int main(int argc, char *argv[]) {
           for (unsigned int k = 0; k < stochastic_time_dists.size(); k++) {
             cout << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(stochastic_time_dists[k]),
-                        areanamemaprev, rm)
+                        areanamemaprev, rm->get_int_dists_map())
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
                 rm->get_dists_int_map().at(stochastic_time_dists[k]),
@@ -686,7 +669,7 @@ int main(int argc, char *argv[]) {
                 << intrees[i]->getRoot()->getNewickOBL("stoch")
                 << tt.get_string_from_dist_int(
                        rm->get_dists_int_map().at(stochastic_time_dists[k]),
-                       areanamemaprev, rm)
+                       areanamemaprev, rm->get_int_dists_map())
                 << ";" << endl;
             outStochTimeFile.close();
             for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
@@ -702,12 +685,12 @@ int main(int argc, char *argv[]) {
             cout << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(
                             stochastic_number_from_tos[k][0]),
-                        areanamemaprev, rm)
+                        areanamemaprev, rm->get_int_dists_map())
                  << " -> "
                  << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(
                             stochastic_number_from_tos[k][1]),
-                        areanamemaprev, rm)
+                        areanamemaprev, rm->get_int_dists_map())
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
                 rm->get_dists_int_map().at(stochastic_number_from_tos[k][0]),
@@ -739,7 +722,6 @@ int main(int argc, char *argv[]) {
          * end stochastic mapping
          */
       }
-      // need to delete the biogeostuff
     }
     cout << "expm count: " << rm->get_expm_count() << endl;
   }

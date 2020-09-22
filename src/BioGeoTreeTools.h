@@ -25,16 +25,18 @@ class BioGeoTreeTools {
 public:
   std::shared_ptr<Tree> getTreeFromString(string treestring);
 
-  void summarizeSplits(std::shared_ptr<Node> node,
-                       unordered_map<vector<int>, vector<AncSplit>> &ans,
-                       unordered_map<int, string> &areanamemaprev,
-                       std::shared_ptr<RateModel> rm);
+  void
+  summarizeSplits(std::shared_ptr<Node> node,
+                  unordered_map<vector<int>, vector<AncSplit>> &ans,
+                  unordered_map<int, string> &areanamemaprev,
+                  const std::unordered_map<int, std::vector<int>> &distmap);
   void summarizeAncState(std::shared_ptr<Node> node, vector<Superdouble> &ans,
                          unordered_map<int, string> &areanamemaprev,
-                         std::shared_ptr<RateModel> rm);
-  string get_string_from_dist_int(int dist,
-                                  unordered_map<int, string> &areanamemaprev,
-                                  std::shared_ptr<RateModel> rm);
+                         const std::unordered_map<int, vector<int>> &distmap,
+                         int areasize);
+  string
+  get_string_from_dist_int(int dist, unordered_map<int, string> &areanamemaprev,
+                           const unordered_map<int, vector<int>> &distmap);
 };
 
 #endif /* PHYLOTREE_H_ */

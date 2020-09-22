@@ -13,7 +13,6 @@
 #ifndef RATEMATRIXUTILS_H_
 #define RATEMATRIXUTILS_H_
 #include "AncSplit.h"
-#include "RateModel.h"
 #include "superdouble.h"
 #include <memory>
 #include <vector>
@@ -45,23 +44,6 @@ int calculate_vector_int_sum_xor(vector<int> &in, vector<int> &in2);
 int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2);
 
 /*
-  given the rate model and the distribution, this should return all the
-  ancestral splits and should ONLY be used for calculating ancestral
-  state values. otherwise the one returning only the ints should be returned
- */
-vector<AncSplit> iter_ancsplits(std::shared_ptr<RateModel> rm, vector<int> &dist);
-
-/*
-  like the above function but without using AncSplits object, and should be
-  used for everything but ancestral state reconstruction.
-  output is the leftdists and rightdists which are the index of the distribution
-  in the ratemodel->getdists
- */
-void iter_ancsplits_just_int(std::shared_ptr<RateModel> rm, vector<int> &dist,
-                             vector<int> &leftdists, vector<int> &rightdists,
-                             double &weight);
-
-/*
   simple printing functions
  */
 void print_vector_int(vector<int> &in);
@@ -80,22 +62,5 @@ vector<vector<int>> generate_dists_from_num_max_areas(int totalnum,
  */
 vector<vector<vector<double>>>
 processRateMatrixConfigFile(string filename, int numareas, int nperiods);
-
-/*
-  all of these are for sparse matrix calculation and are used for the fortran
-  methods
-
-  WILL PROBABLY CHANGE WHEN MOVED TO C++ CLASSES FOR MATEXP
- */
-int get_size_for_coo(const lagrange_matrix_t &);
-void convert_matrix_to_coo_for_fortran(const lagrange_matrix_t &inmatrix,
-                                       int *ia, int *ja, double *a);
-void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
-                                              vector<int> &ia, vector<int> &ja,
-                                              vector<double> &a);
-void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
-                                              double t, double *H);
-vector<int> get_columns_for_sparse(vector<double> &, std::shared_ptr<RateModel>);
-vector<int> get_columns_for_sparse(vector<Superdouble> &, std::shared_ptr<RateModel>);
 
 #endif

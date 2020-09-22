@@ -14,10 +14,6 @@ enable_language(Fortran)
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
         src/AncSplit.h
-        src/BayesianBioGeo.cpp
-        src/BayesianBioGeo.h
-        src/BayesianBioGeoAllDispersal.cpp
-        src/BayesianBioGeoAllDispersal.h
         src/BioGeoTree.cpp
         src/BioGeoTree.h
         src/BioGeoTreeTools.cpp

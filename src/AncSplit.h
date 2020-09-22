@@ -20,18 +20,15 @@
 #include <vector>
 #include <memory>
 
-#include "RateModel.h"
 #include "superdouble.h"
 
 class AncSplit {
 private:
-  std::shared_ptr<RateModel> _model;
   double _weight;
   Superdouble _likelihood;
 
 public:
-  AncSplit(std::shared_ptr<RateModel> mod, int, int, int, Superdouble);
-  std::shared_ptr<RateModel> getModel();
+  AncSplit(int, int, int, Superdouble);
   double getWeight();
   Superdouble getLikelihood();
   void setLikelihood(Superdouble li);

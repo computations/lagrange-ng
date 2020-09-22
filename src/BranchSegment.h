@@ -9,9 +9,8 @@
 #define BRANCHSEGMENT_H_
 
 #include <vector>
+#include <memory>
 using namespace std;
-
-#include "RateModel.h"
 
 #include "superdouble.h"
 #include "vector_node_object.h"
@@ -23,19 +22,16 @@ class BranchSegment {
 private:
   double _duration;
   int _period;
-  std::shared_ptr<RateModel> _model;
   vector<int> _fossil_area_indices;
   int _start_dist;
 
 public:
   BranchSegment(double dur, int per);
-  void setModel(std::shared_ptr<RateModel> mod);
   void clearStartDist();
   double getDuration();
   int getPeriod();
   void set_start_dist_int(int d);
   int get_start_dist_int();
-  std::shared_ptr<RateModel> getModel();
   vector<int> getFossilAreas();
   void setFossilArea(int area);
 #ifdef BIGTREE

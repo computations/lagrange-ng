@@ -129,7 +129,6 @@ void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
   for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
     vector<BranchSegment> &tsegs = _tree->getNode(i)->getSegVector();
     for (unsigned int j = 0; j < tsegs.size(); j++) {
-      tsegs[j].setModel(mod);
       tsegs[j].distconds =
           make_shared<vector<Superdouble>>(_root_ratemodel->getDistsSize(), 0);
       tsegs[j].ancdistconds =
@@ -149,13 +148,6 @@ void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
 
 void BioGeoTree::update_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
-
-  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
-    vector<BranchSegment> &tsegs = _tree->getNode(i)->getSegVector();
-    for (unsigned int j = 0; j < tsegs.size(); j++) {
-      tsegs[j].setModel(mod);
-    }
-  }
 }
 
 void BioGeoTree::set_tip_conditionals(
@@ -163,9 +155,9 @@ void BioGeoTree::set_tip_conditionals(
   int numofleaves = _tree->getExternalNodeCount();
   for (int i = 0; i < numofleaves; i++) {
     vector<BranchSegment> &tsegs = _tree->getExternalNode(i)->getSegVector();
-    std::shared_ptr<RateModel> mod = tsegs[0].getModel();
     int ind1 = get_vector_int_index_from_multi_vector_int(
-        distrib_data[_tree->getExternalNode(i)->getName()], mod->getDists());
+        distrib_data[_tree->getExternalNode(i)->getName()],
+        _root_ratemodel->getDists());
     tsegs[0].distconds->at(ind1) = 1.0;
   }
 }
@@ -208,7 +200,6 @@ vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
       time_segments[i].distconds->at(j) = distconds.at(j);
     }
 
-    std::shared_ptr<RateModel> rm = time_segments[i].getModel();
     vector<Superdouble> v(_root_ratemodel->getDistsSize(), 0);
     vector<int> distrange;
 
@@ -244,12 +235,13 @@ vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
       if (sparse == false) {
         vector<vector<double>> p;
         if (_use_stored_matrices == false) {
-          p = rm->setup_fortran_P(time_segments[i].getPeriod(),
-                                  time_segments[i].getDuration(),
-                                  _store_p_matrices);
+          p = _root_ratemodel->setup_fortran_P(time_segments[i].getPeriod(),
+                                               time_segments[i].getDuration(),
+                                               _store_p_matrices);
         } else {
-          p = rm->stored_p_matrices[time_segments[i].getPeriod()]
-                                   [time_segments[i].getDuration()];
+          p = _root_ratemodel
+                  ->stored_p_matrices[time_segments[i].getPeriod()]
+                                     [time_segments[i].getDuration()];
         }
         for (unsigned int j = 0; j < distrange.size(); j++) {
           for (unsigned int k = 0; k < distconds.size(); k++) {
@@ -260,7 +252,7 @@ vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
         /*
           testing pthread version
         */
-        if (rm->get_nthreads() > 0) {
+        if (_root_ratemodel->get_nthreads() > 0) {
         } else {
           for (unsigned int j = 0; j < distrange.size(); j++) {
             bool inthere = false;
@@ -268,7 +260,7 @@ vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
               inthere = true;
             vector<double> p;
             if (inthere == true) {
-              p = rm->setup_sparse_single_column_P(
+              p = _root_ratemodel->setup_sparse_single_column_P(
                   time_segments[i].getPeriod(), time_segments[i].getDuration(),
                   distrange[j]);
             } else {
@@ -323,9 +315,9 @@ void BioGeoTree::ancdist_conditional_lh(std::shared_ptr<Node> node,
       vector<BranchSegment> &c1tsegs = c1->getSegVector();
       vector<BranchSegment> &c2tsegs = c2->getSegVector();
       vector<int> lcols =
-          get_columns_for_sparse(*c1tsegs[0].distconds, _root_ratemodel);
+          _root_ratemodel->get_columns_for_sparse(*c1tsegs[0].distconds);
       vector<int> rcols =
-          get_columns_for_sparse(*c2tsegs[0].distconds, _root_ratemodel);
+          _root_ratemodel->get_columns_for_sparse(*c2tsegs[0].distconds);
       _which_columns->clear();
       for (unsigned int i = 0; i < lcols.size(); i++) {
         if (lcols[i] == 1 || rcols[i] == 1) {
@@ -360,8 +352,8 @@ void BioGeoTree::ancdist_conditional_lh(std::shared_ptr<Node> node,
         vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
-          iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
-                                  rightdists, weight);
+          _root_ratemodel->iter_ancsplits_just_int(dists.at(i), leftdists,
+                                                   rightdists, weight);
           for (unsigned int j = 0; j < leftdists.size(); j++) {
             int ind1 = leftdists[j];
             int ind2 = rightdists[j];
@@ -490,8 +482,8 @@ void BioGeoTree::reverse(std::shared_ptr<Node> node) {
         vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
-          iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
-                                  rightdists, weight);
+          _root_ratemodel->iter_ancsplits_just_int(dists.at(i), leftdists,
+                                                   rightdists, weight);
           // root has i, curnode has left, sister of cur has right
           for (unsigned int j = 0; j < leftdists.size(); j++) {
             int ind1 = leftdists[j];
@@ -509,10 +501,9 @@ void BioGeoTree::reverse(std::shared_ptr<Node> node) {
       for (unsigned int j = 0; j < dists.size(); j++) {
         revconds->at(j) = 0;
       }
-      std::shared_ptr<RateModel> rm = tsegs[ts].getModel();
       vector<vector<double>> *p =
-          &rm->stored_p_matrices[tsegs[ts].getPeriod()]
-                                [tsegs[ts].getDuration()];
+          &_root_ratemodel->stored_p_matrices[tsegs[ts].getPeriod()]
+                                             [tsegs[ts].getDuration()];
       blaze::DynamicMatrix<double> *EN = nullptr;
       blaze::DynamicMatrix<double> *ER = nullptr;
       vector<Superdouble> tempmoveAer(tempA);
@@ -572,7 +563,7 @@ BioGeoTree::calculate_ancsplit_reverse(std::shared_ptr<Node> node) {
   unordered_map<vector<int>, vector<AncSplit>> ret;
   for (unsigned int j = 0; j < _root_ratemodel->getDistsSize(); j++) {
     vector<int> dist = _root_ratemodel->getDists().at(j);
-    vector<AncSplit> ans = iter_ancsplits(_root_ratemodel, dist);
+    vector<AncSplit> ans = _root_ratemodel->iter_ancsplits(dist);
     if (node->isExternal() == false) { // is not a tip
       std::shared_ptr<Node> c1 = node->getChild(0);
       std::shared_ptr<Node> c2 = node->getChild(1);
@@ -621,8 +612,8 @@ BioGeoTree::calculate_ancstate_reverse(std::shared_ptr<Node> node) {
         vector<vector<int>> *exdist = node->getExclDistVector();
         int cou = count(exdist->begin(), exdist->end(), dists.at(i));
         if (cou == 0) {
-          iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
-                                  rightdists, weight);
+          _root_ratemodel->iter_ancsplits_just_int(dists.at(i), leftdists,
+                                                   rightdists, weight);
           for (unsigned int j = 0; j < leftdists.size(); j++) {
             int ind1 = leftdists[j];
             int ind2 = rightdists[j];
@@ -744,8 +735,8 @@ BioGeoTree::calculate_reverse_stochmap(std::shared_ptr<Node> node, bool time) {
             vector<vector<int>> *exdist = node->getExclDistVector();
             int cou = count(exdist->begin(), exdist->end(), dists.at(i));
             if (cou == 0) {
-              iter_ancsplits_just_int(_root_ratemodel, dists.at(i), leftdists,
-                                      rightdists, weight);
+              _root_ratemodel->iter_ancsplits_just_int(dists.at(i), leftdists,
+                                                       rightdists, weight);
               for (unsigned int j = 0; j < leftdists.size(); j++) {
                 int ind1 = leftdists[j];
                 int ind2 = rightdists[j];

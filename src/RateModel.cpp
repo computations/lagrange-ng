@@ -21,6 +21,66 @@
 #include <pthread.h>
 using namespace std;
 
+/*
+  all of these are for sparse matrix calculation and are used for the fortran
+  methods
+
+  WILL PROBABLY CHANGE WHEN MOVED TO C++ CLASSES FOR MATEXP
+ */
+int get_size_for_coo(const lagrange_matrix_t &inmatrix) {
+  int count = 0;
+  for (size_t i = 0; i < inmatrix.columns(); ++i) {
+    for (auto it = inmatrix.begin(i); it != inmatrix.end(i); ++it) {
+      if (*it != 0) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+void convert_matrix_to_coo_for_fortran(const lagrange_matrix_t &inmatrix,
+                                       int *ia, int *ja, double *a) {
+  int count = 0;
+  for (unsigned int i = 0; i < inmatrix.rows(); i++) {
+    for (unsigned int j = 0; j < inmatrix.columns(); j++) {
+      if (inmatrix(i, j) != 0.0) {
+        ia[count] = i + 1;
+        ja[count] = j + 1;
+        a[count] = inmatrix(i, j);
+        count += 1;
+      }
+    }
+  }
+}
+
+void convert_matrix_to_coo_for_fortran_vector(const lagrange_matrix_t &inmatrix,
+                                              vector<int> &ia, vector<int> &ja,
+                                              vector<double> &a) {
+  int count = 0;
+  for (size_t i = 0; i < inmatrix.rows(); ++i) {
+    for (size_t j = 0; j < inmatrix.columns(); ++j) {
+      if (inmatrix(i, j) != 0.0) {
+        ia[count] = i + 1;
+        ja[count] = j + 1;
+        a[count] = inmatrix(i, j);
+        count += 1;
+      }
+    }
+  }
+}
+
+void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
+                                              double t, double *H) {
+  int count = 0;
+  for (unsigned int i = 0; i < inmatrix.size(); i++) {
+    for (unsigned int j = 0; j < inmatrix[i].size(); j++) {
+      H[i + (j * inmatrix.size())] = inmatrix[i][j] * t;
+      count += 1;
+    }
+  }
+}
+
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
     : _global_ext(ge), _area_count(na), _thread_count(0),
       _periods(pers), _expm_count{0}, _sparse(sp) {}
@@ -753,3 +813,76 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
 }
 
 size_t RateModel::get_expm_count() { return _expm_count; }
+
+vector<AncSplit> RateModel::iter_ancsplits(vector<int> &dist) {
+  vector<AncSplit> ans;
+  auto splits = get_iter_dist_splits(dist);
+  auto distsmap = get_dists_int_map();
+  if (splits.at(0).size() > 0) {
+    int nsplits = splits.at(0).size();
+    double weight = 1.0 / nsplits;
+    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
+      AncSplit an(distsmap[dist], distsmap[splits.at(0)[i]],
+                  distsmap[splits.at(1)[i]], weight);
+      ans.push_back(an);
+    }
+  }
+  return ans;
+}
+
+void RateModel::iter_ancsplits_just_int(vector<int> &dist,
+                                        vector<int> &leftdists,
+                                        vector<int> &rightdists,
+                                        double &weight) {
+  leftdists.clear();
+  rightdists.clear();
+  auto splits = get_iter_dist_splits(dist);
+  auto distsmap = get_dists_int_map();
+  size_t dists_size = splits[0].size() * splits[0][0].size();
+  leftdists.reserve(dists_size);
+  rightdists.reserve(dists_size);
+  if (splits.at(0).size() > 0) {
+    int nsplits = splits.at(0).size();
+    weight = 1.0 / nsplits;
+    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
+      leftdists.push_back(distsmap[splits.at(0)[i]]);
+      rightdists.push_back(distsmap[splits.at(1)[i]]);
+    }
+  }
+}
+
+vector<int> RateModel::get_columns_for_sparse(vector<double> &inc) {
+  vector<int> ret(inc.size(), 0);
+  for (unsigned int i = 0; i < inc.size(); i++) {
+    if (inc[i] > 0.0000000001) {
+      ret[i] = 1;
+      vector<int> dis = getDists().at(i);
+      for (unsigned int j = 0; j < inc.size(); j++) {
+        vector<int> dis2 = getDists().at(j);
+        int sum = calculate_vector_int_sum_xor(dis, dis2);
+        if (sum == 1) {
+          ret[j] = 1;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+vector<int> RateModel::get_columns_for_sparse(vector<Superdouble> &inc) {
+  vector<int> ret(inc.size(), 0);
+  for (unsigned int i = 0; i < inc.size(); i++) {
+    if (inc[i] > Superdouble(0.0000000001)) {
+      ret[i] = 1;
+      vector<int> dis = getDists().at(i);
+      for (unsigned int j = 0; j < inc.size(); j++) {
+        vector<int> dis2 = getDists().at(j);
+        int sum = calculate_vector_int_sum_xor(dis, dis2);
+        if (sum == 1) {
+          ret[j] = 1;
+        }
+      }
+    }
+  }
+  return ret;
+}

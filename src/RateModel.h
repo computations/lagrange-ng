@@ -97,10 +97,17 @@ public:
   bool _sparse;
   int get_num_areas();
   int get_num_periods();
+
+  vector<AncSplit> iter_ancsplits(vector<int> &dist);
+  void iter_ancsplits_just_int(vector<int> &dist, vector<int> &leftdists,
+                               vector<int> &rightdists, double &weight);
+
+  vector<int> get_columns_for_sparse(vector<double> &);
+  vector<int> get_columns_for_sparse(vector<Superdouble> &);
+
   /*
-   testing storing once optimization has occured
-   map of period and map of bl and p matrix
-   map<period,map<branch length,p matrix>>
+   testing storing once optimization has occured map of period and map of bl and
+   p matrix map<period,map<branch length,p matrix>>
    */
   unordered_map<int, map<double, vector<vector<double>>>> stored_p_matrices;
 
