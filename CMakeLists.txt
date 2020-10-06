@@ -84,6 +84,7 @@ target_link_libraries(lagrange-release-libs ${LAGRANGE_LIBS})
 target_link_libraries(lagrange lagrange-release-libs)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
         ${WARNING_FLAGS})
+target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES})
 
 target_compile_options(lagrange-debug-libs PRIVATE ${LAGRANGE_DEBUG_FLAGS}
         ${WARNING_FLAGS})
@@ -93,14 +94,16 @@ target_link_libraries(lagrange-debug-libs ${LAGRANGE_LIBS})
 target_link_libraries(lagrange-debug lagrange-debug-libs)
 target_compile_options(lagrange-debug PRIVATE ${LAGRANGE_DEBUG_FLAGS}
         ${WARNING_FLAGS})
+target_include_directories(lagrange-debug PRIVATE ${BLAZE_INCLUDES})
 
 target_compile_options(lagrange-profile-libs PRIVATE ${LAGRANGE_PROFILE_FLAGS}
         ${WARNING_FLAGS})
-target_include_directories(lagrange-profile PRIVATE ${BLAZE_INCLUDES})
+target_include_directories(lagrange-profile-libs PRIVATE ${BLAZE_INCLUDES})
 target_link_libraries(lagrange-profile-libs ${LAGRANGE_LIBS})
 
 target_link_libraries(lagrange-profile lagrange-profile-libs)
 target_compile_options(lagrange-profile PRIVATE ${LAGRANGE_PROFILE_FLAGS}
         ${WARNING_FLAGS})
+target_include_directories(lagrange-profile PRIVATE ${BLAZE_INCLUDES})
 
 add_subdirectory(tests)
