@@ -105,7 +105,7 @@ void BioGeoTreeTools::summarizeSplits(
     cout << "\t" << (*pit).second << "\t" << double(lnl / sum) << "\t("
          << double(none * lnl.getLn()) << ")" << endl;
   }
-  StringNodeObject disstring = "";
+  string disstring = "";
   int count = 0;
   for (unsigned int m = 0; m < bestldist.size(); m++) {
     if (bestldist[m] == 1) {
@@ -127,9 +127,7 @@ void BioGeoTreeTools::summarizeSplits(
         disstring += "_";
     }
   }
-  string spl = "split";
-  node->assocObject(spl, disstring);
-  // cout << -log(best) << " "<< best/sum << endl;
+  node->setSplitString(disstring);
 }
 
 void BioGeoTreeTools::summarizeAncState(
@@ -176,7 +174,7 @@ void BioGeoTreeTools::summarizeAncState(
     cout << "\t" << (*pit).second << "\t" << double(lnl / sum) << "\t("
          << double(none * lnl.getLn()) << ")" << endl;
   }
-  StringNodeObject disstring = "";
+  string disstring = "";
   int count = 0;
   for (unsigned int m = 0; m < bestancdist.size(); m++) {
     if (bestancdist[m] == 1) {
@@ -187,8 +185,7 @@ void BioGeoTreeTools::summarizeAncState(
         disstring += "_";
     }
   }
-  string spl = "state";
-  node->assocObject(spl, disstring);
+  node->setStateString(disstring);
   // cout << -log(best) << " "<< best/sum << endl;
 }
 
@@ -197,7 +194,7 @@ string BioGeoTreeTools::get_string_from_dist_int(
     const unordered_map<int, vector<int>> &distmap) {
   vector<int> bestancdist = distmap.at(dist);
 
-  StringNodeObject disstring = "";
+  string disstring = "";
   int count = 0;
   for (unsigned int m = 0; m < bestancdist.size(); m++) {
     if (bestancdist[m] == 1) {

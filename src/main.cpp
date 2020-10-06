@@ -592,7 +592,11 @@ int main(int argc, char *argv[]) {
            */
           outTreeKeyFile.open((treefile + ".bgkey.tre").c_str(), ios::app);
           // need to output numbers
-          outTreeKeyFile << intrees[i]->getRoot()->getNewick(true, "number")
+          outTreeKeyFile << intrees[i]->getRoot()->getNewick(
+                                true,
+                                [](const Node &n) -> string {
+                                  return std::to_string(n.getNumber());
+                                })
                          << ";" << endl;
           outTreeKeyFile.close();
         } else {
@@ -617,26 +621,24 @@ int main(int argc, char *argv[]) {
         if (splits) {
           outTreeFile.open((treefile + ".bgsplits.tre").c_str(), ios::app);
           // need to output object "split"
-          outTreeFile << intrees[i]->getRoot()->getNewick(true, "split") << ";"
-                      << endl;
+          outTreeFile << intrees[i]->getRoot()->getNewick(
+                             true,
+                             [](const Node &n) -> string {
+                               return n.getSplitString();
+                             })
+                      << ";" << endl;
           outTreeFile.close();
-          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();
-               j++) {
-            if (intrees[i]->getInternalNode(j)->getObject("split") != NULL)
-              delete intrees[i]->getInternalNode(j)->getObject("split");
-          }
         }
         if (states) {
           outTreeFile.open((treefile + ".bgstates.tre").c_str(), ios::app);
           // need to output object "state"
-          outTreeFile << intrees[i]->getRoot()->getNewick(true, "state") << ";"
-                      << endl;
+          outTreeFile << intrees[i]->getRoot()->getNewick(
+                             true,
+                             [](const Node &n) -> string {
+                               return n.getStateString();
+                             })
+                      << ";" << endl;
           outTreeFile.close();
-          for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();
-               j++) {
-            if (intrees[i]->getInternalNode(j)->getObject("state") != NULL)
-              delete intrees[i]->getInternalNode(j)->getObject("state");
-          }
         }
         /*
          * stochastic mapping calculations
@@ -659,23 +661,21 @@ int main(int argc, char *argv[]) {
               if (intrees[i]->getNode(j) != intrees[i]->getRoot()) {
                 vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
                     intrees[i]->getNode(j), true);
-                VectorNodeObject<double> stres(1);
-                stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
-                intrees[i]->getNode(j)->assocObject("stoch", stres);
+                double stres = calculate_vector_Superdouble_sum(rsm) / totlike;
+                intrees[i]->getNode(j)->setStochString(std::to_string(stres));
               }
             }
             // need to output object "stoch"
             outStochTimeFile
-                << intrees[i]->getRoot()->getNewickOBL("stoch")
+                << intrees[i]->getRoot()->getNewickLambda(
+                       [](const Node &n) -> string {
+                         return n.getStochString();
+                       })
                 << tt.get_string_from_dist_int(
                        rm->get_dists_int_map().at(stochastic_time_dists[k]),
                        areanamemaprev, rm->get_int_dists_map())
                 << ";" << endl;
             outStochTimeFile.close();
-            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
-              if (intrees[i]->getNode(j)->getObject("stoch") != NULL)
-                delete intrees[i]->getNode(j)->getObject("stoch");
-            }
           }
         }
         if (stochastic_number_from_tos.size() > 0) {
@@ -703,19 +703,17 @@ int main(int argc, char *argv[]) {
                 vector<Superdouble> rsm = bgt->calculate_reverse_stochmap(
                     intrees[i]->getNode(j), false);
                 // cout << calculate_vector_double_sum(rsm) / totlike << endl;
-                VectorNodeObject<double> stres(1);
-                stres[0] = calculate_vector_Superdouble_sum(rsm) / totlike;
-                intrees[i]->getNode(j)->assocObject("stoch", stres);
+                double stres = calculate_vector_Superdouble_sum(rsm) / totlike;
+                intrees[i]->getNode(j)->setStochString(std::to_string(stres));
               }
             }
             // need to output object "stoch"
-            outStochTimeFile << intrees[i]->getRoot()->getNewickOBL("stoch")
+            outStochTimeFile << intrees[i]->getRoot()->getNewickLambda(
+                                    [](const Node &n) -> string {
+                                      return n.getStochString();
+                                    })
                              << ";" << endl;
             outStochTimeFile.close();
-            for (unsigned int j = 0; j < intrees[i]->getNodeCount(); j++) {
-              if (intrees[i]->getNode(j)->getObject("stoch") != NULL)
-                delete intrees[i]->getNode(j)->getObject("stoch");
-            }
           }
         }
         /*

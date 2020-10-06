@@ -156,7 +156,6 @@ vector<Superdouble> BioGeoTree::conditionals(std::shared_ptr<Node> node,
   distconds = *time_segments[0].distconds;
 
   for (unsigned int i = 0; i < time_segments.size(); i++) {
-
     for (unsigned int j = 0; j < distconds.size(); j++) {
       time_segments[i].distconds->at(j) = distconds.at(j);
     }

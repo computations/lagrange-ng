@@ -6,8 +6,10 @@
  */
 
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -15,22 +17,20 @@ using namespace std;
 #include "string_node_object.h"
 
 Node::Node()
-    : _branch_length(0.0), _height(0.0), _number(0),
-      _label(""), _children{}, _label_map{}, _label_map_superdouble{},
-      _comment("") {}
+    : _branch_length(0.0), _height(0.0), _number(0), _label(""),
+      _comment(""), _children{}, _label_map_superdouble{} {}
 
 Node::Node(double bl, int innumber, const string &inname)
-    : _branch_length(bl), _height(0.0), _number(innumber),
-      _label(inname), _children{}, _label_map{}, _label_map_superdouble{},
-      _comment("") {}
+    : _branch_length(bl), _height(0.0), _number(innumber), _label(inname),
+      _comment(""), _children{}, _label_map_superdouble{} {}
 
 vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
-bool Node::isExternal() { return _children.size() < 1; }
+bool Node::isExternal() const { return _children.size() < 1; }
 
-bool Node::isInternal() { return _children.size() > 0; }
+bool Node::isInternal() const { return _children.size() > 0; }
 
-int Node::getNumber() { return _number; }
+int Node::getNumber() const { return _number; }
 
 void Node::setNumber(int n) { _number = n; }
 
@@ -71,7 +71,7 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
   return false;
 }
 
-std::shared_ptr<Node> Node::getChild(int c) { return _children.at(c); }
+std::shared_ptr<Node> Node::getChild(int c) const { return _children.at(c); }
 
 string Node::getName() { return _label; }
 
@@ -81,7 +81,7 @@ string Node::getComment() { return _comment; }
 
 void Node::setComment(const string &s) { _comment = s; }
 
-string Node::getNewick(bool branch_lengths) {
+string Node::getNewick(bool branch_lengths) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) {
@@ -103,17 +103,15 @@ string Node::getNewick(bool branch_lengths) {
   return newick_oss.str();
 }
 
-/*
- * should be returning the stringnodeobjects as the names for internal
- * nodes
- */
-string Node::getNewick(bool branch_lengths, const string &obj) {
+string
+Node::getNewick(bool branch_lengths,
+                const std::function<string(const Node &)> &node_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) {
       newick_oss << "(";
     }
-    newick_oss << getChild(i)->getNewick(branch_lengths, obj);
+    newick_oss << getChild(i)->getNewick(branch_lengths, node_lambda);
     if (branch_lengths == true) {
       newick_oss << ":" << getChild(i)->getBL();
     }
@@ -124,13 +122,7 @@ string Node::getNewick(bool branch_lengths, const string &obj) {
     }
   }
   if (isInternal() == true) {
-    if (obj == "number") {
-      newick_oss << _number;
-    } else {
-      if (getObject(obj) != NULL) {
-        newick_oss << (*((StringNodeObject *)(getObject(obj))));
-      }
-    }
+    newick_oss << node_lambda(*this);
   } else { // EXTERNAL
     if (_label.size() > 0)
       newick_oss << _label;
@@ -138,17 +130,16 @@ string Node::getNewick(bool branch_lengths, const string &obj) {
   return newick_oss.str();
 }
 
-/*
- * should return with branch lengths determined from the string obj
- */
-string Node::getNewickOBL(const string &obj) {
+string Node::getNewickLambda(
+    const std::function<string(const Node &)> &length_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) {
       newick_oss << "(";
     }
-    newick_oss << getChild(i)->getNewickOBL(obj);
-    newick_oss << (*(VectorNodeObject<double> *)getChild(i)->getObject(obj))[0];
+
+    newick_oss << getChild(i)->getNewickLambda(length_lambda);
+    newick_oss << length_lambda(*this);
 
     if (i == getChildCount() - 1) {
       newick_oss << ")";
@@ -162,12 +153,30 @@ string Node::getNewickOBL(const string &obj) {
   return newick_oss.str();
 }
 
-int Node::getChildCount() { return _children.size(); }
+int Node::getChildCount() const { return _children.size(); }
 
-void Node::assocObject(const string &name, const NodeObject &obj) {
-  // need to see why this doesn't work
-  _label_map[name] = obj.clone();
+void Node::setConditionalVector(const string &name,
+                                const vector<Superdouble> &v) {
+  assocDoubleVector(name, v);
 }
+
+void Node::setSplitString(const string &splitstring) {
+  _split_string = splitstring;
+}
+
+void Node::setStateString(const string &statestring) {
+  _state_string = statestring;
+}
+
+void Node::setStochString(const string &stochstring) {
+  _stoch_string = stochstring;
+}
+
+string Node::getStateString() const { return _state_string; }
+
+string Node::getSplitString() const { return _split_string; }
+
+string Node::getStochString() const { return _stoch_string; }
 
 void Node::assocDoubleVector(const string &name,
                              const vector<Superdouble> &obj) {
@@ -197,22 +206,6 @@ void Node::initExclDistVector() { _excluded_dists = new vector<vector<int>>(); }
 vector<vector<int>> *Node::getExclDistVector() { return _excluded_dists; }
 
 void Node::deleteExclDistVector() { delete _excluded_dists; }
-
-/*
- * use the string ones like this
- * StringNodeObject sno("...a node object");
- * tree.getRoot()->assocObject("test",sno);
- * cout << *((StringNodeObject*) (tree.getRoot()->getObject("test"))) << endl;
- *
- * and the vector like
- * VectorNodeObject<int> vno;
- * vno.push_back(1);vno.push_back(2);
- * tree.getRoot()->assocObject("testvno",vno);
- * cout << ((VectorNodeObject<int> *)
- * (tree.getRoot()->getObject("testvno")))->at(0) << endl;
- */
-
-NodeObject *Node::getObject(const string &name) { return _label_map[name]; }
 
 double Node::getMaxHeightRecursive() const {
   double max_height = 0.0;
