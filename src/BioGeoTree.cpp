@@ -60,9 +60,6 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
 
       if (_periods.size() > 0) {
         double s = 0;
-        if (_periods.size() == 1) {
-          s = _periods[0];
-        }
         for (size_t j = 0; j < _periods.size(); j++) {
           s += _periods[j];
           if (t < s) {
@@ -83,41 +80,6 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
       }
     }
   }
-
-  /*
-  for (int i = 0; i < _tree->getNodeCount(); i++) {
-    if (_tree->getNode(i)->hasParent()) {
-      double anc = _tree->getNode(i)->getParent()->getHeight();
-      double des = _tree->getNode(i)->getHeight();
-      // assert anc > des
-      double t = des;
-      if (_periods.size() > 0) {
-        for (unsigned int j = 0; j < _periods.size(); j++) {
-          double s = 0;
-          if (_periods.size() == 1)
-            s = _periods[0];
-          for (unsigned int k = 0; k < j + 1; k++) {
-            s += _periods[k];
-          }
-          if (t < s) {
-            double duration = min(s - t, anc - t);
-            if (duration > 0) {
-              BranchSegment tseg = BranchSegment(duration, j);
-              _tree->getNode(i)->getSegVector()->push_back(tseg);
-            }
-            t += duration; // TODO: make sure that this is all working
-          }
-          if (t > anc || _periods[j] > t) {
-            break;
-          }
-        }
-      } else {
-        BranchSegment tseg = BranchSegment(_tree->getNode(i)->getBL(), 0);
-        _tree->getNode(i)->getSegVector()->push_back(tseg);
-      }
-    }
-  }
-  */
 }
 
 void BioGeoTree::set_store_p_matrices(bool i) { _store_p_matrices = i; }
@@ -135,15 +97,14 @@ void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
           make_shared<vector<Superdouble>>(_root_ratemodel->getDistsSize(), 0);
     }
   }
-  vector<Superdouble> *distconds =
-      new vector<Superdouble>(_root_ratemodel->getDistsSize(), 0);
-  _tree->getRoot()->assocDoubleVector(_dist_conditionals_key, *distconds);
-  delete distconds;
-  vector<Superdouble> *ancdistconds =
-      new vector<Superdouble>(_root_ratemodel->getDistsSize(), 0);
-  _tree->getRoot()->assocDoubleVector(_anc_dist_conditionals_key,
-                                      *ancdistconds);
-  delete ancdistconds;
+
+  _tree->getRoot()->assocDoubleVector(
+      _dist_conditionals_key,
+      std::vector<Superdouble>(_root_ratemodel->getDistsSize(), 0));
+
+  _tree->getRoot()->assocDoubleVector(
+      _anc_dist_conditionals_key,
+      std::vector<Superdouble>(_root_ratemodel->getDistsSize(), 0));
 }
 
 void BioGeoTree::update_default_model(std::shared_ptr<RateModel> mod) {

@@ -19,26 +19,16 @@ Node::Node()
       _label(""), _children{}, _label_map{}, _label_map_superdouble{},
       _comment("") {}
 
-Node::Node(double bl, int innumber, string inname)
+Node::Node(double bl, int innumber, const string &inname)
     : _branch_length(bl), _height(0.0), _number(innumber),
       _label(inname), _children{}, _label_map{}, _label_map_superdouble{},
       _comment("") {}
 
 vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
-bool Node::isExternal() {
-  if (_children.size() < 1)
-    return true;
-  else
-    return false;
-}
+bool Node::isExternal() { return _children.size() < 1; }
 
-bool Node::isInternal() {
-  if (_children.size() > 0)
-    return true;
-  else
-    return false;
-}
+bool Node::isInternal() { return _children.size() > 0; }
 
 int Node::getNumber() { return _number; }
 
@@ -65,9 +55,8 @@ bool Node::addChild(std::shared_ptr<Node> c) {
   if (hasChild(c) == false) {
     _children.push_back(c);
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 bool Node::removeChild(std::shared_ptr<Node> c) {
@@ -75,119 +64,113 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
     for (auto it = _children.begin(); it != _children.end(); it++) {
       if (*it == c) {
         _children.erase(it);
+        return true;
       }
     }
-    return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 std::shared_ptr<Node> Node::getChild(int c) { return _children.at(c); }
 
 string Node::getName() { return _label; }
 
-void Node::setName(string s) { _label = s; }
+void Node::setName(const string &s) { _label = s; }
 
 string Node::getComment() { return _comment; }
 
-void Node::setComment(string s) { _comment = s; }
+void Node::setComment(const string &s) { _comment = s; }
 
-string Node::getNewick(bool bl) {
-  string ret = "";
+string Node::getNewick(bool branch_lengths) {
+  std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0)
-      ret = ret + "(";
-    ret = ret + getChild(i)->getNewick(bl);
-    if (bl == true) {
-      std::ostringstream o;
-      o << getChild(i)->getBL();
-      ret = ret + ":" + o.str();
+    if (i == 0) {
+      newick_oss << "(";
     }
-    if (i == getChildCount() - 1)
-      ret = ret + ")";
-    else
-      ret = ret + ",";
+    newick_oss << getChild(i)->getNewick(branch_lengths);
+    if (branch_lengths == true) {
+      newick_oss << ":" << getChild(i)->getBL();
+    }
+    if (i == getChildCount() - 1) {
+      newick_oss << ")";
+    } else {
+      newick_oss << ",";
+    }
   }
-  if (_label.size() > 0)
-    ret = ret + _label;
-  return ret;
+  if (_label.size() > 0) {
+    newick_oss << _label;
+  }
+  return newick_oss.str();
 }
 
 /*
  * should be returning the stringnodeobjects as the names for internal
  * nodes
  */
-string Node::getNewick(bool bl, string obj) {
-  string ret = "";
+string Node::getNewick(bool branch_lengths, const string &obj) {
+  std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0)
-      ret = ret + "(";
-    ret = ret + getChild(i)->getNewick(bl, obj);
-    if (bl == true) {
-      std::ostringstream o;
-      o << getChild(i)->getBL();
-      ret = ret + ":" + o.str();
+    if (i == 0) {
+      newick_oss << "(";
     }
-    if (i == getChildCount() - 1)
-      ret = ret + ")";
-    else
-      ret = ret + ",";
+    newick_oss << getChild(i)->getNewick(branch_lengths, obj);
+    if (branch_lengths == true) {
+      newick_oss << ":" << getChild(i)->getBL();
+    }
+    if (i == getChildCount() - 1) {
+      newick_oss << ")";
+    } else {
+      newick_oss << ",";
+    }
   }
   if (isInternal() == true) {
     if (obj == "number") {
-      std::ostringstream o;
-      o << _number;
-      ret = ret + o.str();
+      newick_oss << _number;
     } else {
       if (getObject(obj) != NULL) {
-        std::ostringstream o;
-        o << (*((StringNodeObject *)(getObject(obj))));
-        ret = ret + o.str();
+        newick_oss << (*((StringNodeObject *)(getObject(obj))));
       }
     }
   } else { // EXTERNAL
     if (_label.size() > 0)
-      ret = ret + _label;
+      newick_oss << _label;
   }
-  return ret;
+  return newick_oss.str();
 }
 
 /*
  * should return with branch lengths determined from the string obj
  */
-string Node::getNewickOBL(string obj) {
-  string ret = "";
+string Node::getNewickOBL(const string &obj) {
+  std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0)
-      ret = ret + "(";
-    ret = ret + getChild(i)->getNewickOBL(obj);
-    std::ostringstream o;
-    double bl = (*(VectorNodeObject<double> *)getChild(i)->getObject(obj))[0];
-    o << bl;
-    ret = ret + ":" + o.str();
+    if (i == 0) {
+      newick_oss << "(";
+    }
+    newick_oss << getChild(i)->getNewickOBL(obj);
+    newick_oss << (*(VectorNodeObject<double> *)getChild(i)->getObject(obj))[0];
 
-    if (i == getChildCount() - 1)
-      ret = ret + ")";
-    else
-      ret = ret + ",";
+    if (i == getChildCount() - 1) {
+      newick_oss << ")";
+    } else {
+      newick_oss << ",";
+    }
   }
-  if (_label.size() > 0)
-    ret = ret + _label;
-  return ret;
+  if (_label.size() > 0) {
+    newick_oss << _label;
+  }
+  return newick_oss.str();
 }
 
 int Node::getChildCount() { return _children.size(); }
 
-void Node::assocObject(string name, NodeObject &obj) {
+void Node::assocObject(const string &name, const NodeObject &obj) {
   // need to see why this doesn't work
   _label_map[name] = obj.clone();
 }
 
-void Node::assocDoubleVector(string name, vector<Superdouble> &obj) {
-  if (_label_map_superdouble.count(name) > 0) {
-    _label_map_superdouble.erase(name);
-  }
+void Node::assocDoubleVector(const string &name,
+                             const vector<Superdouble> &obj) {
   vector<Superdouble> tvec(obj.size());
   for (unsigned int i = 0; i < obj.size(); i++) {
     tvec[i] = obj[i];
@@ -195,11 +178,11 @@ void Node::assocDoubleVector(string name, vector<Superdouble> &obj) {
   _label_map_superdouble[name] = tvec;
 }
 
-vector<Superdouble> *Node::getDoubleVector(string name) {
+vector<Superdouble> *Node::getDoubleVector(const string &name) {
   return &_label_map_superdouble[name];
 }
 
-void Node::deleteDoubleVector(string name) {
+void Node::deleteDoubleVector(const string &name) {
   if (_label_map_superdouble.count(name) > 0) {
     _label_map_superdouble.erase(name);
   }
@@ -229,7 +212,7 @@ void Node::deleteExclDistVector() { delete _excluded_dists; }
  * (tree.getRoot()->getObject("testvno")))->at(0) << endl;
  */
 
-NodeObject *Node::getObject(string name) { return _label_map[name]; }
+NodeObject *Node::getObject(const string &name) { return _label_map[name]; }
 
 double Node::getMaxHeightRecursive() const {
   double max_height = 0.0;

@@ -32,7 +32,7 @@ private:
 
 public:
   Node();
-  Node(double bl, int number, string name);
+  Node(double bl, int number, const string &name);
 
   vector<std::shared_ptr<Node>> getChildren();
   bool isExternal();
@@ -49,22 +49,22 @@ public:
   std::shared_ptr<Node> getChild(int c);
   string getName();
   string getComment();
-  void setName(string s);
-  void setComment(string s);
+  void setName(const string &s);
+  void setComment(const string &s);
   string getNewick(bool bl);
-  string getNewickOBL(string obj);
-  string getNewick(bool bl, string obj);
+  string getNewickOBL(const string &obj);
+  string getNewick(bool bl, const string &obj);
   int getChildCount();
-  void assocObject(string name, NodeObject &obj);
-  void assocDoubleVector(string name, vector<Superdouble> &obj);
-  vector<Superdouble> *getDoubleVector(string name);
-  void deleteDoubleVector(string name);
+  void assocObject(const string &name, const NodeObject &obj);
+  void assocDoubleVector(const string &name, const vector<Superdouble> &obj);
+  vector<Superdouble> *getDoubleVector(const string &name);
+  void deleteDoubleVector(const string &name);
   void initSegVector();
   vector<BranchSegment> &getSegVector();
   void initExclDistVector();
   vector<vector<int>> *getExclDistVector();
   void deleteExclDistVector();
-  NodeObject *getObject(string name);
+  NodeObject *getObject(const string &name);
   bool findNode(std::shared_ptr<Node> n);
 
   double getMaxHeightRecursive() const;
