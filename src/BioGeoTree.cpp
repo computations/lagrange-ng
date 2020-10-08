@@ -253,15 +253,6 @@ void BioGeoTree::ancdist_conditional_lh(std::shared_ptr<Node> node,
   if (node->isExternal() == false) { // is not a tip
     std::shared_ptr<Node> c1 = node->getChild(0);
     std::shared_ptr<Node> c2 = node->getChild(1);
-    /*
-    RateModel *model;
-    if (node.hasParent() == true) {
-      vector<BranchSegment> *tsegs = node.getSegVector();
-      model = tsegs->at(0).getModel();
-    } else {
-      model = _root_ratemodel;
-    }
-    */
     ancdist_conditional_lh(c1, marginal);
     ancdist_conditional_lh(c2, marginal);
     bool sparse = _root_ratemodel->_sparse;

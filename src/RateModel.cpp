@@ -153,17 +153,13 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
     _dists.push_back(empt);
 
     map<int, vector<int>> a = iterate_all_bv(_area_count);
-    map<int, vector<int>>::iterator pos;
-    for (pos = a.begin(); pos != a.end(); ++pos) {
+    for (auto pos = a.begin(); pos != a.end(); ++pos) {
       int f = pos->first;
-      bool inh = false;
       for (unsigned int j = 0; j < indists.size(); j++) {
         if (indists[j] == a[f]) {
-          inh = true;
+          _dists.push_back(a[f]);
+          break;
         }
-      }
-      if (inh == false) {
-        _dists.push_back(a[f]);
       }
     }
   }
