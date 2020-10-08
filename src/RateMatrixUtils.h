@@ -32,7 +32,7 @@ using namespace std;
 double calculate_vector_mpfr_class_double_sum(vector<mpfr_class> &in);
 #endif
 double calculate_vector_double_sum(vector<double> &in);
-Superdouble calculate_vector_Superdouble_sum(vector<Superdouble> &in);
+Superdouble calculate_vector_Superdouble_sum(const vector<Superdouble> &in);
 int calculate_vector_int_sum(const vector<int> &in);
 int get_vector_int_index_from_multi_vector_int(const vector<int> &in,
                                                const vector<vector<int>> &in2);

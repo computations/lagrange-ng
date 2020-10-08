@@ -27,10 +27,12 @@ private:
   string _split_string;
   string _state_string;
   string _stoch_string;
+  vector<Superdouble> _conditionals;
+  vector<Superdouble> _ancestral_conditionals;
+  vector<Superdouble> _reverse_bits;
   vector<std::shared_ptr<Node>> _children;
-  map<string, vector<Superdouble>> _label_map_superdouble;
   vector<BranchSegment> _branch_segments;
-  vector<vector<int>> *_excluded_dists;
+  std::shared_ptr<vector<vector<int>>> _excluded_dists;
 
 public:
   Node();
@@ -66,7 +68,14 @@ public:
 
   int getChildCount() const;
 
-  void setConditionalVector(const string &name, const vector<Superdouble> &v);
+  void setConditionalVector(const vector<Superdouble> &v);
+  void setAncestralConditionalVector(const vector<Superdouble> &v);
+  void setReverseBits(const vector<Superdouble> &v);
+
+  const vector<Superdouble> &getConditionalVector() const;
+  const vector<Superdouble> &getAncestralConditionalVector() const;
+  const vector<Superdouble> &getReverseBits() const;
+
   void setSplitString(const string &splitstring);
   void setStateString(const string &splitstring);
   void setStochString(const string &stochstring);
@@ -74,16 +83,11 @@ public:
   string getStateString() const;
   string getStochString() const;
 
-  void assocDoubleVector(const string &name, const vector<Superdouble> &obj);
-  vector<Superdouble> *getDoubleVector(const string &name);
-  void deleteDoubleVector(const string &name);
-
   void initSegVector();
   vector<BranchSegment> &getSegVector();
 
   void initExclDistVector();
-  vector<vector<int>> *getExclDistVector();
-  void deleteExclDistVector();
+  std::shared_ptr<vector<vector<int>>> getExclDistVector() ;
 
   bool findNode(std::shared_ptr<Node> n);
 

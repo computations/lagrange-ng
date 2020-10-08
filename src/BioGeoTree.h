@@ -81,7 +81,6 @@ public:
   unordered_map<vector<int>, vector<AncSplit>>
   calculate_ancsplit_reverse(std::shared_ptr<Node> node);
   vector<Superdouble> calculate_ancstate_reverse(std::shared_ptr<Node> node);
-  ~BioGeoTree();
   // need to override these at some point
   BioGeoTree(const BioGeoTree &L); // copy constructor
   BioGeoTree &operator=(const BioGeoTree &L);

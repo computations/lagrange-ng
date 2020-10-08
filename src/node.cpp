@@ -5,9 +5,11 @@
  *      Author: smitty
  */
 
+#include "superdouble.h"
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -18,11 +20,11 @@ using namespace std;
 
 Node::Node()
     : _branch_length(0.0), _height(0.0), _number(0), _label(""),
-      _comment(""), _children{}, _label_map_superdouble{} {}
+      _comment(""), _children{} {}
 
 Node::Node(double bl, int innumber, const string &inname)
     : _branch_length(bl), _height(0.0), _number(innumber), _label(inname),
-      _comment(""), _children{}, _label_map_superdouble{} {}
+      _comment(""), _children{} {}
 
 vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
@@ -155,9 +157,28 @@ string Node::getNewickLambda(
 
 int Node::getChildCount() const { return _children.size(); }
 
-void Node::setConditionalVector(const string &name,
-                                const vector<Superdouble> &v) {
-  assocDoubleVector(name, v);
+void Node::setConditionalVector(const vector<Superdouble> &v) {
+  _conditionals = v;
+}
+
+void Node::setAncestralConditionalVector(const vector<Superdouble> &v) {
+  _ancestral_conditionals = v;
+}
+
+void Node::setReverseBits(const vector<Superdouble> &v) {
+  _reverse_bits = v;
+}
+
+const vector<Superdouble> &Node::getConditionalVector() const {
+  return _conditionals;
+}
+
+const vector<Superdouble> &Node::getAncestralConditionalVector() const {
+  return _ancestral_conditionals;
+}
+
+const vector<Superdouble> &Node::getReverseBits() const {
+  return _reverse_bits;
 }
 
 void Node::setSplitString(const string &splitstring) {
@@ -178,34 +199,17 @@ string Node::getSplitString() const { return _split_string; }
 
 string Node::getStochString() const { return _stoch_string; }
 
-void Node::assocDoubleVector(const string &name,
-                             const vector<Superdouble> &obj) {
-  vector<Superdouble> tvec(obj.size());
-  for (unsigned int i = 0; i < obj.size(); i++) {
-    tvec[i] = obj[i];
-  }
-  _label_map_superdouble[name] = tvec;
-}
-
-vector<Superdouble> *Node::getDoubleVector(const string &name) {
-  return &_label_map_superdouble[name];
-}
-
-void Node::deleteDoubleVector(const string &name) {
-  if (_label_map_superdouble.count(name) > 0) {
-    _label_map_superdouble.erase(name);
-  }
-}
-
 void Node::initSegVector() { _branch_segments = vector<BranchSegment>(); }
 
 vector<BranchSegment> &Node::getSegVector() { return _branch_segments; }
 
-void Node::initExclDistVector() { _excluded_dists = new vector<vector<int>>(); }
+void Node::initExclDistVector() {
+  _excluded_dists = std::make_shared<vector<vector<int>>>();
+}
 
-vector<vector<int>> *Node::getExclDistVector() { return _excluded_dists; }
-
-void Node::deleteExclDistVector() { delete _excluded_dists; }
+std::shared_ptr<vector<vector<int>>> Node::getExclDistVector() {
+  return _excluded_dists;
+}
 
 double Node::getMaxHeightRecursive() const {
   double max_height = 0.0;

@@ -38,13 +38,11 @@ double calculate_vector_double_sum(vector<double> &in) {
   return sum;
 }
 
-Superdouble calculate_vector_Superdouble_sum(vector<Superdouble> &in) {
+Superdouble calculate_vector_Superdouble_sum(const vector<Superdouble> &in) {
   Superdouble sum = 0;
   for (unsigned int i = 0; i < in.size(); i++) {
     sum += in[i];
-    // cout << in[i] << " sum:" << sum << endl;
   }
-  // cout << "endsum:" << sum << endl;
   return sum;
 }
 
