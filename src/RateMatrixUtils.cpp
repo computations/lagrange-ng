@@ -5,6 +5,7 @@
  * Author: smitty
  */
 
+#include "Common.h"
 #include "RateMatrixUtils.h"
 #include "Utils.h"
 
@@ -79,6 +80,7 @@ int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2) {
 
 int get_vector_int_index_from_multi_vector_int(const vector<int> &in,
                                                const vector<vector<int>> &in2) {
+
   int ret = 0;
   for (unsigned int i = 0; i < in2.size(); i++) {
     size_t sum = 0;
@@ -104,23 +106,19 @@ int get_vector_int_index_from_multi_vector_int(const vector<int> &in,
                            +" is not included in the possible distributions"};
 }
 
-vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
-                                                      int numareas) {
-  vector<vector<int>> dists;
-  map<int, vector<int>> a = iterate_all_bv(totalnumareas);
-  // globalextinction
-  vector<int> empt;
-  for (unsigned int i = 0; i < a[0].size(); i++) {
-    empt.push_back(0);
-  }
-  dists.push_back(empt);
+vector<lagrange_dist_t> generate_dists_from_num_max_areas(int totalnumareas,
+                                                          int numareas) {
+  vector<lagrange_dist_t> dists;
+  map<int, lagrange_dist_t> a = iterate_all_bv(totalnumareas);
 
-  map<int, vector<int>>::iterator pos;
-  for (pos = a.begin(); pos != a.end(); ++pos) {
+  // globalextinction
+  dists.push_back(0);
+
+  for (auto pos = a.begin(); pos != a.end(); ++pos) {
     int f = pos->first;
-    // if(calculate_vector_int_sum(&a[f]) <= numareas)
-    if (accumulate(a[f].begin(), a[f].end(), 0) <= numareas)
+    if (lagrange_popcount(a[f]) <= static_cast<size_t>(numareas)) {
       dists.push_back(a[f]);
+    }
   }
   return dists;
 }
@@ -128,6 +126,13 @@ vector<vector<int>> generate_dists_from_num_max_areas(int totalnumareas,
 void print_vector_int(vector<int> &in) {
   for (unsigned int i = 0; i < in.size(); i++) {
     cout << in[i] << " ";
+  }
+  cout << endl;
+}
+
+void print_lagrange_dist(lagrange_dist_t in, size_t area_size) {
+  for (unsigned int i = area_size - 1; i >= 0; i--) {
+    cout << lagrange_bextr(in, i) << " ";
   }
   cout << endl;
 }

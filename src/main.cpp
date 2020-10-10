@@ -52,9 +52,9 @@ int main(int argc, char *argv[]) {
     int maxareas = 0;
     vector<double> periods;
     unordered_map<string, vector<string>> mrcas;
-    unordered_map<string, vector<int>> fixnodewithmrca;
-    vector<vector<int>> excludedists;
-    vector<vector<int>> includedists;
+    unordered_map<string, lagrange_dist_t> fixnodewithmrca;
+    vector<lagrange_dist_t> excludedists;
+    vector<lagrange_dist_t> includedists;
     vector<string> areanames;
     unordered_map<string, int> areanamemap;
     unordered_map<int, string> areanamemaprev;
@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
     /*
      * for stochastic mapping
      */
-    vector<vector<vector<int>>> stochastic_number_from_tos;
-    vector<vector<int>> stochastic_time_dists;
+    vector<vector<lagrange_dist_t>> stochastic_number_from_tos;
+    vector<lagrange_dist_t> stochastic_time_dists;
 
     // estimating the dispersal mask
     bool estimate_dispersal_mask = false;
@@ -130,7 +130,8 @@ int main(int argc, char *argv[]) {
               char c = (searchtokens[1].c_str())[j];
               dist.push_back(atoi(&c));
             }
-            fixnodewithmrca[searchtokens[0]] = dist;
+            fixnodewithmrca[searchtokens[0]] =
+                convert_vector_to_lagrange_dist(dist);
           } else if (!strcmp(tokens[0].c_str(), "excludedists")) {
             vector<string> searchtokens;
             Tokenize(tokens[1], searchtokens, ",     ");
@@ -143,7 +144,7 @@ int main(int argc, char *argv[]) {
                 char c = (searchtokens[j].c_str())[k];
                 dist.push_back(atoi(&c));
               }
-              excludedists.push_back(dist);
+              excludedists.push_back(convert_vector_to_lagrange_dist(dist));
             }
           } else if (!strcmp(tokens[0].c_str(), "includedists")) {
             vector<string> searchtokens;
@@ -160,7 +161,7 @@ int main(int argc, char *argv[]) {
                   char c = (searchtokens[j].c_str())[k];
                   dist.push_back(atoi(&c));
                 }
-                includedists.push_back(dist);
+                includedists.push_back(convert_vector_to_lagrange_dist(dist));
               }
             }
           } else if (!strcmp(tokens[0].c_str(), "areacolors")) {
@@ -245,7 +246,8 @@ int main(int argc, char *argv[]) {
                 char c = (searchtokens[j].c_str())[k];
                 dist.push_back(atoi(&c));
               }
-              stochastic_time_dists.push_back(dist);
+              stochastic_time_dists.push_back(
+                  convert_vector_to_lagrange_dist(dist));
             }
           } else if (!strcmp(tokens[0].c_str(), "stochastic_number")) {
             states = true; // requires ancestral states
@@ -263,7 +265,7 @@ int main(int argc, char *argv[]) {
                       "in the form from_to"
                    << endl;
             } else {
-              vector<vector<int>> dists;
+              vector<lagrange_dist_t> dists;
               vector<int> dist0;
               for (unsigned int k = 0; k < searchtokens[0].size(); k++) {
                 char c = (searchtokens[0].c_str())[k];
@@ -274,8 +276,8 @@ int main(int argc, char *argv[]) {
                 char c = (searchtokens[1].c_str())[k];
                 dist1.push_back(atoi(&c));
               }
-              dists.push_back(dist0);
-              dists.push_back(dist1);
+              dists.push_back(convert_vector_to_lagrange_dist(dist0));
+              dists.push_back(convert_vector_to_lagrange_dist(dist1));
               stochastic_number_from_tos.push_back(dists);
             }
           } else if (!strcmp(tokens[0].c_str(), "dispersal")) {
@@ -302,7 +304,7 @@ int main(int argc, char *argv[]) {
     vector<std::shared_ptr<Tree>> intrees;
     ir.readMultipleTreeFile(treefile, intrees);
     cout << "reading data..." << endl;
-    unordered_map<string, vector<int>> data =
+    unordered_map<string, lagrange_dist_t> data =
         ir.readStandardInputData(datafile);
     cout << "checking data..." << endl;
     ir.checkData(data, intrees);
@@ -423,23 +425,17 @@ int main(int argc, char *argv[]) {
       /*
        * set fixed nodes
        */
-      unordered_map<string, vector<int>>::iterator fnit;
-      for (fnit = fixnodewithmrca.begin(); fnit != fixnodewithmrca.end();
+      for (auto fnit = fixnodewithmrca.begin(); fnit != fixnodewithmrca.end();
            fnit++) {
-        vector<int> dista = (*fnit).second;
+        lagrange_dist_t dista = (*fnit).second;
         for (unsigned int k = 0; k < rm->getDistsSize(); k++) {
-          bool isnot = true;
-          for (unsigned int j = 0; j < dista.size(); j++) {
-            if (dista[j] != rm->getDists().at(k)[j])
-              isnot = false;
-          }
-          if (isnot == false) {
+          if (dista != rm->getDists()[k]) {
             bgt->set_excluded_dist(rm->getDists().at(k),
                                    mrcanodeint[(*fnit).first]);
           }
         }
         cout << "fixing " << (*fnit).first << " = ";
-        print_vector_int((*fnit).second);
+        print_lagrange_dist((*fnit).second, rm->get_num_areas());
       }
 
       cout << "setting default model..." << endl;
@@ -567,11 +563,12 @@ int main(int argc, char *argv[]) {
             if (splits) {
               cout << "Ancestral splits for:\t"
                    << intrees[i]->getInternalNode(j)->getNumber() << endl;
-              unordered_map<vector<int>, vector<AncSplit>> ras =
+              unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
                   bgt->calculate_ancsplit_reverse(
                       intrees[i]->getInternalNode(j));
               tt.summarizeSplits(intrees[i]->getInternalNode(j), ras,
-                                 areanamemaprev, rm->get_int_dists_map());
+                                 areanamemaprev, rm->get_int_dists_map(),
+                                 rm->get_num_areas());
               cout << endl;
             }
             if (states) {
@@ -603,10 +600,10 @@ int main(int argc, char *argv[]) {
           for (unsigned int j = 0; j < ancstates.size(); j++) {
             if (splits) {
               cout << "Ancestral splits for: " << ancstates[j] << endl;
-              unordered_map<vector<int>, vector<AncSplit>> ras =
+              unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
                   bgt->calculate_ancsplit_reverse(mrcanodeint[ancstates[j]]);
               tt.summarizeSplits(mrcanodeint[ancstates[j]], ras, areanamemaprev,
-                                 rm->get_int_dists_map());
+                                 rm->get_int_dists_map(), rm->get_num_areas());
             }
             if (states) {
               cout << "Ancestral states for: " << ancstates[j] << endl;
@@ -649,7 +646,8 @@ int main(int argc, char *argv[]) {
           for (unsigned int k = 0; k < stochastic_time_dists.size(); k++) {
             cout << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(stochastic_time_dists[k]),
-                        areanamemaprev, rm->get_int_dists_map())
+                        areanamemaprev, rm->get_int_dists_map(),
+                        rm->get_num_areas())
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
                 rm->get_dists_int_map().at(stochastic_time_dists[k]),
@@ -673,7 +671,8 @@ int main(int argc, char *argv[]) {
                        })
                 << tt.get_string_from_dist_int(
                        rm->get_dists_int_map().at(stochastic_time_dists[k]),
-                       areanamemaprev, rm->get_int_dists_map())
+                       areanamemaprev, rm->get_int_dists_map(),
+                       rm->get_num_areas())
                 << ";" << endl;
             outStochTimeFile.close();
           }
@@ -685,12 +684,14 @@ int main(int argc, char *argv[]) {
             cout << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(
                             stochastic_number_from_tos[k][0]),
-                        areanamemaprev, rm->get_int_dists_map())
+                        areanamemaprev, rm->get_int_dists_map(),
+                        rm->get_num_areas())
                  << " -> "
                  << tt.get_string_from_dist_int(
                         rm->get_dists_int_map().at(
                             stochastic_number_from_tos[k][1]),
-                        areanamemaprev, rm->get_int_dists_map())
+                        areanamemaprev, rm->get_int_dists_map(),
+                        rm->get_num_areas())
                  << endl;
             bgt->prepare_stochmap_reverse_all_nodes(
                 rm->get_dists_int_map().at(stochastic_number_from_tos[k][0]),

@@ -25,18 +25,19 @@ class BioGeoTreeTools {
 public:
   std::shared_ptr<Tree> getTreeFromString(string treestring);
 
+  void summarizeSplits(std::shared_ptr<Node> node,
+                       unordered_map<lagrange_dist_t, vector<AncSplit>> &ans,
+                       unordered_map<int, string> &areanamemaprev,
+                       const std::unordered_map<int, lagrange_dist_t> &distmap,
+                       size_t area_count);
   void
-  summarizeSplits(std::shared_ptr<Node> node,
-                  unordered_map<vector<int>, vector<AncSplit>> &ans,
-                  unordered_map<int, string> &areanamemaprev,
-                  const std::unordered_map<int, std::vector<int>> &distmap);
-  void summarizeAncState(std::shared_ptr<Node> node, vector<Superdouble> &ans,
-                         unordered_map<int, string> &areanamemaprev,
-                         const std::unordered_map<int, vector<int>> &distmap,
-                         int areasize);
-  string
-  get_string_from_dist_int(int dist, unordered_map<int, string> &areanamemaprev,
-                           const unordered_map<int, vector<int>> &distmap);
+  summarizeAncState(std::shared_ptr<Node> node, vector<Superdouble> &ans,
+                    unordered_map<int, string> &areanamemaprev,
+                    const std::unordered_map<int, lagrange_dist_t> &distmap,
+                    size_t areasize);
+  string get_string_from_dist_int(
+      int dist, const unordered_map<int, string> &areanamemaprev,
+      const unordered_map<int, lagrange_dist_t> &distmap, size_t area_count);
 };
 
 #endif /* PHYLOTREE_H_ */

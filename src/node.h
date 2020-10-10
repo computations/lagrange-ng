@@ -15,6 +15,7 @@
 using namespace std;
 
 #include "BranchSegment.h"
+#include "Common.h"
 #include "superdouble.h"
 
 class Node {
@@ -32,7 +33,7 @@ private:
   vector<Superdouble> _reverse_bits;
   vector<std::shared_ptr<Node>> _children;
   vector<BranchSegment> _branch_segments;
-  std::shared_ptr<vector<vector<int>>> _excluded_dists;
+  std::shared_ptr<vector<lagrange_dist_t>> _excluded_dists;
 
 public:
   Node();
@@ -87,7 +88,7 @@ public:
   vector<BranchSegment> &getSegVector();
 
   void initExclDistVector();
-  std::shared_ptr<vector<vector<int>>> getExclDistVector() ;
+  std::shared_ptr<vector<lagrange_dist_t>> getExclDistVector();
 
   bool findNode(std::shared_ptr<Node> n);
 

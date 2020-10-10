@@ -14,6 +14,8 @@
 #include <vector>
 using namespace std;
 
+#include "Common.h"
+#include "Utils.h"
 #include <blaze/Math.h>
 #include <blaze/math/DynamicMatrix.h>
 #include <blaze/math/DynamicVector.h>
@@ -30,23 +32,24 @@ template <> struct hash<std::vector<int>> {
 public:
   size_t operator()(const std::vector<int> &vec) const;
 };
-
 } // namespace std
 
 class RateModel {
 private:
   bool _global_ext;
-  int _area_count;
+  unsigned int _area_count;
+  lagrange_dist_t _valid_dist_mask;
   int _thread_count;
   vector<string> _labels;
   vector<double> _periods;
-  vector<vector<int>> _dists;
-  unordered_map<vector<int>, vector<vector<vector<int>>>> _iter_dists;
-  unordered_map<vector<int>, int> _dists_int_map;
-  unordered_map<int, vector<int>> _int_dists_map;
+  vector<lagrange_dist_t> _dists;
+  unordered_map<lagrange_dist_t, int> _dists_int_map;
+  unordered_map<int, lagrange_dist_t> _int_dists_map;
+  unordered_map<lagrange_dist_t, vector<lagrange_region_split_t>> _iter_dists;
   vector<vector<vector<double>>> _dispersal_params;
   vector<vector<vector<double>>> _dispersal_params_mask;
   vector<vector<double>> _extinction_params;
+  inline size_t getDistCount() const { return (1ul << _area_count); }
 
   vector<lagrange_matrix_t> _rate_matrix;
   vector<lagrange_matrix_t> _rate_matrix_transposed;
@@ -69,7 +72,7 @@ public:
   int get_nthreads();
   size_t get_expm_count();
   void setup_dists();
-  void setup_dists(vector<vector<int>>, bool);
+  void setup_dists(vector<lagrange_dist_t>, bool);
   void setup_Dmask();
   void setup_D_provided(double d, vector<vector<vector<double>>> &D_mask_in);
   void set_Dmask_cell(int period, int area, int area2, double prob, bool sym);
@@ -85,21 +88,21 @@ public:
                                                 vector<int> &columns);
   string Q_repr(int period);
   string P_repr(int period);
-  vector<vector<int>> enumerate_dists();
-  vector<vector<vector<int>>> iter_dist_splits(vector<int> &dist);
-  const vector<vector<int>> &getDists();
+  vector<lagrange_dist_t> enumerate_dists();
+  vector<lagrange_region_split_t> iter_dist_splits(lagrange_dist_t dist);
+  const vector<lagrange_dist_t> &getDists();
   size_t getDistsSize() const;
-  const unordered_map<vector<int>, int> &get_dists_int_map();
-  const unordered_map<int, vector<int>> &get_int_dists_map();
-  const vector<vector<vector<int>>> &
-  get_iter_dist_splits(const vector<int> &dist) const;
+  const unordered_map<lagrange_dist_t, int> &get_dists_int_map();
+  const unordered_map<int, lagrange_dist_t> &get_int_dists_map();
+  const vector<lagrange_region_split_t> &
+  get_iter_dist_splits(lagrange_dist_t dist) const;
   void remove_dist(vector<int> dist);
   bool _sparse;
-  int get_num_areas();
+  size_t get_num_areas();
   int get_num_periods();
 
-  vector<AncSplit> iter_ancsplits(vector<int> &dist);
-  void iter_ancsplits_just_int(vector<int> &dist, vector<int> &leftdists,
+  vector<AncSplit> iter_ancsplits(lagrange_dist_t dist);
+  void iter_ancsplits_just_int(lagrange_dist_t &dist, vector<int> &leftdists,
                                vector<int> &rightdists, double &weight);
 
   vector<int> get_columns_for_sparse(vector<double> &);

@@ -19,8 +19,8 @@ class InputReader {
 public:
   InputReader();
   void readMultipleTreeFile(string filename, vector<std::shared_ptr<Tree>> &);
-  unordered_map<string, vector<int>> readStandardInputData(string filename);
-  void checkData(const unordered_map<string, vector<int>> &,
+  unordered_map<string, lagrange_dist_t> readStandardInputData(string filename);
+  void checkData(const unordered_map<string, lagrange_dist_t> &,
                  const vector<std::shared_ptr<Tree>> &);
   int nareas;
   int nspecies;

@@ -35,14 +35,14 @@ void InputReader::readMultipleTreeFile(string filename,
   }
 }
 
-unordered_map<string, vector<int>>
+unordered_map<string, lagrange_dist_t>
 InputReader::readStandardInputData(string filename) {
   ifstream ifs(filename.c_str());
   string temp;
   bool first = false;
   nareas = 0;
   nspecies = 0;
-  unordered_map<string, vector<int>> data;
+  unordered_map<string, lagrange_dist_t> data;
   string line;
   vector<string> tokens;
   string del("\t ");
@@ -71,18 +71,17 @@ InputReader::readStandardInputData(string filename) {
         cout << spot - '0';
       }
       cout << endl;
-      data[tokens[0]] = speciesdata;
+      data[tokens[0]] = convert_vector_to_lagrange_dist(speciesdata);
     }
   }
   ifs.close();
   return data;
 }
 
-void InputReader::checkData(const unordered_map<string, vector<int>> &data,
+void InputReader::checkData(const unordered_map<string, lagrange_dist_t> &data,
                             const vector<std::shared_ptr<Tree>> &trees) {
   vector<string> dataspecies;
-  unordered_map<string, vector<int>>::const_iterator itr;
-  for (itr = data.begin(); itr != data.end(); ++itr) {
+  for (auto itr = data.begin(); itr != data.end(); ++itr) {
     dataspecies.push_back(itr->first);
   }
   vector<string> treespecies;

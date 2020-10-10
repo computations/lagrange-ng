@@ -5,6 +5,7 @@
  *      Author: Stephen A. Smith
  */
 
+#include "Common.h"
 #include <iostream>
 
 using namespace std;
@@ -41,51 +42,34 @@ void TrimSpaces(string &str) {
     str = "";
   } else
     str = str.substr(startpos, endpos - startpos + 1);
-
-  /*
-              // Code for  Trim Leading Spaces only
-              size_t startpos = str.find_first_not_of(Ó \tÓ); // Find the first
-     character position after excluding leading blank spaces if( string::npos !=
-     startpos ) str = str.substr( startpos );
-   */
-
-  /*
-              // Code for Trim trailing Spaces only
-              size_t endpos = str.find_last_not_of(Ó \tÓ); // Find the first
-     character position from reverse af if( string::npos != endpos ) str =
-     str.substr( 0, endpos+1 );
-   */
 }
 
-long comb(int m, int n) {
-  /*m, n -> number of combinations of m items, n at a time.
+constexpr double factorial_table[] = {
+    1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
+};
 
-  m >= n >= 0 required.
-   */
+constexpr size_t factorial_table_size =
+    sizeof(factorial_table) / sizeof(double);
 
-  if (n > (m >> 1)) {
-    n = m - n;
+constexpr inline double factorial(uint64_t i) {
+  if (i < factorial_table_size) {
+    return factorial_table[i];
   }
-  if (n == 0) {
-    return 1;
+  double f = factorial_table[factorial_table_size - 1];
+  for (size_t k = factorial_table_size; k <= i; ++k) {
+    f *= k;
   }
-  long result = long(m);
-  int i = 2;
-  m = m - 1;
-  n = n - 1;
-  while (n != 0) {
-    result = result * m / i;
-    i = i + 1;
-    n = n - 1;
-    m = m - 1;
-  }
-  return result;
+  return f;
+}
+
+constexpr inline double combinations(uint64_t n, uint64_t i) {
+  return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
 vector<int> comb_at_index(int m, int n, int i) {
   if (!(m >= n) && !(n >= 1))
     cout << "m >= n >= 1 required" << endl;
-  long c = comb(m, n);
+  long c = combinations(m, n);
   if (!(0 <= i) && !(i < c))
     cout << "0 <= i < comb(m,n) required" << endl;
   vector<int> result;
@@ -107,7 +91,7 @@ vector<int> comb_at_index(int m, int n, int i) {
 }
 
 vector<vector<int>> iterate(int M, int N) {
-  long ncombs = long(comb(M, N));
+  intmax_t ncombs = size_t(combinations(M, N));
   vector<vector<int>> results;
   for (int x = 0; x < ncombs; x++) {
     int i = x;
@@ -170,6 +154,17 @@ vector<int> idx2bitvect(vector<int> indices, int M) {
   return v;
 }
 
+lagrange_dist_t convert_indicies_to_lagrange_dist(const vector<int> &inds) {
+  lagrange_dist_t ret = 0;
+  for (auto e : inds) {
+    if (static_cast<size_t>(e) > sizeof(lagrange_dist_t) * 8) {
+      throw std::runtime_error{"Index for range is not supported"};
+    }
+    ret |= (1ul << e);
+  }
+  return ret;
+}
+
 vector<vector<int>> iterate_all(int m) {
   vector<vector<int>> results;
   for (int n = 1; n < m + 1; n++) {
@@ -180,31 +175,27 @@ vector<vector<int>> iterate_all(int m) {
   return results;
 }
 
-map<int, vector<int>> iterate_all_bv(int m) {
+map<int, lagrange_dist_t> iterate_all_bv(int m) {
   vector<vector<int>> it = iterate_all(m);
-  map<int, vector<int>> rangemap;
+  map<int, lagrange_dist_t> rangemap;
   for (unsigned int i = 0; i < it.size(); i++) {
-    rangemap[i] = idx2bitvect(it.at(i), m);
+    rangemap[i] = convert_indicies_to_lagrange_dist(it.at(i));
   }
   return rangemap;
 }
 
-map<int, vector<int>> iterate_all_bv2(int m) {
+map<int, lagrange_dist_t> iterate_all_bv2(int m) {
   vector<vector<int>> it = iterate_all(m);
-  map<int, vector<int>> rangemap;
-  vector<int> zeros;
-  for (int i = 0; i < m; i++) {
-    zeros.push_back(0);
-  }
-  rangemap[0] = zeros;
+  map<int, lagrange_dist_t> rangemap;
+  rangemap[0] = 0;
   for (unsigned int i = 0; i < it.size(); i++) {
-    rangemap[i + 1] = idx2bitvect(it.at(i), m);
+    rangemap[i + 1] = convert_indicies_to_lagrange_dist(it.at(i));
   }
   return rangemap;
 }
 
 int main2() {
-  std::cout << comb(2, 1) << std::endl;
+  std::cout << combinations(2, 1) << std::endl;
   std::cout << iterate(7, 2).at(20).at(0) << std::endl;
   std::cout << dists_by_maxsize(7, 2).at(27).at(6) << std::endl;
   std::cout << iterate_all(4).at(11).at(1) << std::endl;

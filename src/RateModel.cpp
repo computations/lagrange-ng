@@ -5,6 +5,7 @@
  *      Author: smitty
  */
 
+#include "Common.h"
 #define VERBOSE false
 
 #include "RateMatrixUtils.h"
@@ -82,29 +83,24 @@ void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
 }
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
-    : _global_ext(ge), _area_count(na), _thread_count(0),
-      _periods(pers), _expm_count{0}, _sparse(sp) {}
+    : _global_ext(ge),
+      _area_count(na), _valid_dist_mask{(1ull << _area_count) - 1},
+      _thread_count(0), _periods(pers), _expm_count{0}, _sparse(sp) {}
 
 void RateModel::set_nthreads(int nthreads) { _thread_count = nthreads; }
 
 int RateModel::get_nthreads() { return _thread_count; }
 
 void RateModel::setup_dists() {
-  map<int, vector<int>> a = iterate_all_bv(_area_count);
+  map<int, lagrange_dist_t> a = iterate_all_bv(_area_count);
   if (_global_ext) {
-    vector<int> empt;
-    for (unsigned int i = 0; i < a[0].size(); i++) {
-      empt.push_back(0);
-    }
-    _dists.push_back(empt);
+    _dists.push_back(0);
   }
-  map<int, vector<int>>::iterator pos;
-  for (pos = a.begin(); pos != a.end(); ++pos) {
-    int f = pos->first;
-    _dists.push_back(a[f]);
+  for (lagrange_dist_t i = 1; i < (1ul << _area_count); i++) {
+    _dists.push_back(i);
   }
   /*
-   * calculate the distribution map
+   calculate the distribution map
    */
   for (unsigned int i = 0; i < _dists.size(); i++) {
     _dists_int_map[_dists[i]] = i;
@@ -116,50 +112,23 @@ void RateModel::setup_dists() {
    * precalculate the iterdists
    */
   iter_all_dist_splits();
-
-  /*
-   * print out a visual representation of the matrix
-   */
-  if (VERBOSE) {
-    cout << "dists" << endl;
-    for (unsigned int j = 0; j < _dists.size(); j++) {
-      cout << j << " ";
-      for (unsigned int i = 0; i < _dists[j].size(); i++) {
-        cout << _dists[j][i];
-      }
-      cout << endl;
-    }
-  }
 }
 
 /*
  * need to make a generator function for setting distributions
  */
-void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
+void RateModel::setup_dists(vector<lagrange_dist_t> indists, bool include) {
   if (include == true) {
     _dists = indists;
-    if (accumulate(_dists[0].begin(), _dists[0].end(), 0) > 0) {
-      vector<int> empt;
-      for (unsigned int i = 0; i < _dists[0].size(); i++) {
-        empt.push_back(0);
-      }
-      _dists.push_back(empt);
+    if (_dists[0] > 0) {
+      _dists.push_back(0);
     }
   } else { // exclude is sent
-    vector<int> empt;
-    for (int i = 0; i < _area_count; i++) {
-      empt.push_back(0);
-    }
-    _dists.push_back(empt);
+    _dists.push_back(0);
 
-    map<int, vector<int>> a = iterate_all_bv(_area_count);
-    for (auto pos = a.begin(); pos != a.end(); ++pos) {
-      int f = pos->first;
-      for (unsigned int j = 0; j < indists.size(); j++) {
-        if (indists[j] == a[f]) {
-          _dists.push_back(a[f]);
-          break;
-        }
+    for (lagrange_dist_t i = 1; i < getDistCount(); ++i) {
+      if (std::find(indists.begin(), indists.end(), i) == indists.end()) {
+        _dists.push_back(i);
       }
     }
   }
@@ -176,20 +145,6 @@ void RateModel::setup_dists(vector<vector<int>> indists, bool include) {
   precalculate the iterdists
    */
   iter_all_dist_splits();
-
-  /*
-   print out a visual representation of the matrix
-   */
-  if (VERBOSE) {
-    cout << "dists" << endl;
-    for (unsigned int j = 0; j < _dists.size(); j++) {
-      cout << j << " ";
-      for (unsigned int i = 0; i < _dists[j].size(); i++) {
-        cout << _dists[j][i];
-      }
-      cout << endl;
-    }
-  }
 }
 
 /*
@@ -296,23 +251,25 @@ void RateModel::setup_Q() {
   for (unsigned int period = 0; period < _rate_matrix.size();
        period++) {                                                    // periods
     for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) { // dists
-      int s1 = accumulate(_dists[dist_i].begin(), _dists[dist_i].end(), 0);
+      int s1 = lagrange_popcount(_dists[dist_i]);
       if (s1 > 0) {
         for (unsigned int dist_j = 0; dist_j < _dists.size();
              dist_j++) { // dists
-          int sxor =
-              calculate_vector_int_sum_xor(_dists[dist_i], _dists[dist_j]);
+          int sxor = lagrange_popcount(_dists[dist_i] ^ _dists[dist_j]);
           if (sxor == 1) {
-            int s2 =
-                accumulate(_dists[dist_j].begin(), _dists[dist_j].end(), 0);
-            int dest =
-                locate_vector_int_single_xor(_dists[dist_i], _dists[dist_j]);
+            int s2 = lagrange_popcount(_dists[dist_j]);
+            int dest = __builtin_ctzll((_dists[dist_i] ^ _dists[dist_j]));
             double rate = 0.0;
             if (s1 < s2) {
-              for (unsigned int src = 0; src < _dists[dist_i].size(); src++) {
-                if (_dists[dist_i][src] != 0) {
+              for (unsigned int src = 0;
+                   src < static_cast<unsigned int>(_area_count); src++) {
+                rate += _dispersal_params[period][src][dest] *
+                        ((_dists[dist_i] >> src) & 1ul);
+                /*
+                if (_dists[dist_i] & (1ul << _area_count) != 0) {
                   rate += _dispersal_params[period][src][dest];
                 }
+                */
               }
             } else {
               rate = _extinction_params[period][dest];
@@ -581,22 +538,23 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
 
   // filter out impossible dists
   for (unsigned int i = 0; i < _dists.size(); i++) {
-    if (accumulate(_dists[i].begin(), _dists[i].end(), 0) > 0) {
-      for (unsigned int j = 0; j < _dists[i].size(); j++) {
-        if (_dists[i][j] == 1) { // present
-          double sum1 =
-              calculate_vector_double_sum(_dispersal_params_mask[period][j]);
-          double sum2 = 0.0;
-          for (unsigned int k = 0; k < _dispersal_params_mask[period].size();
-               k++) {
-            sum2 += _dispersal_params_mask[period][k][j];
+    if (_dists[i] > 0) {
+      for (unsigned int j = 0; j < _area_count; j++) {
+        if (lagrange_bextr(_dists[i], j) == 0) { // present
+          continue;
+        }
+        double sum1 =
+            calculate_vector_double_sum(_dispersal_params_mask[period][j]);
+        double sum2 = 0.0;
+        for (unsigned int k = 0; k < _dispersal_params_mask[period].size();
+             k++) {
+          sum2 += _dispersal_params_mask[period][k][j];
+        }
+        if (sum1 + sum2 == 0) {
+          for (unsigned int k = 0; k < p[period].size(); k++) {
+            p[period][k] = p[period][k] * 0.0;
           }
-          if (sum1 + sum2 == 0) {
-            for (unsigned int k = 0; k < p[period].size(); k++) {
-              p[period][k] = p[period][k] * 0.0;
-            }
-            break;
-          }
+          break;
         }
       }
     }
@@ -680,84 +638,66 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   return p;
 }
 
-vector<vector<vector<int>>> RateModel::iter_dist_splits(vector<int> &dist) {
-  vector<vector<vector<int>>> ret;
-  vector<vector<int>> left;
-  vector<vector<int>> right;
-  if (accumulate(dist.begin(), dist.end(), 0) == 1) {
-    left.push_back(dist);
-    right.push_back(dist);
-  } else {
-    for (unsigned int i = 0; i < dist.size(); i++) {
-      if (dist[i] == 1) {
-        vector<int> x(dist.size(), 0);
-        x[i] = 1;
-        int cou = count(_dists.begin(), _dists.end(), x);
-        if (cou > 0) {
-          left.push_back(x);
-          right.push_back(dist);
-          left.push_back(dist);
-          right.push_back(x);
-          vector<int> y;
-          for (unsigned int j = 0; j < dist.size(); j++) {
-            if (dist[j] == x[j]) {
-              y.push_back(0);
-            } else {
-              y.push_back(1);
-            }
-          }
-          int cou2 = count(_dists.begin(), _dists.end(), y);
-          if (cou2 > 0) {
-            left.push_back(x);
-            right.push_back(y);
-            if (accumulate(y.begin(), y.end(), 0) > 1) {
-              left.push_back(y);
-              right.push_back(x);
-            }
-          }
-        }
-      }
+vector<lagrange_region_split_t>
+RateModel::iter_dist_splits(lagrange_dist_t dist) {
+  vector<lagrange_region_split_t> ret;
+
+  if (dist == 0) {
+    return ret;
+  }
+
+  if (lagrange_popcount(dist) == 1) {
+    ret.push_back({dist, dist});
+    return ret;
+  }
+
+  for (unsigned int i = 0; i < _area_count; i++) {
+
+    if (lagrange_bextr(dist, i) == 0) {
+      continue;
+    }
+
+    lagrange_dist_t x = 1ull << i;
+    auto iter = std::find(_dists.begin(), _dists.end(), x);
+
+    if (iter == _dists.end()) {
+      continue;
+    }
+
+    ret.push_back({x, dist});
+    ret.push_back({dist, x});
+
+    lagrange_dist_t y = (x ^ dist) & _valid_dist_mask;
+    iter = std::find(_dists.begin(), _dists.end(), y);
+    if (iter == _dists.end()) {
+      continue;
+    }
+
+    ret.push_back({x, y});
+
+    if (lagrange_popcount(y) > 1) {
+      ret.push_back({y, x});
     }
   }
-  if (VERBOSE) {
-    cout << "LEFT" << endl;
-    for (unsigned int i = 0; i < left.size(); i++) {
-      print_vector_int(left[i]);
-    }
-    cout << "RIGHT" << endl;
-    for (unsigned int i = 0; i < right.size(); i++) {
-      print_vector_int(right[i]);
-    }
-  }
-  ret.push_back(left);
-  ret.push_back(right);
   return ret;
 }
 
 void RateModel::iter_all_dist_splits() {
-  for (unsigned int i = 0; i < _dists.size(); i++) {
-    _iter_dists[_dists[i]] = iter_dist_splits(_dists[i]);
+  for (auto d : _dists) {
+    _iter_dists[d] = iter_dist_splits(d);
   }
 }
 
-const vector<vector<int>> &RateModel::getDists() { return _dists; }
+const vector<lagrange_dist_t> &RateModel::getDists() { return _dists; }
 
 size_t RateModel::getDistsSize() const { return _dists.size(); }
 
-const unordered_map<vector<int>, int> &RateModel::get_dists_int_map() {
-  return _dists_int_map;
-}
-
-const unordered_map<int, vector<int>> &RateModel::get_int_dists_map() {
-  return _int_dists_map;
-}
-
-const vector<vector<vector<int>>> &
-RateModel::get_iter_dist_splits(const vector<int> &dist) const {
+const vector<lagrange_region_split_t> &
+RateModel::get_iter_dist_splits(lagrange_dist_t dist) const {
   return _iter_dists.at(dist);
 }
 
-int RateModel::get_num_areas() { return _area_count; }
+size_t RateModel::get_num_areas() { return _area_count; }
 
 int RateModel::get_num_periods() { return _periods.size(); }
 
@@ -810,55 +750,60 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
 
 size_t RateModel::get_expm_count() { return _expm_count; }
 
-vector<AncSplit> RateModel::iter_ancsplits(vector<int> &dist) {
+vector<AncSplit> RateModel::iter_ancsplits(lagrange_dist_t dist) {
   vector<AncSplit> ans;
   auto splits = get_iter_dist_splits(dist);
   auto distsmap = get_dists_int_map();
-  if (splits.at(0).size() > 0) {
-    int nsplits = splits.at(0).size();
-    double weight = 1.0 / nsplits;
-    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
-      AncSplit an(distsmap[dist], distsmap[splits.at(0)[i]],
-                  distsmap[splits.at(1)[i]], weight);
-      ans.push_back(an);
-    }
+  if (splits.size() == 0) {
+    return ans;
+  }
+  int nsplits = splits.size();
+  double weight = 1.0 / nsplits;
+  for (unsigned int i = 0; i < splits.size(); i++) {
+    AncSplit an(distsmap[dist], distsmap[splits[i].left],
+                distsmap[splits[i].right], weight);
+    ans.push_back(an);
   }
   return ans;
 }
 
-void RateModel::iter_ancsplits_just_int(vector<int> &dist,
+void RateModel::iter_ancsplits_just_int(lagrange_dist_t &dist,
                                         vector<int> &leftdists,
                                         vector<int> &rightdists,
                                         double &weight) {
   leftdists.clear();
   rightdists.clear();
+
   auto splits = get_iter_dist_splits(dist);
   auto distsmap = get_dists_int_map();
-  size_t dists_size = splits[0].size() * splits[0][0].size();
+  size_t dists_size = splits.size() * splits.size();
+
   leftdists.reserve(dists_size);
   rightdists.reserve(dists_size);
-  if (splits.at(0).size() > 0) {
-    int nsplits = splits.at(0).size();
-    weight = 1.0 / nsplits;
-    for (unsigned int i = 0; i < splits.at(0).size(); i++) {
-      leftdists.push_back(distsmap[splits.at(0)[i]]);
-      rightdists.push_back(distsmap[splits.at(1)[i]]);
-    }
+
+  if (splits.size() == 0) {
+    return;
+  }
+  int nsplits = splits.size();
+  weight = 1.0 / nsplits;
+  for (unsigned int i = 0; i < splits.size(); i++) {
+    leftdists.push_back(distsmap[splits[i].left]);
+    rightdists.push_back(distsmap[splits[i].right]);
   }
 }
 
 vector<int> RateModel::get_columns_for_sparse(vector<double> &inc) {
   vector<int> ret(inc.size(), 0);
   for (unsigned int i = 0; i < inc.size(); i++) {
-    if (inc[i] > 0.0000000001) {
-      ret[i] = 1;
-      vector<int> dis = getDists().at(i);
-      for (unsigned int j = 0; j < inc.size(); j++) {
-        vector<int> dis2 = getDists().at(j);
-        int sum = calculate_vector_int_sum_xor(dis, dis2);
-        if (sum == 1) {
-          ret[j] = 1;
-        }
+    if (inc[i] < 0.0000000001) {
+      continue;
+    }
+    ret[i] = 1;
+    auto dis = getDists().at(i);
+    for (unsigned int j = 0; j < inc.size(); j++) {
+      auto dis2 = getDists().at(j);
+      if (lagrange_popcount(dis ^ dis2) == 1) {
+        ret[j] = 1;
       }
     }
   }
@@ -868,17 +813,25 @@ vector<int> RateModel::get_columns_for_sparse(vector<double> &inc) {
 vector<int> RateModel::get_columns_for_sparse(vector<Superdouble> &inc) {
   vector<int> ret(inc.size(), 0);
   for (unsigned int i = 0; i < inc.size(); i++) {
-    if (inc[i] > Superdouble(0.0000000001)) {
-      ret[i] = 1;
-      vector<int> dis = getDists().at(i);
-      for (unsigned int j = 0; j < inc.size(); j++) {
-        vector<int> dis2 = getDists().at(j);
-        int sum = calculate_vector_int_sum_xor(dis, dis2);
-        if (sum == 1) {
-          ret[j] = 1;
-        }
+    if (inc[i] < Superdouble(0.0000000001)) {
+      continue;
+    }
+    ret[i] = 1;
+    auto dis = getDists().at(i);
+    for (unsigned int j = 0; j < inc.size(); j++) {
+      auto dis2 = getDists().at(j);
+      if (lagrange_popcount(dis ^ dis2) == 1) {
+        ret[j] = 1;
       }
     }
   }
   return ret;
+}
+
+const unordered_map<lagrange_dist_t, int> &RateModel::get_dists_int_map() {
+  return _dists_int_map;
+}
+
+const unordered_map<int, lagrange_dist_t> &RateModel::get_int_dists_map() {
+  return _int_dists_map;
 }

@@ -13,6 +13,7 @@
 #ifndef RATEMATRIXUTILS_H_
 #define RATEMATRIXUTILS_H_
 #include "AncSplit.h"
+#include "Common.h"
 #include "superdouble.h"
 #include <memory>
 #include <vector>
@@ -48,13 +49,14 @@ int locate_vector_int_single_xor(vector<int> &in, vector<int> &in2);
  */
 void print_vector_int(vector<int> &in);
 void print_vector_double(vector<double> &in);
+void print_lagrange_dist(lagrange_dist_t in, size_t area_size);
 
 /*
   used for generating all the distributions with maximium number of areas
   involved would be designated in the config file
  */
-vector<vector<int>> generate_dists_from_num_max_areas(int totalnum,
-                                                      int numareas);
+vector<lagrange_dist_t> generate_dists_from_num_max_areas(int totalnum,
+                                                          int numareas);
 
 /*
   used for processing custom rate matrix config files designated in the main

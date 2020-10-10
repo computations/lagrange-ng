@@ -16,6 +16,7 @@ using namespace std;
 
 #include "AncSplit.h"
 #include "BranchSegment.h"
+#include "Common.h"
 #include "RateModel.h"
 #include "node.h"
 #include "tree.h"
@@ -56,8 +57,9 @@ public:
   void set_default_model(std::shared_ptr<RateModel> mod);
   void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
-  void set_excluded_dist(vector<int> ind, std::shared_ptr<Node> node);
-  void set_tip_conditionals(unordered_map<string, vector<int>> distrib_data);
+  void set_excluded_dist(lagrange_dist_t ind, std::shared_ptr<Node> node);
+  void
+  set_tip_conditionals(unordered_map<string, lagrange_dist_t> distrib_data);
   vector<Superdouble> conditionals(std::shared_ptr<Node> node, bool marg,
                                    bool sparse);
   // void ancdist_conditional_lh(bpp::Node & node, bool marg);
@@ -78,7 +80,7 @@ public:
    */
   void prepare_ancstate_reverse();
   void reverse(std::shared_ptr<Node>);
-  unordered_map<vector<int>, vector<AncSplit>>
+  unordered_map<lagrange_dist_t, vector<AncSplit>>
   calculate_ancsplit_reverse(std::shared_ptr<Node> node);
   vector<Superdouble> calculate_ancstate_reverse(std::shared_ptr<Node> node);
   // need to override these at some point

@@ -5,6 +5,7 @@
  *      Author: smitty
  */
 
+#include "Common.h"
 #include "superdouble.h"
 #include <cstring>
 #include <functional>
@@ -204,10 +205,10 @@ void Node::initSegVector() { _branch_segments = vector<BranchSegment>(); }
 vector<BranchSegment> &Node::getSegVector() { return _branch_segments; }
 
 void Node::initExclDistVector() {
-  _excluded_dists = std::make_shared<vector<vector<int>>>();
+  _excluded_dists = std::make_shared<vector<lagrange_dist_t>>();
 }
 
-std::shared_ptr<vector<vector<int>>> Node::getExclDistVector() {
+std::shared_ptr<vector<lagrange_dist_t>> Node::getExclDistVector() {
   return _excluded_dists;
 }
 
