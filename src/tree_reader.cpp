@@ -109,7 +109,9 @@ private:
   }
 
   void skip_whitespace() {
-    while (char c = _input[_current_index]) {
+    // while (char c = _input[_current_index]) {
+    while (_current_index < _input.size()) {
+      char c = _input[_current_index];
       if (!std::isspace(c)) {
         break;
       }
