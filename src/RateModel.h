@@ -14,6 +14,7 @@
 #include <vector>
 using namespace std;
 
+#include "AncSplit.h"
 #include "Common.h"
 #include "Utils.h"
 #include <blaze/Math.h>

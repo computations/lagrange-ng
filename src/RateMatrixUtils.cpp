@@ -131,7 +131,7 @@ void print_vector_int(vector<int> &in) {
 }
 
 void print_lagrange_dist(lagrange_dist_t in, size_t area_size) {
-  for (unsigned int i = area_size - 1; i >= 0; i--) {
+  for (int i = area_size - 1; i >= 0; i--) {
     cout << lagrange_bextr(in, i) << " ";
   }
   cout << endl;
