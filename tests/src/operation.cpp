@@ -1,10 +1,11 @@
+#include <memory>
+#include <stdexcept>
+
 #include "Operation.h"
 #include "RateModel.h"
 #include "Workspace.h"
 #include "environment.hpp"
 #include "gtest/gtest.h"
-#include <memory>
-#include <stdexcept>
 
 class OperationTest : public ::testing::Test {
 protected:
@@ -83,7 +84,6 @@ TEST_F(OperationTest, ExpmSimple0) {
 }
 
 TEST_F(OperationTest, ExpmSimple1) {
-
   auto expm_op = ExpmOperation(_rate_matrix, _prob_matrix, _t);
 
   expm_op.eval(_ws);
@@ -103,7 +103,7 @@ TEST_F(OperationTest, DispersionSimple0) {
 TEST_F(OperationTest, DispersionSimple1) {
   auto expm_op =
       std::make_shared<ExpmOperation>(_rate_matrix, _prob_matrix, _t);
-  DispersionOperation disp_op(_rtop_clv, _rbot_clv, _prob_matrix, expm_op);
+  DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
   disp_op.eval(_ws);
 
   double error =
@@ -114,7 +114,7 @@ TEST_F(OperationTest, DispersionSimple1) {
 TEST_F(OperationTest, DispersionSimple2) {
   auto expm_op =
       std::make_shared<ExpmOperation>(_rate_matrix, _prob_matrix, _t);
-  DispersionOperation disp_op(_rtop_clv, _rbot_clv, _prob_matrix, expm_op);
+  DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
   disp_op.eval(_ws);
 
   double error =

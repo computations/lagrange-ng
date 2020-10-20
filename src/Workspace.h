@@ -4,6 +4,7 @@
 #include <blaze/Math.h>
 #include <blaze/math/DynamicMatrix.h>
 #include <blaze/math/DynamicVector.h>
+
 #include <cstddef>
 #include <new>
 #include <stdexcept>

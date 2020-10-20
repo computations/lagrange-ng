@@ -5,18 +5,19 @@
  *      Author: Stephen A. Smith
  */
 
+#include <float.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <chrono>
 #include <ctime>
-#include <float.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
-#include <math.h>
 #include <memory>
 #include <sstream>
-#include <stdio.h>
-#include <string.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
