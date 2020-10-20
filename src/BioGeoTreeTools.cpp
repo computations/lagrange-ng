@@ -34,8 +34,8 @@ void BioGeoTreeTools::summarizeSplits(
   Superdouble best(0);
   Superdouble sum(0);
   vector<pair<Superdouble, string>> printstring;
-  lagrange_dist_t bestldist;
-  lagrange_dist_t bestrdist;
+  lagrange_dist_t bestldist = 0 ;
+  lagrange_dist_t bestrdist = 0;
   bool first = true;
   for (auto it = ans.begin(); it != ans.end(); it++) {
     vector<AncSplit> tans = (*it).second;
