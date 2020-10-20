@@ -44,10 +44,12 @@ set(LAGRANGE_SOURCES
         src/Utils.cpp
         src/Utils.h
         src/vector_node_object.h
+        src/Workspace.h
+        src/Workspace.cpp
+        src/Operation.h
+        src/Operation.cpp
         src/blas.f
-        src/clock.f
         src/lapack.f
-        src/mataid.f
         src/my_expokit.f
         src/my_matexp.f)
 

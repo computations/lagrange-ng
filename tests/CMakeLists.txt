@@ -36,10 +36,12 @@ set(TREEPATH ${CMAKE_CURRENT_SOURCE_DIR}/data/test_trees)
 # Now simply link against gtest or gtest_main as needed. Eg
 set(LAGRANGE_TEST_SOURCES 
   src/tree_reader.cpp
+  src/workspace.cpp
+  src/operation.cpp
   src/main.cpp)
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})
 target_link_libraries(lagrange-test gtest_main lagrange-debug-libs)
-target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/)
+target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/
+  ${BLAZE_INCLUDES})
 target_compile_options(lagrange-test PRIVATE ${LAGRANGE_DEBUG_FLAGS})
 target_compile_definitions(lagrange-test PRIVATE -DTREEPATH=${TREEPATH})
-add_test(NAME example_test COMMAND lagrange-test)
