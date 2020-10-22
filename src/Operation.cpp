@@ -1,11 +1,13 @@
+#include <blaze/math/IdentityMatrix.h>
+
+#include <array>
+#include <memory>
+#include <utility>
+
 #include "Common.h"
 #include "Operation.h"
 #include "RateModel.h"
 #include "Utils.h"
-#include <array>
-#include <blaze/math/IdentityMatrix.h>
-#include <memory>
-#include <utility>
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
@@ -79,11 +81,11 @@ SplitOperation::generate_splits(uint64_t state, size_t regions) {
 }
 
 void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
-  for (size_t i = 0; i < _lbranch_ops_count; i++) {
-    _lbranch_ops.get()[i].eval(ws);
+  for (auto &op : _lbranch_ops) {
+    op->eval(ws);
   }
-  for (size_t i = 0; i < _rbranch_ops_count; i++) {
-    _rbranch_ops.get()[i].eval(ws);
+  for (auto &op : _rbranch_ops) {
+    op->eval(ws);
   }
 
   auto &parent_clv = ws->clv(_parent_clv_index);

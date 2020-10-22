@@ -1,11 +1,13 @@
 #ifndef _LAGRANGE_OPERATION_H
 #define _LAGRANGE_OPERATION_H
 
-#include "Workspace.h"
 #include <blaze/Math.h>
 #include <blaze/math/DynamicMatrix.h>
 #include <blaze/math/DynamicVector.h>
+
 #include <memory>
+
+#include "Workspace.h"
 
 class ExpmOperation {
 public:
@@ -14,6 +16,7 @@ public:
         _rate_matrix_index{rate_matrix}, _t{t} {}
 
   void eval(std::shared_ptr<Workspace> ws);
+  size_t prob_matrix() const { return _prob_matrix_index; }
 
 private:
   size_t _prob_matrix_index;
@@ -28,15 +31,18 @@ public:
       : _top_clv{top}, _bot_clv{bot}, _prob_matrix_index{prob_matrix},
         _expm_op{new ExpmOperation{prob_matrix, rate_matrix, brlen}} {}
 
-  DispersionOperation(size_t top, size_t bot, size_t prob_matrix,
-                      std::shared_ptr<ExpmOperation> op)
+  DispersionOperation(size_t top, size_t bot, std::shared_ptr<ExpmOperation> op)
       : _top_clv{top}, _bot_clv{bot},
-        _prob_matrix_index{prob_matrix}, _expm_op{op} {}
+        _prob_matrix_index{op->prob_matrix()}, _expm_op{op} {}
 
   DispersionOperation(size_t top, size_t bot, size_t prob_matrix)
-      : DispersionOperation(top, bot, prob_matrix, nullptr) {}
+      : _top_clv{top}, _bot_clv{bot},
+        _prob_matrix_index{prob_matrix}, _expm_op{nullptr} {}
 
   void eval(std::shared_ptr<Workspace> ws);
+
+  size_t top_clv_index() const { return _top_clv; };
+  size_t bot_clv_index() const { return _bot_clv; };
 
 private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
@@ -56,25 +62,23 @@ private:
 class SplitOperation {
 public:
   SplitOperation(size_t lchild_clv, size_t rchild_clv, size_t parent_clv,
-                 DispersionOperation *lops, size_t lops_count,
-                 DispersionOperation *rops, size_t rops_count)
+                 std::shared_ptr<DispersionOperation> lops,
+                 std::shared_ptr<DispersionOperation> rops)
       : _lbranch_clv_index{lchild_clv}, _rbranch_clv_index{rchild_clv},
-        _parent_clv_index{parent_clv}, _lbranch_ops{lops},
-        _lbranch_ops_count{lops_count}, _rbranch_ops{rops}, _rbranch_ops_count{
-                                                                rops_count} {}
+        _parent_clv_index{parent_clv}, _lbranch_ops{{lops}}, _rbranch_ops{
+                                                                 {rops}} {}
 
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
                  size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t lprob_mat, size_t rprob_mat,
                  size_t lrate_matrix, size_t rrate_matrix, size_t parent_clv)
       : _lbranch_clv_index{lchild_clv_top}, _rbranch_clv_index{rchild_clv_top},
-        _parent_clv_index{parent_clv}, _lbranch_ops{new DispersionOperation{
-                                           lchild_clv_top, lchild_clv_bot,
-                                           lbrlen, lprob_mat, lrate_matrix}},
-        _lbranch_ops_count{1}, _rbranch_ops{new DispersionOperation{
-                                   rchild_clv_top, rchild_clv_bot, rbrlen,
-                                   rprob_mat, rrate_matrix}},
-        _rbranch_ops_count{1} {}
+        _parent_clv_index{parent_clv},
+        _lbranch_ops{{std::make_shared<DispersionOperation>(
+            lchild_clv_top, lchild_clv_bot, lbrlen, lprob_mat, lrate_matrix)}},
+        _rbranch_ops{{std::make_shared<DispersionOperation>(
+            rchild_clv_top, rchild_clv_bot, rbrlen, rprob_mat, rrate_matrix)}} {
+  }
 
   SplitOperation(size_t lchild_clv_top, size_t lchild_clv_bot,
                  size_t rchild_clv_top, size_t rchild_clv_bot, double lbrlen,
@@ -83,6 +87,13 @@ public:
       : SplitOperation(lchild_clv_top, rchild_clv_top, lchild_clv_bot,
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
                        rate_matrix, rate_matrix, parent_clv) {}
+
+  SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
+                 std::shared_ptr<DispersionOperation> r_ops)
+      : _lbranch_clv_index{l_ops->top_clv_index()},
+        _rbranch_clv_index{r_ops->top_clv_index()},
+        _parent_clv_index{parent_clv}, _lbranch_ops{{l_ops}}, _rbranch_ops{
+                                                                  {r_ops}} {}
 
   void eval(std::shared_ptr<Workspace>);
 
@@ -94,10 +105,8 @@ private:
   size_t _rbranch_clv_index;
   size_t _parent_clv_index;
 
-  std::shared_ptr<DispersionOperation> _lbranch_ops;
-  size_t _lbranch_ops_count;
-  std::shared_ptr<DispersionOperation> _rbranch_ops;
-  size_t _rbranch_ops_count;
+  std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
+  std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
 };
 
 #endif
