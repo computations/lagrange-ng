@@ -3,10 +3,10 @@
  *
  *  Created on: Aug 15, 2009
  *      Author: Stephen A. Smith
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
-#include "BioGeoTreeTools.h"
-#include "RateMatrixUtils.h"
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -14,6 +14,9 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_map>
+
+#include "BioGeoTreeTools.h"
+#include "RateMatrixUtils.h"
 using namespace std;
 
 #include "Utils.h"
@@ -31,26 +34,22 @@ void BioGeoTreeTools::summarizeSplits(
     unordered_map<lagrange_dist_t, vector<AncSplit>> &ans,
     unordered_map<int, string> &areanamemaprev,
     const unordered_map<int, lagrange_dist_t> &distmap, size_t area_count) {
-  Superdouble best(0);
   Superdouble sum(0);
   vector<pair<Superdouble, string>> printstring;
-  lagrange_dist_t bestldist = 0 ;
-  lagrange_dist_t bestrdist = 0;
-  bool first = true;
+
+  const auto &first = ans.begin()->second[0];
+  Superdouble best(first.getLikelihood());
+  lagrange_dist_t bestldist = distmap.at(first.ldescdistint);
+  lagrange_dist_t bestrdist = distmap.at(first.rdescdistint);
+
   for (auto it = ans.begin(); it != ans.end(); it++) {
     vector<AncSplit> tans = (*it).second;
     for (unsigned int i = 0; i < tans.size(); i++) {
-      if (first == true) {
-        first = false;
+      if (tans[i].getLikelihood() > best) {
         best = tans[i].getLikelihood();
-        bestldist = distmap.at(tans[i].ldescdistint); // tans[i].getLDescDist();
-        bestrdist = distmap.at(tans[i].rdescdistint); // tans[i].getRDescDist();
-      } else if (tans[i].getLikelihood() > best) {
-        best = tans[i].getLikelihood();
-        bestldist = distmap.at(tans[i].ldescdistint); // tans[i].getLDescDist();
-        bestrdist = distmap.at(tans[i].rdescdistint); // tans[i].getRDescDist();
+        bestldist = distmap.at(tans[i].ldescdistint);
+        bestrdist = distmap.at(tans[i].rdescdistint);
       }
-      // cout << -log(tans[i].getLikelihood()) << endl;
       sum += tans[i].getLikelihood();
     }
   }
@@ -125,14 +124,14 @@ void BioGeoTreeTools::summarizeAncState(
     unordered_map<int, string> &areanamemaprev,
     const unordered_map<int, lagrange_dist_t> &distmap, size_t areasize) {
   // Superdouble best(ans[1]);
-  Superdouble best(ans[1]); // use ans[1] because ans[0] is just 0
+  Superdouble best(ans[1]);  // use ans[1] because ans[0] is just 0
   Superdouble sum(0);
   map<Superdouble, string> printstring;
   lagrange_dist_t bestancdist = 0;
   Superdouble zero(0);
   // start from 1 because 0 is just the 0 all extinct one
   for (unsigned int i = 1; i < ans.size(); i++) {
-    if (ans[i] >= best && ans[i] != zero) { // added != 0, need to test
+    if (ans[i] >= best && ans[i] != zero) {  // added != 0, need to test
       best = ans[i];
       bestancdist = distmap.at(i);
     }

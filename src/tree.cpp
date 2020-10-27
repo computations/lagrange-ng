@@ -3,6 +3,8 @@
  *
  *  Created on: Nov 24, 2009
  *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #include <cstring>
@@ -14,17 +16,21 @@ using namespace std;
 #include "tree.h"
 
 Tree::Tree()
-    : _root(NULL), _nodes(vector<std::shared_ptr<Node>>()),
+    : _root(NULL),
+      _nodes(vector<std::shared_ptr<Node>>()),
       _internal_nodes(vector<std::shared_ptr<Node>>()),
-      _external_nodes(vector<std::shared_ptr<Node>>()), _internal_node_count(0),
+      _external_nodes(vector<std::shared_ptr<Node>>()),
+      _internal_node_count(0),
       _external_node_count(0) {
   processRoot();
 }
 
 Tree::Tree(std::shared_ptr<Node> inroot)
-    : _root(inroot), _nodes(vector<std::shared_ptr<Node>>()),
+    : _root(inroot),
+      _nodes(vector<std::shared_ptr<Node>>()),
       _internal_nodes(vector<std::shared_ptr<Node>>()),
-      _external_nodes(vector<std::shared_ptr<Node>>()), _internal_node_count(0),
+      _external_nodes(vector<std::shared_ptr<Node>>()),
+      _internal_node_count(0),
       _external_node_count(0) {
   _root = inroot;
   processRoot();
@@ -52,8 +58,7 @@ std::shared_ptr<Node> Tree::getExternalNode(int num) {
 std::shared_ptr<Node> Tree::getExternalNode(string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _external_nodes.size(); i++) {
-    if (_external_nodes.at(i)->getName() == name)
-      ret = _external_nodes.at(i);
+    if (_external_nodes.at(i)->getName() == name) ret = _external_nodes.at(i);
   }
   return ret;
 }
@@ -68,8 +73,7 @@ std::shared_ptr<Node> Tree::getInternalNode(int num) {
 std::shared_ptr<Node> Tree::getInternalNode(string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _internal_nodes.size(); i++) {
-    if (_internal_nodes.at(i)->getName() == name)
-      ret = _internal_nodes.at(i);
+    if (_internal_nodes.at(i)->getName() == name) ret = _internal_nodes.at(i);
   }
   return ret;
 }
@@ -104,13 +108,12 @@ void Tree::reRoot(std::shared_ptr<Node> outgroup) {
   }
   processRoot();
   if (getRoot()->getChildCount() < 3) {
-    tritomyRoot(outgroup); // not sure if this should actually be the inroot
-                           // instead of NULL
+    tritomyRoot(outgroup);  // not sure if this should actually be the inroot
+                            // instead of NULL
   }
   if (_root == outgroup) {
     cout << "you asked to root at the current root" << endl;
   } else {
-
     std::shared_ptr<Node> tempParent = getParent(outgroup);
     auto newRoot = std::make_shared<Node>(*tempParent);
 
@@ -223,8 +226,7 @@ void Tree::processRoot() {
   _external_nodes.clear();
   _internal_node_count = 0;
   _external_node_count = 0;
-  if (_root == nullptr)
-    return;
+  if (_root == nullptr) return;
   postOrderProcessRoot(_root);
 }
 
@@ -257,8 +259,7 @@ void Tree::exchangeInfo(std::shared_ptr<Node> node1,
 }
 
 void Tree::postOrderProcessRoot(std::shared_ptr<Node> node) {
-  if (node == nullptr)
-    return;
+  if (node == nullptr) return;
   if (node->getChildCount() > 0) {
     for (int i = 0; i < node->getChildCount(); i++) {
       postOrderProcessRoot(node->getChild(i));
@@ -291,4 +292,35 @@ bool Tree::findNode(std::shared_ptr<Node> n) { return _root->findNode(n); }
 
 std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
+}
+
+OperationWrapper Tree::generateOperations(
+    Workspace &ws,
+    const std::unordered_map<std::string, lagrange_dist_t> dist_data,
+    bool compute_lh, bool compute_ancstate, bool compute_ancsplit) const {
+  OperationWrapper op_wrap;
+  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws, dist_data);
+  op_wrap._forward_ops = forward_tmp.first;
+  if (compute_lh) {
+    op_wrap.registerLHGoal();
+  }
+
+  if (!compute_ancstate && !compute_ancsplit) return op_wrap;
+
+  auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws);
+  ws.set_tip_clv(ws.get_top_clv_reverse(_root->getNumber()), 1.0);
+  op_wrap._backwards_ops = backward_tmp.first;
+
+  auto node_ids = _root->traverseAndGenerateBackwardNodeIds();
+
+  if (compute_ancstate) {
+    for (auto nid : node_ids) {
+      op_wrap.registerStateLHGoal(ws.get_top_clv_reverse(nid),
+                                  ws.get_lchild_clv(nid),
+                                  ws.get_rchild_clv(nid));
+    }
+  }
+  if (compute_ancsplit) {
+  }
+  return op_wrap;
 }

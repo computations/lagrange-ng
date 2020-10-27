@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 18, 2009
  *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #ifndef OPTIMIZEBIOGEO_H_

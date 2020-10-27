@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 15, 2009
  *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #ifndef PHYLOTREE_H_

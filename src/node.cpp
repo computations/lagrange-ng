@@ -5,33 +5,42 @@
  *      Author: smitty
  */
 
-#include "Common.h"
-#include "superdouble.h"
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
 #include <vector>
 
 using namespace std;
 
+#include "Common.h"
 #include "node.h"
 #include "string_node_object.h"
+#include "superdouble.h"
 
 Node::Node()
-    : _branch_length(0.0), _height(0.0), _number(0), _label(""),
-      _comment(""), _children{} {}
+    : _branch_length(0.0),
+      _height(0.0),
+      _number(0),
+      _label(""),
+      _comment(""),
+      _children{} {}
 
 Node::Node(double bl, int innumber, const string &inname)
-    : _branch_length(bl), _height(0.0), _number(innumber), _label(inname),
-      _comment(""), _children{} {}
+    : _branch_length(bl),
+      _height(0.0),
+      _number(innumber),
+      _label(inname),
+      _comment(""),
+      _children{} {}
 
 vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
-bool Node::isExternal() const { return _children.size() < 1; }
+bool Node::isExternal() const { return _children.size() == 0; }
 
-bool Node::isInternal() const { return _children.size() > 0; }
+bool Node::isInternal() const { return _children.size() != 0; }
 
 int Node::getNumber() const { return _number; }
 
@@ -106,9 +115,9 @@ string Node::getNewick(bool branch_lengths) const {
   return newick_oss.str();
 }
 
-string
-Node::getNewick(bool branch_lengths,
-                const std::function<string(const Node &)> &node_lambda) const {
+string Node::getNewick(
+    bool branch_lengths,
+    const std::function<string(const Node &)> &node_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) {
@@ -126,9 +135,8 @@ Node::getNewick(bool branch_lengths,
   }
   if (isInternal() == true) {
     newick_oss << node_lambda(*this);
-  } else { // EXTERNAL
-    if (_label.size() > 0)
-      newick_oss << _label;
+  } else {  // EXTERNAL
+    if (_label.size() > 0) newick_oss << _label;
   }
   return newick_oss.str();
 }
@@ -162,20 +170,10 @@ void Node::setConditionalVector(const vector<Superdouble> &v) {
   _conditionals = v;
 }
 
-void Node::setAncestralConditionalVector(const vector<Superdouble> &v) {
-  _ancestral_conditionals = v;
-}
-
-void Node::setReverseBits(const vector<Superdouble> &v) {
-  _reverse_bits = v;
-}
+void Node::setReverseBits(const vector<Superdouble> &v) { _reverse_bits = v; }
 
 const vector<Superdouble> &Node::getConditionalVector() const {
   return _conditionals;
-}
-
-const vector<Superdouble> &Node::getAncestralConditionalVector() const {
-  return _ancestral_conditionals;
 }
 
 const vector<Superdouble> &Node::getReverseBits() const {
@@ -254,9 +252,9 @@ void Node::pruneNode(std::shared_ptr<Node> n) {
   }
 }
 
-std::shared_ptr<Node>
-getMRCAWithNode(const std::shared_ptr<Node> &current,
-                const std::vector<std::shared_ptr<Node>> &leaves) {
+std::shared_ptr<Node> getMRCAWithNode(
+    const std::shared_ptr<Node> &current,
+    const std::vector<std::shared_ptr<Node>> &leaves) {
   if (current->_children.size() == 0) {
     for (auto &n : leaves) {
       if (n == current) {
@@ -304,4 +302,117 @@ std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
     }
   }
   return {nullptr};
+}
+
+std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
+Node::traverseAndGenerateForwardOperations(
+    Workspace &ws,
+    const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
+    const {
+  if (_children.size() != 2 && _children.size() != 0) {
+    throw std::runtime_error{
+        "Tree is not bifircating when generating operations"};
+  }
+
+  if (_children.size() == 0) {
+    ws.register_top_clv(_number);
+    ws.set_tip_clv(ws.get_top_clv(_number), distrib_data.at(_label));
+    return {{}, generateDispersionOperations(ws)};
+  }
+
+  std::vector<SplitOperation> split_ops;
+
+  auto lchild =
+      _children[0]->traverseAndGenerateForwardOperations(ws, distrib_data);
+  auto rchild =
+      _children[1]->traverseAndGenerateForwardOperations(ws, distrib_data);
+
+  split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
+  split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
+  split_ops.insert(split_ops.end(), rchild.first.begin(), rchild.first.end());
+
+  ws.register_top_clv(_number);
+  ws.register_children_clv(_number);
+  lchild.second->terminate(ws.get_lchild_clv(_number));
+  rchild.second->terminate(ws.get_rchild_clv(_number));
+
+  split_ops.emplace_back(ws.get_top_clv(_number), lchild.second, rchild.second);
+  return {split_ops, generateDispersionOperations(ws)};
+}
+
+std::pair<std::vector<ReverseSplitOperation>,
+          std::shared_ptr<DispersionOperation>>
+Node::traverseAndGenerateBackwardOperations(Workspace &ws) const {
+  if (_children.size() != 2 && _children.size() != 0) {
+    throw std::runtime_error{
+        "Tree is not bifircating when generating operations"};
+  }
+
+  if (_children.size() == 0) {
+    return {{}, {}};
+  }
+
+  std::vector<ReverseSplitOperation> rsplit_ops;
+
+  ws.register_top_clv_reverse(_number);
+
+  auto disp_ops = generateDispersionOperationsReverse(ws);
+
+  if (_children[0]->isInternal()) {
+    ws.register_bot1_clv_reverse(_number);
+    rsplit_ops.emplace_back(ws.get_bot1_clv_reverse(_number),
+                            ws.get_rchild_clv(_number), disp_ops);
+
+    auto child_trav = _children[0]->traverseAndGenerateBackwardOperations(ws);
+    auto child_disp_op = child_trav.second;
+
+    child_disp_op->terminate(ws.get_bot1_clv_reverse(_number));
+    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
+                      child_trav.first.end());
+  }
+  if (_children[1]->isInternal()) {
+    ws.register_bot2_clv_reverse(_number);
+    rsplit_ops.emplace_back(ws.get_bot2_clv_reverse(_number),
+                            ws.get_lchild_clv(_number), disp_ops);
+
+    auto child_trav = _children[1]->traverseAndGenerateBackwardOperations(ws);
+    auto child_disp_op = child_trav.second;
+
+    child_disp_op->terminate(ws.get_bot2_clv_reverse(_number));
+    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
+                      child_trav.first.end());
+  }
+  return {rsplit_ops, disp_ops};
+}
+
+std::shared_ptr<DispersionOperation> Node::generateDispersionOperations(
+    Workspace &ws) const {
+  return std::make_shared<DispersionOperation>(
+      ws.get_top_clv(_number), _branch_length, ws.suggest_prob_matrix_index(),
+      0);
+}
+
+std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
+    Workspace &ws) const {
+  return std::make_shared<DispersionOperation>(
+      ws.get_top_clv_reverse(_number), _branch_length,
+      ws.suggest_prob_matrix_index(), 0, /*transpose=*/true);
+}
+
+std::vector<size_t> Node::traverseAndGenerateBackwardNodeIds() const {
+  if (_children.size() == 0) {
+    return {_number};
+  }
+
+  std::vector<size_t> node_ids;
+
+  auto lchild = _children[0]->traverseAndGenerateBackwardNodeIds();
+  auto rchild = _children[1]->traverseAndGenerateBackwardNodeIds();
+
+  node_ids.reserve(lchild.size() + rchild.size() + 1);
+  node_ids.insert(node_ids.end(), lchild.begin(), lchild.end());
+  node_ids.insert(node_ids.end(), rchild.begin(), rchild.end());
+  node_ids.push_back(_number);
+
+  return node_ids;
 }

@@ -3,6 +3,8 @@
  *
  *  Created on: Nov 24, 2009
  *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #ifndef NODE_H_
@@ -16,26 +18,27 @@ using namespace std;
 
 #include "BranchSegment.h"
 #include "Common.h"
+#include "Operation.h"
+#include "Workspace.h"
 #include "superdouble.h"
 
 class Node {
-private:
-  double _branch_length; // branch lengths
-  double _height;        // could be from tip or from root
-  int _number;
+ private:
+  double _branch_length;  // branch lengths
+  double _height;         // could be from tip or from root
+  size_t _number;
   string _label;
   string _comment;
   string _split_string;
   string _state_string;
   string _stoch_string;
   vector<Superdouble> _conditionals;
-  vector<Superdouble> _ancestral_conditionals;
   vector<Superdouble> _reverse_bits;
   vector<std::shared_ptr<Node>> _children;
   vector<BranchSegment> _branch_segments;
   std::shared_ptr<vector<lagrange_dist_t>> _excluded_dists;
 
-public:
+ public:
   Node();
   Node(double bl, int number, const string &name);
 
@@ -70,11 +73,9 @@ public:
   int getChildCount() const;
 
   void setConditionalVector(const vector<Superdouble> &v);
-  void setAncestralConditionalVector(const vector<Superdouble> &v);
   void setReverseBits(const vector<Superdouble> &v);
 
   const vector<Superdouble> &getConditionalVector() const;
-  const vector<Superdouble> &getAncestralConditionalVector() const;
   const vector<Superdouble> &getReverseBits() const;
 
   void setSplitString(const string &splitstring);
@@ -100,12 +101,29 @@ public:
 
   friend std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
                                                  std::shared_ptr<Node> n);
-  friend std::shared_ptr<Node>
-  getMRCAWithNode(const std::shared_ptr<Node> &current,
-                  const std::vector<std::shared_ptr<Node>> &nodes);
+  friend std::shared_ptr<Node> getMRCAWithNode(
+      const std::shared_ptr<Node> &current,
+      const std::vector<std::shared_ptr<Node>> &nodes);
+
+  std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
+  traverseAndGenerateForwardOperations(
+      Workspace &ws,
+      const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
+      const;
+
+  std::pair<std::vector<ReverseSplitOperation>,
+            std::shared_ptr<DispersionOperation>>
+  traverseAndGenerateBackwardOperations(Workspace &ws) const;
+
+  std::shared_ptr<DispersionOperation> generateDispersionOperations(
+      Workspace &ws) const;
+  std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
+      Workspace &ws) const;
+
+  std::vector<size_t> traverseAndGenerateBackwardNodeIds() const;
 };
-std::shared_ptr<Node>
-getMRCAWithNode(const std::shared_ptr<Node> &current,
-                const std::vector<std::shared_ptr<Node>> &nodes);
+std::shared_ptr<Node> getMRCAWithNode(
+    const std::shared_ptr<Node> &current,
+    const std::vector<std::shared_ptr<Node>> &nodes);
 
 #endif /* NODE_H_ */

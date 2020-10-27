@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 15, 2009
  *      Author: Stephen A. Smith
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #ifndef BIOGEOTREE_H_
@@ -99,9 +101,9 @@ public:
   /*
           for timing things
    */
-  Superdouble ti;
-  Superdouble ti2;
-  Superdouble ti3;
+  double ti;
+  double ti2;
+  double ti3;
 };
 
 #endif /* BIOGEOTREE_H_ */

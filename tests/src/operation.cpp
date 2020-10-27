@@ -1,5 +1,6 @@
+#include <iostream>
 #include <memory>
-#include <stdexcept>
+#include <type_traits>
 
 #include "Operation.h"
 #include "RateModel.h"
@@ -8,7 +9,7 @@
 #include "gtest/gtest.h"
 
 class OperationTest : public ::testing::Test {
-protected:
+ protected:
   void SetUp() override {
     _arbitrary_rate_matrix = {
         {-2.426898, 1.094290, 0.849836, 0.482772},
@@ -32,8 +33,10 @@ protected:
         0,
         0.0483959,
         0.0600372,
-        0.322861,
+        0.0538102,
     };
+
+    _correct_reverse_bot_clv = {0, 0.0372744, 0.0295824, 0.0360807};
 
     _arbitrary_clv1 = {
         0.491885,
@@ -50,18 +53,40 @@ protected:
     };
 
     _ws = make_shared<Workspace>(_taxa, _regions);
+
+    _lbot_clv = _ws->register_generic_clv();
+    _ltop_clv = _ws->register_generic_clv();
+    _rbot_clv = _ws->register_generic_clv();
+    _rtop_clv = _ws->register_generic_clv();
+
+    _root_clv = _ws->register_generic_clv();
+
+    _reverse_bot_clv = _ws->register_generic_clv();
+    _reverse_ltop_clv = _ws->register_generic_clv();
+    _reverse_lbot_clv = _ws->register_generic_clv();
+
+    _ws->reserve();
+
     _ws->rate_matrix(_rate_matrix) = _arbitrary_rate_matrix;
+
     _ws->clv(_rbot_clv) = _arbitrary_clv1;
     _ws->clv(_lbot_clv) = _arbitrary_clv2;
     _ws->clv(_root_clv) = {0, 0, 0, 0};
+
+    _ws->clv(_reverse_bot_clv) = {0, 0, 0, 0};
+    _ws->clv(_reverse_lbot_clv) = _arbitrary_clv1;
   }
 
-  size_t _lbot_clv = 0;
-  size_t _ltop_clv = 1;
-  size_t _rbot_clv = 2;
-  size_t _rtop_clv = 3;
+  size_t _lbot_clv;
+  size_t _ltop_clv;
+  size_t _rbot_clv;
+  size_t _rtop_clv;
 
-  size_t _root_clv = 4;
+  size_t _root_clv;
+
+  size_t _reverse_bot_clv;
+  size_t _reverse_ltop_clv;
+  size_t _reverse_lbot_clv;
 
   size_t _prob_matrix = 0;
   size_t _rate_matrix = 0;
@@ -75,6 +100,7 @@ protected:
   lagrange_col_vector_t _arbitrary_clv1;
   lagrange_col_vector_t _arbitrary_clv2;
   lagrange_col_vector_t _correct_root_clv;
+  lagrange_col_vector_t _correct_reverse_bot_clv;
   std::shared_ptr<Workspace> _ws;
 };
 
@@ -94,10 +120,8 @@ TEST_F(OperationTest, ExpmSimple1) {
 }
 
 TEST_F(OperationTest, DispersionSimple0) {
-  auto ws = std::make_shared<Workspace>(_taxa, _regions);
-
   DispersionOperation disp_op(_rtop_clv, _rbot_clv, _prob_matrix);
-  disp_op.eval(ws);
+  disp_op.eval(_ws);
 }
 
 TEST_F(OperationTest, DispersionSimple1) {
@@ -141,5 +165,19 @@ TEST_F(OperationTest, SplitSimple0) {
 
   auto &root_clv = _ws->clv(_root_clv);
   double error = blaze::norm(root_clv - _correct_root_clv);
+  EXPECT_NEAR(error, 0.0, 1e-4);
+}
+
+TEST_F(OperationTest, ReversSplitSimple0) {
+  ReverseSplitOperation rsplit_op(_reverse_bot_clv, _reverse_ltop_clv,
+                                  _rbot_clv, _rate_matrix, _prob_matrix,
+                                  _reverse_lbot_clv, _t);
+
+  _ws->clv(_reverse_ltop_clv) = 0.0;
+
+  rsplit_op.eval(_ws);
+
+  auto &root_clv = _ws->clv(_reverse_bot_clv);
+  double error = blaze::norm(root_clv - _correct_reverse_bot_clv);
   EXPECT_NEAR(error, 0.0, 1e-4);
 }

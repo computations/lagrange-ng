@@ -2,7 +2,9 @@
  * RateMatrixUtils.cpp
  *
  *  Created on: Aug 13, 2009
- * Author: smitty
+ *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 #include "Common.h"

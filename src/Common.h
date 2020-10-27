@@ -1,3 +1,8 @@
+/* Common.h
+ *
+ * Created On: 27 Oct 2020
+ * Author: Ben Bettisworth
+ */
 #ifndef LAGRANGE_COMMON_H__
 #define LAGRANGE_COMMON_H__
 

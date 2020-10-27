@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 15, 2009
  *      Author: smitty
+ *   Last Edit: 27 Oct 2020
+ *      Author: Ben Bettisworth
  */
 
 /*
@@ -17,20 +19,20 @@
 #ifndef ANCSPLIT_H_
 #define ANCSPLIT_H_
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "superdouble.h"
 
 class AncSplit {
-private:
+ private:
   double _weight;
   Superdouble _likelihood;
 
-public:
-  AncSplit(int, int, int, Superdouble);
-  double getWeight();
-  Superdouble getLikelihood();
+ public:
+  AncSplit(int, int, int, double);
+  double getWeight() const;
+  Superdouble getLikelihood() const;
   void setLikelihood(Superdouble li);
   int ancdistint;
   int ldescdistint;
