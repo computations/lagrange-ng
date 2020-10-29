@@ -299,28 +299,33 @@ OperationWrapper Tree::generateOperations(
     const std::unordered_map<std::string, lagrange_dist_t> dist_data,
     bool compute_lh, bool compute_ancstate, bool compute_ancsplit) const {
   OperationWrapper op_wrap;
-  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws, dist_data);
+  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws);
   op_wrap._forward_ops = forward_tmp.first;
   if (compute_lh) {
     op_wrap.registerLHGoal();
   }
 
-  if (!compute_ancstate && !compute_ancsplit) return op_wrap;
+  if (compute_ancstate || compute_ancsplit) {
+    auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws);
+    op_wrap._backwards_ops = backward_tmp.first;
 
-  auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws);
-  ws.set_tip_clv(ws.get_top_clv_reverse(_root->getNumber()), 1.0);
-  op_wrap._backwards_ops = backward_tmp.first;
+    std::vector<size_t> node_ids;
+    _root->traverseAndGenerateBackwardNodeIdsInternalOnly(node_ids);
 
-  auto node_ids = _root->traverseAndGenerateBackwardNodeIds();
-
-  if (compute_ancstate) {
-    for (auto nid : node_ids) {
-      op_wrap.registerStateLHGoal(ws.get_top_clv_reverse(nid),
-                                  ws.get_lchild_clv(nid),
-                                  ws.get_rchild_clv(nid));
+    if (compute_ancstate) {
+      for (auto nid : node_ids) {
+        op_wrap.registerStateLHGoal(ws.get_top_clv_reverse(nid),
+                                    ws.get_lchild_clv(nid),
+                                    ws.get_rchild_clv(nid));
+      }
+    }
+    if (compute_ancsplit) {
     }
   }
-  if (compute_ancsplit) {
+  ws.reserve();
+  if (compute_ancsplit || compute_ancstate) {
+    ws.set_tip_clv(ws.get_top_clv_reverse(_root->getNumber()), 1.0);
   }
+  _root->assignTipData(ws, dist_data);
   return op_wrap;
 }

@@ -100,7 +100,9 @@ public:
   const vector<lagrange_region_split_t> &
   get_iter_dist_splits(lagrange_dist_t dist) const;
   void remove_dist(vector<int> dist);
+
   bool _sparse;
+
   size_t get_num_areas();
   int get_num_periods();
 

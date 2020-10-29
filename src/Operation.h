@@ -62,6 +62,14 @@ class DispersionOperation {
         _prob_matrix_index{prob_matrix},
         _expm_op{new ExpmOperation{prob_matrix, rate_matrix, brlen}} {}
 
+  DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
+                      size_t rate_matrix, bool transpose)
+      : _top_clv{std::numeric_limits<size_t>::max()},
+        _bot_clv{bot},
+        _prob_matrix_index{prob_matrix},
+        _expm_op{
+            new ExpmOperation{prob_matrix, rate_matrix, brlen, transpose}} {}
+
   DispersionOperation(size_t top, size_t bot, std::shared_ptr<ExpmOperation> op)
       : _top_clv{top},
         _bot_clv{bot},

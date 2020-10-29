@@ -1,4 +1,3 @@
-#include <iostream>
 #include <memory>
 #include <type_traits>
 
@@ -168,7 +167,7 @@ TEST_F(OperationTest, SplitSimple0) {
   EXPECT_NEAR(error, 0.0, 1e-4);
 }
 
-TEST_F(OperationTest, ReversSplitSimple0) {
+TEST_F(OperationTest, ReverseSplitSimple0) {
   ReverseSplitOperation rsplit_op(_reverse_bot_clv, _reverse_ltop_clv,
                                   _rbot_clv, _rate_matrix, _prob_matrix,
                                   _reverse_lbot_clv, _t);

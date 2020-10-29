@@ -305,10 +305,7 @@ std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
 }
 
 std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateForwardOperations(
-    Workspace &ws,
-    const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
-    const {
+Node::traverseAndGenerateForwardOperations(Workspace &ws) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -316,16 +313,13 @@ Node::traverseAndGenerateForwardOperations(
 
   if (_children.size() == 0) {
     ws.register_top_clv(_number);
-    ws.set_tip_clv(ws.get_top_clv(_number), distrib_data.at(_label));
     return {{}, generateDispersionOperations(ws)};
   }
 
   std::vector<SplitOperation> split_ops;
 
-  auto lchild =
-      _children[0]->traverseAndGenerateForwardOperations(ws, distrib_data);
-  auto rchild =
-      _children[1]->traverseAndGenerateForwardOperations(ws, distrib_data);
+  auto lchild = _children[0]->traverseAndGenerateForwardOperations(ws);
+  auto rchild = _children[1]->traverseAndGenerateForwardOperations(ws);
 
   split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
   split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
@@ -399,20 +393,31 @@ std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
       ws.suggest_prob_matrix_index(), 0, /*transpose=*/true);
 }
 
-std::vector<size_t> Node::traverseAndGenerateBackwardNodeIds() const {
-  if (_children.size() == 0) {
-    return {_number};
+void Node::traverseAndGenerateBackwardNodeIds(std::vector<size_t> &ret) const {
+  ret.push_back(_number);
+  for (auto &c : _children) {
+    c->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
   }
+}
 
-  std::vector<size_t> node_ids;
+void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(
+    std::vector<size_t> &ret) const {
+  ret.push_back(_number);
+  for (auto &c : _children) {
+    if (c->isInternal()) {
+      c->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
+    }
+  }
+}
 
-  auto lchild = _children[0]->traverseAndGenerateBackwardNodeIds();
-  auto rchild = _children[1]->traverseAndGenerateBackwardNodeIds();
-
-  node_ids.reserve(lchild.size() + rchild.size() + 1);
-  node_ids.insert(node_ids.end(), lchild.begin(), lchild.end());
-  node_ids.insert(node_ids.end(), rchild.begin(), rchild.end());
-  node_ids.push_back(_number);
-
-  return node_ids;
+void Node::assignTipData(Workspace &ws,
+                         const std::unordered_map<std::string, lagrange_dist_t>
+                             &distrib_data) const {
+  if (_children.size() == 0) {
+    ws.set_tip_clv(ws.get_top_clv(_number), distrib_data.at(_label));
+  } else {
+    for (auto &c : _children) {
+      c->assignTipData(ws, distrib_data);
+    }
+  }
 }

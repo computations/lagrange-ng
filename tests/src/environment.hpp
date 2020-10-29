@@ -14,7 +14,7 @@ class LagrangeEnvironment: public ::testing::Environment{
     LagrangeEnvironment(){}
 
     std::ifstream get_datafile(){
-        return std::ifstream(STRINGIFY(TREEPATH));
+        return std::ifstream(STRINGIFY(TREEPATH/random_test_trees));
     }
 
 };

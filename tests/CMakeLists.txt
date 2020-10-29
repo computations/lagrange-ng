@@ -31,13 +31,14 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
   include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
-set(TREEPATH ${CMAKE_CURRENT_SOURCE_DIR}/data/test_trees)
+set(TREEPATH ${CMAKE_CURRENT_SOURCE_DIR}/data)
 
 # Now simply link against gtest or gtest_main as needed. Eg
 set(LAGRANGE_TEST_SOURCES 
   src/tree_reader.cpp
   src/workspace.cpp
   src/operation.cpp
+  src/tree.cpp
   src/main.cpp)
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})
 target_link_libraries(lagrange-test gtest_main lagrange-debug-libs)

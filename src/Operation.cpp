@@ -64,9 +64,11 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
 
   for (size_t i = 0; i < states; i++) {
     auto splits = generate_splits(i, regions);
-    double weight = 1.0 / splits.size();
     for (auto p : splits) {
-      dest[i] += c1[p.left] * c2[p.right] * weight;
+      dest[i] += c1[p.left] * c2[p.right];
+    }
+    if (splits.size() != 0) {
+      dest[i] /= static_cast<double>(splits.size());
     }
   }
 }

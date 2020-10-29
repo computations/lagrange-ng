@@ -49,7 +49,7 @@ class Workspace {
         _base_frequencies{nullptr},
         _clv_stride{1},
         _clvs{nullptr},
-        _node_reservations{clv_count()} {
+        _node_reservations{node_count()} {
     if (taxa_count == 0) {
       throw std::runtime_error{"We cannot make a workspace with zero taxa"};
     }

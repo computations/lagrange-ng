@@ -106,10 +106,7 @@ class Node {
       const std::vector<std::shared_ptr<Node>> &nodes);
 
   std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateForwardOperations(
-      Workspace &ws,
-      const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
-      const;
+  traverseAndGenerateForwardOperations(Workspace &ws) const;
 
   std::pair<std::vector<ReverseSplitOperation>,
             std::shared_ptr<DispersionOperation>>
@@ -120,7 +117,13 @@ class Node {
   std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
       Workspace &ws) const;
 
-  std::vector<size_t> traverseAndGenerateBackwardNodeIds() const;
+  void traverseAndGenerateBackwardNodeIds(std::vector<size_t> &) const;
+  void traverseAndGenerateBackwardNodeIdsInternalOnly(
+      std::vector<size_t> &) const;
+
+  void assignTipData(Workspace &ws,
+                     const std::unordered_map<std::string, lagrange_dist_t>
+                         &distrib_data) const;
 };
 std::shared_ptr<Node> getMRCAWithNode(
     const std::shared_ptr<Node> &current,
