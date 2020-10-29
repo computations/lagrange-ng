@@ -71,12 +71,14 @@ class Workspace {
     }
     return _clvs[(i * _clv_stride)];
   }
+
   inline lagrange_matrix_t &rate_matrix(size_t i) {
     if (i >= _rate_matrix_count) {
       throw std::runtime_error{"Rate matrix access out of range"};
     }
     return _rate_matrix[i];
   }
+
   inline lagrange_matrix_t &prob_matrix(size_t i) {
     if (i >= _prob_matrix_count) {
       throw std::runtime_error{"Prob matrix access out of range"};
@@ -161,7 +163,7 @@ class Workspace {
       _prob_matrix[i] = lagrange_matrix_t(_states, _states);
     }
     for (size_t i = 0; i < _base_frequencies_count; i++) {
-      _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0);
+      _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0/_states);
     }
     for (size_t i = 0; i < clv_count(); i++) {
       _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);

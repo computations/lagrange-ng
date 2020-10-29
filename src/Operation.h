@@ -211,9 +211,10 @@ class LHGoal {
       : _root_clv_index{root_clv}, _prior_index{prior_index} {}
   double eval(std::shared_ptr<Workspace>) const;
 
- private:
   size_t _root_clv_index;
   size_t _prior_index;
+
+ private:
 };
 
 class StateLHGoal {

@@ -105,6 +105,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t N = I + c * (_transposed ? blaze::trans(A) : A);
   lagrange_matrix_t D = I - c * (_transposed ? blaze::trans(A) : A);
 
+
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup
   for (int i = 2; i <= q; ++i) {
@@ -118,14 +119,16 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   for (int i = 0; i < scale_exp; ++i) {
     A *= A;
   }
-  ws->prob_matrix(_prob_matrix_index) = std::move(A);
+  ws->prob_matrix(_prob_matrix_index) = A;
 }
 
 void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
   if (_expm_op != nullptr) {
     _expm_op->eval(ws);
   }
+
   ws->clv(_top_clv) = ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv);
+
 }
 
 void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
