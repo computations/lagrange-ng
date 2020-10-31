@@ -10,18 +10,19 @@
 #include "Common.h"
 #define VERBOSE false
 
-#include "RateMatrixUtils.h"
-#include "RateModel.h"
-#include "Utils.h"
+#include <blaze/math/IdentityMatrix.h>
+#include <pthread.h>
 
 #include <algorithm>
-#include <blaze/math/IdentityMatrix.h>
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <limits>
 #include <numeric>
-#include <pthread.h>
+
+#include "RateMatrixUtils.h"
+#include "RateModel.h"
+#include "Utils.h"
 using namespace std;
 
 /*
@@ -86,8 +87,12 @@ void convert_matrix_to_single_row_for_fortran(vector<vector<double>> &inmatrix,
 
 RateModel::RateModel(int na, bool ge, vector<double> pers, bool sp)
     : _global_ext(ge),
-      _area_count(na), _valid_dist_mask{(1ull << _area_count) - 1},
-      _thread_count(0), _periods(pers), _expm_count{0}, _sparse(sp) {}
+      _area_count(na),
+      _valid_dist_mask{(1ull << _area_count) - 1},
+      _thread_count(0),
+      _periods(pers),
+      _expm_count{0},
+      _sparse(sp) {}
 
 void RateModel::set_nthreads(int nthreads) { _thread_count = nthreads; }
 
@@ -125,7 +130,7 @@ void RateModel::setup_dists(vector<lagrange_dist_t> indists, bool include) {
     if (_dists[0] > 0) {
       _dists.push_back(0);
     }
-  } else { // exclude is sent
+  } else {  // exclude is sent
     _dists.push_back(0);
 
     for (lagrange_dist_t i = 1; i < getDistCount(); ++i) {
@@ -163,8 +168,7 @@ void RateModel::setup_Dmask() {
 void RateModel::set_Dmask_cell(int period, int area, int area2, double prob,
                                bool sym) {
   _dispersal_params_mask[period][area][area2] = prob;
-  if (sym)
-    _dispersal_params_mask[period][area2][area] = prob;
+  if (sym) _dispersal_params_mask[period][area2][area] = prob;
 }
 
 void RateModel::setup_D(double d) {
@@ -251,12 +255,12 @@ void RateModel::setup_Q() {
   _rate_matrix = vector<lagrange_matrix_t>(_periods.size(),
                                            {_dists.size(), _dists.size(), 0.0});
   for (unsigned int period = 0; period < _rate_matrix.size();
-       period++) {                                                    // periods
-    for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) { // dists
+       period++) {  // periods
+    for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) {  // dists
       int s1 = lagrange_popcount(_dists[dist_i]);
       if (s1 > 0) {
         for (unsigned int dist_j = 0; dist_j < _dists.size();
-             dist_j++) { // dists
+             dist_j++) {  // dists
           int sxor = lagrange_popcount(_dists[dist_i] ^ _dists[dist_j]);
           if (sxor == 1) {
             int s2 = lagrange_popcount(_dists[dist_j]);
@@ -296,7 +300,7 @@ void RateModel::setup_Q() {
 
     // setting up the coo numbs
     _active_zone_counts = vector<int>(_rate_matrix.size(), 0);
-    for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
+    for (unsigned int p = 0; p < _rate_matrix.size(); p++) {  // periods
       _active_zone_counts[p] = get_size_for_coo(_rate_matrix[p]);
     }
 
@@ -304,7 +308,7 @@ void RateModel::setup_Q() {
     _ia_s.clear();
     _ja_s.clear();
     _a_s.clear();
-    for (unsigned int p = 0; p < _rate_matrix.size(); p++) { // periods
+    for (unsigned int p = 0; p < _rate_matrix.size(); p++) {  // periods
       vector<int> ia = vector<int>(_active_zone_counts[p]);
       vector<int> ja = vector<int>(_active_zone_counts[p]);
       vector<double> a = vector<double>(_active_zone_counts[p]);
@@ -384,8 +388,8 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
 
 /* TODO: Actually compute Horner's method for some particular values of q
  */
-lagrange_matrix_t
-RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
+lagrange_matrix_t RateModel::compute_matrix_exponential_ss(
+    lagrange_matrix_t A) const {
   size_t rows = A.rows();
   int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A)));
   A /= std::pow(2.0, scale_exp);
@@ -416,8 +420,8 @@ RateModel::compute_matrix_exponential_ss(lagrange_matrix_t A) const {
   return A;
 }
 
-lagrange_matrix_t
-RateModel::compute_matrix_exponential_eigen(const lagrange_matrix_t &A) const {
+lagrange_matrix_t RateModel::compute_matrix_exponential_eigen(
+    const lagrange_matrix_t &A) const {
   size_t rows = A.rows();
   lagrange_complex_col_vector_t eigenvalues(rows);
   lagrange_complex_matrix_t eigenvectors(rows, rows);
@@ -501,7 +505,7 @@ vector<vector<double>> RateModel::setup_fortran_P(int period, double t,
  */
 vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   int n = _rate_matrix[period].columns();
-  int m = _rate_matrix[period].columns() - 1; // tweak
+  int m = _rate_matrix[period].columns() - 1;  // tweak
   int nz = get_size_for_coo(_rate_matrix[period]);
   int *ia = new int[nz];
   int *ja = new int[nz];
@@ -542,7 +546,7 @@ vector<vector<double>> RateModel::setup_sparse_full_P(int period, double t) {
   for (unsigned int i = 0; i < _dists.size(); i++) {
     if (_dists[i] > 0) {
       for (unsigned int j = 0; j < _area_count; j++) {
-        if (lagrange_bextr(_dists[i], j) == 0) { // present
+        if (lagrange_bextr(_dists[i], j) == 0) {  // present
           continue;
         }
         double sum1 =
@@ -588,7 +592,7 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   int n = _rate_matrix[period].rows();
   int m = _area_count - 1;
   int current_zone_count =
-      _active_zone_counts[period]; // get_size_for_coo(Q[period],1);
+      _active_zone_counts[period];  // get_size_for_coo(Q[period],1);
   int *ia = new int[current_zone_count];
   int *ja = new int[current_zone_count];
   double *a = new double[current_zone_count];
@@ -599,7 +603,7 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   for (int i = 0; i < n; i++) {
     v[i] = 0;
   }
-  v[column] = 1; // only return the one column we want
+  v[column] = 1;  // only return the one column we want
   double *w = new double[n];
   int ideg = 6;
   double tol = 1;
@@ -609,10 +613,10 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   double *wsp = new double[lwsp];
   int liwsp = m + 2;
   int *iwsp = new int[liwsp];
-  double t1 = t; // use to be 1
+  double t1 = t;  // use to be 1
   double anorm = 0;
   int itrace = 0;
-  double *res = new double[n]; // only needs resulting columns
+  double *res = new double[n];  // only needs resulting columns
   wrapsingledmexpv_(&n, &m, &t1, v, w, &tol, &anorm, wsp, &lwsp, iwsp, &liwsp,
                     &itrace, &iflag, ia, ja, a, &current_zone_count, res);
 
@@ -640,8 +644,8 @@ vector<double> RateModel::setup_sparse_single_column_P(int period, double t,
   return p;
 }
 
-vector<lagrange_region_split_t>
-RateModel::iter_dist_splits(lagrange_dist_t dist) {
+vector<lagrange_region_split_t> RateModel::iter_dist_splits(
+    lagrange_dist_t dist) {
   vector<lagrange_region_split_t> ret;
 
   if (dist == 0) {
@@ -654,7 +658,6 @@ RateModel::iter_dist_splits(lagrange_dist_t dist) {
   }
 
   for (unsigned int i = 0; i < _area_count; i++) {
-
     if (lagrange_bextr(dist, i) == 0) {
       continue;
     }
@@ -694,8 +697,8 @@ const vector<lagrange_dist_t> &RateModel::getDists() { return _dists; }
 
 size_t RateModel::getDistsSize() const { return _dists.size(); }
 
-const vector<lagrange_region_split_t> &
-RateModel::get_iter_dist_splits(lagrange_dist_t dist) const {
+const vector<lagrange_region_split_t> &RateModel::get_iter_dist_splits(
+    lagrange_dist_t dist) const {
   return _iter_dists.at(dist);
 }
 
@@ -716,7 +719,6 @@ inline double roundto(double in) { return floor(in * (1000) + 0.5) / (1000); }
 bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
                                              lagrange_complex_matrix_t &eigvec,
                                              int period) {
-
   size_t row_size = _rate_matrix[period].rows();
   lagrange_matrix_t tQ(row_size, row_size, 0.0);
 
@@ -739,8 +741,7 @@ bool RateModel::get_eigenvec_eigenval_from_Q(lagrange_complex_matrix_t &eigval,
         eigval(i, j) = 0;
       }
       eigvec(i, j) = eigve(i, j);
-      if (imag(eigvec(i, j)) > 0 || imag(eigval(i, j)))
-        isImag = true;
+      if (imag(eigvec(i, j)) > 0 || imag(eigval(i, j))) isImag = true;
     }
   }
   if (VERBOSE) {
@@ -755,15 +756,13 @@ size_t RateModel::get_expm_count() { return _expm_count; }
 vector<AncSplit> RateModel::iter_ancsplits(lagrange_dist_t dist) {
   vector<AncSplit> ans;
   auto splits = get_iter_dist_splits(dist);
-  auto distsmap = get_dists_int_map();
   if (splits.size() == 0) {
     return ans;
   }
   int nsplits = splits.size();
   double weight = 1.0 / nsplits;
   for (unsigned int i = 0; i < splits.size(); i++) {
-    AncSplit an(distsmap[dist], distsmap[splits[i].left],
-                distsmap[splits[i].right], weight);
+    AncSplit an(dist, splits[i].left, splits[i].right, weight);
     ans.push_back(an);
   }
   return ans;

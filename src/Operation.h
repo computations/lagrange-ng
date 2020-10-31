@@ -12,6 +12,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include "Common.h"
+#include "RateModel.h"
 #include "Workspace.h"
 
 class MakeRateMatrixOperation {
@@ -182,6 +184,8 @@ class SplitOperation {
 
   std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
   std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
+
+  std::vector<lagrange_dist_t> _excl_dists;
 };
 
 class ReverseSplitOperation {
@@ -224,6 +228,7 @@ class ReverseSplitOperation {
   bool _eval_clvs;
 
   std::vector<std::shared_ptr<DispersionOperation>> _branch_ops;
+  std::vector<lagrange_dist_t> _excl_dists;
 };
 
 class LHGoal {
@@ -245,7 +250,7 @@ class StateLHGoal {
         _lchild_clv_index{lchild_clv},
         _rchild_clv_index{rchild_clv} {}
 
-  void eval(std::shared_ptr<Workspace>) const;
+  lagrange_col_vector_t eval(std::shared_ptr<Workspace>) const;
 
  private:
   size_t _parent_clv_index;
@@ -255,7 +260,8 @@ class StateLHGoal {
 
 class SplitLHGoal {
  public:
-  void eval(std::shared_ptr<Workspace>) const;
+  std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> eval(
+      std::shared_ptr<Workspace> ws) const;
 
  private:
   size_t _parent_clv_index;

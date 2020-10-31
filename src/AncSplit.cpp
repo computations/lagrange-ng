@@ -17,9 +17,11 @@
  */
 
 #include "AncSplit.h"
+#include "Common.h"
 using namespace std;
 
-AncSplit::AncSplit(int dist, int ldesc, int rdesc, double we)
+AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
+                   lagrange_dist_t rdesc, double we)
     : _weight(we),
       _likelihood(0),
       ancdistint(dist),

@@ -206,7 +206,7 @@ void Node::initExclDistVector() {
   _excluded_dists = std::make_shared<vector<lagrange_dist_t>>();
 }
 
-std::shared_ptr<vector<lagrange_dist_t>> Node::getExclDistVector() {
+std::shared_ptr<vector<lagrange_dist_t>> &Node::getExclDistVector() {
   return _excluded_dists;
 }
 

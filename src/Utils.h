@@ -10,10 +10,11 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-#include "Common.h"
 #include <map>
 #include <string>
 #include <vector>
+
+#include "Common.h"
 
 using namespace std;
 
@@ -44,8 +45,8 @@ inline size_t lagrange_popcount(lagrange_dist_t a) {
 
 inline size_t lagrange_ctz(lagrange_dist_t a) { return __builtin_ctzll(a); }
 
-inline lagrange_dist_t
-convert_vector_to_lagrange_dist(const vector<int> &vec_dist) {
+inline lagrange_dist_t convert_vector_to_lagrange_dist(
+    const vector<int> &vec_dist) {
   lagrange_dist_t ret = 0;
   size_t area_count = vec_dist.size();
 
@@ -56,4 +57,7 @@ convert_vector_to_lagrange_dist(const vector<int> &vec_dist) {
   return ret;
 }
 
+constexpr inline size_t lagrange_fast_log2(size_t x) {
+  return __builtin_clzll(x);
+}
 #endif /* UTILS_H_ */

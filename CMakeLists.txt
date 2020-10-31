@@ -67,7 +67,7 @@ set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(LAGRANGE_DEBUG_FLAGS -Og -g -fno-omit-frame-pointer)
+set(LAGRANGE_DEBUG_FLAGS -O0 -g -fno-omit-frame-pointer)
 list(APPEND ${LAGRANGE_DEBUG_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG})
 set(LAGRANGE_PROFILE_FLAGS -O3 -fno-omit-frame-pointer)
 list(APPEND ${LAGRANGE_PROFILE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})

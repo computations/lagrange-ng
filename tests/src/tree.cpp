@@ -1,6 +1,8 @@
 #include <tree_reader.h>
 
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -19,31 +21,35 @@ class TreeTest : public ::testing::Test {
     _basic_tree_dist_data = {{"a", 0b01}, {"b", 0b11}, {"c", 0b01}};
     _basic_ws = std::make_shared<Workspace>(/*taxa=*/3,
                                             /*regions=*/2);
-
     _arbitrary_rate_matrix = {
-        {-2.426898, 1.094290, 0.849836, 0.482772},
-        {0.088512, -1.800944, 0.083282, 1.629150},
-        {0.759663, 0.547961, -1.367337, 0.059712},
-        {0.360901, 0.374056, 1.267820, -2.002777},
+        {0.00000, 0.00000, 0.00000, 0.00000},
+        {0.08851, -1.71766, 0.00000, 1.62915},
+        {0.75966, 0.00000, -0.81937, 0.05971},
+        {0.00000, 0.37406, 1.26782, -1.64188},
     };
+
+    _rate_matrix_op =
+        std::make_shared<MakeRateMatrixOperation>(_rate_matrix_index);
   }
 
   std::shared_ptr<Tree> parse_tree(const std::string& newick) {
     return TreeReader().readTree(newick);
   }
 
+  size_t _rate_matrix_index = 0;
   std::string _basic_tree_newick;
   std::unordered_map<std::string, lagrange_dist_t> _basic_tree_dist_data;
   std::shared_ptr<Workspace> _basic_ws;
   lagrange_matrix_t _arbitrary_rate_matrix;
+  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 };
 
 TEST_F(TreeTest, simple0) { auto t = parse_tree(_basic_tree_newick); }
 
 TEST_F(TreeTest, generateOperationsSimple0) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data, true,
-                                   false, false);
+  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
+                                   _rate_matrix_op, true, false, false);
 
   EXPECT_EQ(ops._forward_ops.size(), 2);
   EXPECT_EQ(ops._backwards_ops.size(), 0);
@@ -54,8 +60,8 @@ TEST_F(TreeTest, generateOperationsSimple0) {
 
 TEST_F(TreeTest, generateOperationsSimple1) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data, true,
-                                   true, false);
+  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
+                                   _rate_matrix_op, true, true, false);
 
   EXPECT_EQ(ops._forward_ops.size(), 2);
   EXPECT_EQ(ops._backwards_ops.size(), 1);
@@ -66,8 +72,8 @@ TEST_F(TreeTest, generateOperationsSimple1) {
 
 TEST_F(TreeTest, generateOperationsSimple2) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data, true,
-                                   false, false);
+  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
+                                   _rate_matrix_op, true, false, false);
 
   _basic_ws->rate_matrix(0) = _arbitrary_rate_matrix;
   for (auto& o : ops._forward_ops) {
@@ -75,7 +81,7 @@ TEST_F(TreeTest, generateOperationsSimple2) {
   }
 
   double lh = ops._lh[0].eval(_basic_ws);
-  double correct_lh = 0.171726;
+  double correct_lh = 0.006944444444; /* a regression value */
   double error = std::abs(lh - correct_lh);
   EXPECT_NEAR(error, 0.0, 1e-7);
 }

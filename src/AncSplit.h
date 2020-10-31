@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "Common.h"
 #include "superdouble.h"
 
 class AncSplit {
@@ -30,13 +31,13 @@ class AncSplit {
   Superdouble _likelihood;
 
  public:
-  AncSplit(int, int, int, double);
+  AncSplit(lagrange_dist_t, lagrange_dist_t, lagrange_dist_t, double);
   double getWeight() const;
   Superdouble getLikelihood() const;
   void setLikelihood(Superdouble li);
-  int ancdistint;
-  int ldescdistint;
-  int rdescdistint;
+  lagrange_dist_t ancdistint;
+  lagrange_dist_t ldescdistint;
+  lagrange_dist_t rdescdistint;
 };
 
 #endif /* ANCSPLIT_H_ */

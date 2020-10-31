@@ -94,7 +94,7 @@ class Node {
   vector<BranchSegment> &getSegVector();
 
   void initExclDistVector();
-  std::shared_ptr<vector<lagrange_dist_t>> getExclDistVector();
+  std::shared_ptr<vector<lagrange_dist_t>> &getExclDistVector();
 
   bool findNode(std::shared_ptr<Node> n);
 

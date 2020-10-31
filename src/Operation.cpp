@@ -13,15 +13,15 @@
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 
+#include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
 #include "RateModel.h"
 #include "Utils.h"
 #include "Workspace.h"
-
-constexpr inline size_t fast_log2(size_t x) { return __builtin_clzll(x); }
 
 inline std::vector<lagrange_region_split_t> generate_splits(uint64_t state,
                                                             size_t regions) {
@@ -56,14 +56,24 @@ inline std::vector<lagrange_region_split_t> generate_splits(uint64_t state,
 
 inline void weighted_combine(const lagrange_col_vector_t &c1,
                              const lagrange_col_vector_t &c2,
+                             const std::vector<lagrange_dist_t> excl_dists,
                              lagrange_col_vector_t &dest) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
   size_t states = c1.size();
-  size_t regions = fast_log2(states);
+  size_t regions = lagrange_fast_log2(states);
+
+  size_t idx_excl = 0;
 
   for (size_t i = 0; i < states; i++) {
+    while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
+      idx_excl++;
+    }
+    if (idx_excl < excl_dists.size() && i == excl_dists[idx_excl]) {
+      idx_excl++;
+      continue;
+    }
     auto splits = generate_splits(i, regions);
     for (auto p : splits) {
       dest[i] += c1[p.left] * c2[p.right];
@@ -166,7 +176,7 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
-  weighted_combine(lchild_clv, rchild_clv, parent_clv);
+  weighted_combine(lchild_clv, rchild_clv, _excl_dists, parent_clv);
 }
 
 void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
@@ -179,11 +189,41 @@ void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    weighted_combine(ltop_clv, rtop_clv, bot_clv);
+    weighted_combine(ltop_clv, rtop_clv, _excl_dists, bot_clv);
   }
 }
 
 double LHGoal::eval(std::shared_ptr<Workspace> ws) const {
   return blaze::dot(ws->clv(_root_clv_index),
                     ws->get_base_frequencies(_prior_index));
+}
+
+lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
+  lagrange_col_vector_t tmp;
+  weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
+                   /*excl_dists=*/{}, tmp);
+  return ws->clv(_parent_clv_index) * tmp;
+}
+
+std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
+    std::shared_ptr<Workspace> ws) const {
+  std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> ret;
+
+  auto &parent_clv = ws->clv(_parent_clv_index);
+  auto &lchild_clv = ws->clv(_lchild_clv_index);
+  auto &rchild_clv = ws->clv(_rchild_clv_index);
+  for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
+    std::vector<AncSplit> anc_split_vec;
+    auto splits = generate_splits(dist, ws->regions());
+    double weight = 1.0 / splits.size();
+    for (auto sp : splits) {
+      AncSplit anc_split(dist, sp.left, sp.right, weight);
+      double lh = parent_clv[dist] * lchild_clv[sp.left] *
+                  rchild_clv[sp.right] * weight;
+      anc_split.setLikelihood(lh);
+      anc_split_vec.push_back(anc_split);
+    }
+    ret[dist] = anc_split_vec;
+  }
+  return ret;
 }
