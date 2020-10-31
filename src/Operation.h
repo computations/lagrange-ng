@@ -7,6 +7,7 @@
 #ifndef _LAGRANGE_OPERATION_H
 #define _LAGRANGE_OPERATION_H
 
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -15,62 +16,88 @@
 
 class MakeRateMatrixOperation {
  public:
-  void eval(Workspace &ws) const;
+  MakeRateMatrixOperation(size_t index)
+      : _rate_matrix_index{index},
+        _period_index{0},
+        _last_execution{0},
+        _last_update{0} {}
+
+  void eval(std::shared_ptr<Workspace> ws);
+
+  lagrange_clock_t last_execution() const { return _last_execution; }
+
+  inline void update_rates(std::shared_ptr<Workspace> ws, double disp,
+                           double ext) {
+    ws->set_period_params(_period_index, disp, ext);
+    _last_update = ws->advance_clock();
+  }
+
+  inline size_t rate_matrix_index() const { return _rate_matrix_index; }
 
  private:
   size_t _rate_matrix_index;
-  double _dispersion_rate;
-  double _extinction_rate;
+  size_t _period_index;
+  lagrange_clock_t _last_execution;
+  lagrange_clock_t _last_update;
 };
 
 class ExpmOperation {
  public:
-  ExpmOperation(size_t prob_matrix, size_t rate_matrix, double t,
+  ExpmOperation(size_t prob_matrix, double t,
+                const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
                 bool transpose)
       : _prob_matrix_index{prob_matrix},
-        _rate_matrix_index{rate_matrix},
+        _rate_matrix_index{rm_op->rate_matrix_index()},
         _t{t},
+        _last_execution{0},
+        _rate_matrix_op{rm_op},
         _transposed{transpose} {}
 
-  ExpmOperation(size_t prob_matrix, size_t rate_matrix, double t)
-      : ExpmOperation(prob_matrix, rate_matrix, t, false) {}
+  ExpmOperation(size_t prob_matrix, double t,
+                const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
+      : ExpmOperation(prob_matrix, t, rm_op, false) {}
 
   void eval(std::shared_ptr<Workspace> ws);
 
   size_t prob_matrix() const { return _prob_matrix_index; }
 
+  lagrange_clock_t last_execution() const { return _last_execution; }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
   double _t;
+  lagrange_clock_t _last_execution;
+  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
   bool _transposed;
 };
 
 class DispersionOperation {
  public:
   DispersionOperation(size_t top, size_t bot, double brlen, size_t prob_matrix,
-                      size_t rate_matrix)
+                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
       : _top_clv{top},
         _bot_clv{bot},
         _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, rate_matrix, brlen}} {}
+        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op}} {}
 
   DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
-                      size_t rate_matrix)
+                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
       : _top_clv{std::numeric_limits<size_t>::max()},
         _bot_clv{bot},
         _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, rate_matrix, brlen}} {}
+        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op}} {}
 
   DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
-                      size_t rate_matrix, bool transpose)
+                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
+                      bool transpose)
       : _top_clv{std::numeric_limits<size_t>::max()},
         _bot_clv{bot},
         _prob_matrix_index{prob_matrix},
-        _expm_op{
-            new ExpmOperation{prob_matrix, rate_matrix, brlen, transpose}} {}
+        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op, transpose}} {}
 
-  DispersionOperation(size_t top, size_t bot, std::shared_ptr<ExpmOperation> op)
+  DispersionOperation(size_t top, size_t bot,
+                      const std::shared_ptr<ExpmOperation>& op)
       : _top_clv{top},
         _bot_clv{bot},
         _prob_matrix_index{op->prob_matrix()},
@@ -111,19 +138,12 @@ class DispersionOperation {
 
 class SplitOperation {
  public:
-  SplitOperation(size_t lchild_clv, size_t rchild_clv, size_t parent_clv,
-                 std::shared_ptr<DispersionOperation> lops,
-                 std::shared_ptr<DispersionOperation> rops)
-      : _lbranch_clv_index{lchild_clv},
-        _rbranch_clv_index{rchild_clv},
-        _parent_clv_index{parent_clv},
-        _lbranch_ops{{lops}},
-        _rbranch_ops{{rops}} {}
-
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
                  size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t lprob_mat, size_t rprob_mat,
-                 size_t lrate_matrix, size_t rrate_matrix, size_t parent_clv)
+                 std::shared_ptr<MakeRateMatrixOperation> lrate_matrix,
+                 std::shared_ptr<MakeRateMatrixOperation> rrate_matrix,
+                 size_t parent_clv)
       : _lbranch_clv_index{lchild_clv_top},
         _rbranch_clv_index{rchild_clv_top},
         _parent_clv_index{parent_clv},
@@ -135,7 +155,8 @@ class SplitOperation {
 
   SplitOperation(size_t lchild_clv_top, size_t lchild_clv_bot,
                  size_t rchild_clv_top, size_t rchild_clv_bot, double lbrlen,
-                 double rbrlen, size_t prob_mat, size_t rate_matrix,
+                 double rbrlen, size_t prob_mat,
+                 std::shared_ptr<MakeRateMatrixOperation> rate_matrix,
                  size_t parent_clv)
       : SplitOperation(lchild_clv_top, rchild_clv_top, lchild_clv_bot,
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
@@ -169,15 +190,15 @@ class ReverseSplitOperation {
       size_t bot_clv,  /* Where the result is stored*/
       size_t ltop_clv, /* Where the result of the dispop is stored */
       size_t rtop_clv, /* Should be a _non_ reverse CLV */
-      size_t rate_matrix_index, size_t prob_matrix_index, size_t disp_clv_index,
-      double brlen)
+      std::shared_ptr<MakeRateMatrixOperation> rate_matrix_op,
+      size_t prob_matrix_index, size_t disp_clv_index, double brlen)
       : _bot_clv_index{bot_clv},
         _ltop_clv_index{ltop_clv},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
         _branch_ops{{std::make_shared<DispersionOperation>(
             ltop_clv, disp_clv_index, brlen, prob_matrix_index,
-            rate_matrix_index)}} {}
+            rate_matrix_op)}} {}
 
   ReverseSplitOperation(size_t bot_clv, size_t rtop_clv,
                         std::shared_ptr<DispersionOperation> branch_op)

@@ -10,6 +10,7 @@
 #include <blaze/math/IdentityMatrix.h>
 
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -73,21 +74,44 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
-void MakeRateMatrixOperation::eval(Workspace &ws) const {
-  auto &rm = ws.rate_matrix(_rate_matrix_index);
-  for (lagrange_dist_t dist = 0; dist < ws.states(); dist++) {
-    for (lagrange_dist_t i = 0; i < ws.regions(); i++) {
+void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
+  if (_last_update < _last_execution) {
+    return;
+  }
+  auto &rm = ws->rate_matrix(_rate_matrix_index);
+  rm = 0.0;
+  auto period = ws->get_period_params(_period_index);
+  double dispersion_rate = period.dispersion_rate;
+  double extinction_rate = period.extinction_rate;
+  for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
+    for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
       if (lagrange_bextr(dist, i) != 0) {
         continue;
       }
       lagrange_dist_t gain_dist = dist | (1ul << i);
-      rm(dist, gain_dist) = _dispersion_rate;
-      rm(gain_dist, dist) = _extinction_rate;
+      rm(dist, gain_dist) = dispersion_rate;
+      rm(gain_dist, dist) = extinction_rate;
     }
   }
+
+  for (size_t i = 0; i < rm.rows(); i++) {
+    double sum = 0;
+    for (size_t j = 0; j < rm.columns(); j++) {
+      sum += rm(i, j);
+    }
+    rm(i, i) = -sum;
+  }
+
+  _last_execution = ws->advance_clock();
 }
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
+  if (_rate_matrix_op != nullptr &&
+      _last_execution > _rate_matrix_op->last_execution()) {
+    return;
+  }
+  _rate_matrix_op->eval(ws);
+
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
 
   size_t rows = A.rows();
@@ -105,7 +129,6 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t N = I + c * (_transposed ? blaze::trans(A) : A);
   lagrange_matrix_t D = I - c * (_transposed ? blaze::trans(A) : A);
 
-
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup
   for (int i = 2; i <= q; ++i) {
@@ -120,6 +143,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     A *= A;
   }
   ws->prob_matrix(_prob_matrix_index) = A;
+  _last_execution = ws->advance_clock();
 }
 
 void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
@@ -128,7 +152,6 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
   }
 
   ws->clv(_top_clv) = ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv);
-
 }
 
 void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {

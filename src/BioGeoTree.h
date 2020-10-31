@@ -20,12 +20,13 @@ using namespace std;
 #include "BranchSegment.h"
 #include "Common.h"
 #include "RateModel.h"
+#include "Workspace.h"
 #include "node.h"
 #include "tree.h"
 #include "vector_node_object.h"
 
 class BioGeoTree {
-private:
+ private:
   std::shared_ptr<Tree> _tree;
   vector<double> _periods;
   const string _dist_conditionals_key = "dist_conditionals";
@@ -52,16 +53,18 @@ private:
       _stored_ER_matrices;
   // end mapping bits
 
-public:
-  BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps);
+  Workspace _workspace;
+  OperationWrapper _op_wrapper;
+
+ public:
+  BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps, size_t regions,
+             const unordered_map<string, lagrange_dist_t> &distrib_data);
   void set_store_p_matrices(bool);
   void set_use_stored_matrices(bool);
   void set_default_model(std::shared_ptr<RateModel> mod);
   void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
   void set_excluded_dist(lagrange_dist_t ind, std::shared_ptr<Node> node);
-  void
-  set_tip_conditionals(unordered_map<string, lagrange_dist_t> distrib_data);
   vector<Superdouble> conditionals(std::shared_ptr<Node> node, bool marg,
                                    bool sparse);
   // void ancdist_conditional_lh(bpp::Node & node, bool marg);
@@ -82,11 +85,11 @@ public:
    */
   void prepare_ancstate_reverse();
   void reverse(std::shared_ptr<Node>);
-  unordered_map<lagrange_dist_t, vector<AncSplit>>
-  calculate_ancsplit_reverse(std::shared_ptr<Node> node);
+  unordered_map<lagrange_dist_t, vector<AncSplit>> calculate_ancsplit_reverse(
+      std::shared_ptr<Node> node);
   vector<Superdouble> calculate_ancstate_reverse(std::shared_ptr<Node> node);
   // need to override these at some point
-  BioGeoTree(const BioGeoTree &L); // copy constructor
+  BioGeoTree(const BioGeoTree &L);  // copy constructor
   BioGeoTree &operator=(const BioGeoTree &L);
 
   /*
@@ -95,8 +98,8 @@ public:
    */
   void prepare_stochmap_reverse_all_nodes(int, int);
   vector<Superdouble> calculate_reverse_stochmap(std::shared_ptr<Node>, bool);
-  vector<Superdouble>
-  calculate_reverse_stochmap_TEST(std::shared_ptr<Node> node, bool time);
+  vector<Superdouble> calculate_reverse_stochmap_TEST(
+      std::shared_ptr<Node> node, bool time);
 
   /*
           for timing things

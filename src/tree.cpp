@@ -34,6 +34,7 @@ Tree::Tree(std::shared_ptr<Node> inroot)
       _external_node_count(0) {
   _root = inroot;
   processRoot();
+  _root->assignId();
 }
 
 void Tree::addExternalNode(std::shared_ptr<Node> tn) {
@@ -297,16 +298,18 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
 OperationWrapper Tree::generateOperations(
     Workspace &ws,
     const std::unordered_map<std::string, lagrange_dist_t> dist_data,
-    bool compute_lh, bool compute_ancstate, bool compute_ancsplit) const {
+    const std::shared_ptr<MakeRateMatrixOperation> &rm_op, bool compute_lh,
+    bool compute_ancstate, bool compute_ancsplit) const {
   OperationWrapper op_wrap;
-  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws);
+
+  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws, rm_op);
   op_wrap._forward_ops = forward_tmp.first;
   if (compute_lh) {
     op_wrap.registerLHGoal();
   }
 
   if (compute_ancstate || compute_ancsplit) {
-    auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws);
+    auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws, rm_op);
     op_wrap._backwards_ops = backward_tmp.first;
 
     std::vector<size_t> node_ids;
@@ -324,7 +327,7 @@ OperationWrapper Tree::generateOperations(
   }
   ws.reserve();
   if (compute_ancsplit || compute_ancstate) {
-    ws.set_tip_clv(ws.get_top_clv_reverse(_root->getNumber()), 1.0);
+    ws.set_tip_clv(ws.get_top_clv_reverse(_root->getId()), 1.0);
   }
   _root->assignTipData(ws, dist_data);
   return op_wrap;

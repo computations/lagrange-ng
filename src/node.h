@@ -24,9 +24,12 @@ using namespace std;
 
 class Node {
  private:
+  void assignIdRecursive(size_t &id);
+
   double _branch_length;  // branch lengths
   double _height;         // could be from tip or from root
   size_t _number;
+  size_t _id;
   string _label;
   string _comment;
   string _split_string;
@@ -48,6 +51,8 @@ class Node {
 
   int getNumber() const;
   void setNumber(int n);
+
+  size_t getId() const;
 
   double getBL();
   void setBL(double bl);
@@ -106,16 +111,27 @@ class Node {
       const std::vector<std::shared_ptr<Node>> &nodes);
 
   std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateForwardOperations(Workspace &ws) const;
+  traverseAndGenerateForwardOperations(
+      Workspace &ws,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
 
   std::pair<std::vector<ReverseSplitOperation>,
             std::shared_ptr<DispersionOperation>>
   traverseAndGenerateBackwardOperations(Workspace &ws) const;
 
   std::shared_ptr<DispersionOperation> generateDispersionOperations(
-      Workspace &ws) const;
+      Workspace &ws,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+
   std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
-      Workspace &ws) const;
+      Workspace &ws,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+
+  std::pair<std::vector<ReverseSplitOperation>,
+            std::shared_ptr<DispersionOperation>>
+  traverseAndGenerateBackwardOperations(
+      Workspace &ws,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
 
   void traverseAndGenerateBackwardNodeIds(std::vector<size_t> &) const;
   void traverseAndGenerateBackwardNodeIdsInternalOnly(
@@ -124,6 +140,8 @@ class Node {
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, lagrange_dist_t>
                          &distrib_data) const;
+
+  void assignId();
 };
 std::shared_ptr<Node> getMRCAWithNode(
     const std::shared_ptr<Node> &current,

@@ -61,16 +61,16 @@ int main(int argc, char *argv[]) {
     vector<string> areanames;
     unordered_map<string, int> areanamemap;
     unordered_map<int, string> areanamemaprev;
-    vector<string> ancstates; // string should be the mrca or if it is just
-                              // _all_
+    vector<string> ancstates;  // string should be the mrca or if it is just
+                               // _all_
     // then everything will be computed
     vector<string> areacolors;
     vector<string> fossilmrca;
     vector<string> fossiltype;
     vector<string> fossilarea;
-    vector<double> fossilage; // 0's for N type and # for B type
+    vector<double> fossilage;  // 0's for N type and # for B type
 
-    bool marginal = true; // false means joint
+    bool marginal = true;  // false means joint
     bool splits = false;
     bool states = false;
     int numthreads = 0;
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
           } else if (!strcmp(tokens[0].c_str(), "numthreads")) {
             numthreads = atoi(tokens[1].c_str());
           } else if (!strcmp(tokens[0].c_str(), "stochastic_time")) {
-            states = true; // requires ancestral states
+            states = true;  // requires ancestral states
             if (ancstates.size() > 0)
               ancstates[0] = "_all_";
             else
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
                   convert_vector_to_lagrange_dist(dist));
             }
           } else if (!strcmp(tokens[0].c_str(), "stochastic_number")) {
-            states = true; // requires ancestral states
+            states = true;  // requires ancestral states
             if (ancstates.size() > 0)
               ancstates[0] = "_all_";
             else
@@ -408,7 +408,8 @@ int main(int argc, char *argv[]) {
      * start calculating on all trees
      */
     for (unsigned int i = 0; i < intrees.size(); i++) {
-      auto bgt = std::make_shared<BioGeoTree>(intrees[i], periods);
+      auto bgt =
+          std::make_shared<BioGeoTree>(intrees[i], periods, ir.nareas, data);
       /*
        * record the mrcas
        */
@@ -443,8 +444,6 @@ int main(int argc, char *argv[]) {
 
       cout << "setting default model..." << endl;
       bgt->set_default_model(rm);
-      cout << "setting up tips..." << endl;
-      bgt->set_tip_conditionals(data);
 
       /*
        * setting up fossils
@@ -490,7 +489,7 @@ int main(int argc, char *argv[]) {
           cout << "final -ln likelihood: "
                << double(bgt->eval_likelihood(marginal)) << endl;
           bgt->set_store_p_matrices(false);
-        } else { // optimize all the dispersal matrix
+        } else {  // optimize all the dispersal matrix
           cout << "Optimizing (simplex) -ln likelihood with all dispersal "
                   "parameters free."
                << endl;
@@ -557,8 +556,8 @@ int main(int argc, char *argv[]) {
         bgt->set_use_stored_matrices(true);
 
         bgt->prepare_ancstate_reverse();
-        Superdouble totlike = 0; // calculate_vector_double_sum(rast) , should
-                                 // be the same for every node
+        Superdouble totlike = 0;  // calculate_vector_double_sum(rast) , should
+                                  // be the same for every node
 
         if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
           for (unsigned int j = 0; j < intrees[i]->getInternalNodeCount();

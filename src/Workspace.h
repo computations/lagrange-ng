@@ -32,6 +32,11 @@ struct node_reservation_t {
   size_t _bot2_rclv;
 };
 
+struct period_t {
+  double dispersion_rate;
+  double extinction_rate;
+};
+
 class Workspace {
  public:
   Workspace(size_t taxa_count, size_t inner_count, size_t regions,
@@ -49,7 +54,9 @@ class Workspace {
         _base_frequencies{nullptr},
         _clv_stride{1},
         _clvs{nullptr},
-        _node_reservations{node_count()} {
+        _node_reservations{node_count()},
+        _periods{1},
+        _current_clock{0} {
     if (taxa_count == 0) {
       throw std::runtime_error{"We cannot make a workspace with zero taxa"};
     }
@@ -163,11 +170,22 @@ class Workspace {
       _prob_matrix[i] = lagrange_matrix_t(_states, _states);
     }
     for (size_t i = 0; i < _base_frequencies_count; i++) {
-      _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0/_states);
+      _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0 / _states);
     }
     for (size_t i = 0; i < clv_count(); i++) {
       _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);
+      _clvs[i * _clv_stride] = 0.0;
     }
+  }
+
+  lagrange_clock_t advance_clock() { return _current_clock++; }
+
+  period_t get_period_params(size_t period_index) const {
+    return _periods[period_index];
+  }
+
+  void set_period_params(size_t period_index, double d, double e) {
+    _periods[period_index] = {d, e};
   }
 
  private:
@@ -192,6 +210,10 @@ class Workspace {
   lagrange_col_vector_t *_clvs;
 
   std::vector<node_reservation_t> _node_reservations;
+
+  std::vector<period_t> _periods;
+
+  lagrange_clock_t _current_clock;
 };
 
 #endif

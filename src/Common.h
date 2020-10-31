@@ -10,4 +10,6 @@
 
 typedef uint64_t lagrange_dist_t;
 
+typedef uint64_t lagrange_clock_t;
+
 #endif // LAGRANGE_COMMON_H__

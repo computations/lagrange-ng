@@ -45,7 +45,8 @@ class Tree {
 
   OperationWrapper generateOperations(
       Workspace &ws,
-      const std::unordered_map<std::string, lagrange_dist_t> dist_data, bool lh,
+      const std::unordered_map<std::string, lagrange_dist_t> dist_data,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op, bool lh,
       bool ancstate, bool ancsplit) const;
 
   std::shared_ptr<Node> getExternalNode(int num);

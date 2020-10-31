@@ -28,7 +28,9 @@ Superdouble MAX(const Superdouble &a, const Superdouble &b) {
  * sloppy beginning but best for now because of the complicated bits
  */
 
-BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
+BioGeoTree::BioGeoTree(
+    std::shared_ptr<Tree> tr, const vector<double> &ps, size_t regions,
+    const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
     : _tree(tr),
       _periods(ps),
       _columns(nullptr),
@@ -40,7 +42,8 @@ BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, vector<double> ps)
       _stocastic(false),
       _stored_EN_matrices{},
       _stored_EN_CX_matrices{},
-      _stored_ER_matrices{} {
+      _stored_ER_matrices{},
+      _workspace{tr->getExternalNodeCount(), regions} {
   /*
    * initialize each node with segments
    */
@@ -107,23 +110,6 @@ void BioGeoTree::set_default_model(std::shared_ptr<RateModel> mod) {
 
 void BioGeoTree::update_default_model(std::shared_ptr<RateModel> mod) {
   _root_ratemodel = mod;
-}
-
-void BioGeoTree::set_tip_conditionals(
-    unordered_map<string, uint64_t> distrib_data) {
-  int numofleaves = _tree->getExternalNodeCount();
-  for (int i = 0; i < numofleaves; i++) {
-    vector<BranchSegment> &tsegs = _tree->getExternalNode(i)->getSegVector();
-    auto ratemodel_dists = _root_ratemodel->getDists();
-    uint64_t key = distrib_data[_tree->getExternalNode(i)->getName()];
-    size_t index = 0;
-    for (index = 0; index < ratemodel_dists.size(); index++) {
-      if (ratemodel_dists[index] == key) {
-        break;
-      }
-    }
-    tsegs[0].distconds->at(index) = 1.0;
-  }
 }
 
 void BioGeoTree::set_excluded_dist(lagrange_dist_t ind,
