@@ -15,15 +15,7 @@ using namespace std;
 
 #include "tree.h"
 
-Tree::Tree()
-    : _root(NULL),
-      _nodes(vector<std::shared_ptr<Node>>()),
-      _internal_nodes(vector<std::shared_ptr<Node>>()),
-      _external_nodes(vector<std::shared_ptr<Node>>()),
-      _internal_node_count(0),
-      _external_node_count(0) {
-  processRoot();
-}
+Tree::Tree() : Tree(nullptr) {} 
 
 Tree::Tree(std::shared_ptr<Node> inroot)
     : _root(inroot),
@@ -35,6 +27,15 @@ Tree::Tree(std::shared_ptr<Node> inroot)
   _root = inroot;
   processRoot();
   _root->assignId();
+  for (unsigned int i = 0; i < getNodeCount(); i++) {
+    if (getNode(i)->getBL() < 0.000001) {
+      getNode(i)->setBL(0.000001);
+    }
+    getNode(i)->initSegVector();
+    getNode(i)->initExclDistVector();
+  }
+
+  setHeightFromTipToNodes();
 }
 
 void Tree::addExternalNode(std::shared_ptr<Node> tn) {

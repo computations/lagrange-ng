@@ -43,21 +43,14 @@ BioGeoTree::BioGeoTree(
       _stored_EN_matrices{},
       _stored_EN_CX_matrices{},
       _stored_ER_matrices{},
-      _workspace{tr->getExternalNodeCount(), regions} {
-  /*
-   * initialize each node with segments
-   */
-  cout << "initializing nodes..." << endl;
-  for (unsigned int i = 0; i < _tree->getNodeCount(); i++) {
-    if (_tree->getNode(i)->getBL() < 0.000001)
-      _tree->getNode(i)->setBL(0.000001);
-    _tree->getNode(i)->initSegVector();
-    _tree->getNode(i)->initExclDistVector();
-  }
+      _workspace{tr->getExternalNodeCount(), regions},
+      _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(/*index=*/0)} {
+
+  _op_wrapper = tr->generateOperations(_workspace, distrib_data,
+                                       _rate_matrix_op, true, false, false);
   /*
    * initialize the actual branch segments for each node
    */
-  _tree->setHeightFromTipToNodes();
   cout << "initializing branch segments..." << endl;
 
   for (size_t i = 0; i < _tree->getInternalNodeCount(); ++i) {

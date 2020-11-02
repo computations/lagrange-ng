@@ -97,7 +97,6 @@ class OperationTest : public ::testing::Test {
     _ws->set_period_params(0, .3123, 1.1231);
 
     _rate_matrix_op = std::make_shared<MakeRateMatrixOperation>(_rate_matrix);
-    //_rate_matrix_op->update_rates(_ws, .3123, 1.1231);
   }
 
   size_t _lbot_clv;

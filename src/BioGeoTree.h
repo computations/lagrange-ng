@@ -53,8 +53,9 @@ class BioGeoTree {
       _stored_ER_matrices;
   // end mapping bits
 
-  Workspace _workspace;
   OperationWrapper _op_wrapper;
+  Workspace _workspace;
+  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
  public:
   BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps, size_t regions,
