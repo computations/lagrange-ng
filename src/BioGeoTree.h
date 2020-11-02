@@ -65,6 +65,8 @@ class BioGeoTree {
   void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
   void set_excluded_dist(lagrange_dist_t ind, std::shared_ptr<Node> node);
+  void
+  set_tip_conditionals(unordered_map<string, lagrange_dist_t> distrib_data);
   vector<Superdouble> conditionals(std::shared_ptr<Node> node, bool marg,
                                    bool sparse);
   // void ancdist_conditional_lh(bpp::Node & node, bool marg);

@@ -444,6 +444,8 @@ int main(int argc, char *argv[]) {
 
       cout << "setting default model..." << endl;
       bgt->set_default_model(rm);
+      cout << "setting up tips..." << endl;
+      bgt->set_tip_conditionals(data);
 
       /*
        * setting up fossils
