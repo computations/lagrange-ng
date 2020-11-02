@@ -269,22 +269,4 @@ class SplitLHGoal {
   size_t _rchild_clv_index;
 };
 
-struct OperationWrapper {
-  std::vector<LHGoal> _lh;
-  std::vector<StateLHGoal> _state;
-  std::vector<SplitLHGoal> _split;
-  std::vector<SplitOperation> _forward_ops;
-  std::vector<ReverseSplitOperation> _backwards_ops;
-
-  void registerLHGoal() {
-    auto root_clv = (_forward_ops.end() - 1)->get_parent_clv();
-    size_t frequency_index = 0;
-    _lh.emplace_back(root_clv, frequency_index);
-  }
-
-  void registerStateLHGoal(size_t parent_clv, size_t c1_clv, size_t c2_clv) {
-    _state.emplace_back(parent_clv, c1_clv, c2_clv);
-  }
-};
-
 #endif

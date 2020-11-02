@@ -46,42 +46,16 @@ class TreeTest : public ::testing::Test {
 
 TEST_F(TreeTest, simple0) { auto t = parse_tree(_basic_tree_newick); }
 
-TEST_F(TreeTest, generateOperationsSimple0) {
+TEST_F(TreeTest, generate) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
-                                   _rate_matrix_op, true, false, false);
+  auto ops = t->generateForwardOperations(*_basic_ws);
 
-  EXPECT_EQ(ops._forward_ops.size(), 2);
-  EXPECT_EQ(ops._backwards_ops.size(), 0);
-  EXPECT_EQ(ops._lh.size(), 1);
-  EXPECT_EQ(ops._state.size(), 0);
-  EXPECT_EQ(ops._split.size(), 0);
+  EXPECT_EQ(ops.size(), 2);
 }
 
 TEST_F(TreeTest, generateOperationsSimple1) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
-                                   _rate_matrix_op, true, true, false);
+  auto ops = t->generateBackwardOperations(*_basic_ws);
 
-  EXPECT_EQ(ops._forward_ops.size(), 2);
-  EXPECT_EQ(ops._backwards_ops.size(), 1);
-  EXPECT_EQ(ops._lh.size(), 1);
-  EXPECT_EQ(ops._state.size(), 2);
-  EXPECT_EQ(ops._split.size(), 0);
-}
-
-TEST_F(TreeTest, generateOperationsSimple2) {
-  auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateOperations(*_basic_ws, _basic_tree_dist_data,
-                                   _rate_matrix_op, true, false, false);
-
-  _basic_ws->rate_matrix(0) = _arbitrary_rate_matrix;
-  for (auto& o : ops._forward_ops) {
-    o.eval(_basic_ws);
-  }
-
-  double lh = ops._lh[0].eval(_basic_ws);
-  double correct_lh = 0.006944444444; /* a regression value */
-  double error = std::abs(lh - correct_lh);
-  EXPECT_NEAR(error, 0.0, 1e-7);
+  EXPECT_EQ(ops.size(), 1);
 }

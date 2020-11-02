@@ -42,16 +42,10 @@ BioGeoTree::BioGeoTree(
       _stocastic(false),
       _stored_EN_matrices{},
       _stored_EN_CX_matrices{},
-      _stored_ER_matrices{},
-      _workspace{tr->getExternalNodeCount(), regions},
-      _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(/*index=*/0)} {
-
-  _op_wrapper = tr->generateOperations(_workspace, distrib_data,
-                                       _rate_matrix_op, true, false, false);
-  /*
-   * initialize the actual branch segments for each node
-   */
-  cout << "initializing branch segments..." << endl;
+      _stored_ER_matrices{} {
+  if (_periods.size() == 0) {
+    throw std::runtime_error{"No periods when creating a biogeotree"};
+  }
 
   for (size_t i = 0; i < _tree->getInternalNodeCount(); ++i) {
     auto current_node = _tree->getInternalNode(i);
@@ -60,25 +54,20 @@ BioGeoTree::BioGeoTree(
       double descendant_height = child->getHeight();
       double t = descendant_height;
 
-      if (_periods.size() > 0) {
-        double s = 0;
-        for (size_t j = 0; j < _periods.size(); j++) {
-          s += _periods[j];
-          if (t < s) {
-            double duration = min(s - t, ancestor_height - t);
-            if (duration > 0) {
-              BranchSegment tseg = BranchSegment(duration, j);
-              child->getSegVector().push_back(tseg);
-            }
-            t += duration;  // TODO: make sure that this is all working
+      double s = 0;
+      for (size_t j = 0; j < _periods.size(); j++) {
+        s += _periods[j];
+        if (t < s) {
+          double duration = min(s - t, ancestor_height - t);
+          if (duration > 0) {
+            BranchSegment tseg = BranchSegment(duration, j);
+            child->getSegVector().push_back(tseg);
           }
-          if (t > ancestor_height || _periods[j] > t) {
-            break;
-          }
+          t += duration;  // TODO: make sure that this is all working
         }
-      } else {
-        BranchSegment tseg = BranchSegment(current_node->getBL(), 0);
-        current_node->getSegVector().push_back(tseg);
+        if (t > ancestor_height || _periods[j] > t) {
+          break;
+        }
       }
     }
   }

@@ -20,6 +20,8 @@ set(LAGRANGE_SOURCES
         src/BioGeoTreeTools.h
         src/BranchSegment.cpp
         src/BranchSegment.h
+        src/Context.cpp
+        src/Context.h
         src/expm.h
         src/InputReader.cpp
         src/InputReader.h

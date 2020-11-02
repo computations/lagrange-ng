@@ -102,6 +102,7 @@ class Workspace {
   inline size_t node_count() const { return _inner_count + _taxa_count; }
 
   inline size_t suggest_prob_matrix_index() const { return 0; }
+  inline size_t suggest_rate_matrix_index() const { return 0; }
 
   inline size_t register_generic_clv() { return register_clv(); }
 

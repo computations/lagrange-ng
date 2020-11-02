@@ -43,11 +43,8 @@ class Tree {
   void addInternalNode(std::shared_ptr<Node> tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
-  OperationWrapper generateOperations(
-      Workspace &ws,
-      const std::unordered_map<std::string, lagrange_dist_t> dist_data,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op, bool lh,
-      bool ancstate, bool ancsplit) const;
+  std::vector<SplitOperation> generateForwardOperations(Workspace &ws);
+  std::vector<ReverseSplitOperation> generateBackwardOperations(Workspace &ws);
 
   std::shared_ptr<Node> getExternalNode(int num);
   std::shared_ptr<Node> getExternalNode(string &name);

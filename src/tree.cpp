@@ -9,13 +9,13 @@
 
 #include <cstring>
 #include <exception>
-#include <iostream>
+#include <limits>
 
 using namespace std;
 
 #include "tree.h"
 
-Tree::Tree() : Tree(nullptr) {} 
+Tree::Tree() : Tree(nullptr) {}
 
 Tree::Tree(std::shared_ptr<Node> inroot)
     : _root(inroot),
@@ -28,9 +28,6 @@ Tree::Tree(std::shared_ptr<Node> inroot)
   processRoot();
   _root->assignId();
   for (unsigned int i = 0; i < getNodeCount(); i++) {
-    if (getNode(i)->getBL() < 0.000001) {
-      getNode(i)->setBL(0.000001);
-    }
     getNode(i)->initSegVector();
     getNode(i)->initExclDistVector();
   }
@@ -296,40 +293,17 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }
 
-OperationWrapper Tree::generateOperations(
-    Workspace &ws,
-    const std::unordered_map<std::string, lagrange_dist_t> dist_data,
-    const std::shared_ptr<MakeRateMatrixOperation> &rm_op, bool compute_lh,
-    bool compute_ancstate, bool compute_ancsplit) const {
-  OperationWrapper op_wrap;
+std::vector<SplitOperation> Tree::generateForwardOperations(Workspace &ws) {
+  auto rm_op =
+      std::make_shared<MakeRateMatrixOperation>(ws.suggest_rate_matrix_index());
 
-  auto forward_tmp = _root->traverseAndGenerateForwardOperations(ws, rm_op);
-  op_wrap._forward_ops = forward_tmp.first;
-  if (compute_lh) {
-    op_wrap.registerLHGoal();
-  }
+  return _root->traverseAndGenerateForwardOperations(ws, rm_op).first;
+}
 
-  if (compute_ancstate || compute_ancsplit) {
-    auto backward_tmp = _root->traverseAndGenerateBackwardOperations(ws, rm_op);
-    op_wrap._backwards_ops = backward_tmp.first;
+std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
+    Workspace &ws) {
+  auto rm_op =
+      std::make_shared<MakeRateMatrixOperation>(ws.suggest_rate_matrix_index());
 
-    std::vector<size_t> node_ids;
-    _root->traverseAndGenerateBackwardNodeIdsInternalOnly(node_ids);
-
-    if (compute_ancstate) {
-      for (auto nid : node_ids) {
-        op_wrap.registerStateLHGoal(ws.get_top_clv_reverse(nid),
-                                    ws.get_lchild_clv(nid),
-                                    ws.get_rchild_clv(nid));
-      }
-    }
-    if (compute_ancsplit) {
-    }
-  }
-  ws.reserve();
-  if (compute_ancsplit || compute_ancstate) {
-    ws.set_tip_clv(ws.get_top_clv_reverse(_root->getId()), 1.0);
-  }
-  _root->assignTipData(ws, dist_data);
-  return op_wrap;
+  return _root->traverseAndGenerateBackwardOperations(ws, rm_op).first;
 }
