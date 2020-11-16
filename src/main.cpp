@@ -408,8 +408,7 @@ int main(int argc, char *argv[]) {
      * start calculating on all trees
      */
     for (unsigned int i = 0; i < intrees.size(); i++) {
-      auto bgt =
-          std::make_shared<BioGeoTree>(intrees[i], periods, ir.nareas, data);
+      auto bgt = std::make_shared<BioGeoTree>(intrees[i], periods);
       /*
        * record the mrcas
        */

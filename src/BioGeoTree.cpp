@@ -28,9 +28,7 @@ Superdouble MAX(const Superdouble &a, const Superdouble &b) {
  * sloppy beginning but best for now because of the complicated bits
  */
 
-BioGeoTree::BioGeoTree(
-    std::shared_ptr<Tree> tr, const vector<double> &ps, size_t regions,
-    const std::unordered_map<std::string, lagrange_dist_t> &distrib_data)
+BioGeoTree::BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps)
     : _tree(tr),
       _periods(ps),
       _columns(nullptr),

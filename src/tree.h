@@ -43,8 +43,16 @@ class Tree {
   void addInternalNode(std::shared_ptr<Node> tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
-  std::vector<SplitOperation> generateForwardOperations(Workspace &ws);
-  std::vector<ReverseSplitOperation> generateBackwardOperations(Workspace &ws);
+  std::vector<SplitOperation> generateForwardOperations(
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op);
+  std::vector<ReverseSplitOperation> generateBackwardOperations(
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op);
+
+  std::vector<size_t> traversePreorderInternalNodesOnly() const;
+
+  void assignTipData(
+      Workspace &ws,
+      const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
 
   std::shared_ptr<Node> getExternalNode(int num);
   std::shared_ptr<Node> getExternalNode(string &name);
@@ -52,9 +60,9 @@ class Tree {
   std::shared_ptr<Node> getInternalNode(string &name);
   std::shared_ptr<Node> getNode(int num);
 
-  unsigned int getNodeCount();
-  unsigned int getExternalNodeCount();
-  unsigned int getInternalNodeCount();
+  unsigned int getNodeCount() const;
+  unsigned int getExternalNodeCount() const;
+  unsigned int getInternalNodeCount() const;
 
   std::shared_ptr<Node> getRoot();
   void setRoot(std::shared_ptr<Node> inroot);

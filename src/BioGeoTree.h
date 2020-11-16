@@ -55,8 +55,7 @@ class BioGeoTree {
 
 
  public:
-  BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps, size_t regions,
-             const unordered_map<string, lagrange_dist_t> &distrib_data);
+  BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps);
   void set_store_p_matrices(bool);
   void set_use_stored_matrices(bool);
   void set_default_model(std::shared_ptr<RateModel> mod);

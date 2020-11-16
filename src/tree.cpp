@@ -77,13 +77,13 @@ std::shared_ptr<Node> Tree::getInternalNode(string &name) {
   return ret;
 }
 
-unsigned int Tree::getExternalNodeCount() { return _external_node_count; }
+unsigned int Tree::getExternalNodeCount() const { return _external_node_count; }
 
-unsigned int Tree::getInternalNodeCount() { return _internal_node_count; }
+unsigned int Tree::getInternalNodeCount() const { return _internal_node_count; }
 
 std::shared_ptr<Node> Tree::getNode(int num) { return _nodes.at(num); }
 
-unsigned int Tree::getNodeCount() { return _nodes.size(); }
+unsigned int Tree::getNodeCount() const { return _nodes.size(); }
 
 std::shared_ptr<Node> Tree::getRoot() { return _root; }
 
@@ -293,17 +293,25 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }
 
-std::vector<SplitOperation> Tree::generateForwardOperations(Workspace &ws) {
-  auto rm_op =
-      std::make_shared<MakeRateMatrixOperation>(ws.suggest_rate_matrix_index());
-
+std::vector<SplitOperation> Tree::generateForwardOperations(
+    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op) {
   return _root->traverseAndGenerateForwardOperations(ws, rm_op).first;
 }
 
 std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
-    Workspace &ws) {
-  auto rm_op =
-      std::make_shared<MakeRateMatrixOperation>(ws.suggest_rate_matrix_index());
-
+    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op) {
   return _root->traverseAndGenerateBackwardOperations(ws, rm_op).first;
+}
+
+std::vector<size_t> Tree::traversePreorderInternalNodesOnly() const {
+  std::vector<size_t> ret;
+  ret.reserve(getInternalNodeCount());
+  _root->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
+  return ret;
+}
+
+void Tree::assignTipData(
+    Workspace &ws,
+    const std::unordered_map<std::string, lagrange_dist_t> &dist_data) {
+  _root->assignTipData(ws, dist_data);
 }

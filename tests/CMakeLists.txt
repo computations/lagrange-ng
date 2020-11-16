@@ -38,6 +38,7 @@ set(LAGRANGE_TEST_SOURCES
   src/tree_reader.cpp
   src/workspace.cpp
   src/operation.cpp
+  src/context.cpp
   src/tree.cpp
   src/main.cpp)
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})

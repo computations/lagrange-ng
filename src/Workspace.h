@@ -15,28 +15,6 @@
 #include "Common.h"
 #include "RateModel.h"
 
-struct node_reservation_t {
-  node_reservation_t()
-      : _top_clv{std::numeric_limits<size_t>::max()},
-        _bot1_clv{std::numeric_limits<size_t>::max()},
-        _bot2_clv{std::numeric_limits<size_t>::max()},
-        _top_rclv{std::numeric_limits<size_t>::max()},
-        _bot1_rclv{std::numeric_limits<size_t>::max()},
-        _bot2_rclv{std::numeric_limits<size_t>::max()} {}
-  size_t _top_clv;
-  size_t _bot1_clv;
-  size_t _bot2_clv;
-
-  size_t _top_rclv;
-  size_t _bot1_rclv;
-  size_t _bot2_rclv;
-};
-
-struct period_t {
-  double dispersion_rate;
-  double extinction_rate;
-};
-
 class Workspace {
  public:
   Workspace(size_t taxa_count, size_t inner_count, size_t regions,
@@ -103,6 +81,7 @@ class Workspace {
 
   inline size_t suggest_prob_matrix_index() const { return 0; }
   inline size_t suggest_rate_matrix_index() const { return 0; }
+  inline size_t suggest_freq_vector_index() const { return 0; }
 
   inline size_t register_generic_clv() { return register_clv(); }
 
@@ -187,6 +166,11 @@ class Workspace {
 
   void set_period_params(size_t period_index, double d, double e) {
     _periods[period_index] = {d, e};
+  }
+
+  bool reserved() const {
+    return _rate_matrix == nullptr || _prob_matrix == nullptr ||
+           _base_frequencies == nullptr || _clvs == nullptr;
   }
 
  private:

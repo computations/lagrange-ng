@@ -11,7 +11,9 @@
 
 #include <array>
 #include <cstddef>
+#include <iomanip>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -66,6 +68,8 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
 
   size_t idx_excl = 0;
 
+  dest = 0.0;
+
   for (size_t i = 0; i < states; i++) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
       idx_excl++;
@@ -84,6 +88,40 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
+inline std::string make_tabs(size_t tabLevel) {
+  std::ostringstream tabs;
+  tabs << "|";
+  for (size_t i = 0; i < tabLevel; ++i) {
+    tabs << " |";
+  }
+  tabs << " ";
+  return tabs.str();
+}
+
+inline std::string opening_line(const std::string &tabs) {
+  std::ostringstream line;
+
+  line << tabs.substr(0, tabs.size() - 2) << "┌";
+  size_t cur_len = line.str().size();
+  for (size_t i = 0; i < (80 - cur_len); ++i) {
+    line << "─";
+  }
+
+  return line.str();
+}
+
+inline std::string closing_line(const std::string &tabs) {
+  std::ostringstream line;
+
+  line << tabs.substr(0, tabs.size() - 2) << "└";
+  size_t cur_len = line.str().size();
+  for (size_t i = 0; i < (80 - cur_len); ++i) {
+    line << "─";
+  }
+
+  return line.str();
+}
+
 void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
   if (_last_update < _last_execution) {
     return;
@@ -99,8 +137,10 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
         continue;
       }
       lagrange_dist_t gain_dist = dist | (1ul << i);
-      rm(dist, gain_dist) = dispersion_rate;
       rm(gain_dist, dist) = extinction_rate;
+      if (dist != 0) {
+        rm(dist, gain_dist) = dispersion_rate;
+      }
     }
   }
 
@@ -115,9 +155,38 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
   _last_execution = ws->advance_clock();
 }
 
+void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                          std::ostream &os,
+                                          size_t tabLevel) const {
+  std::string tabs = make_tabs(tabLevel);
+  os << opening_line(tabs) << "\n";
+  os << tabs << "MakeRateMatrixOperation:\n"
+     << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
+
+  auto &rm = ws->rate_matrix(_rate_matrix_index);
+
+  for (size_t i = 0; i < rm.rows(); ++i) {
+    auto row = blaze::row(rm, i);
+    os << tabs << std::setprecision(10) << row;
+  }
+
+  os << tabs << "Period index: " << _period_index << "\n"
+     << tabs << ws->get_period_params(_period_index).toString() << "\n"
+     << tabs << "_last_execution: " << _last_execution << "\n"
+     << tabs << "_last_update: " << _last_update << "\n";
+  os << closing_line(tabs);
+}
+
+std::string MakeRateMatrixOperation::printStatus(
+    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+  std::ostringstream os;
+  printStatus(ws, os, tabLevel);
+  return os.str();
+}
+
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   if (_rate_matrix_op != nullptr &&
-      _last_execution > _rate_matrix_op->last_execution()) {
+      _last_execution > _rate_matrix_op->last_update()) {
     return;
   }
   _rate_matrix_op->eval(ws);
@@ -152,8 +221,45 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   for (int i = 0; i < scale_exp; ++i) {
     A *= A;
   }
-  ws->prob_matrix(_prob_matrix_index) = A;
   _last_execution = ws->advance_clock();
+  ws->prob_matrix(_prob_matrix_index) = A;
+}
+
+void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                std::ostream &os, size_t tabLevel) const {
+  std::string tabs = make_tabs(tabLevel);
+  os << opening_line(tabs) << "\n";
+  os << tabs << "ExpmOperation:\n"
+     << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
+
+  auto &rm = ws->rate_matrix(_rate_matrix_index);
+  for (size_t i = 0; i < rm.rows(); ++i) {
+    auto row = blaze::row(rm, i);
+    os << tabs << std::setprecision(10) << row;
+  }
+
+  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << "):\n";
+
+  auto &pm = ws->prob_matrix(_prob_matrix_index);
+
+  for (size_t i = 0; i < pm.rows(); ++i) {
+    auto row = blaze::row(pm, i);
+    os << tabs << std::setprecision(10) << row;
+  }
+
+  os << tabs << "t: " << std::setprecision(10) << _t << "\n";
+  os << tabs << "_last_execution: " << _last_execution;
+  if (_rate_matrix_op != nullptr) {
+    os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
+  }
+  os << closing_line(tabs);
+}
+
+std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                       size_t tabLevel) const {
+  std::ostringstream os;
+  printStatus(ws, os, tabLevel);
+  return os.str();
 }
 
 void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
@@ -162,6 +268,40 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
   }
 
   ws->clv(_top_clv) = ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv);
+}
+
+void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                      std::ostream &os, size_t tabLevel) const {
+  std::string tabs = make_tabs(tabLevel);
+
+  os << opening_line(tabs) << "\n";
+  os << tabs << "DispersionOperation:\n";
+  os << tabs << "Top clv (index: " << _top_clv << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_top_clv));
+  os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_bot_clv));
+
+  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << "):\n";
+
+  auto &pm = ws->prob_matrix(_prob_matrix_index);
+
+  for (size_t i = 0; i < pm.rows(); ++i) {
+    auto row = blaze::row(pm, i);
+    os << tabs << std::setprecision(10) << row;
+  }
+
+  if (_expm_op != nullptr) {
+    os << _expm_op->printStatus(ws, tabLevel + 1);
+  }
+  os << "\n";
+  os << closing_line(tabs);
+}
+
+std::string DispersionOperation::printStatus(
+    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+  std::ostringstream os;
+  printStatus(ws, os, tabLevel);
+  return os.str();
 }
 
 void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
@@ -179,6 +319,52 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
   weighted_combine(lchild_clv, rchild_clv, _excl_dists, parent_clv);
 }
 
+void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                 std::ostream &os, size_t tabLevel) const {
+  std::string tabs = make_tabs(tabLevel);
+  os << opening_line(tabs) << "\n";
+  os << tabs << "SplitOperation:\n";
+
+  os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
+     << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_lbranch_clv_index));
+  os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
+     << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_rbranch_clv_index));
+  os << tabs << "Parent clv (index: " << _parent_clv_index
+     << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_parent_clv_index));
+
+  if (_excl_dists.size() != 0) {
+    os << tabs << "Excluded dists:\n";
+    for (size_t i = 0; i < _excl_dists.size(); ++i) {
+      os << tabs << _excl_dists[i] << "\n";
+    }
+  }
+
+  os << tabs << "Left Branch ops:\n";
+  if (_lbranch_ops.size() != 0) {
+    for (auto &op : _lbranch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
+  }
+  os << "\n" << tabs << "Right Branch ops:\n";
+  if (_rbranch_ops.size() != 0) {
+    for (auto &op : _rbranch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
+  }
+  os << "\n";
+  os << closing_line(tabs);
+}
+
+std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                        size_t tabLevel) const {
+  std::ostringstream os;
+  printStatus(ws, os, tabLevel);
+  return os.str();
+}
+
 void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
   for (auto &op : _branch_ops) {
     op->eval(ws);
@@ -191,6 +377,48 @@ void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
 
     weighted_combine(ltop_clv, rtop_clv, _excl_dists, bot_clv);
   }
+}
+
+void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                        std::ostream &os,
+                                        size_t tabLevel) const {
+  std::string tabs = make_tabs(tabLevel);
+  os << opening_line(tabs) << "\n";
+  os << tabs << "SplitOperation:\n";
+
+  os << tabs << "Bot clv (index: " << _bot_clv_index
+     << "): " << std::setprecision(10) << blaze::trans(ws->clv(_bot_clv_index));
+  os << tabs << "Ltop clv (index: " << _ltop_clv_index
+     << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_ltop_clv_index));
+  os << tabs << "Rtop clv (index: " << _rtop_clv_index
+     << "): " << std::setprecision(10)
+     << blaze::trans(ws->clv(_rtop_clv_index));
+
+  if (_excl_dists.size() != 0) {
+    os << tabs << "Excluded dists:\n";
+    for (size_t i = 0; i < _excl_dists.size(); ++i) {
+      os << tabs << _excl_dists[i] << "\n";
+    }
+  }
+
+  os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
+
+  os << tabs << "Branch ops:\n";
+  if (_branch_ops.size() != 0) {
+    for (auto &op : _branch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
+  }
+  os << "\n";
+  os << closing_line(tabs);
+}
+
+std::string ReverseSplitOperation::printStatus(
+    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+  std::ostringstream os;
+  printStatus(ws, os, tabLevel);
+  return os.str();
 }
 
 double LHGoal::eval(std::shared_ptr<Workspace> ws) const {

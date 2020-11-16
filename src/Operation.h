@@ -7,9 +7,12 @@
 #ifndef _LAGRANGE_OPERATION_H
 #define _LAGRANGE_OPERATION_H
 
+#include <cstddef>
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <ostream>
+#include <sstream>
 #include <stdexcept>
 
 #include "Common.h"
@@ -26,15 +29,27 @@ class MakeRateMatrixOperation {
 
   void eval(std::shared_ptr<Workspace> ws);
 
-  lagrange_clock_t last_execution() const { return _last_execution; }
+  lagrange_clock_t last_update() const {
+    return std::max(_last_execution, _last_update);
+  }
 
-  inline void update_rates(std::shared_ptr<Workspace> ws, double disp,
+  inline void update_rates(const std::shared_ptr<Workspace>& ws, double disp,
                            double ext) {
     ws->set_period_params(_period_index, disp, ext);
     _last_update = ws->advance_clock();
   }
 
+  inline void update_rates(const std::shared_ptr<Workspace>& ws, period_t p) {
+    update_rates(ws, p.dispersion_rate, p.extinction_rate);
+  }
+
   inline size_t rate_matrix_index() const { return _rate_matrix_index; }
+
+  void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
+                   size_t tabLevel = 0) const;
+
+  std::string printStatus(const std::shared_ptr<Workspace>& ws,
+                          size_t tabLevel = 0) const;
 
  private:
   size_t _rate_matrix_index;
@@ -64,6 +79,11 @@ class ExpmOperation {
   size_t prob_matrix() const { return _prob_matrix_index; }
 
   lagrange_clock_t last_execution() const { return _last_execution; }
+
+  void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
+                   size_t tabLevel = 0) const;
+  std::string printStatus(const std::shared_ptr<Workspace>& ws,
+                          size_t tabLevel = 0) const;
 
  private:
   size_t _prob_matrix_index;
@@ -123,6 +143,12 @@ class DispersionOperation {
   size_t top_clv_index() const { return _top_clv; };
   size_t bot_clv_index() const { return _bot_clv; };
 
+  void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
+                   size_t tabLevel = 0) const;
+
+  std::string printStatus(const std::shared_ptr<Workspace>& ws,
+                          size_t tabLevel = 0) const;
+
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
@@ -177,6 +203,12 @@ class SplitOperation {
 
   size_t get_parent_clv() const { return _parent_clv_index; }
 
+  void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
+                   size_t tabLevel = 0) const;
+
+  std::string printStatus(const std::shared_ptr<Workspace>& ws,
+                          size_t tabLevel = 0) const;
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -220,6 +252,12 @@ class ReverseSplitOperation {
         _branch_ops{{branch_op}} {}
 
   void eval(std::shared_ptr<Workspace>) const;
+
+  void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
+                   size_t tabLevel = 0) const;
+
+  std::string printStatus(const std::shared_ptr<Workspace>& ws,
+                          size_t tabLevel = 0) const;
 
  private:
   size_t _bot_clv_index;
