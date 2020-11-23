@@ -9,7 +9,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <sstream>
+#include <vector>
 
 typedef uint64_t lagrange_dist_t;
 
@@ -44,8 +46,9 @@ struct period_derivative_t {
 struct period_t {
   double dispersion_rate;
   double extinction_rate;
+  std::shared_ptr<std::vector<std::vector<double>>> adjustment_matrix = nullptr;
 
-  void applyDerivative(const period_derivative_t &d) {
+  void applyDerivative(const period_derivative_t& d) {
     dispersion_rate += d.d_dispersion;
     extinction_rate += d.d_extinction;
     if (dispersion_rate < 0) {
@@ -61,6 +64,14 @@ struct period_t {
     os << "(disp: " << dispersion_rate << ", ext: " << extinction_rate << ")";
     return os.str();
   }
+
+  inline double getDispersionRate(size_t from, size_t to) const {
+    return dispersion_rate * (adjustment_matrix != nullptr
+                                  ? (*adjustment_matrix)[from][to]
+                                  : 1.0);
+  }
+
+  inline double getExtinctionRate() const { return extinction_rate; }
 };
 
 #endif  // LAGRANGE_COMMON_H__

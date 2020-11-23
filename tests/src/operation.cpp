@@ -212,3 +212,20 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
   double error = blaze::norm(root_clv - _correct_reverse_bot_clv);
   EXPECT_NEAR(error, 0.0, 1e-4);
 }
+
+TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
+  MakeRateMatrixOperation make_op(_rate_matrix);
+
+  make_op.eval(_ws);
+  std::cout << make_op.printStatus(_ws) << std::endl;
+}
+
+TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
+  auto local_ws = make_shared<Workspace>(_taxa, 3);
+  local_ws->reserve();
+  local_ws->set_period_params(0, .3123, 1.1231);
+  MakeRateMatrixOperation make_op(_rate_matrix);
+
+  make_op.eval(local_ws);
+  std::cout << make_op.printStatus(local_ws) << std::endl;
+}

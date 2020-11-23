@@ -207,7 +207,7 @@ void RateModel::setup_D(double d) {
 
 void RateModel::setup_D_provided(double d,
                                  vector<vector<vector<double>>> &D_mask_in) {
-  vector<double> cols(_area_count, 1 * d);
+  vector<double> cols(_area_count, d);
   vector<vector<double>> rows(_area_count, cols);
   _dispersal_params = vector<vector<vector<double>>>(_periods.size(), rows);
   for (unsigned int i = 0; i < _dispersal_params.size(); i++) {
@@ -257,33 +257,37 @@ void RateModel::setup_Q() {
                                            {_dists.size(), _dists.size(), 0.0});
   for (unsigned int period = 0; period < _rate_matrix.size();
        period++) {  // periods
-    for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) {  // dists
+    for (unsigned int dist_i = 0; dist_i < _dists.size(); dist_i++) {
       int s1 = lagrange_popcount(_dists[dist_i]);
-      if (s1 > 0) {
-        for (unsigned int dist_j = 0; dist_j < _dists.size();
-             dist_j++) {  // dists
-          int sxor = lagrange_popcount(_dists[dist_i] ^ _dists[dist_j]);
-          if (sxor == 1) {
-            int s2 = lagrange_popcount(_dists[dist_j]);
-            int dest = __builtin_ctzll((_dists[dist_i] ^ _dists[dist_j]));
-            double rate = 0.0;
-            if (s1 < s2) {
-              for (unsigned int src = 0;
-                   src < static_cast<unsigned int>(_area_count); src++) {
-                rate += _dispersal_params[period][src][dest] *
-                        ((_dists[dist_i] >> src) & 1ul);
-                /*
-                if (_dists[dist_i] & (1ul << _area_count) != 0) {
-                  rate += _dispersal_params[period][src][dest];
-                }
-                */
-              }
-            } else {
-              rate = _extinction_params[period][dest];
-            }
-            _rate_matrix[period](dist_i, dist_j) = rate;
-          }
+      if (s1 == 0) {
+        continue;
+      }
+
+      for (unsigned int dist_j = 0; dist_j < _dists.size(); dist_j++) {
+        int sxor = lagrange_popcount(_dists[dist_i] ^ _dists[dist_j]);
+        if (sxor != 1) {
+          continue;
         }
+
+        int s2 = lagrange_popcount(_dists[dist_j]);
+        int dest = __builtin_ctzll((_dists[dist_i] ^ _dists[dist_j]));
+        double rate = 0.0;
+
+        if (s1 < s2) { /* If we gain a region */
+          for (unsigned int src = 0;
+               src < static_cast<unsigned int>(_area_count); src++) {
+            rate += _dispersal_params[period][src][dest] *
+                    ((_dists[dist_i] >> src) & 1ul);
+            /*
+            if (_dists[dist_i] & (1ul << _area_count) != 0) {
+              rate += _dispersal_params[period][src][dest];
+            }
+            */
+          }
+        } else {
+          rate = _extinction_params[period][dest];
+        }
+        _rate_matrix[period](dist_i, dist_j) = rate;
       }
     }
     set_Qdiag(period);

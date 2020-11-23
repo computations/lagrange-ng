@@ -128,18 +128,20 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
   }
   auto &rm = ws->rate_matrix(_rate_matrix_index);
   rm = 0.0;
-  auto period = ws->get_period_params(_period_index);
-  double dispersion_rate = period.dispersion_rate;
-  double extinction_rate = period.extinction_rate;
+  auto &period = ws->get_period_params(_period_index);
   for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
     for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
       if (lagrange_bextr(dist, i) != 0) {
         continue;
       }
       lagrange_dist_t gain_dist = dist | (1ul << i);
-      rm(gain_dist, dist) = extinction_rate;
-      if (dist != 0) {
-        rm(dist, gain_dist) = dispersion_rate;
+      rm(gain_dist, dist) = period.getExtinctionRate();
+      if (dist == 0) {
+        continue;
+      }
+      for (size_t j = 0; j < ws->regions(); ++j) {
+        rm(dist, gain_dist) +=
+            period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
       }
     }
   }

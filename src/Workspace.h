@@ -160,7 +160,7 @@ class Workspace {
 
   lagrange_clock_t advance_clock() { return _current_clock++; }
 
-  period_t get_period_params(size_t period_index) const {
+  const period_t &get_period_params(size_t period_index) const {
     return _periods[period_index];
   }
 
