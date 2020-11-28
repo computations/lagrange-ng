@@ -1,8 +1,9 @@
-#include "environment.hpp"
-#include "tree_reader.h"
-#include "gtest/gtest.h"
 #include <stdexcept>
 #include <string>
+
+#include "environment.hpp"
+#include "gtest/gtest.h"
+#include "tree_reader.h"
 
 TEST(TreeReader, simple0) {
   auto tr = TreeReader();
@@ -127,8 +128,9 @@ TEST(TreeReader, simple5) {
 
 TEST(TreeReader, simple6) {
   auto tr = TreeReader();
-  auto t = tr.readTree("(\t(a\t:\t30.5\t,\tb\t:\t0.03\t)\tab\t,\t(c\t:0,d\t:"
-                       "\t3\t)\tcd\t)root\t;");
+  auto t = tr.readTree(
+      "(\t(a\t:\t30.5\t,\tb\t:\t0.03\t)\tab\t,\t(c\t:0,d\t:"
+      "\t3\t)\tcd\t)root\t;");
   EXPECT_EQ(t->getExternalNodeCount(), 4);
 
   EXPECT_EQ(t->getExternalNode(0)->getName(), "a");
@@ -334,7 +336,8 @@ TEST(TreeReader, badtrees8) {
 
 TEST(TreeReader, badtrees9) {
   auto tr = TreeReader();
-  EXPECT_THROW(tr.readTree("((a,b),(c,(d, e):0.5 label));"), std::runtime_error);
+  EXPECT_THROW(tr.readTree("((a,b),(c,(d, e):0.5 label));"),
+               std::runtime_error);
 }
 
 TEST(TreeReader, badtrees10) {
@@ -349,6 +352,29 @@ TEST(TreeReader, badtrees11) {
 
 TEST(TreeReader, manytrees) {
   auto treefile = env->get_datafile();
+  size_t line_number = 1;
+  std::string line;
+  while (std::getline(treefile, line)) {
+    if (!treefile) {
+      break;
+    }
+    auto tr = TreeReader();
+    try {
+      auto t = tr.readTree(line);
+      EXPECT_GT(t->getExternalNodeCount(), 0);
+    } catch (const std::exception &e) {
+      throw std::runtime_error{std::string("Got error on line ") +
+                               std::to_string(line_number) +
+                               " with the error: \n" + e.what()};
+    }
+    line_number++;
+    line.clear();
+  }
+}
+
+TEST(TreeReader, DISABLED_pathologic0) {
+  auto treefile = env->get_pathological_data();
+
   size_t line_number = 1;
   std::string line;
   while (std::getline(treefile, line)) {
