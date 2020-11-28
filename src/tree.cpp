@@ -300,7 +300,12 @@ std::vector<SplitOperation> Tree::generateForwardOperations(
 
 std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
     Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op) {
-  return _root->traverseAndGenerateBackwardOperations(ws, rm_op).first;
+  auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_op);
+  ret.first.begin()->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
+  (ret.first.begin() + 1)
+      ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
+
+  return ret.first;
 }
 
 std::vector<size_t> Tree::traversePreorderInternalNodesOnly() const {

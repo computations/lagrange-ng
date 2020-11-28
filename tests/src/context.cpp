@@ -28,6 +28,7 @@ TEST_F(ContextTest, simple0) {
   Context context(_basic_tree, 2);
   context.registerLHGoal();
   context.registerTipClvs(_basic_tree_data);
+  context.init();
 }
 
 TEST_F(ContextTest, error0) {
@@ -59,4 +60,28 @@ TEST_F(ContextTest, optimizeSimple0) {
   double llh = context.computeLLH();
 
   EXPECT_GT(llh, initial_llh);
+}
+
+TEST_F(ContextTest, LHGoal0) {
+  Context context(_basic_tree, 2);
+  context.registerLHGoal();
+  context.init();
+  context.updateRates({10.5, 1.5});
+  context.registerTipClvs(_basic_tree_data);
+
+  context.computeLHGoal();
+}
+
+TEST_F(ContextTest, StateGoal0) {
+  Context context(_basic_tree, 2);
+  context.registerLHGoal();
+  context.registerStateLHGoal();
+  context.init();
+  context.updateRates({10.5, 1.5});
+  context.registerTipClvs(_basic_tree_data);
+
+  auto states = context.computeStateGoal();
+  for (auto& s : states) {
+    std::cout << s << std::endl;
+  }
 }

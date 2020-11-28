@@ -44,6 +44,11 @@ class Node {
  public:
   Node();
   Node(double bl, int number, const string &name);
+  ~Node() {
+    for (auto &c : _children) {
+      c.reset();
+    }
+  }
 
   vector<std::shared_ptr<Node>> getChildren();
   bool isExternal() const;
@@ -104,8 +109,9 @@ class Node {
   void setHeightRecursive();
   void pruneNode(std::shared_ptr<Node> n);
 
-  friend std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
-                                                 std::shared_ptr<Node> n);
+  friend std::shared_ptr<Node> getParentWithNode(
+      const std::shared_ptr<Node> &current, const std::shared_ptr<Node> &n);
+
   friend std::shared_ptr<Node> getMRCAWithNode(
       const std::shared_ptr<Node> &current,
       const std::vector<std::shared_ptr<Node>> &nodes);

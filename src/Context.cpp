@@ -4,6 +4,7 @@
 
 #include "Common.h"
 #include "Context.h"
+#include "RateModel.h"
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
@@ -12,8 +13,8 @@ void Context::registerForwardOperations() {
 }
 
 void Context::registerBackwardOperations() {
-  _forward_operations =
-      _tree->generateForwardOperations(*_workspace, _rate_matrix_op);
+  _reverse_operations =
+      _tree->generateBackwardOperations(*_workspace, _rate_matrix_op);
 }
 
 void Context::registerLHGoal() {
@@ -27,7 +28,7 @@ void Context::registerLHGoal() {
 }
 
 void Context::registerStateLHGoal() {
-  if (_reverse_operations.size() != 0) {
+  if (_reverse_operations.size() == 0) {
     registerBackwardOperations();
   }
 
@@ -59,10 +60,23 @@ void Context::registerTipClvs(
   _tree->assignTipData(*_workspace, dist_data);
 }
 
-double Context::computeLH() {
+void Context::computeForwardOperations() {
   for (auto& op : _forward_operations) {
     op.eval(_workspace);
   }
+}
+
+void Context::computeBackwardOperations() {
+  size_t prior_index = _reverse_operations.begin()->getStableCLV();
+  _workspace->clv(prior_index) = 1.0 / _workspace->states();
+  for (auto& op : _reverse_operations) {
+    std::cout << op.printStatus(_workspace) << std::endl;
+    op.eval(_workspace);
+  }
+}
+
+double Context::computeLH() {
+  computeForwardOperations();
   return _lh_goal.begin()->eval(_workspace);
 }
 
@@ -97,4 +111,16 @@ void Context::optimize() {
     current_params.applyDerivative(gradient);
     updateRates(current_params);
   }
+}
+
+double Context::computeLHGoal() { return computeLH(); }
+
+std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
+  computeBackwardOperations();
+  std::vector<lagrange_col_vector_t> states;
+  states.reserve(_state_lh_goal.size());
+  for (auto& op : _state_lh_goal) {
+    states.push_back(op.eval(_workspace));
+  }
+  return states;
 }

@@ -22,6 +22,9 @@ class Context {
   void registerStateLHGoal();
   void registerSplitLHGoal();
 
+  double computeLHGoal();
+  std::vector<lagrange_col_vector_t> computeStateGoal();
+
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
@@ -39,6 +42,9 @@ class Context {
  private:
   void registerForwardOperations();
   void registerBackwardOperations();
+
+  void computeForwardOperations();
+  void computeBackwardOperations();
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;

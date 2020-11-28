@@ -127,11 +127,11 @@ class Workspace {
   }
 
   inline size_t get_bot1_clv_reverse(size_t node_id) {
-    return _node_reservations[node_id]._bot1_clv;
+    return _node_reservations[node_id]._bot1_rclv;
   }
 
   inline size_t get_bot2_clv_reverse(size_t node_id) {
-    return _node_reservations[node_id]._bot2_clv;
+    return _node_reservations[node_id]._bot2_rclv;
   }
 
   inline lagrange_col_vector_t &get_base_frequencies(size_t index) {
@@ -139,10 +139,31 @@ class Workspace {
   }
 
   void reserve() {
+    if (_rate_matrix != nullptr) {
+      // throw std::runtime_error{"Rate matrix buffer was already allocated"};
+      delete[] _rate_matrix;
+    }
     _rate_matrix = new lagrange_matrix_t[_rate_matrix_count];
+
+    if (_prob_matrix != nullptr) {
+      // throw std::runtime_error{"Prob matrix buffer was already allocated"};
+      delete[] _prob_matrix;
+    }
     _prob_matrix = new lagrange_matrix_t[_prob_matrix_count];
+
+    if (_base_frequencies != nullptr) {
+      // throw std::runtime_error{"Base frequencies buffer was already
+      // allocated"};
+      delete[] _base_frequencies;
+    }
     _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
+
+    if (_clvs != nullptr) {
+      // throw std::runtime_error{"CLV buffer was already allocated"};
+      delete[] _clvs;
+    }
     _clvs = new lagrange_col_vector_t[clv_count()];
+
     for (size_t i = 0; i < _rate_matrix_count; i++) {
       _rate_matrix[i] = lagrange_matrix_t(_states, _states);
     }

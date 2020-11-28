@@ -57,5 +57,5 @@ TEST_F(TreeTest, generateOperationsSimple1) {
   auto t = parse_tree(_basic_tree_newick);
   auto ops = t->generateBackwardOperations(*_basic_ws, _rate_matrix_op);
 
-  EXPECT_EQ(ops.size(), 1);
+  EXPECT_EQ(ops.size(), 4);
 }

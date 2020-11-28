@@ -386,7 +386,7 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                         size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
-  os << tabs << "SplitOperation:\n";
+  os << tabs << "ReverseSplitOperation:\n";
 
   os << tabs << "Bot clv (index: " << _bot_clv_index
      << "): " << std::setprecision(10) << blaze::trans(ws->clv(_bot_clv_index));
@@ -406,13 +406,13 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
 
-  os << tabs << "Branch ops:\n";
   if (_branch_ops.size() != 0) {
+    os << tabs << "Branch ops:\n";
     for (auto &op : _branch_ops) {
       os << op->printStatus(ws, tabLevel + 1);
     }
+    os << "\n";
   }
-  os << "\n";
   os << closing_line(tabs);
 }
 

@@ -239,7 +239,7 @@ class ReverseSplitOperation {
   ReverseSplitOperation(size_t bot_clv, size_t rtop_clv,
                         std::shared_ptr<DispersionOperation> branch_op)
       : _bot_clv_index{bot_clv},
-        _ltop_clv_index{branch_op->top_clv_index()},
+        _ltop_clv_index{branch_op->bot_clv_index()},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
         _branch_ops{{branch_op}} {}
@@ -258,6 +258,20 @@ class ReverseSplitOperation {
 
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
+
+  void makeRootOperation(size_t clv_index) {
+    _branch_ops.clear();
+    if (_ltop_clv_index == std::numeric_limits<size_t>::max()) {
+      _ltop_clv_index = clv_index;
+    }
+    if (_rtop_clv_index == std::numeric_limits<size_t>::max()) {
+      _rtop_clv_index = clv_index;
+    }
+  }
+
+  size_t getStableCLV() const{
+    return _ltop_clv_index;
+  }
 
  private:
   size_t _bot_clv_index;

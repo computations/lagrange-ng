@@ -17,6 +17,10 @@ class LagrangeEnvironment: public ::testing::Environment{
         return std::ifstream(STRINGIFY(TREEPATH/random_test_trees));
     }
 
+    std::ifstream get_pathological_data(){
+        return std::ifstream(STRINGIFY(TREEPATH/pathological_trees));
+    }
+
 };
 
 extern LagrangeEnvironment * env;

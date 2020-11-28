@@ -290,8 +290,8 @@ bool Node::findNode(std::shared_ptr<Node> n) {
   return false;
 }
 
-std::shared_ptr<Node> getParentWithNode(std::shared_ptr<Node> current,
-                                        std::shared_ptr<Node> n) {
+std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
+                                        const std::shared_ptr<Node> &n) {
   for (auto c : current->_children) {
     if (n == c) {
       return current;
@@ -356,11 +356,15 @@ Node::traverseAndGenerateBackwardOperations(
 
   auto disp_ops = generateDispersionOperationsReverse(ws, rm_op);
 
-  if (_children[0]->isInternal()) {
-    ws.register_bot1_clv_reverse(_id);
-    rsplit_ops.emplace_back(ws.get_bot1_clv_reverse(_id),
-                            ws.get_rchild_clv(_id), disp_ops);
+  ws.register_bot1_clv_reverse(_id);
+  rsplit_ops.emplace_back(ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id),
+                          disp_ops);
 
+  ws.register_bot2_clv_reverse(_id);
+  rsplit_ops.emplace_back(ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id),
+                          disp_ops);
+
+  if (_children[0]->isInternal()) {
     auto child_trav =
         _children[0]->traverseAndGenerateBackwardOperations(ws, rm_op);
     auto child_disp_op = child_trav.second;
@@ -369,11 +373,8 @@ Node::traverseAndGenerateBackwardOperations(
     rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
                       child_trav.first.end());
   }
-  if (_children[1]->isInternal()) {
-    ws.register_bot2_clv_reverse(_id);
-    rsplit_ops.emplace_back(ws.get_bot2_clv_reverse(_id),
-                            ws.get_lchild_clv(_id), disp_ops);
 
+  if (_children[1]->isInternal()) {
     auto child_trav =
         _children[1]->traverseAndGenerateBackwardOperations(ws, rm_op);
     auto child_disp_op = child_trav.second;
