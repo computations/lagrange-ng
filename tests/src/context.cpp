@@ -80,6 +80,7 @@ TEST_F(ContextTest, StateGoal0) {
   context.updateRates({10.5, 1.5});
   context.registerTipClvs(_basic_tree_data);
 
+  context.computeLHGoal();
   auto states = context.computeStateGoal();
   for (auto& s : states) {
     std::cout << s << std::endl;

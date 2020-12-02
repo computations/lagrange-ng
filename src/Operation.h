@@ -103,6 +103,14 @@ class DispersionOperation {
         _prob_matrix_index{prob_matrix},
         _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op}} {}
 
+  DispersionOperation(size_t top, size_t bot, double brlen, size_t prob_matrix,
+                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
+                      bool transpose)
+      : _top_clv{top},
+        _bot_clv{bot},
+        _prob_matrix_index{prob_matrix},
+        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op, transpose}} {}
+
   DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
                       const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
       : _top_clv{std::numeric_limits<size_t>::max()},
@@ -133,11 +141,18 @@ class DispersionOperation {
 
   void eval(std::shared_ptr<Workspace> ws);
 
-  void terminate(size_t clv_index) {
+  void terminate_top(size_t clv_index) {
     if (_top_clv != std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{"Dispersion Operation already terminated"};
     }
     _top_clv = clv_index;
+  }
+
+  void terminate_bot(size_t clv_index) {
+    if (_bot_clv != std::numeric_limits<size_t>::max()) {
+      throw std::runtime_error{"Dispersion Operation already terminated"};
+    }
+    _bot_clv = clv_index;
   }
 
   size_t top_clv_index() const { return _top_clv; };
@@ -239,7 +254,7 @@ class ReverseSplitOperation {
   ReverseSplitOperation(size_t bot_clv, size_t rtop_clv,
                         std::shared_ptr<DispersionOperation> branch_op)
       : _bot_clv_index{bot_clv},
-        _ltop_clv_index{branch_op->bot_clv_index()},
+        _ltop_clv_index{branch_op->top_clv_index()},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
         _branch_ops{{branch_op}} {}
@@ -269,9 +284,7 @@ class ReverseSplitOperation {
     }
   }
 
-  size_t getStableCLV() const{
-    return _ltop_clv_index;
-  }
+  size_t getStableCLV() const { return _ltop_clv_index; }
 
  private:
   size_t _bot_clv_index;

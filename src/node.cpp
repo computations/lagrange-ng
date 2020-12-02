@@ -329,8 +329,8 @@ Node::traverseAndGenerateForwardOperations(
 
   ws.register_top_clv(_id);
   ws.register_children_clv(_id);
-  lchild.second->terminate(ws.get_lchild_clv(_id));
-  rchild.second->terminate(ws.get_rchild_clv(_id));
+  lchild.second->terminate_top(ws.get_lchild_clv(_id));
+  rchild.second->terminate_top(ws.get_rchild_clv(_id));
 
   split_ops.emplace_back(ws.get_top_clv(_id), lchild.second, rchild.second);
   return {split_ops, generateDispersionOperations(ws, rm_op)};
@@ -369,7 +369,7 @@ Node::traverseAndGenerateBackwardOperations(
         _children[0]->traverseAndGenerateBackwardOperations(ws, rm_op);
     auto child_disp_op = child_trav.second;
 
-    child_disp_op->terminate(ws.get_bot1_clv_reverse(_id));
+    child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
     rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
                       child_trav.first.end());
   }
@@ -379,7 +379,7 @@ Node::traverseAndGenerateBackwardOperations(
         _children[1]->traverseAndGenerateBackwardOperations(ws, rm_op);
     auto child_disp_op = child_trav.second;
 
-    child_disp_op->terminate(ws.get_bot2_clv_reverse(_id));
+    child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));
     rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
                       child_trav.first.end());
   }
@@ -398,8 +398,9 @@ std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
     Workspace &ws,
     const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const {
   return std::make_shared<DispersionOperation>(
-      ws.get_top_clv_reverse(_id), _branch_length,
-      ws.suggest_prob_matrix_index(), rm_op, /*transpose=*/true);
+      ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
+      _branch_length, ws.suggest_prob_matrix_index(), rm_op,
+      /*transpose=*/true);
 }
 
 void Node::traverseAndGenerateBackwardNodeIds(std::vector<size_t> &ret) const {

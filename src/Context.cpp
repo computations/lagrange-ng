@@ -70,8 +70,8 @@ void Context::computeBackwardOperations() {
   size_t prior_index = _reverse_operations.begin()->getStableCLV();
   _workspace->clv(prior_index) = 1.0 / _workspace->states();
   for (auto& op : _reverse_operations) {
-    std::cout << op.printStatus(_workspace) << std::endl;
     op.eval(_workspace);
+    std::cout << op.printStatus(_workspace) << std::endl;
   }
 }
 
