@@ -4,3 +4,4 @@ build/*
 bin/*
 compile_commands.json
 .clangd/*
+.cache/*
