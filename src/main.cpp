@@ -265,74 +265,59 @@ void handle_ancsplits_ancstates(
     const config_options_t &config, Superdouble &outtotlike) {
   BioGeoTreeTools tt;
 
-  /*
-   * outfile for tree reconstructed states
-   */
-  ofstream outTreeFile;
-  ofstream outTreeKeyFile;
+  if (config.ancstates.size() == 0) {
+    return;
+  }
 
-  if (config.ancstates.size() > 0) {
-    bgt->set_use_stored_matrices(true);
+  bgt->set_use_stored_matrices(true);
 
-    bgt->prepare_ancstate_reverse();
+  bgt->prepare_ancstate_reverse();
 
-    if (config.ancstates[0] == "_all_" || config.ancstates[0] == "_ALL_") {
-      for (unsigned int j = 0; j < intree->getInternalNodeCount(); j++) {
-        if (config.splits) {
-          cout << "Ancestral splits for:\t"
-               << intree->getInternalNode(j)->getNumber() << endl;
-          unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
-              bgt->calculate_ancsplit_reverse(intree->getInternalNode(j));
-          tt.summarizeSplits(intree->getInternalNode(j), ras, areanamemaprev,
-                             rm->get_int_dists_map(), rm->get_num_areas());
-          cout << endl;
-        }
-        if (config.states) {
-          cout << "Ancestral states for:\t"
-               << intree->getInternalNode(j)->getNumber() << endl;
-          vector<Superdouble> rast =
-              bgt->calculate_ancstate_reverse(intree->getInternalNode(j));
-          outtotlike = calculate_vector_Superdouble_sum(rast);
-          tt.summarizeAncState(intree->getInternalNode(j), rast, areanamemaprev,
-                               rm->get_int_dists_map(), rm->get_num_areas());
-          cout << endl;
-        }
-      }
-      /*
-       * key file output
-       */
-      outTreeKeyFile.open((config.treefile + ".bgkey.tre").c_str(), ios::app);
-      // need to output numbers
-      outTreeKeyFile << intree->getRoot()->getNewick(
-                            true,
-                            [](const Node &n) -> string {
-                              return std::to_string(n.getNumber());
-                            })
-                     << ";" << endl;
-      outTreeKeyFile.close();
-    } else {
-      for (unsigned int j = 0; j < config.ancstates.size(); j++) {
-        if (config.splits) {
-          cout << "Ancestral splits for: " << config.ancstates[j] << endl;
-          unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
-              bgt->calculate_ancsplit_reverse(
-                  mrcanodeint.at(config.ancstates[j]));
-          tt.summarizeSplits(mrcanodeint.at(config.ancstates[j]), ras,
-                             areanamemaprev, rm->get_int_dists_map(),
-                             rm->get_num_areas());
-        }
-        if (config.states) {
-          cout << "Ancestral states for: " << config.ancstates[j] << endl;
-          vector<Superdouble> rast = bgt->calculate_ancstate_reverse(
-              mrcanodeint.at(config.ancstates[j]));
-          tt.summarizeAncState(mrcanodeint.at(config.ancstates[j]), rast,
-                               areanamemaprev, rm->get_int_dists_map(),
-                               rm->get_num_areas());
-        }
-      }
+  std::vector<std::shared_ptr<Node>> node_indicies;
+
+  if (config.ancstates[0] == "_all_" || config.ancstates[0] == "_ALL_") {
+    for (unsigned int j = 0; j < intree->getInternalNodeCount(); j++) {
+      node_indicies.push_back(intree->getInternalNode(j));
+    }
+  } else {
+    for (unsigned int j = 0; j < config.ancstates.size(); j++) {
+      node_indicies.push_back(mrcanodeint.at(config.ancstates[j]));
     }
   }
+
+  for (auto nid : node_indicies) {
+    if (config.splits) {
+      cout << "Ancestral splits for:\t" << nid->getNumber() << endl;
+      unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
+          bgt->calculate_ancsplit_reverse(nid);
+      tt.summarizeSplits(nid, ras, areanamemaprev, rm->get_int_dists_map(),
+                         rm->get_num_areas());
+      cout << endl;
+    }
+    if (config.states) {
+      cout << "Ancestral states for:\t" << nid->getNumber() << endl;
+      vector<Superdouble> rast = bgt->calculate_ancstate_reverse(nid);
+      outtotlike = calculate_vector_Superdouble_sum(rast);
+      tt.summarizeAncState(nid, rast, areanamemaprev, rm->get_int_dists_map(),
+                           rm->get_num_areas());
+      cout << endl;
+    }
+  }
+
+  /*
+   * key file output
+   */
+  ofstream outTreeKeyFile;
+  outTreeKeyFile.open((config.treefile + ".bgkey.tre").c_str(), ios::app);
+  // need to output numbers
+  outTreeKeyFile << intree->getRoot()->getNewick(
+                        true,
+                        [](const Node &n) -> string {
+                          return std::to_string(n.getNumber());
+                        })
+                 << ";" << endl;
   if (config.splits) {
+    ofstream outTreeFile;
     outTreeFile.open((config.treefile + ".bgsplits.tre").c_str(), ios::app);
     // need to output object "split"
     outTreeFile << intree->getRoot()->getNewick(true,
@@ -340,9 +325,9 @@ void handle_ancsplits_ancstates(
                                                   return n.getSplitString();
                                                 })
                 << ";" << endl;
-    outTreeFile.close();
   }
   if (config.states) {
+    ofstream outTreeFile;
     outTreeFile.open((config.treefile + ".bgstates.tre").c_str(), ios::app);
     // need to output object "state"
     outTreeFile << intree->getRoot()->getNewick(true,
@@ -350,7 +335,6 @@ void handle_ancsplits_ancstates(
                                                   return n.getStateString();
                                                 })
                 << ";" << endl;
-    outTreeFile.close();
   }
 }
 
