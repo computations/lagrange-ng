@@ -14,6 +14,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json.hpp>
 using namespace std;
 #include "node.h"
 #include "superdouble.h"
