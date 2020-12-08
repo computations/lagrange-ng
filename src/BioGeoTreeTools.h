@@ -10,11 +10,12 @@
 #ifndef PHYLOTREE_H_
 #define PHYLOTREE_H_
 
-#include "AncSplit.h"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <nlohmann/json.hpp>
+
+#include "AncSplit.h"
 using namespace std;
 #include "node.h"
 #include "superdouble.h"
@@ -25,7 +26,7 @@ using namespace std;
 #endif
 
 class BioGeoTreeTools {
-public:
+ public:
   std::shared_ptr<Tree> getTreeFromString(string treestring);
 
   void summarizeSplits(std::shared_ptr<Node> node,
@@ -33,11 +34,11 @@ public:
                        unordered_map<int, string> &areanamemaprev,
                        const std::unordered_map<int, lagrange_dist_t> &distmap,
                        size_t area_count);
-  void
-  summarizeAncState(std::shared_ptr<Node> node, vector<Superdouble> &ans,
-                    unordered_map<int, string> &areanamemaprev,
-                    const std::unordered_map<int, lagrange_dist_t> &distmap,
-                    size_t areasize);
+  void summarizeAncState(
+      std::shared_ptr<Node> node, vector<Superdouble> &ans,
+      unordered_map<int, string> &areanamemaprev,
+      const std::unordered_map<int, lagrange_dist_t> &distmap, size_t areasize,
+      nlohmann::json &output_json);
   string get_string_from_dist_int(
       int dist, const unordered_map<int, string> &areanamemaprev,
       const unordered_map<int, lagrange_dist_t> &distmap, size_t area_count);

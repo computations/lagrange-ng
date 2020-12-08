@@ -285,7 +285,10 @@ void handle_ancsplits_ancstates(
     }
   }
 
+  nlohmann::json root_json;
   for (auto nid : node_indicies) {
+    nlohmann::json current_json;
+    current_json["number"] = nid->getNumber();
     if (config.splits) {
       cout << "Ancestral splits for:\t" << nid->getNumber() << endl;
       unordered_map<lagrange_dist_t, vector<AncSplit>> ras =
@@ -295,14 +298,20 @@ void handle_ancsplits_ancstates(
       cout << endl;
     }
     if (config.states) {
+      nlohmann::json output_json;
       cout << "Ancestral states for:\t" << nid->getNumber() << endl;
       vector<Superdouble> rast = bgt->calculate_ancstate_reverse(nid);
       outtotlike = calculate_vector_Superdouble_sum(rast);
       tt.summarizeAncState(nid, rast, areanamemaprev, rm->get_int_dists_map(),
-                           rm->get_num_areas());
+                           rm->get_num_areas(), output_json);
       cout << endl;
+
+      current_json["states"] = output_json;
     }
+    root_json.push_back(current_json);
   }
+  ofstream jsonfile((config.treefile + ".bgstates.json").c_str(), ios::app);
+  jsonfile << root_json.dump() << std::endl;
 
   /*
    * key file output

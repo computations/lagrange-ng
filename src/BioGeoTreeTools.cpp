@@ -126,7 +126,8 @@ void BioGeoTreeTools::summarizeSplits(
 void BioGeoTreeTools::summarizeAncState(
     std::shared_ptr<Node> node, vector<Superdouble> &ans,
     unordered_map<int, string> &areanamemaprev,
-    const unordered_map<int, lagrange_dist_t> &distmap, size_t areasize) {
+    const unordered_map<int, lagrange_dist_t> &distmap, size_t areasize,
+    nlohmann::json &output_json) {
   Superdouble best(ans[1]);
   Superdouble sum(0);
   std::vector<std::pair<Superdouble, string>> printstring;
@@ -183,7 +184,6 @@ void BioGeoTreeTools::summarizeAncState(
          << double(none * lnl.getLn()) << ")" << endl;
   }
 
-  /*
   for (auto &item : json_list) {
     nlohmann::json j_tmp;
     j_tmp["llh"] = double(item.first.getLn());
@@ -191,7 +191,6 @@ void BioGeoTreeTools::summarizeAncState(
     j_tmp["distribution"] = item.second;
     output_json.push_back(j_tmp);
   }
-  */
 
   string disstring = "";
   size_t count = 0;
