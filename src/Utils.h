@@ -23,5 +23,6 @@ vector<int> idx2bitvect(vector <int> indices, int M);
 vector< vector<int> >  iterate_all(int m);
 map< int, vector<int> > iterate_all_bv(int m);
 map< int, vector<int> > iterate_all_bv2(int m);
+size_t dist_to_int(const vector<int>& d);
 
 #endif /* UTILS_H_ */

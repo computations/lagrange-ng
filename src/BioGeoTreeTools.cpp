@@ -22,6 +22,7 @@ using namespace std;
 #include "node.h"
 #include "vector_node_object.h"
 #include "string_node_object.h"
+#include "Utils.h"
 
 Tree * BioGeoTreeTools::getTreeFromString(string treestring){
     TreeReader tr;
@@ -136,7 +137,7 @@ void BioGeoTreeTools::summarizeSplits(Node * node,map<vector<int>,vector<AncSpli
 }
 
 
-void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,map<int,string> &areanamemaprev, RateModel * rm){
+void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,map<int,string> &areanamemaprev, RateModel * rm, nlohmann::json& output){
     //Superdouble best(ans[1]);
     Superdouble best(ans[1]);//use ans[1] because ans[0] is just 0
     Superdouble sum(0);
@@ -158,6 +159,10 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 	if (((best.getLn())-(ans[i].getLn()) ) < test2){
 	    string tdisstring ="";
 	    int  count1 = 0;
+	    nlohmann::json tmp_json;
+	    tmp_json["llh"] = double(ans[i].getLn());
+	    tmp_json["ratio"] = double(ans[i]/sum);
+	    tmp_json["distribution"] = dist_to_int(distmap->at(i));
 	    for(int m=0;m<areasize;m++){
 		if((*distmap)[i][m] == 1){
 		    tdisstring += areanamemaprev[m];
@@ -168,6 +173,7 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 		}
 	    }
 	    printstring[ans[i]] = tdisstring;
+	    output.push_back(tmp_json);
 	}
     }
 

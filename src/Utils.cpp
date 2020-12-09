@@ -227,3 +227,11 @@ int main2 (){
 	return 0;
 }
 
+size_t dist_to_int(const vector<int>& d){
+    size_t acc = 0;
+    for(auto i: d){
+	acc += i;
+	acc <<= 1;
+    }
+    return acc;
+}

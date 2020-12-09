@@ -18,6 +18,7 @@
 #include <float.h>
 #include <iomanip>
 #include <chrono>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -571,7 +572,10 @@ int main(int argc, char *argv[]) {
                 Superdouble totlike = 0; // calculate_vector_double_sum(rast) , should be the same for every node
 
                 if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
+                    nlohmann::json root_json;
                     for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
+                        nlohmann::json node_json;
+                        node_json["number"] = intrees[i]->getInternalNode(i)->getNumber();
                         if (splits) {
                             cout << "Ancestral splits for:\t" << intrees[i]->getInternalNode(j)->getNumber() << endl;
                             map<vector<int>, vector<AncSplit> > ras = bgt.calculate_ancsplit_reverse(
@@ -581,14 +585,17 @@ int main(int argc, char *argv[]) {
                             cout << endl;
                         }
                         if (states) {
+                            nlohmann::json state_json;
                             cout << "Ancestral states for:\t" << intrees[i]->getInternalNode(j)->getNumber() << endl;
                             vector<Superdouble> rast = bgt.calculate_ancstate_reverse(*intrees[i]->getInternalNode(j),
                                                                                       marginal);
                             totlike = calculate_vector_Superdouble_sum(rast);
-                            tt.summarizeAncState(intrees[i]->getInternalNode(j), rast, areanamemaprev, &rm);
+                            tt.summarizeAncState(intrees[i]->getInternalNode(j), rast, areanamemaprev, &rm, state_json);
+                            node_json["states"] = state_json;
                             cout << endl;
-
                         }
+                        root_json.push_back(node_json);
+
                         //exit(0);
                     }
                     /*
@@ -598,6 +605,9 @@ int main(int argc, char *argv[]) {
                     //need to output numbers
                     outTreeKeyFile << intrees[i]->getRoot()->getNewick(true, "number") << ";" << endl;
                     outTreeKeyFile.close();
+
+                    ofstream jsonOutfile((treefile + ".bgstates.json").c_str(), ios::app);
+                    jsonOutfile<<root_json.dump();
                 } else {
                     for (unsigned int j = 0; j < ancstates.size(); j++) {
                         if (splits) {
@@ -610,7 +620,10 @@ int main(int argc, char *argv[]) {
                             cout << "Ancestral states for: " << ancstates[j] << endl;
                             vector<Superdouble> rast = bgt.calculate_ancstate_reverse(*mrcanodeint[ancstates[j]],
                                                                                       marginal);
-                            tt.summarizeAncState(mrcanodeint[ancstates[j]], rast, areanamemaprev, &rm);
+                            //Just to get the code to build, I dont need the
+                            //output here
+                            nlohmann::json tmp;
+                            tt.summarizeAncState(mrcanodeint[ancstates[j]], rast, areanamemaprev, &rm, tmp);
                         }
                     }
                 }
