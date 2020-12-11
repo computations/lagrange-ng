@@ -82,7 +82,5 @@ TEST_F(ContextTest, StateGoal0) {
 
   context.computeLHGoal();
   auto states = context.computeStateGoal();
-  for (auto& s : states) {
-    std::cout << s << std::endl;
-  }
+  EXPECT_EQ(states.size(), 2);
 }
