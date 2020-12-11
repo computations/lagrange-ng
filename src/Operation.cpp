@@ -429,7 +429,8 @@ double LHGoal::eval(std::shared_ptr<Workspace> ws) const {
 }
 
 lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
-  lagrange_col_vector_t tmp;
+  lagrange_col_vector_t tmp(ws->states());
+  tmp = 0.0;
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
                    /*excl_dists=*/{}, tmp);
   return ws->clv(_parent_clv_index) * tmp;

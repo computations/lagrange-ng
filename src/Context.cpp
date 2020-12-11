@@ -32,8 +32,7 @@ void Context::registerStateLHGoal() {
     registerBackwardOperations();
   }
 
-  std::vector<size_t> node_ids;
-  _tree->traversePreorderInternalNodesOnly();
+  auto node_ids = _tree->traversePreorderInternalNodesOnly();
   for (auto nid : node_ids) {
     _state_lh_goal.emplace_back(_workspace->get_top_clv_reverse(nid),
                                 _workspace->get_lchild_clv(nid),
