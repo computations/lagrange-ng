@@ -286,6 +286,15 @@ void handle_ancsplits_ancstates(
   }
 
   nlohmann::json root_json;
+
+  nlohmann::json attributes_json;
+  attributes_json["regions"] = rm->get_num_areas();
+  attributes_json["periods"] = rm->get_num_periods();
+  attributes_json["taxa"] = bgt->getTipCount();
+  root_json["attributes"] = attributes_json;
+
+  nlohmann::json node_results_json;
+
   for (auto nid : node_indicies) {
     nlohmann::json current_json;
     current_json["number"] = nid->getNumber();
@@ -308,9 +317,10 @@ void handle_ancsplits_ancstates(
 
       current_json["states"] = output_json;
     }
-    root_json.push_back(current_json);
+    node_results_json.push_back(current_json);
   }
-  ofstream jsonfile((config.treefile + ".bgstates.json").c_str(), ios::app);
+  root_json["node-results"] = node_results_json;
+  ofstream jsonfile((config.treefile + ".results.json").c_str(), ios::app);
   jsonfile << root_json.dump() << std::endl;
 
   /*

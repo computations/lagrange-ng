@@ -53,7 +53,6 @@ class BioGeoTree {
       _stored_ER_matrices;
   // end mapping bits
 
-
  public:
   BioGeoTree(std::shared_ptr<Tree> tr, const vector<double> &ps);
   void set_store_p_matrices(bool);
@@ -62,8 +61,8 @@ class BioGeoTree {
   void update_default_model(std::shared_ptr<RateModel> mod);
   Superdouble eval_likelihood(bool marg);
   void set_excluded_dist(lagrange_dist_t ind, std::shared_ptr<Node> node);
-  void
-  set_tip_conditionals(unordered_map<string, lagrange_dist_t> distrib_data);
+  void set_tip_conditionals(
+      unordered_map<string, lagrange_dist_t> distrib_data);
   vector<Superdouble> conditionals(std::shared_ptr<Node> node, bool marg,
                                    bool sparse);
   // void ancdist_conditional_lh(bpp::Node & node, bool marg);
@@ -90,6 +89,9 @@ class BioGeoTree {
   // need to override these at some point
   BioGeoTree(const BioGeoTree &L);  // copy constructor
   BioGeoTree &operator=(const BioGeoTree &L);
+
+  size_t getNodeCount() const { return _tree->getNodeCount(); }
+  size_t getTipCount() const { return _tree->getExternalNodeCount(); }
 
   /*
    * for calculating forward and reverse for expected values (stochastic
