@@ -582,7 +582,7 @@ int main(int argc, char *argv[]) {
 
                     for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
                         nlohmann::json node_json;
-                        node_json["number"] = intrees[i]->getInternalNode(i)->getNumber();
+                        node_json["number"] = intrees[i]->getInternalNode(j)->getNumber();
                         if (splits) {
                             cout << "Ancestral splits for:\t" << intrees[i]->getInternalNode(j)->getNumber() << endl;
                             map<vector<int>, vector<AncSplit> > ras = bgt.calculate_ancsplit_reverse(

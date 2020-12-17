@@ -229,8 +229,8 @@ int main2 (){
 
 size_t dist_to_int(const vector<int>& d){
     size_t acc = 0;
-    for(auto i: d){
-	acc += i;
+    for(int i = d.size() - 1 ; i >= 0; --i){
+	acc += d[i];
 	acc <<= 1;
     }
     // We shifted one too many, so we shift back down to fix
