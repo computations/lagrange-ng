@@ -573,6 +573,13 @@ int main(int argc, char *argv[]) {
 
                 if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
                     nlohmann::json root_json;
+                    nlohmann::json attributes_json;
+                    attributes_json["regions"] = ir.nareas;
+                    attributes_json["taxa"] = intrees[i]->getExternalNodeCount();
+                    root_json["attributes"] = attributes_json;
+
+                    nlohmann::json node_results_json;
+
                     for (int j = 0; j < intrees[i]->getInternalNodeCount(); j++) {
                         nlohmann::json node_json;
                         node_json["number"] = intrees[i]->getInternalNode(i)->getNumber();
@@ -594,10 +601,12 @@ int main(int argc, char *argv[]) {
                             node_json["states"] = state_json;
                             cout << endl;
                         }
-                        root_json.push_back(node_json);
+                        node_results_json.push_back(node_json);
 
                         //exit(0);
                     }
+
+                    root_json["node-results"] = node_results_json;
                     /*
                      * key file output
                      */
@@ -606,7 +615,7 @@ int main(int argc, char *argv[]) {
                     outTreeKeyFile << intrees[i]->getRoot()->getNewick(true, "number") << ";" << endl;
                     outTreeKeyFile.close();
 
-                    ofstream jsonOutfile((treefile + ".bgstates.json").c_str(), ios::app);
+                    ofstream jsonOutfile((treefile + ".results.json").c_str(), ios::app);
                     jsonOutfile<<root_json.dump();
                 } else {
                     for (unsigned int j = 0; j < ancstates.size(); j++) {
