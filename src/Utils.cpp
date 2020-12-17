@@ -233,5 +233,7 @@ size_t dist_to_int(const vector<int>& d){
 	acc += i;
 	acc <<= 1;
     }
+    // We shifted one too many, so we shift back down to fix
+    acc >>= 1;
     return acc;
 }
