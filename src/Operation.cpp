@@ -269,7 +269,8 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
     _expm_op->eval(ws);
   }
 
-  ws->clv(_top_clv) = ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv);
+  ws->clv(_top_clv) =
+      std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv));
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,

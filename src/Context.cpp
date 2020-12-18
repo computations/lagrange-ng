@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <nlopt.hpp>
 #include <string>
 
 #include "Common.h"
@@ -70,7 +71,6 @@ void Context::computeBackwardOperations() {
   _workspace->clv(prior_index) = 1.0 / _workspace->states();
   for (auto& op : _reverse_operations) {
     op.eval(_workspace);
-    std::cout << op.printStatus(_workspace) << std::endl;
   }
 }
 
@@ -99,17 +99,22 @@ period_derivative_t Context::computeDLLH(double initial_lh) {
 }
 
 void Context::optimize() {
-  while (true) {
-    period_t current_params = _workspace->get_period_params(0);
-    double curlh = computeLLH();
-    auto gradient = computeDLLH(curlh);
+  nlopt::opt opt(nlopt::LN_SBPLX, 2);
+  auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
+                      void* f_data) -> double {
+    (void)(grad);
+    auto obj = static_cast<Context*>(f_data);
+    period_t p{x[0], x[1]};
+    obj->updateRates(p);
+    return obj->computeLLH();
+  };
 
-    if (gradient.norm() < 1e-10) {
-      break;
-    }
-    current_params.applyDerivative(gradient);
-    updateRates(current_params);
-  }
+  opt.set_max_objective(objective, this);
+
+  std::vector<double> results(2, 0.1);
+  double obj_val = 0;
+
+  opt.optimize(results, obj_val);
 }
 
 double Context::computeLHGoal() { return computeLH(); }
