@@ -148,11 +148,13 @@ void BioGeoTreeTools::summarizeAncState(
   Superdouble none(-1);
   Superdouble test2(2);
   for (unsigned int i = 0; i < ans.size(); i++) {
+    if (i != 0) {
+      json_list.emplace_back(ans[i], distmap.at(i));
+    }
     if (((best.getLn()) - (ans[i].getLn())) < test2) {
       string tdisstring = "";
       auto cur_dist = distmap.at(i);
       auto dist_popcount = lagrange_popcount(cur_dist);
-      json_list.emplace_back(ans[i], cur_dist);
       for (size_t m = 0; m < areasize; m++) {
         if (lagrange_bextr(cur_dist, m) == 1) {
           tdisstring += areanamemaprev[m];
