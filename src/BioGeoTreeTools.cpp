@@ -153,16 +153,19 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 	}
 	sum += ans[i];
     }
+    for(unsigned int i=1;i<ans.size();i++){
+	nlohmann::json tmp_json;
+	tmp_json["llh"] = double(ans[i].getLn());
+	tmp_json["ratio"] = double(ans[i]/sum);
+	tmp_json["distribution"] = dist_to_int(distmap->at(i));
+	output.push_back(tmp_json);
+    }
     Superdouble none(-1);
     Superdouble test2(2);
     for(unsigned int i=0;i<ans.size();i++){
 	if (((best.getLn())-(ans[i].getLn()) ) < test2){
 	    string tdisstring ="";
 	    int  count1 = 0;
-	    nlohmann::json tmp_json;
-	    tmp_json["llh"] = double(ans[i].getLn());
-	    tmp_json["ratio"] = double(ans[i]/sum);
-	    tmp_json["distribution"] = dist_to_int(distmap->at(i));
 	    for(int m=0;m<areasize;m++){
 		if((*distmap)[i][m] == 1){
 		    tdisstring += areanamemaprev[m];
@@ -173,7 +176,6 @@ void BioGeoTreeTools::summarizeAncState(Node * node,vector<Superdouble> & ans,ma
 		}
 	    }
 	    printstring[ans[i]] = tdisstring;
-	    output.push_back(tmp_json);
 	}
     }
 
