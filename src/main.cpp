@@ -261,6 +261,7 @@ config_options_t parse_config(const std::string &config_filename) {
 void handle_ancsplits_ancstates(
     std::shared_ptr<BioGeoTree> bgt, std::shared_ptr<Tree> intree,
     std::shared_ptr<RateModel> rm, unordered_map<int, string> &areanamemaprev,
+    nlohmann::json &root_json,
     const unordered_map<string, std::shared_ptr<Node>> &mrcanodeint,
     const config_options_t &config, Superdouble &outtotlike) {
   BioGeoTreeTools tt;
@@ -284,8 +285,6 @@ void handle_ancsplits_ancstates(
       node_indicies.push_back(mrcanodeint.at(config.ancstates[j]));
     }
   }
-
-  nlohmann::json root_json;
 
   nlohmann::json attributes_json;
   attributes_json["regions"] = rm->get_num_areas();
@@ -320,8 +319,6 @@ void handle_ancsplits_ancstates(
     node_results_json.push_back(current_json);
   }
   root_json["node-results"] = node_results_json;
-  ofstream jsonfile((config.treefile + ".results.json").c_str(), ios::app);
-  jsonfile << root_json.dump() << std::endl;
 
   /*
    * key file output
@@ -438,6 +435,7 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
                  const std::unordered_map<string, lagrange_dist_t> data,
                  unordered_map<int, string> &areanamemaprev,
                  const config_options_t &config) {
+  nlohmann::json root_json;
   auto bgt = std::make_shared<BioGeoTree>(intree, config.periods);
 
   /*
@@ -506,6 +504,7 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
    * optimize likelihood
    */
   Superdouble nlnlike = 0;
+  nlohmann::json params_json;
   if (config.estimate == true) {
     if (config.estimate_dispersal_mask == false) {
       cout << "Optimizing (simplex) -ln likelihood." << endl;
@@ -516,6 +515,8 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
 
       rm->setup_D(disext[0]);
       rm->setup_E(disext[1]);
+      params_json["dispersal"] = disext[0];
+      params_json["extinction"] = disext[1];
 
     } else {  // optimize all the dispersal matrix
       cout << "Optimizing (simplex) -ln likelihood with all dispersal "
@@ -566,6 +567,8 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
     rm->setup_E(config.extinction);
   }
 
+  root_json["params"] = params_json;
+
   rm->setup_Q();
   bgt->update_default_model(rm);
   bgt->set_store_p_matrices(true);
@@ -577,8 +580,8 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
    * ancestral splits calculation
    */
   Superdouble totlike;
-  handle_ancsplits_ancstates(bgt, intree, rm, areanamemaprev, mrcanodeint,
-                             config, totlike);
+  handle_ancsplits_ancstates(bgt, intree, rm, areanamemaprev, root_json,
+                             mrcanodeint, config, totlike);
 
   /*
    * stochastic mapping calculations
@@ -588,6 +591,9 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
   /*
    * end stochastic mapping
    */
+
+  ofstream jsonfile((config.treefile + ".results.json").c_str(), ios::app);
+  jsonfile << root_json.dump() << std::endl;
 }
 
 void print_ratematrix(
