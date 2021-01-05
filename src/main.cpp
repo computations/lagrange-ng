@@ -411,6 +411,7 @@ int main(int argc, char *argv[]) {
          * start calculating on all trees
          */
         for (unsigned int i = 0; i < intrees.size(); i++) {
+            nlohmann::json root_json;
             BioGeoTree bgt(intrees[i], periods);
             /*
              * record the mrcas
@@ -480,6 +481,7 @@ int main(int argc, char *argv[]) {
             /*
              * optimize likelihood
              */
+            nlohmann::json params_json;
             Superdouble nlnlike = 0;
             if (estimate == true) {
                 if (estimate_dispersal_mask == false) {
@@ -494,6 +496,8 @@ int main(int argc, char *argv[]) {
                     bgt.set_store_p_matrices(true);
                     cout << "final -ln likelihood: " << double(bgt.eval_likelihood(marginal)) << endl;
                     bgt.set_store_p_matrices(false);
+                    params_json["dispersion"] = disext[0];
+                    params_json["extinction"] = disext[1];
                 } else {//optimize all the dispersal matrix
                     cout << "Optimizing (simplex) -ln likelihood with all dispersal parameters free." << endl;
                     //OptimizeBioGeoAllDispersal opt(&bgt,&rm,marginal);
@@ -551,6 +555,8 @@ int main(int argc, char *argv[]) {
                 bgt.set_store_p_matrices(false);
             }
 
+            root_json["params"] = params_json;
+
 
             /*
              * testing BAYESIAN
@@ -572,7 +578,6 @@ int main(int argc, char *argv[]) {
                 Superdouble totlike = 0; // calculate_vector_double_sum(rast) , should be the same for every node
 
                 if (ancstates[0] == "_all_" || ancstates[0] == "_ALL_") {
-                    nlohmann::json root_json;
                     nlohmann::json attributes_json;
                     attributes_json["regions"] = ir.nareas;
                     attributes_json["taxa"] = intrees[i]->getExternalNodeCount();
