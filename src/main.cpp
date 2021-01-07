@@ -515,7 +515,7 @@ void handle_tree(std::shared_ptr<Tree> intree, std::shared_ptr<RateModel> rm,
 
       rm->setup_D(disext[0]);
       rm->setup_E(disext[1]);
-      params_json["dispersal"] = disext[0];
+      params_json["dispersion"] = disext[0];
       params_json["extinction"] = disext[1];
 
     } else {  // optimize all the dispersal matrix
