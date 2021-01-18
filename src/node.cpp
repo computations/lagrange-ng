@@ -433,10 +433,10 @@ void Node::assignTipData(Workspace &ws,
 }
 
 void Node::assignIdRecursive(size_t &id) {
-  _id = id++;
   for (auto &c : _children) {
     c->assignIdRecursive(id);
   }
+  _id = id++;
 }
 
 void Node::assignId() {

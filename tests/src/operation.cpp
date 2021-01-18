@@ -217,7 +217,6 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
   MakeRateMatrixOperation make_op(_rate_matrix);
 
   make_op.eval(_ws);
-  std::cout << make_op.printStatus(_ws) << std::endl;
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
@@ -227,5 +226,6 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
   MakeRateMatrixOperation make_op(_rate_matrix);
 
   make_op.eval(local_ws);
-  std::cout << make_op.printStatus(local_ws) << std::endl;
+
+  auto Q = local_ws->rate_matrix(_rate_matrix);
 }

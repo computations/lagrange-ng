@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <nlopt.hpp>
 #include <string>
 
@@ -106,19 +107,34 @@ void Context::optimize() {
     auto obj = static_cast<Context*>(f_data);
     period_t p{x[0], x[1]};
     obj->updateRates(p);
-    return obj->computeLLH();
+    auto llh = obj->computeLLH();
+    if (!std::isfinite(llh)) {
+      throw std::runtime_error{"Log likelihood is not finite"};
+    }
+    return llh;
   };
 
   opt.set_max_objective(objective, this);
+  opt.set_lower_bounds({1e-8, 1e-8});
 
-  std::vector<double> results(2, 0.1);
+  std::vector<double> results(2, 1);
   double obj_val = 0;
 
+  computeForwardOperations();
   opt.optimize(results, obj_val);
 }
 
 double Context::computeLHGoal() { return computeLH(); }
 
+/* Computes the registered state goals
+ * If there are no reverse state goals, this operation does nothing. It also
+ * requires that the forward operations be computed first.
+ *
+ * Returns:
+ *   a map (really a vector) from node id to result. The result is a col vector
+ *   indexed by lagrange_dist_t, where each entry contains the likelihood of
+ *   that particular distribution at that node.
+ */
 std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
   computeBackwardOperations();
   std::vector<lagrange_col_vector_t> states;
@@ -126,5 +142,10 @@ std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
   for (auto& op : _state_lh_goal) {
     states.push_back(op.eval(_workspace));
   }
+
   return states;
+}
+
+period_t Context::currentParams() const {
+  return _workspace->get_period_params(0);
 }

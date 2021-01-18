@@ -60,4 +60,5 @@ inline lagrange_dist_t convert_vector_to_lagrange_dist(
 constexpr inline size_t lagrange_fast_log2(size_t x) {
   return __builtin_clzll(x);
 }
+
 #endif /* UTILS_H_ */

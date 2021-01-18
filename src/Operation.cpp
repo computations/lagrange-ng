@@ -196,8 +196,13 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
 
   size_t rows = A.rows();
-  int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t));
-  A /= std::pow(2.0, scale_exp) * _t;
+  A *= _t;
+  // int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t));
+  // A /= std::pow(2.0, scale_exp) / _t;
+  // int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A)));
+  int scale_exp =
+      std::min(30, std::max(0, 1 + static_cast<int>(blaze::norm(A))));
+  A /= std::pow(2.0, scale_exp);
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
   // orders of magnitude. Anything above 12 is probably snake oil.
@@ -207,8 +212,8 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
 
   lagrange_matrix_t X = _transposed ? blaze::trans(A) : A;
-  lagrange_matrix_t N = I + c * (_transposed ? blaze::trans(A) : A);
-  lagrange_matrix_t D = I - c * (_transposed ? blaze::trans(A) : A);
+  lagrange_matrix_t N = I + c * X;
+  lagrange_matrix_t D = I - c * X;
 
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup
@@ -219,7 +224,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     sign *= -1.0;
     D += sign * c * X;
   }
-  A = blaze::inv(D) * N;
+  A = blaze::solve(D, N);
   for (int i = 0; i < scale_exp; ++i) {
     A *= A;
   }
@@ -284,14 +289,7 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_bot_clv));
 
-  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << "):\n";
-
-  auto &pm = ws->prob_matrix(_prob_matrix_index);
-
-  for (size_t i = 0; i < pm.rows(); ++i) {
-    auto row = blaze::row(pm, i);
-    os << tabs << std::setprecision(10) << row;
-  }
+  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
   if (_expm_op != nullptr) {
     os << _expm_op->printStatus(ws, tabLevel + 1);

@@ -83,6 +83,12 @@ struct config_options_t {
   size_t region_count;
 };
 
+lagrange_col_vector_t normalizeDistributionByLWR(
+    const lagrange_col_vector_t &states) {
+  double sum = blaze::sum(states);
+  return states / sum;
+}
+
 std::vector<std::string> grab_token(const std::string &token,
                                     const std::string &deliminators) {
   vector<string> searchtokens;
@@ -261,12 +267,46 @@ config_options_t parse_config(const std::string &config_filename) {
   return config;
 }
 
+nlohmann::json makeStateJsonOutput(
+    const std::vector<lagrange_col_vector_t> states) {
+  nlohmann::json states_json;
+  for (size_t i = 0; i < states.size(); ++i) {
+    nlohmann::json node_json;
+    node_json["number"] = i;
+    auto &state_distribution = states[i];
+    auto lwr_distribution = normalizeDistributionByLWR(state_distribution);
+    for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
+      nlohmann::json tmp;
+      tmp["distribution"] = dist;
+      tmp["llh"] = state_distribution[dist];
+      tmp["ratio"] = lwr_distribution[dist];
+      node_json["states"].push_back(tmp);
+    }
+    states_json.push_back(node_json);
+  }
+  return states_json;
+}
+
+void writeJsonToFile(const config_options_t &config,
+                     const nlohmann ::json &root_json) {
+  std::string json_filename = config.treefile + ".results.json";
+  std::ofstream outfile(json_filename);
+  outfile << root_json.dump();
+}
+
 void handle_tree(std::shared_ptr<Tree> intree,
                  const std::unordered_map<string, lagrange_dist_t> data,
                  const config_options_t &config) {
+  nlohmann::json root_json;
+  nlohmann::json attributes_json;
+  attributes_json["periods"] =
+      config.periods.size() ? config.periods.size() != 0 : 1;
+  attributes_json["regions"] = config.region_count;
+  attributes_json["taxa"] = intree->getNodeCount();
+  root_json["attributes"] = attributes_json;
   Context context(intree, config.region_count);
   context.registerLHGoal();
-  if(config.states){
+  if (config.states) {
     context.registerStateLHGoal();
   }
   context.init();
@@ -275,10 +315,18 @@ void handle_tree(std::shared_ptr<Tree> intree,
 
   context.optimize();
 
+  nlohmann::json params_json;
+  auto params = context.currentParams();
+  params_json["dispersion"] = params.dispersion_rate;
+  params_json["extinction"] = params.extinction_rate;
+  root_json["params"] = params_json;
+
   context.computeLHGoal();
-  if(config.states){
+  if (config.states) {
     auto states = context.computeStateGoal();
+    root_json["node-results"] = makeStateJsonOutput(states);
   }
+  writeJsonToFile(config, root_json);
 }
 
 int main(int argc, char *argv[]) {

@@ -39,6 +39,8 @@ class Context {
   void updateRates(const period_t& p);
   void init();
 
+  period_t currentParams() const;
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();
