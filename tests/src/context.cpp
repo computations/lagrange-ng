@@ -43,7 +43,7 @@ TEST_F(ContextTest, computelh1) {
   context.registerTipClvs(_basic_tree_data);
 
   double llh = context.computeLLH();
-  constexpr double regression_llh = -6.8248849729777694;
+  constexpr double regression_llh = -1.7596288538749982;
 
   EXPECT_NEAR(llh, regression_llh, 1e-9);
 }
