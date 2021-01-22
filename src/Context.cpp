@@ -45,6 +45,7 @@ void Context::registerStateLHGoal() {
 
 void Context::updateRates(const period_t& params) {
   _rate_matrix_op->update_rates(_workspace, params);
+  _rate_matrix_op->eval(_workspace);
 }
 
 void Context::init() {
@@ -82,7 +83,6 @@ void Context::computeForwardOperations() {
 void Context::computeBackwardOperations() {
   for (auto& op : _reverse_operations) {
     op.eval(_workspace);
-    std::cout << op.printStatus(_workspace) << std::endl;
   }
 }
 

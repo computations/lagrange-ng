@@ -225,7 +225,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
       _last_execution > _rate_matrix_op->last_update()) {
     return;
   }
-  _rate_matrix_op->eval(ws);
+  // _rate_matrix_op->eval(ws);
 
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
 
