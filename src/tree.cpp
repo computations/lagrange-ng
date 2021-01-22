@@ -315,6 +315,13 @@ std::vector<size_t> Tree::traversePreorderInternalNodesOnly() const {
   return ret;
 }
 
+std::vector<size_t> Tree::traversePreorderInternalNodesOnlyNumbers() const {
+  std::vector<size_t> ret;
+  ret.reserve(getInternalNodeCount());
+  _root->traverseAndGenerateBackwardNodeNumbersInternalOnly(ret);
+  return ret;
+}
+
 void Tree::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, lagrange_dist_t> &dist_data) {

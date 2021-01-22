@@ -70,8 +70,8 @@ struct config_options_t {
   int numthreads = 0;
   bool sparse = false;
 
-  double dispersal = 0.1;
-  double extinction = 0.1;
+  double dispersal = 0.01;
+  double extinction = 0.01;
   bool estimate = true;
 
   vector<vector<lagrange_dist_t>> stochastic_number_from_tos;
@@ -268,17 +268,18 @@ config_options_t parse_config(const std::string &config_filename) {
 }
 
 nlohmann::json makeStateJsonOutput(
-    const std::vector<lagrange_col_vector_t> states) {
+    const std::vector<lagrange_col_vector_t> states,
+    const std::vector<size_t> stateToIdMap) {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
     nlohmann::json node_json;
-    node_json["number"] = i;
+    node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
     auto lwr_distribution = normalizeDistributionByLWR(state_distribution);
     for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      tmp["llh"] = state_distribution[dist];
+      tmp["llh"] = std::log(state_distribution[dist]);
       tmp["ratio"] = lwr_distribution[dist];
       node_json["states"].push_back(tmp);
     }
@@ -294,6 +295,21 @@ void writeJsonToFile(const config_options_t &config,
   outfile << root_json.dump();
 }
 
+void writeBgStateFile(const config_options_t &config) {
+  std::string bgstates_filename = config.treefile + ".bgstates.tre";
+  std::ofstream outfile(bgstates_filename);
+}
+
+void writeBgKeyFile(const config_options_t &config) {
+  std::string bgkey_filename = config.treefile + ".bgkey.tre";
+  std::ofstream outfile(bgkey_filename);
+}
+
+void writeBgFiles(const config_options_t &config) {
+  writeBgKeyFile(config);
+  writeBgStateFile(config);
+}
+
 void handle_tree(std::shared_ptr<Tree> intree,
                  const std::unordered_map<string, lagrange_dist_t> data,
                  const config_options_t &config) {
@@ -302,7 +318,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   attributes_json["periods"] =
       config.periods.size() ? config.periods.size() != 0 : 1;
   attributes_json["regions"] = config.region_count;
-  attributes_json["taxa"] = intree->getNodeCount();
+  attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
   Context context(intree, config.region_count);
   context.registerLHGoal();
@@ -313,7 +329,11 @@ void handle_tree(std::shared_ptr<Tree> intree,
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
 
-  context.optimize();
+  double initial_lh = context.computeLLH();
+  std::cout << "Initial LH: " << initial_lh << std::endl;
+
+  double final_lh = context.optimize();
+  std::cout << "Final LH: " << final_lh << std::endl;
 
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -321,12 +341,15 @@ void handle_tree(std::shared_ptr<Tree> intree,
   params_json["extinction"] = params.extinction_rate;
   root_json["params"] = params_json;
 
-  context.computeLHGoal();
+  auto stateToIdMap = intree->traversePreorderInternalNodesOnlyNumbers();
+
   if (config.states) {
     auto states = context.computeStateGoal();
-    root_json["node-results"] = makeStateJsonOutput(states);
+    root_json["node-results"] = makeStateJsonOutput(states, stateToIdMap);
   }
+  std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
+  writeBgFiles(config);
 }
 
 int main(int argc, char *argv[]) {

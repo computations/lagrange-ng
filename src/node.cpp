@@ -420,6 +420,26 @@ void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(
   }
 }
 
+void Node::traverseAndGeneratePostorderNodeIdsInternalOnly(
+    std::vector<size_t> &ret) const {
+  for (auto &c : _children) {
+    if (c->isInternal()) {
+      c->traverseAndGeneratePostorderNodeIdsInternalOnly(ret);
+    }
+  }
+  ret.push_back(_id);
+}
+
+void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
+    std::vector<size_t> &ret) const {
+  ret.push_back(_number);
+  for (auto &c : _children) {
+    if (c->isInternal()) {
+      c->traverseAndGenerateBackwardNodeNumbersInternalOnly(ret);
+    }
+  }
+}
+
 void Node::assignTipData(Workspace &ws,
                          const std::unordered_map<std::string, lagrange_dist_t>
                              &distrib_data) const {
@@ -433,10 +453,10 @@ void Node::assignTipData(Workspace &ws,
 }
 
 void Node::assignIdRecursive(size_t &id) {
+  _id = id++;
   for (auto &c : _children) {
     c->assignIdRecursive(id);
   }
-  _id = id++;
 }
 
 void Node::assignId() {

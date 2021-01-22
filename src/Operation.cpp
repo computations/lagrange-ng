@@ -79,11 +79,45 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
       continue;
     }
     auto splits = generate_splits(i, regions);
-    for (auto p : splits) {
+    for (auto &p : splits) {
       dest[i] += c1[p.left] * c2[p.right];
     }
     if (splits.size() != 0) {
       dest[i] /= static_cast<double>(splits.size());
+    }
+  }
+}
+
+inline void reverse_weighted_combine(
+    const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
+    const std::vector<lagrange_dist_t> excl_dists,
+    lagrange_col_vector_t &dest) {
+  if (c1.size() != c2.size() && dest.size() == c1.size()) {
+    throw std::runtime_error{"The vectors to combine are not equal sizes"};
+  }
+  size_t states = c1.size();
+  size_t regions = lagrange_fast_log2(states);
+
+  size_t idx_excl = 0;
+
+  dest = 0.0;
+
+  for (size_t i = 0; i < states; i++) {
+    while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
+      idx_excl++;
+    }
+    if (idx_excl < excl_dists.size() && i == excl_dists[idx_excl]) {
+      idx_excl++;
+      continue;
+    }
+    auto splits = generate_splits(i, regions);
+    if (splits.size() == 0) {
+      continue;
+    }
+
+    double weight = 1.0 / static_cast<double>(splits.size());
+    for (auto &p : splits) {
+      dest[p.left] += c1[i] * c2[p.right] * weight;
     }
   }
 }
@@ -196,13 +230,11 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
 
   size_t rows = A.rows();
-  A *= _t;
-  // int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t));
-  // A /= std::pow(2.0, scale_exp) / _t;
-  // int scale_exp = std::max(0, 1 + static_cast<int>(blaze::linfNorm(A)));
+  // We place an arbitrary limit on the size of scale exp because if it is too
+  // large we run into numerical issues.
   int scale_exp =
-      std::min(30, std::max(0, 1 + static_cast<int>(blaze::norm(A))));
-  A /= std::pow(2.0, scale_exp);
+      std::min(30, std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t)));
+  A /= std::pow(2.0, scale_exp) / _t;
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
   // orders of magnitude. Anything above 12 is probably snake oil.
@@ -211,7 +243,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   double sign = -1.0;
   blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
 
-  lagrange_matrix_t X = _transposed ? blaze::trans(A) : A;
+  lagrange_matrix_t X = A;
   lagrange_matrix_t N = I + c * X;
   lagrange_matrix_t D = I - c * X;
 
@@ -224,11 +256,18 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     sign *= -1.0;
     D += sign * c * X;
   }
+
   A = blaze::solve(D, N);
   for (int i = 0; i < scale_exp; ++i) {
     A *= A;
   }
+
   _last_execution = ws->advance_clock();
+  if (_transposed) {
+    A = blaze::trans(A);
+    blaze::row(A, 0) = 0.0;
+    A(0, 0) = 1.0;
+  }
   ws->prob_matrix(_prob_matrix_index) = A;
 }
 
@@ -239,12 +278,6 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ExpmOperation:\n"
      << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
 
-  auto &rm = ws->rate_matrix(_rate_matrix_index);
-  for (size_t i = 0; i < rm.rows(); ++i) {
-    auto row = blaze::row(rm, i);
-    os << tabs << std::setprecision(10) << row;
-  }
-
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << "):\n";
 
   auto &pm = ws->prob_matrix(_prob_matrix_index);
@@ -254,10 +287,16 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
     os << tabs << std::setprecision(10) << row;
   }
 
-  os << tabs << "t: " << std::setprecision(10) << _t << "\n";
+  os << tabs << "t: " << std::setprecision(16) << _t << "\n";
   os << tabs << "_last_execution: " << _last_execution;
   if (_rate_matrix_op != nullptr) {
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
+  } else {
+    auto &rm = ws->rate_matrix(_rate_matrix_index);
+    for (size_t i = 0; i < rm.rows(); ++i) {
+      auto row = blaze::row(rm, i);
+      os << tabs << std::setprecision(10) << row;
+    }
   }
   os << closing_line(tabs);
 }
@@ -376,7 +415,7 @@ void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    weighted_combine(ltop_clv, rtop_clv, _excl_dists, bot_clv);
+    reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists, bot_clv);
   }
 }
 
@@ -425,6 +464,7 @@ std::string ReverseSplitOperation::printStatus(
 double LHGoal::eval(std::shared_ptr<Workspace> ws) const {
   return blaze::dot(ws->clv(_root_clv_index),
                     ws->get_base_frequencies(_prior_index));
+  // return blaze::sum(ws->clv(_root_clv_index));
 }
 
 lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {

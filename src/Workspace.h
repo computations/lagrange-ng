@@ -10,7 +10,9 @@
 #include <cstddef>
 #include <limits>
 #include <new>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "Common.h"
 #include "RateModel.h"
@@ -190,8 +192,39 @@ class Workspace {
   }
 
   bool reserved() const {
-    return _rate_matrix == nullptr || _prob_matrix == nullptr ||
-           _base_frequencies == nullptr || _clvs == nullptr;
+    return !(_rate_matrix == nullptr || _prob_matrix == nullptr ||
+             _base_frequencies == nullptr || _clvs == nullptr);
+  }
+
+  std::string report_node_vecs(size_t node_id) const {
+    auto reservations = _node_reservations[node_id];
+    std::stringstream oss;
+    constexpr size_t sentinel_value = std::numeric_limits<size_t>::max();
+    if (reservations._top_clv != sentinel_value) {
+      oss << "top clv (index: " << reservations._top_clv << ")\n";
+      oss << blaze::trans(_clvs[reservations._top_clv]);
+    }
+    if (reservations._bot1_clv != sentinel_value) {
+      oss << "bot1 clv (index: " << reservations._bot1_clv << ")\n";
+      oss << blaze::trans(_clvs[reservations._bot1_clv]);
+    }
+    if (reservations._bot2_clv != sentinel_value) {
+      oss << "bot2 clv (index: " << reservations._bot2_clv << ")\n";
+      oss << blaze::trans(_clvs[reservations._bot2_clv]);
+    }
+    if (reservations._top_rclv != sentinel_value) {
+      oss << "top rclv (index: " << reservations._top_rclv << ")\n";
+      oss << blaze::trans(_clvs[reservations._top_rclv]);
+    }
+    if (reservations._bot1_rclv != sentinel_value) {
+      oss << "bot1 rclv (index: " << reservations._bot1_rclv << ")\n";
+      oss << blaze::trans(_clvs[reservations._bot1_rclv]);
+    }
+    if (reservations._bot2_rclv != sentinel_value) {
+      oss << "bot2 rclv (index: " << reservations._bot2_rclv << ")\n";
+      oss << blaze::trans(_clvs[reservations._bot2_rclv]);
+    }
+    return oss.str();
   }
 
  private:

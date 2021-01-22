@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "Common.h"
 #include "Operation.h"
@@ -28,7 +29,7 @@ class Context {
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
-  void optimize();
+  double optimize();
   double computeLH();
   double computeLLH();
 
@@ -40,6 +41,8 @@ class Context {
   void init();
 
   period_t currentParams() const;
+
+  std::string treeCLVStatus() const;
 
  private:
   void registerForwardOperations();

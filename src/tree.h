@@ -49,6 +49,7 @@ class Tree {
       Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op);
 
   std::vector<size_t> traversePreorderInternalNodesOnly() const;
+  std::vector<size_t> traversePreorderInternalNodesOnlyNumbers() const;
 
   void assignTipData(
       Workspace &ws,

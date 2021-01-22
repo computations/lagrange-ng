@@ -325,7 +325,7 @@ void RateModel::setup_Q() {
     }
   }
 
-  if (VERBOSE) {
+  if (true) {
     cout << "Q" << endl;
     for (unsigned int i = 0; i < _rate_matrix.size(); i++) {
       for (unsigned int j = 0; j < _rate_matrix[i].columns(); j++) {

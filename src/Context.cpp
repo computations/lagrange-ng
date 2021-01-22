@@ -2,6 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <nlopt.hpp>
+#include <sstream>
 #include <string>
 
 #include "Common.h"
@@ -48,7 +49,16 @@ void Context::updateRates(const period_t& params) {
 
 void Context::init() {
   _workspace->reserve();
-  updateRates({1.0, 1.0});
+  updateRates({0.01, 0.01});
+
+  for (auto& goal : _lh_goal) {
+    _workspace->get_base_frequencies(goal._prior_index) = 1.0;
+  }
+
+  if (_reverse_operations.size() != 0) {
+    size_t prior_index = _reverse_operations.begin()->getStableCLV();
+    _workspace->clv(prior_index) = 1.0;
+  }
 }
 
 void Context::registerTipClvs(
@@ -57,7 +67,9 @@ void Context::registerTipClvs(
     throw std::runtime_error{
         "The forward operations need to be generated first"};
   }
-  _workspace->reserve();
+  if (!_workspace->reserved()) {
+    _workspace->reserve();
+  }
   _tree->assignTipData(*_workspace, dist_data);
 }
 
@@ -68,10 +80,9 @@ void Context::computeForwardOperations() {
 }
 
 void Context::computeBackwardOperations() {
-  size_t prior_index = _reverse_operations.begin()->getStableCLV();
-  _workspace->clv(prior_index) = 1.0 / _workspace->states();
   for (auto& op : _reverse_operations) {
     op.eval(_workspace);
+    std::cout << op.printStatus(_workspace) << std::endl;
   }
 }
 
@@ -99,7 +110,7 @@ period_derivative_t Context::computeDLLH(double initial_lh) {
   return derivative;
 }
 
-void Context::optimize() {
+double Context::optimize() {
   nlopt::opt opt(nlopt::LN_SBPLX, 2);
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
@@ -108,20 +119,21 @@ void Context::optimize() {
     period_t p{x[0], x[1]};
     obj->updateRates(p);
     auto llh = obj->computeLLH();
-    if (!std::isfinite(llh)) {
-      throw std::runtime_error{"Log likelihood is not finite"};
+    if (std::isnan(llh)) {
+      throw std::runtime_error{"Log likelihood is not not a number"};
     }
     return llh;
   };
 
   opt.set_max_objective(objective, this);
-  opt.set_lower_bounds({1e-8, 1e-8});
+  opt.set_lower_bounds({1e-7, 1e-7});
 
-  std::vector<double> results(2, 1);
+  std::vector<double> results(2, 0.01);
   double obj_val = 0;
 
-  computeForwardOperations();
   opt.optimize(results, obj_val);
+
+  return obj_val;
 }
 
 double Context::computeLHGoal() { return computeLH(); }
@@ -148,4 +160,14 @@ std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
 
 period_t Context::currentParams() const {
   return _workspace->get_period_params(0);
+}
+
+std::string Context::treeCLVStatus() const {
+  std::stringstream oss;
+  auto node_ids = _tree->traversePreorderInternalNodesOnly();
+  for (auto nid : node_ids) {
+    oss << "node id: " << nid << "\n"
+        << _workspace->report_node_vecs(nid) << std::endl;
+  }
+  return oss.str();
 }

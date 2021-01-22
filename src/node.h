@@ -143,6 +143,12 @@ class Node {
   void traverseAndGenerateBackwardNodeIdsInternalOnly(
       std::vector<size_t> &) const;
 
+  void traverseAndGenerateBackwardNodeNumbersInternalOnly(
+      std::vector<size_t> &ret) const;
+
+  void traverseAndGeneratePostorderNodeIdsInternalOnly(
+      std::vector<size_t> &ret) const;
+
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, lagrange_dist_t>
                          &distrib_data) const;
