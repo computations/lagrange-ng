@@ -347,7 +347,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
     auto states = context.computeStateGoal();
     root_json["node-results"] = makeStateJsonOutput(states, stateToIdMap);
   }
-  std::cout << context.treeCLVStatus() << std::endl;
+  //std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
   writeBgFiles(config);
 }
