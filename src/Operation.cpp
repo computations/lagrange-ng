@@ -21,7 +21,6 @@
 #include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
-#include "RateModel.h"
 #include "Utils.h"
 #include "Workspace.h"
 

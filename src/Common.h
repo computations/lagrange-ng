@@ -12,6 +12,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <blaze/Math.h>
 
 typedef uint64_t lagrange_dist_t;
 
@@ -73,5 +74,12 @@ struct period_t {
 
   inline double getExtinctionRate() const { return extinction_rate; }
 };
+
+typedef blaze::DynamicMatrix<double, blaze::columnMajor> lagrange_matrix_t;
+typedef blaze::DynamicMatrix<std::complex<double>, blaze::columnMajor>
+    lagrange_complex_matrix_t;
+typedef blaze::DynamicVector<double, blaze::columnVector> lagrange_col_vector_t;
+typedef blaze::DynamicVector<std::complex<double>, blaze::columnVector>
+    lagrange_complex_col_vector_t;
 
 #endif  // LAGRANGE_COMMON_H__

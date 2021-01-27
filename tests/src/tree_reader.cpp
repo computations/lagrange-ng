@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #include "environment.hpp"
 #include "gtest/gtest.h"

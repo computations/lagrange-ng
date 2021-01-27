@@ -23,20 +23,14 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
-#include "BioGeoTree.h"
-#include "BioGeoTreeTools.h"
 #include "Context.h"
 #include "InputReader.h"
-#include "OptimizeBioGeo.h"
-#include "OptimizeBioGeoAllDispersal_nlopt.h"
-#include "RateMatrixUtils.h"
-#include "RateModel.h"
 #include "Utils.h"
 #include "superdouble.h"
-#include "vector_node_object.h"
 
 #ifdef BIGTREE
 #include "gmpfrxx/gmpfrxx.h"

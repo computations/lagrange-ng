@@ -14,13 +14,11 @@
 #include <map>
 #include <string>
 #include <vector>
-using namespace std;
 
 #include "BranchSegment.h"
 #include "Common.h"
 #include "Operation.h"
 #include "Workspace.h"
-#include "superdouble.h"
 
 class Node {
  private:

@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <memory>
+#include <unordered_map>
 
 #include "Context.h"
 #include "environment.hpp"

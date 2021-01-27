@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <sstream>
+#include <unordered_map>
 
 using namespace std;
 
@@ -27,7 +28,7 @@ enum lexeme_type_t {
 };
 
 class lexer_t {
-public:
+ public:
   lexer_t(std::string input) : _input{std::move(input)}, _current_index{0} {};
 
   lexeme_type_t consume();
@@ -73,7 +74,7 @@ public:
 
   bool at_end() { return _input.size() == _current_index; }
 
-private:
+ private:
   bool is_punct(char c) {
     return c == '[' || c == ']' || c == '(' || c == ')' || c == ':' ||
            c == ';' || c == ',' || c == 0 || c == EOF;
@@ -87,26 +88,26 @@ private:
 
   std::string describe_token(lexeme_type_t token_type) {
     switch (token_type) {
-    case OPENING_SQUARE_BRACKET:
-      return {"opening square bracket"};
-    case CLOSING_SQUARE_BRACKET:
-      return {"closing square bracket"};
-    case OPENING_PAREN:
-      return {"opening parenthesis"};
-    case CLOSING_PAREN:
-      return {"closing parenthesis"};
-    case COLON:
-      return {"colon"};
-    case SEMICOLON:
-      return {"semicolon"};
-    case COMMA:
-      return {"comma"};
-    case END:
-      return {"end of input"};
-    case VALUE:
-      return {"either a identifier or a number"};
-    default:
-      return {"unknown token"};
+      case OPENING_SQUARE_BRACKET:
+        return {"opening square bracket"};
+      case CLOSING_SQUARE_BRACKET:
+        return {"closing square bracket"};
+      case OPENING_PAREN:
+        return {"opening parenthesis"};
+      case CLOSING_PAREN:
+        return {"closing parenthesis"};
+      case COLON:
+        return {"colon"};
+      case SEMICOLON:
+        return {"semicolon"};
+      case COMMA:
+        return {"comma"};
+      case END:
+        return {"end of input"};
+      case VALUE:
+        return {"either a identifier or a number"};
+      default:
+        return {"unknown token"};
     }
   }
 
@@ -131,25 +132,25 @@ lexeme_type_t lexer_t::peak() {
   char current_char = _input[tmp_index++];
   if (is_punct(current_char)) {
     switch (current_char) {
-    case '[':
-      return OPENING_SQUARE_BRACKET;
-    case ']':
-      return CLOSING_SQUARE_BRACKET;
-    case '(':
-      return OPENING_PAREN;
-    case ')':
-      return CLOSING_PAREN;
-    case ':':
-      return COLON;
-    case ';':
-      return SEMICOLON;
-    case ',':
-      return COMMA;
-    case 0:
-    case EOF:
-      return END;
-    default:
-      throw std::runtime_error{"The punctuation was unrecognized"};
+      case '[':
+        return OPENING_SQUARE_BRACKET;
+      case ']':
+        return CLOSING_SQUARE_BRACKET;
+      case '(':
+        return OPENING_PAREN;
+      case ')':
+        return CLOSING_PAREN;
+      case ':':
+        return COLON;
+      case ';':
+        return SEMICOLON;
+      case ',':
+        return COMMA;
+      case 0:
+      case EOF:
+        return END;
+      default:
+        throw std::runtime_error{"The punctuation was unrecognized"};
     }
   } else {
     return VALUE;
@@ -217,17 +218,17 @@ lexeme_type_t lexer_t::consume() {
  */
 
 class parser_t {
-public:
+ public:
   parser_t(std::string input) : _lexer{std::move(input)} {};
   std::shared_ptr<Tree> parse() { return parse_tree(); }
 
-private:
+ private:
   std::shared_ptr<Tree> parse_tree();
   std::shared_ptr<Node> parse_subtree();
-  std::shared_ptr<Node> parse_internal(); // creates node
+  std::shared_ptr<Node> parse_internal();  // creates node
   void parse_node_set(std::shared_ptr<Node> current_node);
   void parse_node_attrs(std::shared_ptr<Node> current_node);
-  std::shared_ptr<Node> parse_leaf(); // creates node
+  std::shared_ptr<Node> parse_leaf();  // creates node
   void parse_length(std::shared_ptr<Node> current_node);
   void parse_name(std::shared_ptr<Node> current_node);
   std::string parse_string();

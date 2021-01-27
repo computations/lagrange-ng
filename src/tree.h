@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 #include "Operation.h"
 #include "node.h"
 

@@ -14,9 +14,10 @@
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
 
+#include "AncSplit.h"
 #include "Common.h"
-#include "RateModel.h"
 #include "Workspace.h"
 
 class MakeRateMatrixOperation {

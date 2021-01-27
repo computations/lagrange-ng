@@ -1,9 +1,9 @@
 #include <iomanip>
 #include <memory>
 #include <type_traits>
+#include <unordered_map>
 
 #include "Operation.h"
-#include "RateModel.h"
 #include "Workspace.h"
 #include "environment.hpp"
 #include "gtest/gtest.h"

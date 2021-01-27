@@ -4,10 +4,10 @@
 #include <nlopt.hpp>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 #include "Common.h"
 #include "Context.h"
-#include "RateModel.h"
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {

@@ -15,7 +15,6 @@
 #include <string>
 
 #include "Common.h"
-#include "RateModel.h"
 
 class Workspace {
  public:

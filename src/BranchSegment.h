@@ -15,7 +15,6 @@
 using namespace std;
 
 #include "superdouble.h"
-#include "vector_node_object.h"
 #ifdef BIGTREE
 #include "gmpfrxx/gmpfrxx.h"
 #endif

@@ -11,11 +11,8 @@
 #include <iostream>
 using namespace std;
 
-#include "BioGeoTreeTools.h"
 #include "InputReader.h"
-#include "RateMatrixUtils.h"
 #include "Utils.h"
-
 #include "tree_reader.h"
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
@@ -37,8 +34,8 @@ void InputReader::readMultipleTreeFile(string filename,
   }
 }
 
-unordered_map<string, lagrange_dist_t>
-InputReader::readStandardInputData(string filename) {
+unordered_map<string, lagrange_dist_t> InputReader::readStandardInputData(
+    string filename) {
   ifstream ifs(filename.c_str());
   string temp;
   bool first = false;
@@ -68,8 +65,7 @@ InputReader::readStandardInputData(string filename) {
       vector<int> speciesdata(nareas, 0);
       for (int i = 0; i < nareas; i++) {
         char spot = tokens[1][i];
-        if (spot == '1')
-          speciesdata[i] = 1;
+        if (spot == '1') speciesdata[i] = 1;
         cout << spot - '0';
       }
       cout << endl;
@@ -91,8 +87,7 @@ void InputReader::checkData(const unordered_map<string, lagrange_dist_t> &data,
     treespecies.push_back(trees[0]->getExternalNode(j)->getName());
     int count = 0;
     for (unsigned int k = 0; k < dataspecies.size(); k++) {
-      if (trees[0]->getExternalNode(j)->getName() == dataspecies[k])
-        count += 1;
+      if (trees[0]->getExternalNode(j)->getName() == dataspecies[k]) count += 1;
     }
     if (count != 1) {
       cout << "Error: " << trees[0]->getExternalNode(j)->getName() << " found"

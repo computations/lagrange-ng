@@ -12,13 +12,12 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
 
 using namespace std;
 
 #include "Common.h"
 #include "node.h"
-#include "string_node_object.h"
-#include "superdouble.h"
 
 Node::Node()
     : _branch_length(0.0),
