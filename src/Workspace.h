@@ -16,6 +16,12 @@
 
 #include "Common.h"
 
+struct matrix_reservation_t {
+  lagrange_matrix_t *_matrix = nullptr;
+  lagrange_clock_t _last_update;
+  lagrange_op_id_t _op_id;
+};
+
 class Workspace {
  public:
   Workspace(size_t taxa_count, size_t inner_count, size_t regions,
@@ -25,17 +31,16 @@ class Workspace {
         _regions{regions},
         _states{1ull << regions},
         _next_free_clv{0},
-        _rate_matrix_count{rate_matrix_count},
-        _rate_matrix{nullptr},
-        _prob_matrix_count{prob_matrix_count},
-        _prob_matrix{nullptr},
+        _rate_matrix{rate_matrix_count},
+        _prob_matrix{prob_matrix_count},
         _base_frequencies_count{1},
         _base_frequencies{nullptr},
         _clv_stride{1},
         _clvs{nullptr},
         _node_reservations{node_count()},
         _periods{1},
-        _current_clock{0} {
+        _current_clock{0},
+        _reserved{false} {
     if (taxa_count == 0) {
       throw std::runtime_error{"We cannot make a workspace with zero taxa"};
     }
@@ -45,8 +50,12 @@ class Workspace {
       : Workspace(taxa_count, taxa_count - 1, regions, 1, 1) {}
 
   ~Workspace() {
-    if (_rate_matrix != nullptr) delete[] _rate_matrix;
-    if (_prob_matrix != nullptr) delete[] _prob_matrix;
+    for (auto &res : _rate_matrix) {
+      delete res._matrix;
+    }
+    for (auto &res : _prob_matrix) {
+      delete res._matrix;
+    }
     if (_base_frequencies != nullptr) delete[] _base_frequencies;
     if (_clvs != nullptr) delete[] _clvs;
   }
@@ -59,23 +68,23 @@ class Workspace {
   }
 
   inline lagrange_matrix_t &rate_matrix(size_t i) {
-    if (i >= _rate_matrix_count) {
+    if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range"};
     }
-    return _rate_matrix[i];
+    return *_rate_matrix[i]._matrix;
   }
 
   inline lagrange_matrix_t &prob_matrix(size_t i) {
-    if (i >= _prob_matrix_count) {
+    if (i >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range"};
     }
-    return _prob_matrix[i];
+    return *_prob_matrix[i]._matrix;
   }
 
   inline size_t states() const { return _states; }
   inline size_t regions() const { return _regions; }
-  inline size_t prob_matrix_count() const { return _prob_matrix_count; }
-  inline size_t rate_matrix_count() const { return _rate_matrix_count; }
+  inline size_t prob_matrix_count() const { return _prob_matrix.size(); }
+  inline size_t rate_matrix_count() const { return _rate_matrix.size(); }
   inline size_t clv_count() const { return _next_free_clv; }
   inline size_t matrix_size() const { return _states * _states; }
   inline size_t node_count() const { return _inner_count + _taxa_count; }
@@ -140,18 +149,6 @@ class Workspace {
   }
 
   void reserve() {
-    if (_rate_matrix != nullptr) {
-      // throw std::runtime_error{"Rate matrix buffer was already allocated"};
-      delete[] _rate_matrix;
-    }
-    _rate_matrix = new lagrange_matrix_t[_rate_matrix_count];
-
-    if (_prob_matrix != nullptr) {
-      // throw std::runtime_error{"Prob matrix buffer was already allocated"};
-      delete[] _prob_matrix;
-    }
-    _prob_matrix = new lagrange_matrix_t[_prob_matrix_count];
-
     if (_base_frequencies != nullptr) {
       // throw std::runtime_error{"Base frequencies buffer was already
       // allocated"};
@@ -165,11 +162,18 @@ class Workspace {
     }
     _clvs = new lagrange_col_vector_t[clv_count()];
 
-    for (size_t i = 0; i < _rate_matrix_count; i++) {
-      _rate_matrix[i] = lagrange_matrix_t(_states, _states);
+    for (size_t i = 0; i < _rate_matrix.size(); i++) {
+      if (_rate_matrix[i]._matrix != nullptr) {
+        delete _rate_matrix[i]._matrix;
+      }
+
+      _rate_matrix[i]._matrix = new lagrange_matrix_t(_states, _states);
     }
-    for (size_t i = 0; i < _prob_matrix_count; i++) {
-      _prob_matrix[i] = lagrange_matrix_t(_states, _states);
+    for (size_t i = 0; i < _rate_matrix.size(); i++) {
+      if (_prob_matrix[i]._matrix != nullptr) {
+        delete _prob_matrix[i]._matrix;
+      }
+      _prob_matrix[i]._matrix = new lagrange_matrix_t(_states, _states);
     }
     for (size_t i = 0; i < _base_frequencies_count; i++) {
       _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0 / _states);
@@ -178,6 +182,7 @@ class Workspace {
       _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);
       _clvs[i * _clv_stride] = 0.0;
     }
+    _reserved = true;
   }
 
   lagrange_clock_t advance_clock() { return _current_clock++; }
@@ -191,8 +196,7 @@ class Workspace {
   }
 
   bool reserved() const {
-    return !(_rate_matrix == nullptr || _prob_matrix == nullptr ||
-             _base_frequencies == nullptr || _clvs == nullptr);
+    return !(_base_frequencies == nullptr || _clvs == nullptr);
   }
 
   std::string report_node_vecs(size_t node_id) const {
@@ -235,11 +239,8 @@ class Workspace {
   size_t _states;
   size_t _next_free_clv;
 
-  size_t _rate_matrix_count;
-  lagrange_matrix_t *_rate_matrix;
-
-  size_t _prob_matrix_count;
-  lagrange_matrix_t *_prob_matrix;
+  std::vector<matrix_reservation_t> _rate_matrix;
+  std::vector<matrix_reservation_t> _prob_matrix;
 
   size_t _base_frequencies_count;
   lagrange_col_vector_t *_base_frequencies;
@@ -252,6 +253,7 @@ class Workspace {
   std::vector<period_t> _periods;
 
   lagrange_clock_t _current_clock;
+  bool _reserved;
 };
 
 #endif

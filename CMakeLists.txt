@@ -3,7 +3,6 @@ project(lagrange-cpp)
 set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(deps)
-message(STATUS "${ARMADILLO_INCLUDES}")
 set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
@@ -14,29 +13,12 @@ enable_language(Fortran)
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
         src/AncSplit.h
-        src/BioGeoTree.cpp
-        src/BioGeoTree.h
-        src/BioGeoTreeTools.cpp
-        src/BioGeoTreeTools.h
-        src/BranchSegment.cpp
-        src/BranchSegment.h
         src/Context.cpp
         src/Context.h
-        src/expm.h
         src/InputReader.cpp
         src/InputReader.h
         src/node.cpp
         src/node.h
-        src/node_object.h
-        src/OptimizeBioGeo.cpp
-        src/OptimizeBioGeo.h
-        src/OptimizeBioGeoAllDispersal_nlopt.cpp
-        src/OptimizeBioGeoAllDispersal_nlopt.h
-        src/RateMatrixUtils.cpp
-        src/RateMatrixUtils.h
-        src/RateModel.cpp
-        src/RateModel.h
-        src/string_node_object.h
         src/superdouble.cpp
         src/superdouble.h
         src/tree.cpp
@@ -45,15 +27,11 @@ set(LAGRANGE_SOURCES
         src/tree_reader.h
         src/Utils.cpp
         src/Utils.h
-        src/vector_node_object.h
         src/Workspace.h
         src/Workspace.cpp
         src/Operation.h
         src/Operation.cpp
-        src/blas.f
-        src/lapack.f
-        src/my_expokit.f
-        src/my_matexp.f)
+        )
 
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})

@@ -18,6 +18,8 @@ typedef uint64_t lagrange_dist_t;
 
 typedef uint64_t lagrange_clock_t;
 
+typedef uint64_t lagrange_op_id_t;
+
 struct node_reservation_t {
   node_reservation_t()
       : _top_clv{std::numeric_limits<size_t>::max()},

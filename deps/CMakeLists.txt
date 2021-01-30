@@ -19,7 +19,7 @@ Blaze_Import(
    QUIET
    BLAS on
    LAPACK on
-   THREADING Boost
+   THREADING off
    CACHE_SIZE auto
    VECTORIZATION on
    STORAGE_ORDER rowMajor
