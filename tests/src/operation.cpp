@@ -169,7 +169,6 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
   _ws->clv(_reverse_ltop_clv) = 0.0;
 
   rsplit_op.eval(_ws);
-  std::cout << rsplit_op.printStatus(_ws) << std::endl;
 
   auto &root_clv = _ws->clv(_reverse_bot_clv);
   double error = blaze::norm(root_clv - _correct_reverse_bot_clv);
