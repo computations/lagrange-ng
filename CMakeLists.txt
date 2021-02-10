@@ -39,10 +39,6 @@ add_executable(lagrange src/main.cpp)
 add_executable(lagrange-debug src/main.cpp)
 add_executable(lagrange-profile src/main.cpp)
 
-# These flags are required for the expmkit code
-set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
-set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
-
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
 set(LAGRANGE_DEBUG_FLAGS -O0 -g -fno-omit-frame-pointer)
