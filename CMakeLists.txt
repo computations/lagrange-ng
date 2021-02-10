@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 link_directories(/usr/local/lib)
 
-enable_language(Fortran)
+enable_language(CUDA)
 
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
@@ -19,8 +19,6 @@ set(LAGRANGE_SOURCES
         src/InputReader.h
         src/node.cpp
         src/node.h
-        src/superdouble.cpp
-        src/superdouble.h
         src/tree.cpp
         src/tree.h
         src/tree_reader.cpp

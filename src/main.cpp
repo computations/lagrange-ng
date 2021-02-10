@@ -30,11 +30,6 @@ using namespace std;
 #include "Context.h"
 #include "InputReader.h"
 #include "Utils.h"
-#include "superdouble.h"
-
-#ifdef BIGTREE
-#include "gmpfrxx/gmpfrxx.h"
-#endif
 
 struct config_options_t {
   std::string treefile;

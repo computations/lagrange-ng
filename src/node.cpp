@@ -11,8 +11,8 @@
 #include <iterator>
 #include <memory>
 #include <sstream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 using namespace std;
 
@@ -164,20 +164,6 @@ string Node::getNewickLambda(
 }
 
 int Node::getChildCount() const { return _children.size(); }
-
-void Node::setConditionalVector(const vector<Superdouble> &v) {
-  _conditionals = v;
-}
-
-void Node::setReverseBits(const vector<Superdouble> &v) { _reverse_bits = v; }
-
-const vector<Superdouble> &Node::getConditionalVector() const {
-  return _conditionals;
-}
-
-const vector<Superdouble> &Node::getReverseBits() const {
-  return _reverse_bits;
-}
 
 void Node::setSplitString(const string &splitstring) {
   _split_string = splitstring;

@@ -43,7 +43,7 @@ class OperationTest : public ::testing::Test {
         0.0564923,
     };
 
-    _ws = make_shared<Workspace>(_taxa, _regions);
+    _ws = std::make_shared<Workspace>(_taxa, _regions);
 
     _lbot_clv = _ws->register_generic_clv();
     _ltop_clv = _ws->register_generic_clv();
@@ -183,7 +183,7 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
-  auto local_ws = make_shared<Workspace>(_taxa, 3);
+  auto local_ws = std::make_shared<Workspace>(_taxa, 3);
   local_ws->reserve();
   local_ws->set_period_params(0, .3123, 1.1231);
   MakeRateMatrixOperation make_op(_rate_matrix);

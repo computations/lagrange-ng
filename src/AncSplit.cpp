@@ -23,13 +23,13 @@ using namespace std;
 AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
                    lagrange_dist_t rdesc, double we)
     : _weight(we),
-      _likelihood(0),
+      _likelihood(0.0),
       ancdistint(dist),
       ldescdistint(ldesc),
       rdescdistint(rdesc) {}
 
 double AncSplit::getWeight() const { return _weight; }
 
-Superdouble AncSplit::getLikelihood() const { return _likelihood; }
+void AncSplit::setLikelihood(double li) { _likelihood = li; }
 
-void AncSplit::setLikelihood(Superdouble li) { _likelihood = li; }
+double AncSplit::getLikelihood() const { return _likelihood; }

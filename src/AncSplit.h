@@ -23,18 +23,17 @@
 #include <vector>
 
 #include "Common.h"
-#include "superdouble.h"
 
 class AncSplit {
  private:
   double _weight;
-  Superdouble _likelihood;
+  double _likelihood;
 
  public:
   AncSplit(lagrange_dist_t, lagrange_dist_t, lagrange_dist_t, double);
   double getWeight() const;
-  Superdouble getLikelihood() const;
-  void setLikelihood(Superdouble li);
+  double getLikelihood() const;
+  void setLikelihood(double li);
   lagrange_dist_t ancdistint;
   lagrange_dist_t ldescdistint;
   lagrange_dist_t rdescdistint;

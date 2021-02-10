@@ -33,8 +33,6 @@ class Node {
   string _split_string;
   string _state_string;
   string _stoch_string;
-  vector<Superdouble> _conditionals;
-  vector<Superdouble> _reverse_bits;
   vector<std::shared_ptr<Node>> _children;
   vector<BranchSegment> _branch_segments;
   std::shared_ptr<vector<lagrange_dist_t>> _excluded_dists;
@@ -79,12 +77,6 @@ class Node {
   string getNewickLambda(const std::function<string(const Node &)> &) const;
 
   int getChildCount() const;
-
-  void setConditionalVector(const vector<Superdouble> &v);
-  void setReverseBits(const vector<Superdouble> &v);
-
-  const vector<Superdouble> &getConditionalVector() const;
-  const vector<Superdouble> &getReverseBits() const;
 
   void setSplitString(const string &splitstring);
   void setStateString(const string &splitstring);
