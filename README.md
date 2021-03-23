@@ -1,10 +1,7 @@
-this is the git version of the http://code.google.com/p/lagrange c++ version
+# Introduction
 
-this changed from a configure/Makefile project to cmake
+The new version of Lagrange, a tool to infer ancestral ranges and splits using the DEC model.
 
-to build run
+# Building 
 
-```
-cmake .
-make
-```
+There is a helpful makefile which will generate and build the cmake directory. So, you can just run `make` to build.
