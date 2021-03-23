@@ -42,7 +42,7 @@ set(LAGRANGE_TEST_SOURCES
   src/tree.cpp
   src/main.cpp)
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})
-target_link_libraries(lagrange-test gtest_main lagrange-debug-libs)
+target_link_libraries(lagrange-test gtest_main lagrange-release-libs)
 target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/
   ${BLAZE_INCLUDES})
 target_compile_options(lagrange-test PRIVATE ${LAGRANGE_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address)
