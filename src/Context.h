@@ -1,9 +1,15 @@
+/*
+ * Context.h
+ *     Created: 2021-03-23
+ *      Author: Ben Bettisworth
+ */
+
 #ifndef LAGRANGE_CONTEXT_H
 #define LAGRANGE_CONTEXT_H
 
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "Common.h"
 #include "Operation.h"
