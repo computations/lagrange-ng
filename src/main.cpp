@@ -7,6 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
+#include <cblas.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -19,11 +20,11 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -336,13 +337,14 @@ void handle_tree(std::shared_ptr<Tree> intree,
     auto states = context.computeStateGoal();
     root_json["node-results"] = makeStateJsonOutput(states, stateToIdMap);
   }
-  //std::cout << context.treeCLVStatus() << std::endl;
+  // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
   writeBgFiles(config);
 }
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
+  openblas_set_num_threads(4);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

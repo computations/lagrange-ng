@@ -34,13 +34,13 @@ add_executable(lagrange src/main.cpp)
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
-        ${WARNING_FLAGS})
+    ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES})
 target_link_libraries(lagrange-release-libs ${LAGRANGE_LIBS})
 
-target_link_libraries(lagrange lagrange-release-libs)
+target_link_libraries(lagrange lagrange-release-libs pthread)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
-        ${WARNING_FLAGS})
+    ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES})
 
 
