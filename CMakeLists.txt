@@ -26,7 +26,6 @@ set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION=1)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 
 #set(LINALG_LIBS gsl cblas lapack)
-message("Openblas libname: ${OpenBLAS_LIBNAME}")
 set(OPT_LIBS nlopt)
 set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
 
@@ -47,7 +46,8 @@ target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
     nlohmann_json::nlohmann_json)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})
-target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES})
+target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES}
+    ${OpenBLAS_INCLUDE_DIRS})
 
 
 add_subdirectory(tests)
