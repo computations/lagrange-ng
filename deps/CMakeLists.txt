@@ -33,7 +33,7 @@ set(OpenBLAS_LIB ${OpenBLAS_INSTALL_PREFIX}/lib/libopenblas.a PARENT_SCOPE)
 
 include(ExternalProject)
 ExternalProject_Add(OpenBLAS
-    GIT_REPOSITORY git@github.com:xianyi/OpenBLAS.git
+    GIT_REPOSITORY https://github.com/xianyi/OpenBLAS
     GIT_TAG v0.3.14
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
