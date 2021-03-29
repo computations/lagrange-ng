@@ -7,7 +7,6 @@
  *      Author: Ben Bettisworth
  */
 
-#include <cblas.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -25,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "cblas.h"
 #include "nlohmann/json.hpp"
 
 using namespace std;
