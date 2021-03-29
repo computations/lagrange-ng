@@ -40,7 +40,8 @@ target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
     ${OpenBLAS_INCLUDE_DIRS})
-target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} ${OpenBLAS_LIB})
+target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
+    ${OpenBLAS_LIB} pthread)
 
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
     nlohmann_json::nlohmann_json)
