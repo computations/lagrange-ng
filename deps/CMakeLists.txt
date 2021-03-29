@@ -42,3 +42,28 @@ ExternalProject_Add(OpenBLAS
     BUILD_IN_SOURCE TRUE
     INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
 )
+
+# Jsonhpp fourth
+
+include(FetchContent)
+
+FetchContent_Declare(json
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
+  GIT_TAG v3.9.1)
+
+FetchContent_GetProperties(json)
+if(NOT json_POPULATED)
+  FetchContent_Populate(json)
+  add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+#include(cmake/GitUtils.cmake)
+#
+#git_clone(
+#    PROJECT_NAME jsonhpp
+#    GIT_URL      https://github.com/nlohmann/json.git
+#    GIT_TAG      v3.9.1
+#    DIRECTORY    ${CMAKE_CURRENT_SOURCE_DIR}
+#    )
+#
+#add_subdirectory(jsonhpp)
