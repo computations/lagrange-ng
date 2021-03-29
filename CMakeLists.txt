@@ -25,18 +25,23 @@ set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION=1)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 
-set(LINALG_LIBS gsl cblas lapack)
+#set(LINALG_LIBS gsl cblas lapack)
+message("Openblas libname: ${OpenBLAS_LIBNAME}")
 set(OPT_LIBS nlopt)
-set(LAGRANGE_LIBS ${LINALG_LIBS} ${OPT_LIBS})
+set(LAGRANGE_LIBS ${OPT_LIBS})
 
 
 add_executable(lagrange src/main.cpp)
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 
+add_dependencies(lagrange-release-libs OpenBLAS)
+add_dependencies(lagrange OpenBLAS)
+
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})
-target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES})
-target_link_libraries(lagrange-release-libs ${LAGRANGE_LIBS})
+target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
+    ${OpenBLAS_INCLUDE_DIRS})
+target_link_libraries(lagrange-release-libs ${LAGRANGE_LIBS} ${OpenBLAS_LIB})
 
 target_link_libraries(lagrange lagrange-release-libs pthread)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
