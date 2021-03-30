@@ -66,6 +66,6 @@ add_executable(lagrange_cpp
 set(CMAKE_Fortran_FLAGS_DEBUG "-fallow-argument-mismatch")
 set(CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
 
-target_include_directories(lagrange_cpp PRIVATE ${ARMADILLO_INCLUDES})
-target_link_libraries(lagrange_cpp gsl nlopt gslcblas ${ARMADILLO_LIBS})
+target_include_directories(lagrange_cpp PRIVATE ${ARMADILLO_INCLUDES} nlohmann_json::nlohmann_json)
+target_link_libraries(lagrange_cpp gsl nlopt gslcblas ${ARMADILLO_LIBS} nlohmann_json::nlohmann_json)
 add_dependencies(lagrange_cpp armadillo_headers)
