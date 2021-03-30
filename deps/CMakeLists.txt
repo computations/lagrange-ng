@@ -11,10 +11,8 @@ set(ARMADILLO_INCLUDES "${CMAKE_CURRENT_BINARY_DIR}/armadillo-3.0.2/include"
 
 #nlopt second
 
-find_library(nlopt REQUIRED
-        NAMES nlopt libnlopt
-        HINTS "/usr/lib/"
-        )
+add_subdirectory(nlopt)
+
 
 # json third
 include(FetchContent)
