@@ -134,6 +134,12 @@ class DispersionOperation {
         _prob_matrix_index{op->prob_matrix()},
         _expm_op{op} {}
 
+  DispersionOperation(size_t bot, const std::shared_ptr<ExpmOperation>& op)
+      : _top_clv{std::numeric_limits<size_t>::max()},
+        _bot_clv{bot},
+        _prob_matrix_index{op->prob_matrix()},
+        _expm_op{op} {}
+
   DispersionOperation(size_t top, size_t bot, size_t prob_matrix)
       : _top_clv{top},
         _bot_clv{bot},
@@ -144,14 +150,16 @@ class DispersionOperation {
 
   void terminate_top(size_t clv_index) {
     if (_top_clv != std::numeric_limits<size_t>::max()) {
-      throw std::runtime_error{"Dispersion Operation already terminated"};
+      throw std::runtime_error{
+          "Dispersion Operation already terminated at the top"};
     }
     _top_clv = clv_index;
   }
 
   void terminate_bot(size_t clv_index) {
     if (_bot_clv != std::numeric_limits<size_t>::max()) {
-      throw std::runtime_error{"Dispersion Operation already terminated"};
+      throw std::runtime_error{
+          "Dispersion Operation already terminated at the bot"};
     }
     _bot_clv = clv_index;
   }
@@ -297,9 +305,9 @@ class ReverseSplitOperation {
   std::vector<lagrange_dist_t> _excl_dists;
 };
 
-class LHGoal {
+class LLHGoal {
  public:
-  LHGoal(size_t root_clv, size_t prior_index)
+  LLHGoal(size_t root_clv, size_t prior_index)
       : _root_clv_index{root_clv}, _prior_index{prior_index} {}
   double eval(std::shared_ptr<Workspace>) const;
 
@@ -334,5 +342,12 @@ class SplitLHGoal {
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 };
+
+typedef std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>
+    PeriodRateMatrixMap;
+
+typedef std::unordered_map<std::pair<size_t, double>,
+                           std::shared_ptr<ExpmOperation>>
+    BranchProbMatrixMap;
 
 #endif

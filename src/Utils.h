@@ -61,4 +61,12 @@ constexpr inline size_t lagrange_fast_log2(size_t x) {
   return __builtin_clzll(x);
 }
 
+namespace std {
+template <>
+struct hash<std::pair<size_t, double>> {
+  std::size_t operator()(std::pair<size_t, double> const &p) const {
+    return std::hash<size_t>{}(p.first) ^ std::hash<double>{}(p.second);
+  }
+};
+}  // namespace std
 #endif /* UTILS_H_ */

@@ -9,10 +9,14 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
+
+#include "Operation.h"
 
 using namespace std;
 
@@ -23,6 +27,7 @@ Node::Node()
     : _branch_length(0.0),
       _height(0.0),
       _number(0),
+      _period(0),
       _label(""),
       _comment(""),
       _children{} {}
@@ -183,10 +188,6 @@ string Node::getSplitString() const { return _split_string; }
 
 string Node::getStochString() const { return _stoch_string; }
 
-void Node::initSegVector() { _branch_segments = vector<BranchSegment>(); }
-
-vector<BranchSegment> &Node::getSegVector() { return _branch_segments; }
-
 void Node::initExclDistVector() {
   _excluded_dists = std::make_shared<vector<lagrange_dist_t>>();
 }
@@ -290,9 +291,9 @@ std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
 }
 
 std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateForwardOperations(
-    Workspace &ws,
-    const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const {
+Node::traverseAndGenerateForwardOperations(Workspace &ws,
+                                           PeriodRateMatrixMap &rm_map,
+                                           BranchProbMatrixMap &pm_map) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -300,13 +301,15 @@ Node::traverseAndGenerateForwardOperations(
 
   if (_children.size() == 0) {
     ws.register_top_clv(_id);
-    return {{}, generateDispersionOperations(ws, rm_op)};
+    return {{}, generateDispersionOperations(ws, rm_map, pm_map)};
   }
 
   std::vector<SplitOperation> split_ops;
 
-  auto lchild = _children[0]->traverseAndGenerateForwardOperations(ws, rm_op);
-  auto rchild = _children[1]->traverseAndGenerateForwardOperations(ws, rm_op);
+  auto lchild =
+      _children[0]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
+  auto rchild =
+      _children[1]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
 
   split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
   split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
@@ -318,14 +321,14 @@ Node::traverseAndGenerateForwardOperations(
   rchild.second->terminate_top(ws.get_rchild_clv(_id));
 
   split_ops.emplace_back(ws.get_top_clv(_id), lchild.second, rchild.second);
-  return {split_ops, generateDispersionOperations(ws, rm_op)};
+  return {split_ops, generateDispersionOperations(ws, rm_map, pm_map)};
 }
 
 std::pair<std::vector<ReverseSplitOperation>,
           std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateBackwardOperations(
-    Workspace &ws,
-    const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const {
+Node::traverseAndGenerateBackwardOperations(Workspace &ws,
+                                            PeriodRateMatrixMap &rm_map,
+                                            BranchProbMatrixMap &pm_map) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -339,7 +342,7 @@ Node::traverseAndGenerateBackwardOperations(
 
   ws.register_top_clv_reverse(_id);
 
-  auto disp_ops = generateDispersionOperationsReverse(ws, rm_op);
+  auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
   ws.register_bot1_clv_reverse(_id);
   rsplit_ops.emplace_back(ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id),
@@ -351,7 +354,7 @@ Node::traverseAndGenerateBackwardOperations(
 
   if (_children[0]->isInternal()) {
     auto child_trav =
-        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_op);
+        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
@@ -361,7 +364,7 @@ Node::traverseAndGenerateBackwardOperations(
 
   if (_children[1]->isInternal()) {
     auto child_trav =
-        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_op);
+        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));
@@ -372,20 +375,18 @@ Node::traverseAndGenerateBackwardOperations(
 }
 
 std::shared_ptr<DispersionOperation> Node::generateDispersionOperations(
-    Workspace &ws,
-    const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const {
+    Workspace &ws, PeriodRateMatrixMap &rm_map,
+    BranchProbMatrixMap &pm_map) const {
   return std::make_shared<DispersionOperation>(
-      ws.get_top_clv(_id), _branch_length, ws.suggest_prob_matrix_index(),
-      rm_op);
+      ws.get_top_clv(_id), getProbMatrixOperation(ws, rm_map, pm_map));
 }
 
 std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
-    Workspace &ws,
-    const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const {
+    Workspace &ws, PeriodRateMatrixMap &rm_map,
+    BranchProbMatrixMap &pm_map) const {
   return std::make_shared<DispersionOperation>(
       ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
-      _branch_length, ws.suggest_prob_matrix_index(), rm_op,
-      /*transpose=*/true);
+      getProbMatrixOperation(ws, rm_map, pm_map, true));
 }
 
 void Node::traverseAndGenerateBackwardNodeIds(std::vector<size_t> &ret) const {

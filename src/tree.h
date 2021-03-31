@@ -10,7 +10,10 @@
 #ifndef TREE_H_
 #define TREE_H_
 
+#include <cstddef>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "Operation.h"
@@ -41,10 +44,15 @@ class Tree {
   void addInternalNode(std::shared_ptr<Node> tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
+  std::vector<SplitOperation> generateForwardOperations(Workspace &ws);
+  std::vector<ReverseSplitOperation> generateBackwardOperations(Workspace &ws);
+
   std::vector<SplitOperation> generateForwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op);
+      Workspace &ws, PeriodRateMatrixMap &period_rm_map,
+      BranchProbMatrixMap &period_pm_map);
   std::vector<ReverseSplitOperation> generateBackwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op);
+      Workspace &ws, PeriodRateMatrixMap &period_rm_map,
+      BranchProbMatrixMap &period_pm_map);
 
   std::vector<size_t> traversePreorderInternalNodesOnly() const;
   std::vector<size_t> traversePreorderInternalNodesOnlyNumbers() const;

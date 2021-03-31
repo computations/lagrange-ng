@@ -36,7 +36,6 @@ class Context {
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
   double optimize();
-  double computeLH();
   double computeLLH();
 
   period_derivative_t computeDLLH(double initial_lh);
@@ -59,7 +58,7 @@ class Context {
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;
-  std::vector<LHGoal> _lh_goal;
+  std::vector<LLHGoal> _llh_goal;
   std::vector<StateLHGoal> _state_lh_goal;
   std::vector<SplitLHGoal> _split_lh_goal;
 

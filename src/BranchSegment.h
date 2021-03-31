@@ -24,8 +24,8 @@ class BranchSegment {
  public:
   BranchSegment(double dur, int per);
   void clearStartDist();
-  double getDuration();
-  int getPeriod();
+  double getDuration() const;
+  int getPeriod() const;
   void set_start_dist_int(int d);
   int get_start_dist_int();
   vector<int> getFossilAreas();

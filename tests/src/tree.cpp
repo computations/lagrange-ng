@@ -48,14 +48,18 @@ TEST_F(TreeTest, simple0) { auto t = parse_tree(_basic_tree_newick); }
 
 TEST_F(TreeTest, generate) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateForwardOperations(*_basic_ws, _rate_matrix_op);
+  PeriodRateMatrixMap rm_map;
+  BranchProbMatrixMap pm_map;
+  auto ops = t->generateForwardOperations(*_basic_ws, rm_map, pm_map);
 
   EXPECT_EQ(ops.size(), 2);
 }
 
 TEST_F(TreeTest, generateOperationsSimple1) {
   auto t = parse_tree(_basic_tree_newick);
-  auto ops = t->generateBackwardOperations(*_basic_ws, _rate_matrix_op);
+  PeriodRateMatrixMap rm_map;
+  BranchProbMatrixMap pm_map;
+  auto ops = t->generateBackwardOperations(*_basic_ws, rm_map, pm_map);
 
   EXPECT_EQ(ops.size(), 4);
 }

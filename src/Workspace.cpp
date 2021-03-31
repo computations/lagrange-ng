@@ -15,6 +15,7 @@ Workspace::~Workspace() {
   }
   if (_base_frequencies != nullptr) delete[] _base_frequencies;
   if (_clvs != nullptr) delete[] _clvs;
+  if (_clv_scalars != nullptr) delete[] _clv_scalars;
 }
 
 void Workspace::register_top_clv(size_t node_id) {
@@ -43,6 +44,14 @@ void Workspace::reserve() {
     delete[] _clvs;
   }
   _clvs = new lagrange_col_vector_t[clv_count()];
+
+  if (_clv_scalars != nullptr) {
+    delete[] _clv_scalars;
+  }
+  _clv_scalars = new size_t[clv_count()];
+  for (size_t i = 0; i < clv_count(); i++) {
+    _clv_scalars[i] = 0;
+  }
 
   for (size_t i = 0; i < _rate_matrix.size(); i++) {
     if (_rate_matrix[i]._matrix != nullptr) {

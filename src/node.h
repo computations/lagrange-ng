@@ -12,12 +12,17 @@
 
 #include <functional>
 #include <map>
+#include <memory>
+#include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "BranchSegment.h"
 #include "Common.h"
 #include "Operation.h"
+#include "Utils.h"
 #include "Workspace.h"
 
 class Node {
@@ -28,14 +33,49 @@ class Node {
   double _height;         // could be from tip or from root
   size_t _number;
   size_t _id;
+  size_t _period;
   string _label;
   string _comment;
   string _split_string;
   string _state_string;
   string _stoch_string;
   vector<std::shared_ptr<Node>> _children;
-  vector<BranchSegment> _branch_segments;
   std::shared_ptr<vector<lagrange_dist_t>> _excluded_dists;
+
+  std::shared_ptr<MakeRateMatrixOperation> getRateMatrixOperation(
+      Workspace &ws, PeriodRateMatrixMap &rm_map) const {
+    auto it = rm_map.find(_period);
+    if (it == rm_map.end()) {
+      auto rm = std::make_shared<MakeRateMatrixOperation>(
+          ws.suggest_rate_matrix_index());
+      rm_map.emplace(_period, rm);
+      return rm;
+    } else {
+      if (it->second == nullptr) {
+        throw std::runtime_error{"We got an empty expm"};
+      }
+      return it->second;
+    }
+  }
+
+  std::shared_ptr<ExpmOperation> getProbMatrixOperation(
+      Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
+      bool transpose = false) const {
+    auto key = std::make_pair(_period, _branch_length);
+    auto it = pm_map.find(key);
+    if (it == pm_map.end()) {
+      auto rm = getRateMatrixOperation(ws, rm_map);
+      auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
+                                                _branch_length, rm, transpose);
+      pm_map.emplace(key, pm);
+      return pm;
+    } else {
+      if (it->second == nullptr) {
+        throw std::runtime_error{"We got an empty expm"};
+      }
+      return it->second;
+    }
+  }
 
  public:
   Node();
@@ -85,9 +125,6 @@ class Node {
   string getStateString() const;
   string getStochString() const;
 
-  void initSegVector();
-  vector<BranchSegment> &getSegVector();
-
   void initExclDistVector();
   std::shared_ptr<vector<lagrange_dist_t>> &getExclDistVector();
 
@@ -107,21 +144,23 @@ class Node {
       const std::vector<std::shared_ptr<Node>> &nodes);
 
   std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateForwardOperations(
-      Workspace &ws,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+  traverseAndGenerateForwardOperations(Workspace &ws,
+                                       PeriodRateMatrixMap &pm_map,
+                                       BranchProbMatrixMap &bm_map) const;
 
   std::pair<std::vector<ReverseSplitOperation>,
             std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateBackwardOperations(Workspace &ws) const;
+  traverseAndGenerateBackwardOperations(Workspace &ws,
+                                        PeriodRateMatrixMap &rm_map,
+                                        BranchProbMatrixMap &pm_map) const;
 
   std::shared_ptr<DispersionOperation> generateDispersionOperations(
-      Workspace &ws,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+      Workspace &ws, PeriodRateMatrixMap &rm_map,
+      BranchProbMatrixMap &pm_map) const;
 
   std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
-      Workspace &ws,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+      Workspace &ws, PeriodRateMatrixMap &rm_map,
+      BranchProbMatrixMap &pm_map) const;
 
   std::pair<std::vector<ReverseSplitOperation>,
             std::shared_ptr<DispersionOperation>>

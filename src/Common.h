@@ -6,13 +6,14 @@
 #ifndef LAGRANGE_COMMON_H__
 #define LAGRANGE_COMMON_H__
 
+#include <blaze/Math.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <sstream>
 #include <vector>
-#include <blaze/Math.h>
 
 typedef uint64_t lagrange_dist_t;
 
@@ -83,5 +84,9 @@ typedef blaze::DynamicMatrix<std::complex<double>, blaze::columnMajor>
 typedef blaze::DynamicVector<double, blaze::columnVector> lagrange_col_vector_t;
 typedef blaze::DynamicVector<std::complex<double>, blaze::columnVector>
     lagrange_complex_col_vector_t;
+
+constexpr double lagrange_scaling_factor = 0x1p256;
+
+constexpr double lagrange_scale_threshold = 1.0 / lagrange_scaling_factor;
 
 #endif  // LAGRANGE_COMMON_H__

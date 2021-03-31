@@ -58,7 +58,8 @@ inline std::vector<lagrange_region_split_t> generate_splits(uint64_t state,
 inline void weighted_combine(const lagrange_col_vector_t &c1,
                              const lagrange_col_vector_t &c2,
                              const std::vector<lagrange_dist_t> excl_dists,
-                             lagrange_col_vector_t &dest) {
+                             lagrange_col_vector_t &dest, size_t c1_scale,
+                             size_t c2_scale, size_t &scale_count) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
@@ -68,6 +69,9 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   size_t idx_excl = 0;
 
   dest = 0.0;
+
+  scale_count = c1_scale + c2_scale;
+  bool scale = true;
 
   for (size_t i = 0; i < states; i++) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
@@ -84,6 +88,15 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
     if (splits.size() != 0) {
       dest[i] /= static_cast<double>(splits.size());
     }
+    if (dest[i] < lagrange_scale_threshold) {
+      scale &= true;
+    } else {
+      scale &= false;
+    }
+  }
+  if (scale) {
+    dest *= lagrange_scaling_factor;
+    scale_count += 1;
   }
 }
 
@@ -221,10 +234,10 @@ std::string MakeRateMatrixOperation::printStatus(
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   if (_rate_matrix_op != nullptr &&
-      _last_execution > _rate_matrix_op->last_update()) {
+      _last_execution > _rate_matrix_op->last_update() &&
+      _last_execution > ws->last_update_prob_matrix(_prob_matrix_index)) {
     return;
   }
-  // _rate_matrix_op->eval(ws);
 
   lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
 
@@ -261,13 +274,13 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     A *= A;
   }
 
-  _last_execution = ws->advance_clock();
   if (_transposed) {
     A = blaze::trans(A);
     blaze::row(A, 0) = 0.0;
     A(0, 0) = 1.0;
   }
-  ws->prob_matrix(_prob_matrix_index) = A;
+  ws->update_prob_matrix(_prob_matrix_index, A);
+  _last_execution = ws->advance_clock();
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -355,7 +368,10 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
-  weighted_combine(lchild_clv, rchild_clv, _excl_dists, parent_clv);
+  weighted_combine(lchild_clv, rchild_clv, _excl_dists, parent_clv,
+                   ws->clv_scalar(_lbranch_clv_index),
+                   ws->clv_scalar(_rbranch_clv_index),
+                   ws->clv_scalar(_parent_clv_index));
 }
 
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -460,18 +476,22 @@ std::string ReverseSplitOperation::printStatus(
   return os.str();
 }
 
-double LHGoal::eval(std::shared_ptr<Workspace> ws) const {
-  return blaze::dot(ws->clv(_root_clv_index),
-                    ws->get_base_frequencies(_prior_index));
+double LLHGoal::eval(std::shared_ptr<Workspace> ws) const {
+  return std::log(blaze::dot(ws->clv(_root_clv_index),
+                             ws->get_base_frequencies(_prior_index))) +
+         std::log(lagrange_scaling_factor) * ws->clv_scalar(_root_clv_index);
   // return blaze::sum(ws->clv(_root_clv_index));
 }
 
 lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
   lagrange_col_vector_t tmp(ws->states());
   tmp = 0.0;
+  size_t tmp_scalar = 0;
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
-                   /*excl_dists=*/{}, tmp);
-  return ws->clv(_parent_clv_index) * tmp;
+                   /*excl_dists=*/{}, tmp, ws->clv_scalar(_lchild_clv_index),
+                   ws->clv_scalar(_rchild_clv_index), tmp_scalar);
+  return ws->clv(_parent_clv_index) *
+         (tmp + tmp_scalar * std::log(lagrange_scaling_factor));
 }
 
 std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(

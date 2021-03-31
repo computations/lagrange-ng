@@ -11,13 +11,11 @@
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
-  _forward_operations =
-      _tree->generateForwardOperations(*_workspace, _rate_matrix_op);
+  _forward_operations = _tree->generateForwardOperations(*_workspace);
 }
 
 void Context::registerBackwardOperations() {
-  _reverse_operations =
-      _tree->generateBackwardOperations(*_workspace, _rate_matrix_op);
+  _reverse_operations = _tree->generateBackwardOperations(*_workspace);
 }
 
 void Context::registerLHGoal() {
@@ -27,7 +25,7 @@ void Context::registerLHGoal() {
 
   auto root_clv = (_forward_operations.end() - 1)->get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
-  _lh_goal.emplace_back(root_clv, frequency_index);
+  _llh_goal.emplace_back(root_clv, frequency_index);
 }
 
 void Context::registerStateLHGoal() {
@@ -52,7 +50,7 @@ void Context::init() {
   _workspace->reserve();
   updateRates({0.01, 0.01});
 
-  for (auto& goal : _lh_goal) {
+  for (auto& goal : _llh_goal) {
     _workspace->get_base_frequencies(goal._prior_index) = 1.0;
   }
 
@@ -86,12 +84,10 @@ void Context::computeBackwardOperations() {
   }
 }
 
-double Context::computeLH() {
+double Context::computeLLH() {
   computeForwardOperations();
-  return _lh_goal.begin()->eval(_workspace);
+  return _llh_goal.begin()->eval(_workspace);
 }
-
-double Context::computeLLH() { return std::log(computeLH()); }
 
 period_derivative_t Context::computeDLLH(double initial_lh) {
   period_derivative_t derivative;
@@ -136,7 +132,7 @@ double Context::optimize() {
   return obj_val;
 }
 
-double Context::computeLHGoal() { return computeLH(); }
+double Context::computeLHGoal() { return computeLLH(); }
 
 /* Computes the registered state goals
  * If there are no reverse state goals, this operation does nothing. It also

@@ -10,6 +10,7 @@ link_directories(/usr/local/lib)
 
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
+        src/BranchSegment.cpp
         src/Context.cpp
         src/InputReader.cpp
         src/node.cpp
@@ -32,9 +33,6 @@ set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
 
 add_executable(lagrange src/main.cpp)
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
-
-add_dependencies(lagrange-release-libs OpenBLAS)
-add_dependencies(lagrange OpenBLAS)
 
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})

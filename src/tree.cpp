@@ -12,6 +12,8 @@
 #include <limits>
 #include <unordered_map>
 
+#include "Operation.h"
+
 using namespace std;
 
 #include "tree.h"
@@ -29,7 +31,6 @@ Tree::Tree(std::shared_ptr<Node> inroot)
   processRoot();
   _root->assignId();
   for (unsigned int i = 0; i < getNodeCount(); i++) {
-    getNode(i)->initSegVector();
     getNode(i)->initExclDistVector();
   }
 
@@ -294,14 +295,32 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }
 
+std::vector<SplitOperation> Tree::generateForwardOperations(Workspace &ws) {
+  PeriodRateMatrixMap rm_map;
+  BranchProbMatrixMap pm_map;
+  return generateForwardOperations(ws, rm_map, pm_map);
+}
+
 std::vector<SplitOperation> Tree::generateForwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op) {
-  return _root->traverseAndGenerateForwardOperations(ws, rm_op).first;
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
+  return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
 }
 
 std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op) {
-  auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_op);
+    Workspace &ws) {
+  PeriodRateMatrixMap rm_map;
+  BranchProbMatrixMap pm_map;
+  auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
+  ret.first.begin()->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
+  (ret.first.begin() + 1)
+      ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
+
+  return ret.first;
+}
+
+std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
+  auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
   ret.first.begin()->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
   (ret.first.begin() + 1)
       ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));

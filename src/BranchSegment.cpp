@@ -12,16 +12,18 @@
 using namespace std;
 
 BranchSegment::BranchSegment(double dur, int per)
-    : _duration(dur), _period(per),
-      _fossil_area_indices(vector<int>()), _start_dist(-666) {}
+    : _duration(dur),
+      _period(per),
+      _fossil_area_indices(vector<int>()),
+      _start_dist(-666) {}
 
 void BranchSegment::clearStartDist() {
-  _start_dist = -666; // null is -666
+  _start_dist = -666;  // null is -666
 }
 
-double BranchSegment::getDuration() { return _duration; }
+double BranchSegment::getDuration() const { return _duration; }
 
-int BranchSegment::getPeriod() { return _period; }
+int BranchSegment::getPeriod() const { return _period; }
 
 void BranchSegment::set_start_dist_int(int d) { _start_dist = d; }
 

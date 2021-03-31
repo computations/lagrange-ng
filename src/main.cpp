@@ -76,8 +76,9 @@ struct config_options_t {
 
 lagrange_col_vector_t normalizeDistributionByLWR(
     const lagrange_col_vector_t &states) {
-  double sum = blaze::sum(states);
-  return states / sum;
+  double max_llh = blaze::max(states);
+  double total_llh = blaze::sum(blaze::exp(states - max_llh));
+  return blaze::exp(states - max_llh) / total_llh;
 }
 
 std::vector<std::string> grab_token(const std::string &token,
@@ -270,7 +271,7 @@ nlohmann::json makeStateJsonOutput(
     for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      tmp["llh"] = std::log(state_distribution[dist]);
+      tmp["llh"] = state_distribution[dist];
       tmp["ratio"] = lwr_distribution[dist];
       node_json["states"].push_back(tmp);
     }
