@@ -478,8 +478,8 @@ std::string ReverseSplitOperation::printStatus(
 
 double LLHGoal::eval(std::shared_ptr<Workspace> ws) const {
   return std::log(blaze::dot(ws->clv(_root_clv_index),
-                             ws->get_base_frequencies(_prior_index))) +
-         std::log(lagrange_scaling_factor) * ws->clv_scalar(_root_clv_index);
+                             ws->get_base_frequencies(_prior_index))) -
+         lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
   // return blaze::sum(ws->clv(_root_clv_index));
 }
 
@@ -490,8 +490,11 @@ lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
                    /*excl_dists=*/{}, tmp, ws->clv_scalar(_lchild_clv_index),
                    ws->clv_scalar(_rchild_clv_index), tmp_scalar);
-  return ws->clv(_parent_clv_index) *
-         (tmp + tmp_scalar * std::log(lagrange_scaling_factor));
+
+  tmp_scalar += ws->clv_scalar(_parent_clv_index);
+
+  return blaze::log(ws->clv(_parent_clv_index) * tmp) -
+         tmp_scalar * lagrange_scaling_factor_log;
 }
 
 std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
