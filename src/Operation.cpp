@@ -327,6 +327,7 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
 
   ws->clv(_top_clv) =
       std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv));
+  ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -381,12 +382,15 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "SplitOperation:\n";
 
   os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
+     << ", scalar: " << ws->clv_scalar(_lbranch_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_lbranch_clv_index));
   os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
+     << ", scalar: " << ws->clv_scalar(_rbranch_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_rbranch_clv_index));
   os << tabs << "Parent clv (index: " << _parent_clv_index
+     << ", scalar: " << ws->clv_scalar(_parent_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_parent_clv_index));
 
