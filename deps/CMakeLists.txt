@@ -19,7 +19,7 @@ Blaze_Import(
    QUIET
    BLAS on
    LAPACK on
-   THREADING off
+   THREADING on
    CACHE_SIZE auto
    VECTORIZATION on
    STORAGE_ORDER rowMajor
@@ -43,7 +43,7 @@ else()
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND make
+        BUILD_COMMAND make USE_THREAD=0 USE_LOCKING=0
         BUILD_IN_SOURCE TRUE
         INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
     )
