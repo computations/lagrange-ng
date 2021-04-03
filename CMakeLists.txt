@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.13)
 project(lagrange-cpp)
 set(CMAKE_CXX_STANDARD 14)
 
-add_subdirectory(deps)
 set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
@@ -34,7 +33,10 @@ set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
 add_executable(lagrange src/main.cpp)
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 
+add_subdirectory(deps)
+
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
+    
     ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
     ${OpenBLAS_INCLUDE_DIRS})
@@ -43,7 +45,7 @@ target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
 
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
     nlohmann_json::nlohmann_json)
-target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS}
+target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
     ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES}
     ${OpenBLAS_INCLUDE_DIRS})
