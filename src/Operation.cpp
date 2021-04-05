@@ -255,18 +255,49 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   double sign = -1.0;
   blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
 
+#if 0
   lagrange_matrix_t X = A;
   lagrange_matrix_t N = I + c * X;
   lagrange_matrix_t D = I - c * X;
+#endif
+
+  lagrange_matrix_t X_2 = A;
+  lagrange_matrix_t N = I + c * X_2;
+  lagrange_matrix_t D = I - c * X_2;
+  lagrange_matrix_t X_1;
 
   // Using fortran indexing, and we started an iteration ahead to skip some
-  // setup
-  for (int i = 2; i <= q; ++i) {
+  // setup. Furhthermore, we are going to unroll the loop to allow us to skip
+  // some assignments.
+#if 0
+  for (int i = 2; i <= q; i++) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
+    std::cout << "C: " << c << std::endl;
     X = A * X;
     N += c * X;
     sign *= -1.0;
     D += sign * c * X;
+  }
+#endif
+
+  for (int i = 2; i <= q;) {
+    c = c * (q - i + 1) / (i * (2 * q - i + 1));
+    X_1 = A * X_2;
+    N += c * X_1;
+    sign *= -1.0;
+    D += sign * c * X_1;
+    i += 1;
+
+    if (i > q) {
+      break;
+    }
+
+    c = c * (q - i + 1) / (i * (2 * q - i + 1));
+    X_2 = A * X_1;
+    N += c * X_2;
+    sign *= -1.0;
+    D += sign * c * X_2;
+    i += 1;
   }
 
   A = blaze::solve(D, N);
