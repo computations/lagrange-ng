@@ -283,9 +283,22 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   for (int i = 2; i <= q;) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     X_1 = A * X_2;
-    N += c * X_1;
+
+    // N += c * X_1;
+    for (size_t j = 0; j < rows; ++j) {
+      for (size_t k = 0; k < rows; k++) {
+        N(j, k) += c * X_1(j, k);
+      }
+    }
+
     sign *= -1.0;
-    D += sign * c * X_1;
+
+    // D += sign * c * X_1;
+    for (size_t j = 0; j < rows; ++j) {
+      for (size_t k = 0; k < rows; k++) {
+        D(j, k) += sign * c * X_1(j, k);
+      }
+    }
     i += 1;
 
     if (i > q) {
@@ -294,9 +307,19 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
 
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     X_2 = A * X_1;
-    N += c * X_2;
+    // N += c * X_2;
+    for (size_t j = 0; j < rows; ++j) {
+      for (size_t k = 0; k < rows; k++) {
+        N(j, k) += c * X_2(j, k);
+      }
+    }
     sign *= -1.0;
-    D += sign * c * X_2;
+    // D += sign * c * X_2;
+    for (size_t j = 0; j < rows; ++j) {
+      for (size_t k = 0; k < rows; k++) {
+        D(j, k) += sign * c * X_2(j, k);
+      }
+    }
     i += 1;
   }
 
