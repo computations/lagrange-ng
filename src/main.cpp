@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Common.h"
 #include "cblas.h"
 #include "nlohmann/json.hpp"
 
@@ -46,8 +47,8 @@ struct config_options_t {
   unordered_map<string, lagrange_dist_t> fixnodewithmrca;
   vector<lagrange_dist_t> excludedists;
   vector<lagrange_dist_t> includedists;
-  vector<string> areanames;
-  unordered_map<string, int> areanamemap;
+  vector<string> areaNames;
+  unordered_map<string, lagrange_dist_t> areaNameToDistMap;
   vector<string> ancstates;
   vector<string> areacolors;
   vector<string> fossilmrca;
@@ -74,7 +75,7 @@ struct config_options_t {
   size_t region_count;
 };
 
-lagrange_col_vector_t normalizeDistributionByLWR(
+lagrange_col_vector_t normalizeStateDistrubtionByLWR(
     const lagrange_col_vector_t &states) {
   double max_llh = blaze::max(states);
   double total_llh = blaze::sum(blaze::exp(states - max_llh));
@@ -119,7 +120,7 @@ config_options_t parse_config(const std::string &config_filename) {
       }
     } else if (!strcmp(tokens[0].c_str(), "areanames")) {
       vector<string> searchtokens = grab_token(tokens[1], ",     ");
-      config.areanames = searchtokens;
+      config.areaNames = searchtokens;
     } else if (!strcmp(tokens[0].c_str(), "fixnode")) {
       vector<string> searchtokens = grab_token(tokens[1], ",     ");
       vector<int> dist;
@@ -260,14 +261,14 @@ config_options_t parse_config(const std::string &config_filename) {
 }
 
 nlohmann::json makeStateJsonOutput(
-    const std::vector<lagrange_col_vector_t> states,
-    const std::vector<size_t> stateToIdMap) {
+    const std::vector<lagrange_col_vector_t> &states,
+    const std::vector<size_t> &stateToIdMap) {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
     nlohmann::json node_json;
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
-    auto lwr_distribution = normalizeDistributionByLWR(state_distribution);
+    auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
     for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
@@ -287,19 +288,25 @@ void writeJsonToFile(const config_options_t &config,
   outfile << root_json.dump();
 }
 
-void writeBgStateFile(const config_options_t &config) {
-  std::string bgstates_filename = config.treefile + ".bgstates.tre";
-  std::ofstream outfile(bgstates_filename);
-}
-
-void writeBgKeyFile(const config_options_t &config) {
-  std::string bgkey_filename = config.treefile + ".bgkey.tre";
-  std::ofstream outfile(bgkey_filename);
-}
-
-void writeBgFiles(const config_options_t &config) {
-  writeBgKeyFile(config);
-  writeBgStateFile(config);
+void writeResultTree(const config_options_t &config,
+                     const std::shared_ptr<Tree> &tree) {
+  std::string result_tree_filename = config.treefile + ".results.tree";
+  std::ofstream outfile(result_tree_filename);
+  outfile << tree->getNewickLambda([](const Node &n) -> std::string {
+    if (n.isInternal()) {
+      std::ostringstream oss;
+      oss << "[&&NHX";
+      if (!n.getStateString().empty()) {
+        oss << ":state=" << n.getStateString();
+      }
+      if (!n.getSplitString().empty()) {
+        oss << ":split=" << n.getSplitString();
+      }
+      oss << "]";
+      return oss.str();
+    }
+    return n.getName();
+  });
 }
 
 void handle_tree(std::shared_ptr<Tree> intree,
@@ -333,20 +340,35 @@ void handle_tree(std::shared_ptr<Tree> intree,
   params_json["extinction"] = params.extinction_rate;
   root_json["params"] = params_json;
 
-  auto stateToIdMap = intree->traversePreorderInternalNodesOnlyNumbers();
+  auto stateGoalIndexToIdMap =
+      intree->traversePreorderInternalNodesOnlyNumbers();
+
+  // invert the map
+  auto idtoStateGoalIndexMap = std::vector<size_t>();
+  idtoStateGoalIndexMap.resize(stateGoalIndexToIdMap.size() + 1);
+
+  for (size_t i = 0; i < idtoStateGoalIndexMap.size(); ++i) {
+    size_t number = stateGoalIndexToIdMap[i];
+    idtoStateGoalIndexMap[number] = i;
+  }
 
   if (config.states) {
     auto states = context.computeStateGoal();
-    root_json["node-results"] = makeStateJsonOutput(states, stateToIdMap);
+    root_json["node-results"] =
+        makeStateJsonOutput(states, stateGoalIndexToIdMap);
+    intree->setStateStrings(idtoStateGoalIndexMap, states, config.areaNames);
+  }
+  if (config.splits) {
+    auto splits = context.computeSplitGoal();
   }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
-  writeBgFiles(config);
+  writeResultTree(config, intree);
 }
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  blaze::setNumThreads(4);
+  blaze::setNumThreads(1);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;
@@ -372,27 +394,6 @@ int main(int argc, char *argv[]) {
     ir.checkData(data, intrees);
 
     config.region_count = ir.nareas;
-
-    /*
-     * read area names
-     */
-    unordered_map<int, string> areanamemaprev;
-    if (config.areanames.size() > 0) {
-      cout << "reading area names" << endl;
-      for (unsigned int i = 0; i < config.areanames.size(); i++) {
-        config.areanamemap[config.areanames[i]] = i;
-        areanamemaprev[i] = config.areanames[i];
-        cout << i << "=" << config.areanames[i] << endl;
-      }
-    } else {
-      for (int i = 0; i < ir.nareas; i++) {
-        std::ostringstream osstream;
-        osstream << i;
-        std::string string_x = osstream.str();
-        config.areanamemap[string_x] = i;
-        areanamemaprev[i] = string_x;
-      }
-    }
 
     for (unsigned int i = 0; i < intrees.size(); i++) {
       handle_tree(intrees[i], data, config);

@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "Common.h"
 #include "Operation.h"
 #include "node.h"
 
@@ -86,6 +87,17 @@ class Tree {
 
   void setHeightFromRootToNodes();
   void setHeightFromTipToNodes();
+
+  std::string getNewick() const;
+  std::string getNewickLambda(
+      const std::function<string(const Node &)> &newick_lambda) const;
+
+  void setStateStrings(const std::vector<size_t> &id_map,
+                       const std::vector<lagrange_col_vector_t> &dist_lhs,
+                       const std::vector<std::string> &names);
+  void setSplitStrings(const std::vector<size_t> &id_map,
+                       const std::vector<lagrange_col_vector_t> &dist_lhs,
+                       const std::vector<std::string> &names);
 
   ~Tree();
 };

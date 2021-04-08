@@ -347,3 +347,22 @@ void Tree::assignTipData(
     const std::unordered_map<std::string, lagrange_dist_t> &dist_data) {
   _root->assignTipData(ws, dist_data);
 }
+
+std::string Tree::getNewick() const { return _root->getNewick(); }
+
+std::string Tree::getNewickLambda(
+    const std::function<string(const Node &)> &newick_lambda) const {
+  return _root->getNewickLambda(newick_lambda);
+}
+
+void Tree::setStateStrings(const std::vector<size_t> &id_map,
+                           const std::vector<lagrange_col_vector_t> &dist_lhs,
+                           const std::vector<std::string> &names) {
+  _root->setStateStringRecursive(id_map, dist_lhs, names);
+}
+
+void Tree::setSplitStrings(const std::vector<size_t> &id_map,
+                           const std::vector<lagrange_col_vector_t> &dist_lhs,
+                           const std::vector<std::string> &names) {
+  _root->setSplitStringRecursive(id_map, dist_lhs, names);
+}

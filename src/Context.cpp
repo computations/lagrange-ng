@@ -1,4 +1,5 @@
 #include <cmath>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <nlopt.hpp>
@@ -6,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "AncSplit.h"
 #include "Common.h"
 #include "Context.h"
 #include "Workspace.h"
@@ -152,6 +154,17 @@ std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
   }
 
   return states;
+}
+
+lagrange_split_goal_return_t Context::computeSplitGoal() {
+  computeBackwardOperations();
+  std::vector<std::unordered_map<lagrange_dist_t, std::vector<AncSplit>>>
+      splits;
+  splits.reserve(_split_lh_goal.size());
+  for (auto& op : _split_lh_goal) {
+    splits.push_back(op.eval(_workspace));
+  }
+  return splits;
 }
 
 period_t Context::currentParams() const {

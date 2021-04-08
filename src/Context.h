@@ -9,12 +9,17 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
 #include "Workspace.h"
 #include "tree.h"
+
+typedef std::vector<std::unordered_map<lagrange_dist_t, std::vector<AncSplit>>>
+    lagrange_split_goal_return_t;
 
 class Context {
  public:
@@ -31,6 +36,7 @@ class Context {
 
   double computeLHGoal();
   std::vector<lagrange_col_vector_t> computeStateGoal();
+  lagrange_split_goal_return_t computeSplitGoal();
 
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);

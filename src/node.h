@@ -106,17 +106,24 @@ class Node {
   bool removeChild(std::shared_ptr<Node> c);
   std::shared_ptr<Node> getChild(int c) const;
 
-  string getName();
-  string getComment();
+  string getName() const;
+  string getComment() const;
   void setName(const string &s);
   void setComment(const string &s);
 
-  string getNewick(bool bl) const;
-  string getNewick(bool branch_lengths,
-                   const std::function<string(const Node &)> &) const;
+  string getNewick() const;
   string getNewickLambda(const std::function<string(const Node &)> &) const;
 
   int getChildCount() const;
+
+  void setSplitStringRecursive(
+      const std::vector<size_t> &id_map,
+      const std::vector<lagrange_col_vector_t> &dist_lhs,
+      const std::vector<std::string> &names);
+  void setStateStringRecursive(
+      const std::vector<size_t> &id_map,
+      const std::vector<lagrange_col_vector_t> &dist_lhs,
+      const std::vector<std::string> &names);
 
   void setSplitString(const string &splitstring);
   void setStateString(const string &splitstring);

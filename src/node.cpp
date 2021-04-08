@@ -89,72 +89,29 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
 
 std::shared_ptr<Node> Node::getChild(int c) const { return _children.at(c); }
 
-string Node::getName() { return _label; }
+string Node::getName() const { return _label; }
 
 void Node::setName(const string &s) { _label = s; }
 
-string Node::getComment() { return _comment; }
+string Node::getComment() const { return _comment; }
 
 void Node::setComment(const string &s) { _comment = s; }
 
-string Node::getNewick(bool branch_lengths) const {
-  std::ostringstream newick_oss;
-  for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0) {
-      newick_oss << "(";
-    }
-    newick_oss << getChild(i)->getNewick(branch_lengths);
-    if (branch_lengths == true) {
-      newick_oss << ":" << getChild(i)->getBL();
-    }
-    if (i == getChildCount() - 1) {
-      newick_oss << ")";
-    } else {
-      newick_oss << ",";
-    }
-  }
-  if (_label.size() > 0) {
-    newick_oss << _label;
-  }
-  return newick_oss.str();
-}
+string Node::getNewick() const {
+  static auto newick_lambda = [](const Node &n) { return n.getName(); };
 
-string Node::getNewick(
-    bool branch_lengths,
-    const std::function<string(const Node &)> &node_lambda) const {
-  std::ostringstream newick_oss;
-  for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0) {
-      newick_oss << "(";
-    }
-    newick_oss << getChild(i)->getNewick(branch_lengths, node_lambda);
-    if (branch_lengths == true) {
-      newick_oss << ":" << getChild(i)->getBL();
-    }
-    if (i == getChildCount() - 1) {
-      newick_oss << ")";
-    } else {
-      newick_oss << ",";
-    }
-  }
-  if (isInternal() == true) {
-    newick_oss << node_lambda(*this);
-  } else {  // EXTERNAL
-    if (_label.size() > 0) newick_oss << _label;
-  }
-  return newick_oss.str();
+  return getNewickLambda(newick_lambda);
 }
 
 string Node::getNewickLambda(
-    const std::function<string(const Node &)> &length_lambda) const {
+    const std::function<string(const Node &)> &newick_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) {
       newick_oss << "(";
     }
 
-    newick_oss << getChild(i)->getNewickLambda(length_lambda);
-    newick_oss << length_lambda(*this);
+    newick_oss << getChild(i)->getNewickLambda(newick_lambda);
 
     if (i == getChildCount() - 1) {
       newick_oss << ")";
@@ -162,9 +119,7 @@ string Node::getNewickLambda(
       newick_oss << ",";
     }
   }
-  if (_label.size() > 0) {
-    newick_oss << _label;
-  }
+  newick_oss << newick_lambda(*this);
   return newick_oss.str();
 }
 
@@ -451,3 +406,35 @@ void Node::assignId() {
 }
 
 size_t Node::getId() const { return _id; }
+
+void Node::setSplitStringRecursive(
+    const std::vector<size_t> &id_map,
+    const std::vector<lagrange_col_vector_t> &dist_lhs,
+    const std::vector<std::string> &names) {
+  if (isExternal()) {
+    return;
+  }
+
+  lagrange_dist_t best_dist =
+      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
+  _split_string = lagrange_convert_dist_string(best_dist, names);
+  for (auto &c : _children) {
+    c->setSplitStringRecursive(id_map, dist_lhs, names);
+  }
+}
+
+void Node::setStateStringRecursive(
+    const std::vector<size_t> &id_map,
+    const std::vector<lagrange_col_vector_t> &dist_lhs,
+    const std::vector<std::string> &names) {
+  if (isExternal()) {
+    return;
+  }
+
+  lagrange_dist_t best_dist =
+      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
+  _state_string = lagrange_convert_dist_string(best_dist, names);
+  for (auto &c : _children) {
+    c->setStateStringRecursive(id_map, dist_lhs, names);
+  }
+}
