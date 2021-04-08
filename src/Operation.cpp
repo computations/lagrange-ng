@@ -4,11 +4,6 @@
  * 2020-10-27
  */
 
-#include <blaze/Math.h>
-#include <blaze/math/DynamicMatrix.h>
-#include <blaze/math/DynamicVector.h>
-#include <blaze/math/IdentityMatrix.h>
-
 #include <array>
 #include <cstddef>
 #include <iomanip>
@@ -282,23 +277,12 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
 
   for (int i = 2; i <= q;) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
+
     X_1 = A * X_2;
-
-    // N += c * X_1;
-    for (size_t j = 0; j < rows; ++j) {
-      for (size_t k = 0; k < rows; k++) {
-        N(j, k) += c * X_1(j, k);
-      }
-    }
-
+    N += c * X_1;
     sign *= -1.0;
+    D += sign * c * X_1;
 
-    // D += sign * c * X_1;
-    for (size_t j = 0; j < rows; ++j) {
-      for (size_t k = 0; k < rows; k++) {
-        D(j, k) += sign * c * X_1(j, k);
-      }
-    }
     i += 1;
 
     if (i > q) {
@@ -307,33 +291,27 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
 
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     X_2 = A * X_1;
-    // N += c * X_2;
-    for (size_t j = 0; j < rows; ++j) {
-      for (size_t k = 0; k < rows; k++) {
-        N(j, k) += c * X_2(j, k);
-      }
-    }
+    N += c * X_2;
     sign *= -1.0;
-    // D += sign * c * X_2;
-    for (size_t j = 0; j < rows; ++j) {
-      for (size_t k = 0; k < rows; k++) {
-        D(j, k) += sign * c * X_2(j, k);
-      }
-    }
+    D += sign * c * X_2;
+
     i += 1;
   }
 
-  A = blaze::solve(D, N);
+  X_1 = blaze::solve(D, N);
+  auto &rX_1 = X_1;
+  auto &rX_2 = X_2;
   for (int i = 0; i < scale_exp; ++i) {
-    A *= A;
+    rX_2 = rX_1 * rX_1;
+    std::swap(rX_1, rX_2);
   }
 
   if (_transposed) {
-    A = blaze::trans(A);
-    blaze::row(A, 0) = 0.0;
-    A(0, 0) = 1.0;
+    blaze::transpose(X_1);
+    blaze::row(X_1, 0) = 0.0;
+    X_1(0, 0) = 1.0;
   }
-  ws->update_prob_matrix(_prob_matrix_index, A);
+  ws->update_prob_matrix(_prob_matrix_index, X_1);
   _last_execution = ws->advance_clock();
 }
 
