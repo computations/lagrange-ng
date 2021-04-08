@@ -6,6 +6,7 @@ set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 link_directories(/usr/local/lib)
+find_package(OpenMP)
 
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
@@ -22,9 +23,10 @@ set(LAGRANGE_SOURCES
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION
-    -DBLAZE_BLAS_MODE=1 -DBLAZE_BLAS_IS_64BIT=1 -DBLAZE_BLAS_IS_PARALLEL=1
-    )
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
+
+set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
 
 #set(LINALG_LIBS gsl cblas lapack)
@@ -38,17 +40,15 @@ add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 add_subdirectory(deps)
 
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
-    -fno-omit-frame-pointer
     ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
     ${OpenBLAS_INCLUDE_DIRS})
 target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
-    ${OpenBLAS_LIB} pthread)
+    ${OpenBLAS_LIB} pthread OpenMP::OpenMP_CXX)
 
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
-    nlohmann_json::nlohmann_json)
+    nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
-    -fno-omit-frame-pointer
     ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES}
     ${OpenBLAS_INCLUDE_DIRS})

@@ -346,9 +346,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  blaze::setNumThreads(1);
-  openblas_set_num_threads(1);
-  goto_set_num_threads(1);
+  blaze::setNumThreads(4);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

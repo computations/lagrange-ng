@@ -26,6 +26,7 @@ Blaze_Import(
 )
 
 # OpenBLAS third
+
 find_package(BLAS)
 find_package(LAPACK)
 if(${LAPACK_FOUND} AND ${BLAS_FOUND})
@@ -43,7 +44,7 @@ else()
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND make USE_THREAD=0 USE_LOCKING=0
+        BUILD_COMMAND make USE_OPENMP=1 USE_THREAD=1
         BUILD_IN_SOURCE TRUE
         INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
     )
