@@ -9,7 +9,7 @@
 #define BLAZE_BLAS_MODE 1
 #define BLAZE_BLAS_IS_64BIT 1
 #define BLAZE_BLAS_IS_PARALLEL 1
-#define BLAZE_BLAS_INCLUDE_FILE <cblas.h>
+#define BLAZE_BLAS_INCLUDE_FILE "cblas.h"
 #define BLAZE_USE_OPENMP 1
 
 #include <blaze/Blaze.h>
