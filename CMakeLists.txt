@@ -2,10 +2,9 @@ cmake_minimum_required(VERSION 3.13)
 project(lagrange-cpp)
 set(CMAKE_CXX_STANDARD 14)
 
-set(INCLUDE_DIRS /usr/local/include src ${ARMADILLO_INCLUDES})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-link_directories(/usr/local/lib)
+find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(OpenMP)
 
 set(LAGRANGE_SOURCES
@@ -26,32 +25,20 @@ set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
 
-set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION)
-list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
-
-#set(LINALG_LIBS gsl cblas lapack)
-set(OPT_LIBS nlopt)
-set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
-
-
-add_executable(lagrange src/main.cpp)
-add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
-
 add_subdirectory(deps)
 
-target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
-    ${WARNING_FLAGS})
-target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
-    ${OpenBLAS_INCLUDE_DIRS})
-target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
-    ${OpenBLAS_LIB} pthread OpenMP::OpenMP_CXX)
+add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
+add_executable(lagrange src/main.cpp)
 
-target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
-    nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)
-target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
-    ${WARNING_FLAGS})
-target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES}
-    ${OpenBLAS_INCLUDE_DIRS})
+target_compile_options(lagrange-release-libs PRIVATE ${WARNING_FLAGS})
+target_include_directories(lagrange-release-libs PRIVATE)
+target_link_libraries(lagrange-release-libs PRIVATE nlopt Eigen3::Eigen 
+    OpenMP::OpenMP_CXX nlohmann_json::nlohmann_json)
+
+target_compile_options(lagrange PRIVATE ${WARNING_FLAGS})
+target_include_directories(lagrange PRIVATE)
+target_link_libraries(lagrange PRIVATE lagrange-release-libs 
+    nlopt Eigen3::Eigen OpenMP::OpenMP_CXX nlohmann_json::nlohmann_json)
 
 
 add_subdirectory(tests)

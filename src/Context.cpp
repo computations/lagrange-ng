@@ -53,12 +53,14 @@ void Context::init() {
   updateRates({0.01, 0.01});
 
   for (auto& goal : _llh_goal) {
-    _workspace->get_base_frequencies(goal._prior_index) = 1.0;
+    _workspace->get_base_frequencies(goal._prior_index) =
+        lagrange_col_vector_t::Ones(_workspace->states());
   }
 
   if (_reverse_operations.size() != 0) {
     size_t prior_index = _reverse_operations.begin()->getStableCLV();
-    _workspace->clv(prior_index) = 1.0;
+    _workspace->clv(prior_index) =
+        lagrange_col_vector_t::Ones(_workspace->states());
   }
 }
 

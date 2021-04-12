@@ -21,12 +21,10 @@ class TreeTest : public ::testing::Test {
     _basic_tree_dist_data = {{"a", 0b01}, {"b", 0b11}, {"c", 0b01}};
     _basic_ws = std::make_shared<Workspace>(/*taxa=*/3,
                                             /*regions=*/2);
-    _arbitrary_rate_matrix = {
-        {0.00000, 0.00000, 0.00000, 0.00000},
-        {0.08851, -1.71766, 0.00000, 1.62915},
-        {0.75966, 0.00000, -0.81937, 0.05971},
-        {0.00000, 0.37406, 1.26782, -1.64188},
-    };
+    _arbitrary_rate_matrix = lagrange_matrix_t(4, 4);
+    _arbitrary_rate_matrix << 0.00000, 0.00000, 0.00000, 0.00000, 0.08851,
+        -1.71766, 0.00000, 1.62915, 0.75966, 0.00000, -0.81937, 0.05971,
+        0.00000, 0.37406, 1.26782, -1.64188;
 
     _rate_matrix_op =
         std::make_shared<MakeRateMatrixOperation>(_rate_matrix_index);

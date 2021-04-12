@@ -11,37 +11,28 @@
 class OperationTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    _arbitrary_rate_matrix = {
-        {-2.426898, 1.094290, 0.849836, 0.482772},
-        {0.088512, -1.800944, 0.083282, 1.629150},
-        {0.759663, 0.547961, -1.367337, 0.059712},
-        {0.360901, 0.374056, 1.267820, -2.002777},
-    };
+    _arbitrary_rate_matrix = lagrange_matrix_t(4, 4);
+    _arbitrary_rate_matrix << -2.426898, 1.094290, 0.849836, 0.482772, 0.088512,
+        -1.800944, 0.083282, 1.629150, 0.759663, 0.547961, -1.367337, 0.059712,
+        0.360901, 0.374056, 1.267820, -2.002777;
 
-    _correct_prob_matrix = {
-        {0.1949195896, 0.2632718648, 0.3005026902, 0.24130565},
-        {0.110711104, 0.3018364877, 0.2646053177, 0.3228469542},
-        {0.1710689037, 0.2362891503, 0.4115737324, 0.1810676026},
-        {0.1494294987, 0.21110698, 0.3574843286, 0.2819789219},
-    };
+    _correct_prob_matrix = lagrange_matrix_t(4, 4);
+    _correct_prob_matrix << 0.1949195896, 0.2632718648, 0.3005026902,
+        0.24130565, 0.110711104, 0.3018364877, 0.2646053177, 0.3228469542,
+        0.1710689037, 0.2362891503, 0.4115737324, 0.1810676026, 0.1494294987,
+        0.21110698, 0.3574843286, 0.2819789219;
 
-    _correct_root_clv = {0, 0.04839594797, 0.06003722477, 0.05381024353};
+    _correct_root_clv = lagrange_col_vector_t(4);
+    _correct_root_clv << 0, 0.04839594797, 0.06003722477, 0.05381024353;
 
-    _correct_reverse_bot_clv = {0, 0.04898326741, 0.04287039582, 0.01129551391};
+    _correct_reverse_bot_clv = lagrange_col_vector_t(4);
+    _correct_reverse_bot_clv << 0, 0.04898326741, 0.04287039582, 0.01129551391;
 
-    _arbitrary_clv1 = {
-        0.491885,
-        0.180252,
-        0.136036,
-        0.191827,
-    };
+    _arbitrary_clv1 = lagrange_col_vector_t(4);
+    _arbitrary_clv1 << 0.491885, 0.180252, 0.136036, 0.191827;
 
-    _arbitrary_clv2 = {
-        0.2921,
-        0.297896,
-        0.353511,
-        0.0564923,
-    };
+    _arbitrary_clv2 = lagrange_col_vector_t(4);
+    _arbitrary_clv2 << 0.2921, 0.297896, 0.353511, 0.0564923;
 
     _ws = std::make_shared<Workspace>(_taxa, _regions);
 
@@ -62,9 +53,9 @@ class OperationTest : public ::testing::Test {
 
     _ws->clv(_rbot_clv) = _arbitrary_clv1;
     _ws->clv(_lbot_clv) = _arbitrary_clv2;
-    _ws->clv(_root_clv) = {0, 0, 0, 0};
+    _ws->clv(_root_clv) << 0, 0, 0, 0;
 
-    _ws->clv(_reverse_bot_clv) = {0, 0, 0, 0};
+    _ws->clv(_reverse_bot_clv) << 0, 0, 0, 0;
     _ws->clv(_reverse_lbot_clv) = _arbitrary_clv1;
     _ws->set_period_params(0, .3123, 1.1231);
 
@@ -110,7 +101,7 @@ TEST_F(OperationTest, ExpmSimple1) {
   expm_op.eval(_ws);
 
   auto diff = _ws->prob_matrix(_prob_matrix) - _correct_prob_matrix;
-  double error = blaze::norm(diff);
+  double error = diff.norm();
   EXPECT_NEAR(error, 0.0, 1e-7);
 }
 
@@ -126,8 +117,7 @@ TEST_F(OperationTest, DispersionSimple1) {
   DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
   disp_op.eval(_ws);
 
-  double error =
-      blaze::norm(_ws->prob_matrix(_prob_matrix) - _correct_prob_matrix);
+  double error = (_ws->prob_matrix(_prob_matrix) - _correct_prob_matrix).norm();
   EXPECT_NEAR(error, 0.0, 1e-7);
 }
 
@@ -138,14 +128,13 @@ TEST_F(OperationTest, DispersionSimple2) {
   DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
   disp_op.eval(_ws);
 
-  double error =
-      blaze::norm(_ws->prob_matrix(_prob_matrix) - _correct_prob_matrix);
+  double error = (_ws->prob_matrix(_prob_matrix) - _correct_prob_matrix).norm();
   EXPECT_NEAR(error, 0.0, 1e-7);
 
-  lagrange_col_vector_t correct_clv = {0.2305014254, 0.2067903737, 0.2174603189,
-                                       0.2142764931};
+  lagrange_col_vector_t correct_clv(4);
+  correct_clv << 0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931;
 
-  error = blaze::norm(_ws->clv(_rtop_clv) - correct_clv);
+  error = (_ws->clv(_rtop_clv) - correct_clv).norm();
 
   EXPECT_NEAR(error, 0.0, 1e-7);
 }
@@ -157,7 +146,7 @@ TEST_F(OperationTest, SplitSimple0) {
   split_op.eval(_ws);
 
   auto &root_clv = _ws->clv(_root_clv);
-  double error = blaze::norm(root_clv - _correct_root_clv);
+  double error = (root_clv - _correct_root_clv).norm();
   EXPECT_NEAR(error, 0.0, 1e-4);
 }
 
@@ -166,12 +155,13 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
                                   _rbot_clv, _rate_matrix_op, _prob_matrix,
                                   _reverse_lbot_clv, _t);
 
-  _ws->clv(_reverse_ltop_clv) = 0.0;
+  _ws->clv(_reverse_ltop_clv) =
+      lagrange_col_vector_t::Zero(_ws->clv(_reverse_ltop_clv).size());
 
   rsplit_op.eval(_ws);
 
   auto &root_clv = _ws->clv(_reverse_bot_clv);
-  double error = blaze::norm(root_clv - _correct_reverse_bot_clv);
+  double error = (root_clv - _correct_reverse_bot_clv).norm();
   EXPECT_NEAR(error, 0.0, 1e-4);
 }
 

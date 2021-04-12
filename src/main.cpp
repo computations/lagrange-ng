@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <eigen3/Eigen/Core>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -77,9 +78,16 @@ struct config_options_t {
 
 lagrange_col_vector_t normalizeStateDistrubtionByLWR(
     const lagrange_col_vector_t &states) {
-  double max_llh = blaze::max(states);
-  double total_llh = blaze::sum(blaze::exp(states - max_llh));
-  return blaze::exp(states - max_llh) / total_llh;
+  auto normalized_states = states;
+  double max_llh = states.maxCoeff();
+
+  normalized_states.array() - max_llh;
+  normalized_states.array().exp();
+
+  double total_llh = normalized_states.sum();
+  normalized_states.array() / total_llh;
+
+  return normalized_states;
 }
 
 std::vector<std::string> grab_token(const std::string &token,
@@ -269,7 +277,8 @@ nlohmann::json makeStateJsonOutput(
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
     auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
-    for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
+    for (size_t dist = 0; dist < static_cast<size_t>(state_distribution.size());
+         ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
       tmp["llh"] = state_distribution[dist];
@@ -368,7 +377,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  blaze::setNumThreads(1);
+  Eigen::setNbThreads(4);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

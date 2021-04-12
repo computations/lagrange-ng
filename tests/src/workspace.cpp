@@ -15,12 +15,12 @@ TEST(Workspace, simple0) {
 
   EXPECT_EQ(ws.rate_matrix_count(), 1);
   EXPECT_EQ(ws.rate_matrix(0).rows(), states);
-  EXPECT_EQ(ws.rate_matrix(0).columns(), states);
+  EXPECT_EQ(ws.rate_matrix(0).cols(), states);
   EXPECT_THROW(ws.rate_matrix(1), std::runtime_error);
 
   EXPECT_EQ(ws.rate_matrix_count(), 1);
   EXPECT_EQ(ws.prob_matrix(0).rows(), states);
-  EXPECT_EQ(ws.prob_matrix(0).columns(), states);
+  EXPECT_EQ(ws.prob_matrix(0).cols(), states);
   EXPECT_THROW(ws.prob_matrix(1), std::runtime_error);
 }
 
@@ -45,6 +45,6 @@ TEST(Workspace, setters) {
   auto ws = Workspace(10, regions);
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
-  ws.get_base_frequencies(0) = 1.0;
+  ws.get_base_frequencies(0) = lagrange_col_vector_t::Ones(states);
   EXPECT_EQ(ws.get_base_frequencies(0)[0], 1.0);
 }

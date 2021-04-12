@@ -57,7 +57,8 @@ inline lagrange_dist_t lagrange_compute_best_dist(
     const lagrange_col_vector_t &dist_lhs) {
   lagrange_dist_t best_dist = 0;
   double best_lh = dist_lhs[0];
-  for (lagrange_dist_t i = 1; i < dist_lhs.size(); i++) {
+  for (lagrange_dist_t i = 1; i < static_cast<unsigned long>(dist_lhs.size());
+       i++) {
     if (best_lh < dist_lhs[i]) {
       best_dist = i;
       best_lh = dist_lhs[i];

@@ -63,7 +63,7 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
 
   size_t idx_excl = 0;
 
-  dest = 0.0;
+  dest = lagrange_col_vector_t::Zero(dest.size());
 
   scale_count = c1_scale + c2_scale;
   bool scale = true;
@@ -107,7 +107,7 @@ inline void reverse_weighted_combine(
 
   size_t idx_excl = 0;
 
-  dest = 0.0;
+  dest = lagrange_col_vector_t::Zero(dest.size());
 
   for (size_t i = 0; i < states; i++) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
@@ -168,7 +168,7 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
     return;
   }
   auto &rm = ws->rate_matrix(_rate_matrix_index);
-  rm = 0.0;
+  rm = lagrange_matrix_t::Zero(rm.rows(), rm.cols());
   auto &period = ws->get_period_params(_period_index);
   for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
     for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
@@ -187,9 +187,9 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
     }
   }
 
-  for (size_t i = 0; i < rm.rows(); i++) {
+  for (size_t i = 0; i < static_cast<size_t>(rm.rows()); i++) {
     double sum = 0;
-    for (size_t j = 0; j < rm.columns(); j++) {
+    for (size_t j = 0; j < static_cast<size_t>(rm.cols()); j++) {
       sum += rm(i, j);
     }
     rm(i, i) = -sum;
@@ -208,8 +208,8 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   auto &rm = ws->rate_matrix(_rate_matrix_index);
 
-  for (size_t i = 0; i < rm.rows(); ++i) {
-    auto row = blaze::row(rm, i);
+  for (size_t i = 0; i < static_cast<size_t>(rm.rows()); ++i) {
+    auto row = rm.row(i);
     os << tabs << std::setprecision(10) << row;
   }
 
@@ -239,8 +239,8 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   size_t rows = A.rows();
   // We place an arbitrary limit on the size of scale exp because if it is too
   // large we run into numerical issues.
-  int scale_exp =
-      std::min(30, std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t)));
+  int At_norm = A.rowwise().lpNorm<1>().maxCoeff() * _t;
+  int scale_exp = std::min(30, std::max(0, 1 + At_norm));
   A /= std::pow(2.0, scale_exp) / _t;
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
@@ -248,7 +248,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   constexpr int q = 3;
   double c = 0.5;
   double sign = -1.0;
-  blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
+  lagrange_matrix_t I = lagrange_matrix_t::Identity(rows, rows);
 
 #if 0
   lagrange_matrix_t X = A;
@@ -298,7 +298,8 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     i += 1;
   }
 
-  X_1 = blaze::solve(D, N);
+  // X_1 = blaze::solve(D, N);
+  X_1 = D.colPivHouseholderQr().solve(N);
   auto &rX_1 = X_1;
   auto &rX_2 = X_2;
   for (int i = 0; i < scale_exp; ++i) {
@@ -307,8 +308,9 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   }
 
   if (_transposed) {
-    blaze::transpose(X_1);
-    blaze::row(X_1, 0) = 0.0;
+    X_1.transposeInPlace();
+    X_1.row(0) = lagrange_col_vector_t::Zero(rows);
+
     X_1(0, 0) = 1.0;
   }
   ws->update_prob_matrix(_prob_matrix_index, X_1);
@@ -326,8 +328,8 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   auto &pm = ws->prob_matrix(_prob_matrix_index);
 
-  for (size_t i = 0; i < pm.rows(); ++i) {
-    auto row = blaze::row(pm, i);
+  for (size_t i = 0; i < static_cast<size_t>(pm.rows()); ++i) {
+    decltype(auto) row = pm.row(i);
     os << tabs << std::setprecision(10) << row;
   }
 
@@ -337,8 +339,8 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
   } else {
     auto &rm = ws->rate_matrix(_rate_matrix_index);
-    for (size_t i = 0; i < rm.rows(); ++i) {
-      auto row = blaze::row(rm, i);
+    for (size_t i = 0; i < static_cast<size_t>(rm.rows()); ++i) {
+      decltype(auto) row = rm.row(i);
       os << tabs << std::setprecision(10) << row;
     }
   }
@@ -369,9 +371,9 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << opening_line(tabs) << "\n";
   os << tabs << "DispersionOperation:\n";
   os << tabs << "Top clv (index: " << _top_clv << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_top_clv));
+     << ws->clv(_top_clv).transpose();
   os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_bot_clv));
+     << ws->clv(_bot_clv).transpose();
 
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
@@ -416,15 +418,15 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_lbranch_clv_index)
      << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_lbranch_clv_index));
+     << ws->clv(_lbranch_clv_index).transpose();
   os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_rbranch_clv_index)
      << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_rbranch_clv_index));
+     << ws->clv(_rbranch_clv_index).transpose();
   os << tabs << "Parent clv (index: " << _parent_clv_index
      << ", scalar: " << ws->clv_scalar(_parent_clv_index)
      << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_parent_clv_index));
+     << ws->clv(_parent_clv_index).transpose();
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -478,13 +480,11 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ReverseSplitOperation:\n";
 
   os << tabs << "Bot clv (index: " << _bot_clv_index
-     << "): " << std::setprecision(10) << blaze::trans(ws->clv(_bot_clv_index));
+     << "): " << std::setprecision(10) << ws->clv(_bot_clv_index).transpose();
   os << tabs << "Ltop clv (index: " << _ltop_clv_index
-     << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_ltop_clv_index));
+     << "): " << std::setprecision(10) << ws->clv(_ltop_clv_index).transpose();
   os << tabs << "Rtop clv (index: " << _rtop_clv_index
-     << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_rtop_clv_index));
+     << "): " << std::setprecision(10) << ws->clv(_rtop_clv_index).transpose();
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -513,15 +513,14 @@ std::string ReverseSplitOperation::printStatus(
 }
 
 double LLHGoal::eval(std::shared_ptr<Workspace> ws) const {
-  return std::log(blaze::dot(ws->clv(_root_clv_index),
-                             ws->get_base_frequencies(_prior_index))) -
+  return std::log(ws->clv(_root_clv_index)
+                      .dot(ws->get_base_frequencies(_prior_index))) -
          lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
-  // return blaze::sum(ws->clv(_root_clv_index));
 }
 
 lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
-  lagrange_col_vector_t tmp(ws->states());
-  tmp = 0.0;
+  lagrange_col_vector_t tmp = lagrange_col_vector_t::Zero(ws->states());
+
   size_t tmp_scalar = 0;
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
                    /*excl_dists=*/{}, tmp, ws->clv_scalar(_lchild_clv_index),
@@ -529,8 +528,10 @@ lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 
-  return blaze::log(ws->clv(_parent_clv_index) * tmp) -
-         tmp_scalar * lagrange_scaling_factor_log;
+  tmp.array() *= ws->clv(_parent_clv_index).array();
+  tmp.array().log();
+
+  return tmp.array() - tmp_scalar * lagrange_scaling_factor_log;
 }
 
 std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
