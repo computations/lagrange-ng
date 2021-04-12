@@ -356,7 +356,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   auto idtoStateGoalIndexMap = std::vector<size_t>();
   idtoStateGoalIndexMap.resize(stateGoalIndexToIdMap.size() + 1);
 
-  for (size_t i = 0; i < idtoStateGoalIndexMap.size(); ++i) {
+  for (size_t i = 0; i < stateGoalIndexToIdMap.size(); ++i) {
     size_t number = stateGoalIndexToIdMap[i];
     idtoStateGoalIndexMap[number] = i;
   }
