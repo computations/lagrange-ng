@@ -13,19 +13,22 @@
 #include <string.h>
 
 #include <chrono>
+#include <cstddef>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "Common.h"
-#include "cblas.h"
+#include "blis/blis.h"
 #include "nlohmann/json.hpp"
 
 using namespace std;
@@ -77,9 +80,36 @@ struct config_options_t {
 
 lagrange_col_vector_t normalizeStateDistrubtionByLWR(
     const lagrange_col_vector_t &states) {
-  double max_llh = blaze::max(states);
-  double total_llh = blaze::sum(blaze::exp(states - max_llh));
-  return blaze::exp(states - max_llh) / total_llh;
+  lagrange_col_vector_t normalized_states = new lagrange_matrix_base_t;
+
+  bli_obj_create_conf_to(states, normalized_states);
+  bli_copyv(states, normalized_states);
+
+  double max_llh = -std::numeric_limits<double>::infinity();
+  size_t states_size = bli_obj_width(normalized_states);
+
+  if (states_size == 1) {
+    throw std::runtime_error{"YOU FUCKED UP BEN"};
+  }
+
+  for (size_t i = 0; i < states_size; ++i) {
+    double tmp = bli_getiv_real(normalized_states, i);
+    max_llh = std::max(max_llh, tmp);
+  }
+
+  double total_llh = 0.0;
+  for (size_t i = 0; i < states_size; i++) {
+    total_llh += std::exp(bli_getiv_real(normalized_states, i) - max_llh);
+  }
+
+  for (size_t i = 0; i < states_size; i++) {
+    bli_setiv_real(
+        normalized_states,
+        std::exp(bli_getiv_real(normalized_states, i) - max_llh) / total_llh,
+        i);
+  }
+
+  return normalized_states;
 }
 
 std::vector<std::string> grab_token(const std::string &token,
@@ -269,11 +299,12 @@ nlohmann::json makeStateJsonOutput(
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
     auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
-    for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
+    size_t state_distribution_size = bli_obj_width(state_distribution);
+    for (size_t dist = 0; dist < state_distribution_size; ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      tmp["llh"] = state_distribution[dist];
-      tmp["ratio"] = lwr_distribution[dist];
+      tmp["llh"] = bli_getiv_real(state_distribution, dist);
+      tmp["ratio"] = bli_getiv_real(lwr_distribution, dist);
       node_json["states"].push_back(tmp);
     }
     states_json.push_back(node_json);
@@ -363,13 +394,12 @@ void handle_tree(std::shared_ptr<Tree> intree,
   }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
-  writeResultTree(config, intree);
+  // writeResultTree(config, intree);
 }
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  // blaze::setNumThreads(1);
-  omp_set_num_threads(4);
+  bli_thread_set_num_threads(4);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

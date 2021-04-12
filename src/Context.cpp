@@ -51,15 +51,14 @@ void Context::updateRates(const period_t& params) {
 void Context::init() {
   _workspace->reserve();
   updateRates({0.01, 0.01});
-
-  for (auto& goal : _llh_goal) {
-    _workspace->get_base_frequencies(goal._prior_index) = 1.0;
-  }
+  obj_t one;
+  bli_obj_create_1x1(BLIS_DOUBLE, &one);
 
   if (_reverse_operations.size() != 0) {
     size_t prior_index = _reverse_operations.begin()->getStableCLV();
-    _workspace->clv(prior_index) = 1.0;
+    bli_setv(&one, _workspace->clv(prior_index));
   }
+  bli_obj_free(&one);
 }
 
 void Context::registerTipClvs(

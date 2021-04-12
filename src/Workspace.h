@@ -17,7 +17,7 @@
 #include "Common.h"
 
 struct matrix_reservation_t {
-  lagrange_matrix_t *_matrix = nullptr;
+  lagrange_matrix_t _matrix = nullptr;
   lagrange_clock_t _last_update;
   lagrange_op_id_t _op_id;
 };
@@ -38,6 +38,8 @@ class Workspace {
         _clv_stride{1},
         _clvs{nullptr},
         _clv_scalars{nullptr},
+        _lapack_workspace_buffer{nullptr},
+        _lapack_piv_buffer{nullptr},
         _node_reservations{node_count()},
         _periods{1},
         _current_clock{0},
@@ -65,24 +67,24 @@ class Workspace {
     if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range"};
     }
-    return *_rate_matrix[i]._matrix;
+    return _rate_matrix[i]._matrix;
   }
 
-  inline void update_rate_matrix(size_t i, const lagrange_matrix_t &A) {
+  inline lagrange_clock_t update_rate_matrix(size_t i,
+                                             const lagrange_matrix_t &A) {
     if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range when updating"};
     }
 
-    _rate_matrix[i]._last_update = advance_clock();
-
-    *_rate_matrix[i]._matrix = A;
+    bli_copym(A, _rate_matrix[i]._matrix);
+    return _rate_matrix[i]._last_update = advance_clock();
   }
 
   inline lagrange_matrix_t &prob_matrix(size_t i) {
     if (i >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range"};
     }
-    return *_prob_matrix[i]._matrix;
+    return _prob_matrix[i]._matrix;
   }
 
   inline lagrange_clock_t update_prob_matrix(size_t i,
@@ -91,7 +93,7 @@ class Workspace {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
 
-    *_prob_matrix[i]._matrix = A;
+    bli_copym(A, _prob_matrix[i]._matrix);
     return _prob_matrix[i]._last_update = advance_clock();
   }
 
@@ -175,6 +177,14 @@ class Workspace {
 
   std::string report_node_vecs(size_t node_id) const;
 
+  inline size_t compute_matrix_index(size_t i, size_t j) {
+    return i * states() + j;
+  }
+
+  inline double *workspace_buffer() { return _lapack_workspace_buffer; }
+
+  inline int *ipiv_buffer() { return _lapack_piv_buffer; }
+
  private:
   inline size_t register_clv() { return _next_free_clv++; }
 
@@ -193,6 +203,9 @@ class Workspace {
   size_t _clv_stride;
   lagrange_col_vector_t *_clvs;
   size_t *_clv_scalars;
+
+  double *_lapack_workspace_buffer;
+  int *_lapack_piv_buffer;
 
   std::vector<node_reservation_t> _node_reservations;
 

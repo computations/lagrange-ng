@@ -54,14 +54,13 @@ Blaze_Import(
   #    add_dependencies(lagrange-release-libs OpenBLAS)
   #    add_dependencies(lagrange OpenBLAS)
   set(BLAS_LIBS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/blas)
-  set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INSTALL_PREFIX}/blis/include PARENT_SCOPE)
+  set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INSTALL_PREFIX}/include PARENT_SCOPE)
   set(BLAS_LIBS_BINARY ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.a PARENT_SCOPE)
   ExternalProject_Add(blis
       GIT_REPOSITORY https://github.com/flame/blis
-      GIT_TAG 0.8.1
-      GIT_SHALLOW TRUE
       GIT_PROGRESS TRUE
-      CONFIGURE_COMMAND ./configure --prefix=${BLAS_LIBS_INSTALL_PREFIX} --enable-cblas --disable-shared --enable-threading=openmp haswell
+      GIT_TAG 0.6.0
+      CONFIGURE_COMMAND ./configure --prefix=${BLAS_LIBS_INSTALL_PREFIX} --disable-shared --enable-threading=openmp haswell
       BUILD_COMMAND make
       INSTALL_COMMAND make install
       BUILD_IN_SOURCE TRUE
@@ -70,6 +69,7 @@ Blaze_Import(
   add_dependencies(lagrange-release-libs blis)
   add_dependencies(lagrange blis)
   set(LAPACK ON CACHE BOOL "Building lapack")
+  set(LAPACKE ON CACHE BOOL "Building lapack")
   set(BUILD_SINGLE OFF CACHE BOOL "Turning off single precision")
   set(BUILD_COMPLEX OFF CACHE BOOL "Turning off single precision complex")
   set(BUILD_COMPLEX16 OFF CACHE BOOL "Turning off double precision complex")
