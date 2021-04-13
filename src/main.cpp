@@ -82,10 +82,12 @@ lagrange_col_vector_t normalizeStateDistrubtionByLWR(
   double max_llh = states.maxCoeff();
 
   normalized_states.array() - max_llh;
-  normalized_states.array().exp();
+
+  normalized_states = normalized_states.array().exp();
 
   double total_llh = normalized_states.sum();
-  normalized_states.array() / total_llh;
+
+  normalized_states.array() /= total_llh;
 
   return normalized_states;
 }
@@ -377,7 +379,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  Eigen::setNbThreads(4);
+  Eigen::setNbThreads(1);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

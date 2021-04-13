@@ -79,6 +79,7 @@ void Context::registerTipClvs(
 void Context::computeForwardOperations() {
   for (auto& op : _forward_operations) {
     op.eval(_workspace);
+    //std::cout << op.printStatus(_workspace) << std::endl;
   }
 }
 

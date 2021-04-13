@@ -210,7 +210,7 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   for (size_t i = 0; i < static_cast<size_t>(rm.rows()); ++i) {
     auto row = rm.row(i);
-    os << tabs << std::setprecision(10) << row;
+    os << tabs << std::setprecision(10) << row << "\n";
   }
 
   os << tabs << "Period index: " << _period_index << "\n"
@@ -299,7 +299,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   }
 
   // X_1 = blaze::solve(D, N);
-  X_1 = D.colPivHouseholderQr().solve(N);
+  X_1 = D.completeOrthogonalDecomposition().solve(N);
   auto &rX_1 = X_1;
   auto &rX_2 = X_2;
   for (int i = 0; i < scale_exp; ++i) {
@@ -330,7 +330,7 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   for (size_t i = 0; i < static_cast<size_t>(pm.rows()); ++i) {
     decltype(auto) row = pm.row(i);
-    os << tabs << std::setprecision(10) << row;
+    os << tabs << std::setprecision(10) << row << "\n";
   }
 
   os << tabs << "t: " << std::setprecision(16) << _t << "\n";
@@ -341,7 +341,7 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
     auto &rm = ws->rate_matrix(_rate_matrix_index);
     for (size_t i = 0; i < static_cast<size_t>(rm.rows()); ++i) {
       decltype(auto) row = rm.row(i);
-      os << tabs << std::setprecision(10) << row;
+      os << tabs << std::setprecision(10) << row << "\n";
     }
   }
   os << closing_line(tabs);
@@ -371,16 +371,18 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << opening_line(tabs) << "\n";
   os << tabs << "DispersionOperation:\n";
   os << tabs << "Top clv (index: " << _top_clv << "): " << std::setprecision(10)
-     << ws->clv(_top_clv).transpose();
+     << ws->clv(_top_clv).transpose() << "\n";
   os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
-     << ws->clv(_bot_clv).transpose();
+     << ws->clv(_bot_clv).transpose() << "\n";
 
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
+  /*
   if (_expm_op != nullptr) {
     os << _expm_op->printStatus(ws, tabLevel + 1);
   }
   os << "\n";
+  */
   os << closing_line(tabs);
 }
 
@@ -418,15 +420,15 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_lbranch_clv_index)
      << "): " << std::setprecision(10)
-     << ws->clv(_lbranch_clv_index).transpose();
+     << ws->clv(_lbranch_clv_index).transpose() << "\n";
   os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_rbranch_clv_index)
      << "): " << std::setprecision(10)
-     << ws->clv(_rbranch_clv_index).transpose();
+     << ws->clv(_rbranch_clv_index).transpose() << "\n";
   os << tabs << "Parent clv (index: " << _parent_clv_index
      << ", scalar: " << ws->clv_scalar(_parent_clv_index)
-     << "): " << std::setprecision(10)
-     << ws->clv(_parent_clv_index).transpose();
+     << "): " << std::setprecision(10) << ws->clv(_parent_clv_index).transpose()
+     << "\n";
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -480,11 +482,14 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ReverseSplitOperation:\n";
 
   os << tabs << "Bot clv (index: " << _bot_clv_index
-     << "): " << std::setprecision(10) << ws->clv(_bot_clv_index).transpose();
+     << "): " << std::setprecision(10) << ws->clv(_bot_clv_index).transpose()
+     << "\n";
   os << tabs << "Ltop clv (index: " << _ltop_clv_index
-     << "): " << std::setprecision(10) << ws->clv(_ltop_clv_index).transpose();
+     << "): " << std::setprecision(10) << ws->clv(_ltop_clv_index).transpose()
+     << "\n";
   os << tabs << "Rtop clv (index: " << _rtop_clv_index
-     << "): " << std::setprecision(10) << ws->clv(_rtop_clv_index).transpose();
+     << "): " << std::setprecision(10) << ws->clv(_rtop_clv_index).transpose()
+     << "\n";
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -528,10 +533,12 @@ lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 
-  tmp.array() *= ws->clv(_parent_clv_index).array();
-  tmp.array().log();
+  tmp = tmp.cwiseProduct(ws->clv(_parent_clv_index));
+  tmp = tmp.array().log();
 
-  return tmp.array() - tmp_scalar * lagrange_scaling_factor_log;
+  tmp.array() -= tmp_scalar * lagrange_scaling_factor_log;
+
+  return tmp;
 }
 
 std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
