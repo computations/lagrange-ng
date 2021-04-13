@@ -25,6 +25,9 @@ set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
 
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 add_subdirectory(deps)
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
