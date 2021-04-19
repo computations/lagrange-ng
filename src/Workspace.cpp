@@ -4,6 +4,7 @@
  * Author: Ben Bettisworth
  */
 
+#include "Common.h"
 #include "Workspace.h"
 
 Workspace::~Workspace() {
@@ -33,17 +34,22 @@ void Workspace::set_tip_clv(size_t index, lagrange_dist_t dist) {
 
 void Workspace::reserve() {
   if (_base_frequencies != nullptr) {
-    // throw std::runtime_error{"Base frequencies buffer was already
-    // allocated"};
     delete[] _base_frequencies;
   }
   _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
+  for (size_t i = 0; i < _base_frequencies_count; i++) {
+    _base_frequencies[i] = lagrange_col_vector_t(_states);
+    _base_frequencies[i] = 1.0;
+  }
 
   if (_clvs != nullptr) {
-    // throw std::runtime_error{"CLV buffer was already allocated"};
     delete[] _clvs;
   }
   _clvs = new lagrange_col_vector_t[clv_count()];
+  for (size_t i = 0; i < clv_count(); i++) {
+    _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);
+    _clvs[i * _clv_stride] = 0.0;
+  }
 
   if (_clv_scalars != nullptr) {
     delete[] _clv_scalars;
@@ -65,13 +71,6 @@ void Workspace::reserve() {
       delete _prob_matrix[i]._matrix;
     }
     _prob_matrix[i]._matrix = new lagrange_matrix_t(_states, _states);
-  }
-  for (size_t i = 0; i < _base_frequencies_count; i++) {
-    _base_frequencies[i] = lagrange_col_vector_t(_states, 1.0 / _states);
-  }
-  for (size_t i = 0; i < clv_count(); i++) {
-    _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);
-    _clvs[i * _clv_stride] = 0.0;
   }
   _reserved = true;
 }

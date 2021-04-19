@@ -356,14 +356,14 @@ void handle_tree(std::shared_ptr<Tree> intree,
     auto states = context.computeStateGoal();
     root_json["node-results"] =
         makeStateJsonOutput(states, stateGoalIndexToIdMap);
-    intree->setStateStrings(idtoStateGoalIndexMap, states, config.areaNames);
+    // intree->setStateStrings(idtoStateGoalIndexMap, states, config.areaNames);
   }
   if (config.splits) {
     auto splits = context.computeSplitGoal();
   }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
-  writeResultTree(config, intree);
+  // writeResultTree(config, intree);
 }
 
 int main(int argc, char *argv[]) {

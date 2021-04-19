@@ -10,6 +10,7 @@
 #include "AncSplit.h"
 #include "Common.h"
 #include "Context.h"
+#include "ThreadState.h"
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
@@ -52,10 +53,6 @@ void Context::init() {
   _workspace->reserve();
   updateRates({0.01, 0.01});
 
-  for (auto& goal : _llh_goal) {
-    _workspace->get_base_frequencies(goal._prior_index) = 1.0;
-  }
-
   if (_reverse_operations.size() != 0) {
     size_t prior_index = _reverse_operations.begin()->getStableCLV();
     _workspace->clv(prior_index) = 1.0;
@@ -75,9 +72,14 @@ void Context::registerTipClvs(
 }
 
 void Context::computeForwardOperations() {
+  ThreadState ts;
+  ts.work(_forward_operations, _workspace);
+
+  /*
   for (auto& op : _forward_operations) {
     op.eval(_workspace);
   }
+  */
 }
 
 void Context::computeBackwardOperations() {

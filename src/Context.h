@@ -15,6 +15,7 @@
 #include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
+#include "ThreadState.h"
 #include "Workspace.h"
 #include "tree.h"
 

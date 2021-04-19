@@ -190,6 +190,8 @@ class DispersionOperation {
 
 class SplitOperation {
  public:
+  SplitOperation() = default;
+
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
                  size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t lprob_mat, size_t rprob_mat,
@@ -233,6 +235,8 @@ class SplitOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
+  bool ready() { return true; }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -246,6 +250,8 @@ class SplitOperation {
 
 class ReverseSplitOperation {
  public:
+  ReverseSplitOperation() = default;
+
   ReverseSplitOperation(
       size_t bot_clv,  /* Where the result is stored*/
       size_t ltop_clv, /* Where the result of the dispop is stored */
@@ -294,6 +300,8 @@ class ReverseSplitOperation {
   }
 
   size_t getStableCLV() const { return _ltop_clv_index; }
+
+  bool ready() const { return true; }
 
  private:
   size_t _bot_clv_index;

@@ -11,6 +11,7 @@
 #define UTILS_H_
 
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -68,6 +69,35 @@ inline lagrange_dist_t lagrange_compute_best_dist(
 
 std::string lagrange_convert_dist_string(lagrange_dist_t dist,
                                          const std::vector<std::string> &names);
+
+template <typename T>
+class lagrange_option_t {
+ public:
+  lagrange_option_t() : _value{}, _has_value{false} {}
+  lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
+
+  T &get() {
+    if (_has_value) {
+      return _value;
+    }
+    throw std::runtime_error{"lagrange_option_t has no value when used"};
+  }
+
+  const T &get() const {
+    if (_has_value) {
+      return _value;
+    }
+    throw std::runtime_error{"lagrange_option_t has no value when used"};
+  }
+
+  bool has_value() const { return _has_value; }
+
+  operator bool() const { return has_value(); }
+
+ private:
+  T _value;
+  bool _has_value;
+};
 
 namespace std {
 template <>
