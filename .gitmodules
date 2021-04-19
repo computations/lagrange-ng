@@ -11,4 +11,4 @@
 	url = https://github.com/stevengj/nlopt
 [submodule "deps/lapack"]
 	path = deps/lapack
-	url = https://github.com/Reference-LAPACK/lapack.git
+	url = https://github.com/Reference-LAPACK/lapack-release.git
