@@ -344,26 +344,16 @@ void handle_tree(std::shared_ptr<Tree> intree,
       intree->traversePreorderInternalNodesOnlyNumbers();
 
   // invert the map
-  auto idtoStateGoalIndexMap = std::vector<size_t>();
-  idtoStateGoalIndexMap.resize(stateGoalIndexToIdMap.size() + 1);
-
-  for (size_t i = 0; i < idtoStateGoalIndexMap.size(); ++i) {
-    size_t number = stateGoalIndexToIdMap[i];
-    idtoStateGoalIndexMap[number] = i;
-  }
-
   if (config.states) {
     auto states = context.computeStateGoal();
     root_json["node-results"] =
         makeStateJsonOutput(states, stateGoalIndexToIdMap);
-    // intree->setStateStrings(idtoStateGoalIndexMap, states, config.areaNames);
   }
   if (config.splits) {
     auto splits = context.computeSplitGoal();
   }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
-  // writeResultTree(config, intree);
 }
 
 int main(int argc, char *argv[]) {

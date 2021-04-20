@@ -69,8 +69,8 @@ class Context {
   std::vector<StateLHGoal> _state_lh_goal;
   std::vector<SplitLHGoal> _split_lh_goal;
 
-  std::vector<SplitOperation> _forward_operations;
-  std::vector<ReverseSplitOperation> _reverse_operations;
+  std::vector<std::shared_ptr<SplitOperation>> _forward_operations;
+  std::vector<std::shared_ptr<ReverseSplitOperation>> _reverse_operations;
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 };
 

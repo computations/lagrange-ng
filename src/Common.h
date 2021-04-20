@@ -6,6 +6,7 @@
 #ifndef LAGRANGE_COMMON_H__
 #define LAGRANGE_COMMON_H__
 
+#include <bits/stdint-uintn.h>
 #define BLAZE_BLAS_MODE 1
 #define BLAZE_BLAS_IS_64BIT 1
 #define BLAZE_BLAS_IS_PARALLEL 1
@@ -14,6 +15,7 @@
 
 #include <blaze/Blaze.h>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -23,7 +25,8 @@
 
 typedef uint64_t lagrange_dist_t;
 
-typedef uint64_t lagrange_clock_t;
+typedef uint64_t lagrange_clock_tick_t;
+typedef std::atomic_uint64_t lagrange_clock_t;
 
 typedef uint64_t lagrange_op_id_t;
 
@@ -85,11 +88,7 @@ struct period_t {
 };
 
 typedef blaze::DynamicMatrix<double, blaze::columnMajor> lagrange_matrix_t;
-typedef blaze::DynamicMatrix<std::complex<double>, blaze::columnMajor>
-    lagrange_complex_matrix_t;
 typedef blaze::DynamicVector<double, blaze::columnVector> lagrange_col_vector_t;
-typedef blaze::DynamicVector<std::complex<double>, blaze::columnVector>
-    lagrange_complex_col_vector_t;
 
 constexpr double lagrange_scaling_factor = 0x1p256;
 

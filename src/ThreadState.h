@@ -14,11 +14,13 @@
 class ThreadState {
  public:
   template <typename T>
-  void work(std::vector<T>& work_buffer, std::shared_ptr<Workspace> workspace) {
+  void work(std::vector<T>& work_buffer,
+            const std::shared_ptr<Workspace>& workspace) {
     start_thread();
 
-    while (auto w = find_work(work_buffer)) {
-      w.get().eval(workspace);
+    for (auto w = find_work(work_buffer, workspace); w != nullptr;
+         w = find_work(work_buffer, workspace)) {
+      w->eval(workspace);
     }
 
     end_thread();
@@ -26,7 +28,8 @@ class ThreadState {
 
  private:
   template <typename T>
-  lagrange_option_t<T> find_work(std::vector<T>& work_buffer) {
+  T find_work(std::vector<T>& work_buffer,
+              const std::shared_ptr<Workspace>& workspace) {
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     size_t local_index = _start_index;
 
@@ -41,11 +44,11 @@ class ThreadState {
         local_index = _start_index;
       }
 
-      if (work_buffer[local_index].ready()) {
+      if (work_buffer[local_index]->ready(workspace)) {
         std::swap(work_buffer[local_index], work_buffer[_start_index]);
-        auto& op = work_buffer[_start_index];
+        auto op = work_buffer[_start_index];
         _start_index++;
-        return {op};
+        return op;
       }
 
       local_index++;

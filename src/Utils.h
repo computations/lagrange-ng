@@ -73,7 +73,7 @@ std::string lagrange_convert_dist_string(lagrange_dist_t dist,
 template <typename T>
 class lagrange_option_t {
  public:
-  lagrange_option_t() : _value{}, _has_value{false} {}
+  lagrange_option_t() : _has_value{false} {}
   lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
 
   T &get() {

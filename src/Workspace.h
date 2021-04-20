@@ -18,8 +18,14 @@
 
 struct matrix_reservation_t {
   lagrange_matrix_t *_matrix = nullptr;
-  lagrange_clock_t _last_update;
+  lagrange_clock_tick_t _last_update;
   lagrange_op_id_t _op_id;
+};
+
+struct clv_reservation_t {
+  lagrange_col_vector_t _clv;
+  lagrange_clock_tick_t _last_update;
+  double &operator[](size_t index) { return _clv[index]; }
 };
 
 class Workspace {
@@ -35,8 +41,7 @@ class Workspace {
         _prob_matrix{prob_matrix_count},
         _base_frequencies_count{1},
         _base_frequencies{nullptr},
-        _clv_stride{1},
-        _clvs{nullptr},
+        _clvs{},
         _clv_scalars{nullptr},
         _node_reservations{node_count()},
         _periods{1},
@@ -51,13 +56,6 @@ class Workspace {
       : Workspace(taxa_count, taxa_count - 1, regions, 1, 1) {}
 
   ~Workspace();
-
-  inline lagrange_col_vector_t &clv(size_t i) {
-    if (i >= clv_count()) {
-      throw std::runtime_error{"CLV access out of range"};
-    }
-    return _clvs[(i * _clv_stride)];
-  }
 
   inline size_t &clv_scalar(size_t i) { return _clv_scalars[i]; }
 
@@ -85,8 +83,8 @@ class Workspace {
     return *_prob_matrix[i]._matrix;
   }
 
-  inline lagrange_clock_t update_prob_matrix(size_t i,
-                                             const lagrange_matrix_t &A) {
+  inline lagrange_clock_tick_t update_prob_matrix(size_t i,
+                                                  const lagrange_matrix_t &A) {
     if (i >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -95,8 +93,27 @@ class Workspace {
     return _prob_matrix[i]._last_update = advance_clock();
   }
 
-  inline lagrange_clock_t last_update_prob_matrix(size_t i) {
+  inline lagrange_clock_tick_t last_update_prob_matrix(size_t i) {
     return _prob_matrix[i]._last_update;
+  }
+
+  inline const lagrange_col_vector_t &clv(size_t i) {
+    if (i >= clv_count()) {
+      throw std::runtime_error{"CLV access out of range"};
+    }
+    return _clvs[i]._clv;
+  }
+
+  inline lagrange_col_vector_t &update_clv(size_t index) {
+    if (index >= clv_count()) {
+      throw std::runtime_error{"CLV access out of range"};
+    }
+    _clvs[index]._last_update = advance_clock();
+    return _clvs[index]._clv;
+  }
+
+  inline lagrange_clock_tick_t last_update_clv(size_t index) {
+    return _clvs[index]._last_update;
   }
 
   inline size_t states() const { return _states; }
@@ -161,7 +178,8 @@ class Workspace {
 
   void reserve();
 
-  inline lagrange_clock_t advance_clock() { return _current_clock++; }
+  inline lagrange_clock_tick_t advance_clock() { return _current_clock++; }
+  inline lagrange_clock_tick_t read_clock() { return _current_clock; }
 
   const period_t &get_period_params(size_t period_index) const {
     return _periods[period_index];
@@ -170,7 +188,7 @@ class Workspace {
   void set_period_params(size_t period_index, double d, double e);
 
   inline bool reserved() const {
-    return !(_base_frequencies == nullptr || _clvs == nullptr);
+    return !(_base_frequencies == nullptr || _clvs.size() == 0);
   }
 
   std::string report_node_vecs(size_t node_id) const;
@@ -190,8 +208,7 @@ class Workspace {
   size_t _base_frequencies_count;
   lagrange_col_vector_t *_base_frequencies;
 
-  size_t _clv_stride;
-  lagrange_col_vector_t *_clvs;
+  std::vector<clv_reservation_t> _clvs;
   size_t *_clv_scalars;
 
   std::vector<node_reservation_t> _node_reservations;

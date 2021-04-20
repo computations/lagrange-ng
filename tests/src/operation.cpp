@@ -60,12 +60,12 @@ class OperationTest : public ::testing::Test {
 
     _ws->rate_matrix(_rate_matrix) = _arbitrary_rate_matrix;
 
-    _ws->clv(_rbot_clv) = _arbitrary_clv1;
-    _ws->clv(_lbot_clv) = _arbitrary_clv2;
-    _ws->clv(_root_clv) = {0, 0, 0, 0};
+    _ws->update_clv(_rbot_clv) = _arbitrary_clv1;
+    _ws->update_clv(_lbot_clv) = _arbitrary_clv2;
+    _ws->update_clv(_root_clv) = {0, 0, 0, 0};
 
-    _ws->clv(_reverse_bot_clv) = {0, 0, 0, 0};
-    _ws->clv(_reverse_lbot_clv) = _arbitrary_clv1;
+    _ws->update_clv(_reverse_bot_clv) = {0, 0, 0, 0};
+    _ws->update_clv(_reverse_lbot_clv) = _arbitrary_clv1;
     _ws->set_period_params(0, .3123, 1.1231);
 
     _rate_matrix_op = std::make_shared<MakeRateMatrixOperation>(_rate_matrix);
@@ -166,7 +166,7 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
                                   _rbot_clv, _rate_matrix_op, _prob_matrix,
                                   _reverse_lbot_clv, _t);
 
-  _ws->clv(_reverse_ltop_clv) = 0.0;
+  _ws->update_clv(_reverse_ltop_clv) = 0.0;
 
   rsplit_op.eval(_ws);
 

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -30,7 +31,7 @@ class MakeRateMatrixOperation {
 
   void eval(std::shared_ptr<Workspace> ws);
 
-  lagrange_clock_t last_update() const {
+  lagrange_clock_tick_t last_update() const {
     return std::max(_last_execution, _last_update);
   }
 
@@ -55,8 +56,11 @@ class MakeRateMatrixOperation {
  private:
   size_t _rate_matrix_index;
   size_t _period_index;
-  lagrange_clock_t _last_execution;
-  lagrange_clock_t _last_update;
+
+  std::unique_ptr<std::mutex> _lock{new std::mutex};
+
+  lagrange_clock_tick_t _last_execution;
+  lagrange_clock_tick_t _last_update;
 };
 
 class ExpmOperation {
@@ -67,7 +71,6 @@ class ExpmOperation {
       : _prob_matrix_index{prob_matrix},
         _rate_matrix_index{rm_op->rate_matrix_index()},
         _t{t},
-        _last_execution{0},
         _rate_matrix_op{rm_op},
         _transposed{transpose} {}
 
@@ -79,10 +82,11 @@ class ExpmOperation {
 
   size_t prob_matrix() const { return _prob_matrix_index; }
 
-  lagrange_clock_t last_execution() const { return _last_execution; }
+  lagrange_clock_tick_t last_execution() const { return _last_execution; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
+
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
@@ -90,8 +94,12 @@ class ExpmOperation {
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
   double _t;
-  lagrange_clock_t _last_execution;
+
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
+
+  lagrange_clock_tick_t _last_execution = 0;
+  std::unique_ptr<std::mutex> _lock{new std::mutex};
+
   bool _transposed;
 };
 
@@ -173,6 +181,10 @@ class DispersionOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
+  bool ready(const std::shared_ptr<Workspace>& ws) {
+    return ws->last_update_clv(_bot_clv) > _last_execution;
+  }
+
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
@@ -186,12 +198,13 @@ class DispersionOperation {
 
   /* _expm_op is an owning pointer, and can be null */
   std::shared_ptr<ExpmOperation> _expm_op;
+
+  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  lagrange_clock_tick_t _last_execution = 0;
 };
 
 class SplitOperation {
  public:
-  SplitOperation() = default;
-
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
                  size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t lprob_mat, size_t rprob_mat,
@@ -225,7 +238,7 @@ class SplitOperation {
         _lbranch_ops{{l_ops}},
         _rbranch_ops{{r_ops}} {}
 
-  void eval(std::shared_ptr<Workspace>) const;
+  void eval(std::shared_ptr<Workspace>);
 
   size_t get_parent_clv() const { return _parent_clv_index; }
 
@@ -235,7 +248,20 @@ class SplitOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  bool ready() { return true; }
+  bool ready(const std::shared_ptr<Workspace>& ws) {
+    bool lready = true;
+    bool rready = true;
+
+    for (auto& op : _lbranch_ops) {
+      lready = lready && op->ready(ws);
+    }
+
+    for (auto& op : _rbranch_ops) {
+      rready = rready && op->ready(ws);
+    }
+
+    return rready && lready;
+  }
 
  private:
   size_t _lbranch_clv_index;
@@ -246,12 +272,13 @@ class SplitOperation {
   std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
 
   std::vector<lagrange_dist_t> _excl_dists;
+
+  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  lagrange_clock_tick_t _last_execution = 0;
 };
 
 class ReverseSplitOperation {
  public:
-  ReverseSplitOperation() = default;
-
   ReverseSplitOperation(
       size_t bot_clv,  /* Where the result is stored*/
       size_t ltop_clv, /* Where the result of the dispop is stored */
@@ -281,7 +308,7 @@ class ReverseSplitOperation {
         _eval_clvs{false},
         _branch_ops{{branch_op}} {}
 
-  void eval(std::shared_ptr<Workspace>) const;
+  void eval(std::shared_ptr<Workspace>);
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -311,6 +338,9 @@ class ReverseSplitOperation {
 
   std::vector<std::shared_ptr<DispersionOperation>> _branch_ops;
   std::vector<lagrange_dist_t> _excl_dists;
+
+  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  lagrange_clock_tick_t _last_execution = 0;
 };
 
 class LLHGoal {

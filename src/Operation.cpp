@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <iomanip>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -164,6 +165,7 @@ inline std::string closing_line(const std::string &tabs) {
 }
 
 void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
+  std::lock_guard<std::mutex> t_lock(*_lock);
   if (_last_update < _last_execution) {
     return;
   }
@@ -228,6 +230,7 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
+  std::lock_guard<std::mutex> t_lock(*_lock);
   if (_rate_matrix_op != nullptr &&
       _last_execution > _rate_matrix_op->last_update() &&
       _last_execution > ws->last_update_prob_matrix(_prob_matrix_index)) {
@@ -353,13 +356,16 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
+  std::lock_guard<std::mutex> t_lock(*_lock);
   if (_expm_op != nullptr) {
     _expm_op->eval(ws);
   }
 
-  ws->clv(_top_clv) =
+  ws->update_clv(_top_clv) =
       std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv));
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
+
+  _last_execution = ws->advance_clock();
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -389,7 +395,8 @@ std::string DispersionOperation::printStatus(
   return os.str();
 }
 
-void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
+void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
+  std::lock_guard<std::mutex> t_lock(*_lock);
   for (auto &op : _lbranch_ops) {
     op->eval(ws);
   }
@@ -397,7 +404,7 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
     op->eval(ws);
   }
 
-  auto &parent_clv = ws->clv(_parent_clv_index);
+  auto &parent_clv = ws->update_clv(_parent_clv_index);
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
@@ -405,6 +412,8 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) const {
                    ws->clv_scalar(_lbranch_clv_index),
                    ws->clv_scalar(_rbranch_clv_index),
                    ws->clv_scalar(_parent_clv_index));
+
+  _last_execution = ws->advance_clock();
 }
 
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -456,18 +465,23 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
-void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) const {
+void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) {
+  std::lock_guard<std::mutex> t_lock(*_lock);
   for (auto &op : _branch_ops) {
     op->eval(ws);
   }
 
   if (_eval_clvs) {
-    auto &bot_clv = ws->clv(_bot_clv_index);
+    lagrange_col_vector_t tmp(ws->states());
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists, bot_clv);
+    reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists, tmp);
+
+    ws->update_clv(_bot_clv_index) = std::move(tmp);
   }
+
+  _last_execution = ws->advance_clock();
 }
 
 void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,

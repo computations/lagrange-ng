@@ -4,6 +4,8 @@
  * Author: Ben Bettisworth
  */
 
+#include <limits>
+
 #include "Common.h"
 #include "Workspace.h"
 
@@ -15,7 +17,6 @@ Workspace::~Workspace() {
     delete res._matrix;
   }
   if (_base_frequencies != nullptr) delete[] _base_frequencies;
-  if (_clvs != nullptr) delete[] _clvs;
   if (_clv_scalars != nullptr) delete[] _clv_scalars;
 }
 
@@ -29,7 +30,8 @@ void Workspace::register_children_clv(size_t node_id) {
 }
 
 void Workspace::set_tip_clv(size_t index, lagrange_dist_t dist) {
-  _clvs[index * _clv_stride][dist] = 1.0;
+  _clvs[index]._clv[dist] = 1.0;
+  _clvs[index]._last_update = std::numeric_limits<lagrange_clock_tick_t>::max();
 }
 
 void Workspace::reserve() {
@@ -42,13 +44,10 @@ void Workspace::reserve() {
     _base_frequencies[i] = 1.0;
   }
 
-  if (_clvs != nullptr) {
-    delete[] _clvs;
-  }
-  _clvs = new lagrange_col_vector_t[clv_count()];
+  _clvs.resize(clv_count());
   for (size_t i = 0; i < clv_count(); i++) {
-    _clvs[i * _clv_stride] = lagrange_col_vector_t(_states);
-    _clvs[i * _clv_stride] = 0.0;
+    _clvs[i]._clv = lagrange_col_vector_t(_states);
+    _clvs[i]._clv = 0.0;
   }
 
   if (_clv_scalars != nullptr) {
@@ -85,27 +84,27 @@ std::string Workspace::report_node_vecs(size_t node_id) const {
   constexpr size_t sentinel_value = std::numeric_limits<size_t>::max();
   if (reservations._top_clv != sentinel_value) {
     oss << "top clv (index: " << reservations._top_clv << ")\n";
-    oss << blaze::trans(_clvs[reservations._top_clv]);
+    oss << blaze::trans(_clvs[reservations._top_clv]._clv);
   }
   if (reservations._bot1_clv != sentinel_value) {
     oss << "bot1 clv (index: " << reservations._bot1_clv << ")\n";
-    oss << blaze::trans(_clvs[reservations._bot1_clv]);
+    oss << blaze::trans(_clvs[reservations._bot1_clv]._clv);
   }
   if (reservations._bot2_clv != sentinel_value) {
     oss << "bot2 clv (index: " << reservations._bot2_clv << ")\n";
-    oss << blaze::trans(_clvs[reservations._bot2_clv]);
+    oss << blaze::trans(_clvs[reservations._bot2_clv]._clv);
   }
   if (reservations._top_rclv != sentinel_value) {
     oss << "top rclv (index: " << reservations._top_rclv << ")\n";
-    oss << blaze::trans(_clvs[reservations._top_rclv]);
+    oss << blaze::trans(_clvs[reservations._top_rclv]._clv);
   }
   if (reservations._bot1_rclv != sentinel_value) {
     oss << "bot1 rclv (index: " << reservations._bot1_rclv << ")\n";
-    oss << blaze::trans(_clvs[reservations._bot1_rclv]);
+    oss << blaze::trans(_clvs[reservations._bot1_rclv]._clv);
   }
   if (reservations._bot2_rclv != sentinel_value) {
     oss << "bot2 rclv (index: " << reservations._bot2_rclv << ")\n";
-    oss << blaze::trans(_clvs[reservations._bot2_rclv]);
+    oss << blaze::trans(_clvs[reservations._bot2_rclv]._clv);
   }
   return oss.str();
 }

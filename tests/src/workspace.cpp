@@ -7,7 +7,7 @@
 TEST(Workspace, simple0) {
   constexpr size_t regions = 3;
   constexpr size_t states = 1 << regions;
-  auto ws = Workspace(10, regions);
+  Workspace ws(10, regions);
 
   ws.reserve();
 
@@ -27,7 +27,7 @@ TEST(Workspace, simple0) {
 TEST(Workspace, simple1) {
   constexpr size_t regions = 3;
   constexpr size_t states = 1 << regions;
-  auto ws = Workspace(10, regions);
+  Workspace ws(10, regions);
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
   EXPECT_EQ(clv_index, 0);
@@ -42,7 +42,7 @@ TEST(Workspace, minsize) {
 TEST(Workspace, setters) {
   constexpr size_t regions = 3;
   constexpr size_t states = 1 << regions;
-  auto ws = Workspace(10, regions);
+  Workspace ws(10, regions);
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
   ws.get_base_frequencies(0) = 1.0;

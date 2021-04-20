@@ -26,7 +26,7 @@ void Context::registerLHGoal() {
     registerForwardOperations();
   }
 
-  auto root_clv = (_forward_operations.end() - 1)->get_parent_clv();
+  auto root_clv = (*(_forward_operations.end() - 1))->get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
@@ -54,8 +54,8 @@ void Context::init() {
   updateRates({0.01, 0.01});
 
   if (_reverse_operations.size() != 0) {
-    size_t prior_index = _reverse_operations.begin()->getStableCLV();
-    _workspace->clv(prior_index) = 1.0;
+    size_t prior_index = (*_reverse_operations.begin())->getStableCLV();
+    _workspace->update_clv(prior_index) = 1.0;
   }
 }
 
@@ -84,7 +84,7 @@ void Context::computeForwardOperations() {
 
 void Context::computeBackwardOperations() {
   for (auto& op : _reverse_operations) {
-    op.eval(_workspace);
+    op->eval(_workspace);
   }
 }
 

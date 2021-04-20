@@ -295,34 +295,38 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }
 
-std::vector<SplitOperation> Tree::generateForwardOperations(Workspace &ws) {
+std::vector<std::shared_ptr<SplitOperation>> Tree::generateForwardOperations(
+    Workspace &ws) {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   return generateForwardOperations(ws, rm_map, pm_map);
 }
 
-std::vector<SplitOperation> Tree::generateForwardOperations(
+std::vector<std::shared_ptr<SplitOperation>> Tree::generateForwardOperations(
     Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
   return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
 }
 
-std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
-    Workspace &ws) {
+std::vector<std::shared_ptr<ReverseSplitOperation>>
+Tree::generateBackwardOperations(Workspace &ws) {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-  ret.first.begin()->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
-  (ret.first.begin() + 1)
+  (*ret.first.begin())
+      ->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
+  (*(ret.first.begin() + 1))
       ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
 
   return ret.first;
 }
 
-std::vector<ReverseSplitOperation> Tree::generateBackwardOperations(
-    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
+std::vector<std::shared_ptr<ReverseSplitOperation>>
+Tree::generateBackwardOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                                 BranchProbMatrixMap &pm_map) {
   auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-  ret.first.begin()->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
-  (ret.first.begin() + 1)
+  (*ret.first.begin())
+      ->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
+  (*(ret.first.begin() + 1))
       ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
 
   return ret.first;

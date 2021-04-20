@@ -150,12 +150,13 @@ class Node {
       const std::shared_ptr<Node> &current,
       const std::vector<std::shared_ptr<Node>> &nodes);
 
-  std::pair<std::vector<SplitOperation>, std::shared_ptr<DispersionOperation>>
+  std::pair<std::vector<std::shared_ptr<SplitOperation>>,
+            std::shared_ptr<DispersionOperation>>
   traverseAndGenerateForwardOperations(Workspace &ws,
                                        PeriodRateMatrixMap &pm_map,
                                        BranchProbMatrixMap &bm_map) const;
 
-  std::pair<std::vector<ReverseSplitOperation>,
+  std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
             std::shared_ptr<DispersionOperation>>
   traverseAndGenerateBackwardOperations(Workspace &ws,
                                         PeriodRateMatrixMap &rm_map,
