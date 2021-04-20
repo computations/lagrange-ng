@@ -24,8 +24,11 @@ set(LAGRANGE_SOURCES
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-O3 -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_C_FLAGS_DEBUG "-O3 -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION)
 list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
