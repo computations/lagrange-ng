@@ -90,12 +90,19 @@ class ExpmOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
+  std::mutex& getLock() { return *_lock; }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
   double _t;
 
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
+
+  lagrange_matrix_t X_1;
+  lagrange_matrix_t X_2;
+  lagrange_matrix_t N;
+  lagrange_matrix_t D;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -185,6 +192,8 @@ class DispersionOperation {
     return ws->last_update_clv(_bot_clv) > _last_execution;
   }
 
+  std::mutex& getLock() { return *_lock; }
+
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
@@ -263,6 +272,8 @@ class SplitOperation {
     return rready && lready;
   }
 
+  std::mutex& getLock() { return *_lock; }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -329,6 +340,8 @@ class ReverseSplitOperation {
   size_t getStableCLV() const { return _ltop_clv_index; }
 
   bool ready() const { return true; }
+
+  std::mutex& getLock() { return *_lock; }
 
  private:
   size_t _bot_clv_index;

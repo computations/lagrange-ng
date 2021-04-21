@@ -20,7 +20,16 @@ class ThreadState {
 
     for (auto w = find_work(work_buffer, workspace); w != nullptr;
          w = find_work(work_buffer, workspace)) {
-      w->eval(workspace);
+      /* We only lock on greater than 2 here because we have 2 copies of the
+       * shared pointer here. One in the vector, and one returned by value from
+       * the find_work function
+       */
+      if (w.use_count() > 2) {
+        std::lock_guard<std::mutex> lock(w->getLock());
+        w->eval(workspace);
+      } else {
+        w->eval(workspace);
+      }
     }
 
     end_thread();

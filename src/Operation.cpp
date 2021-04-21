@@ -20,42 +20,42 @@
 #include "Utils.h"
 #include "Workspace.h"
 
-inline std::vector<lagrange_region_split_t> generate_splits(uint64_t state,
-                                                            size_t regions) {
+void generate_splits(uint64_t state, size_t regions,
+                     std::vector<lagrange_region_split_t> &results) {
+  results.clear();
   uint64_t valid_region_mask = (1ull << regions) - 1;
   if (state == 0) {
-    return {};
+    return;
   }
 
   if (lagrange_popcount(state) == 1) {
-    return {{state, state}};
+    results.push_back({state, state});
+    return;
   }
 
-  std::vector<lagrange_region_split_t> ret;
-  ret.reserve(regions);
+  results.reserve(regions);
   for (size_t i = 0; i < regions; ++i) {
     uint64_t x = 1ull << i;
     if ((state & x) == 0) {
       continue;
     }
 
-    ret.push_back({x, state});
-    ret.push_back({state, x});
+    results.push_back({x, state});
+    results.push_back({state, x});
 
     uint64_t y = (x ^ state) & valid_region_mask;
-    ret.push_back({x, y});
+    results.push_back({x, y});
     if (lagrange_popcount(y) > 1) {
-      ret.push_back({y, x});
+      results.push_back({y, x});
     }
   }
-  return ret;
 }
 
-inline void weighted_combine(const lagrange_col_vector_t &c1,
-                             const lagrange_col_vector_t &c2,
-                             const std::vector<lagrange_dist_t> excl_dists,
-                             lagrange_col_vector_t &dest, size_t c1_scale,
-                             size_t c2_scale, size_t &scale_count) {
+void weighted_combine(const lagrange_col_vector_t &c1,
+                      const lagrange_col_vector_t &c2,
+                      const std::vector<lagrange_dist_t> excl_dists,
+                      lagrange_col_vector_t &dest, size_t c1_scale,
+                      size_t c2_scale, size_t &scale_count) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
@@ -69,6 +69,8 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   scale_count = c1_scale + c2_scale;
   bool scale = true;
 
+  std::vector<lagrange_region_split_t> splits;
+
   for (size_t i = 0; i < states; i++) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
       idx_excl++;
@@ -77,7 +79,7 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
       idx_excl++;
       continue;
     }
-    auto splits = generate_splits(i, regions);
+    generate_splits(i, regions, splits);
     for (auto &p : splits) {
       dest[i] += c1[p.left] * c2[p.right];
     }
@@ -96,10 +98,10 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
-inline void reverse_weighted_combine(
-    const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
-    const std::vector<lagrange_dist_t> excl_dists,
-    lagrange_col_vector_t &dest) {
+void reverse_weighted_combine(const lagrange_col_vector_t &c1,
+                              const lagrange_col_vector_t &c2,
+                              const std::vector<lagrange_dist_t> excl_dists,
+                              lagrange_col_vector_t &dest) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
@@ -110,6 +112,8 @@ inline void reverse_weighted_combine(
 
   dest = 0.0;
 
+  std::vector<lagrange_region_split_t> splits;
+
   for (size_t i = 0; i < states; i++) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
       idx_excl++;
@@ -118,7 +122,8 @@ inline void reverse_weighted_combine(
       idx_excl++;
       continue;
     }
-    auto splits = generate_splits(i, regions);
+
+    generate_splits(i, regions, splits);
     if (splits.size() == 0) {
       continue;
     }
@@ -230,7 +235,6 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
-  std::lock_guard<std::mutex> t_lock(*_lock);
   if (_rate_matrix_op != nullptr &&
       _last_execution > _rate_matrix_op->last_update() &&
       _last_execution > ws->last_update_prob_matrix(_prob_matrix_index)) {
@@ -259,10 +263,9 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t D = I - c * X;
 #endif
 
-  lagrange_matrix_t X_2 = A;
-  lagrange_matrix_t N = I + c * X_2;
-  lagrange_matrix_t D = I - c * X_2;
-  lagrange_matrix_t X_1;
+  X_2 = A;
+  N = I + c * X_2;
+  D = I - c * X_2;
 
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup. Furhthermore, we are going to unroll the loop to allow us to skip
@@ -308,6 +311,13 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     rX_2 = rX_1 * rX_1;
     std::swap(rX_1, rX_2);
   }
+
+#if 0
+  X = blaze::solve(D, N);
+  for (int i = 0; i < scale_exp; ++i) {
+    X = X;
+  }
+#endif
 
   if (_transposed) {
     blaze::transpose(X_1);
@@ -356,9 +366,13 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
-  std::lock_guard<std::mutex> t_lock(*_lock);
   if (_expm_op != nullptr) {
-    _expm_op->eval(ws);
+    if (_expm_op.use_count() > 1) {
+      std::lock_guard<std::mutex>(_expm_op->getLock());
+      _expm_op->eval(ws);
+    } else {
+      _expm_op->eval(ws);
+    }
   }
 
   ws->update_clv(_top_clv) =
@@ -396,12 +410,21 @@ std::string DispersionOperation::printStatus(
 }
 
 void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
-  std::lock_guard<std::mutex> t_lock(*_lock);
   for (auto &op : _lbranch_ops) {
-    op->eval(ws);
+    if (op.use_count() > 1) {
+      std::lock_guard<std::mutex> lock(op->getLock());
+      op->eval(ws);
+    } else {
+      op->eval(ws);
+    }
   }
   for (auto &op : _rbranch_ops) {
-    op->eval(ws);
+    if (op.use_count() > 1) {
+      std::lock_guard<std::mutex> lock(op->getLock());
+      op->eval(ws);
+    } else {
+      op->eval(ws);
+    }
   }
 
   auto &parent_clv = ws->update_clv(_parent_clv_index);
@@ -466,9 +489,13 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) {
-  std::lock_guard<std::mutex> t_lock(*_lock);
   for (auto &op : _branch_ops) {
-    op->eval(ws);
+    if (op.use_count() > 1) {
+      std::lock_guard<std::mutex> lock(op->getLock());
+      op->eval(ws);
+    } else {
+      op->eval(ws);
+    }
   }
 
   if (_eval_clvs) {
@@ -554,9 +581,10 @@ std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
   auto &parent_clv = ws->clv(_parent_clv_index);
   auto &lchild_clv = ws->clv(_lchild_clv_index);
   auto &rchild_clv = ws->clv(_rchild_clv_index);
+  std::vector<lagrange_region_split_t> splits;
   for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
     std::vector<AncSplit> anc_split_vec;
-    auto splits = generate_splits(dist, ws->regions());
+    generate_splits(dist, ws->regions(), splits);
     double weight = 1.0 / splits.size();
     for (auto sp : splits) {
       AncSplit anc_split(dist, sp.left, sp.right, weight);
