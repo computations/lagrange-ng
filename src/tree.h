@@ -46,10 +46,11 @@ class Tree {
   void pruneExternalNode(std::shared_ptr<Node> node);
 
   std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
-      Workspace &ws);
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
 
   std::vector<std::shared_ptr<ReverseSplitOperation>>
-  generateBackwardOperations(Workspace &ws);
+  generateBackwardOperations(
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
 
   std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
       Workspace &ws, PeriodRateMatrixMap &period_rm_map,

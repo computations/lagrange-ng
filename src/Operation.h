@@ -188,8 +188,11 @@ class DispersionOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  bool ready(const std::shared_ptr<Workspace>& ws) {
-    return ws->last_update_clv(_bot_clv) > _last_execution;
+  bool ready(const std::shared_ptr<Workspace>& ws,
+             lagrange_clock_tick_t deadline) {
+    return (ws->last_update_clv(_bot_clv) > _last_execution) ||
+           ((deadline > ws->last_update_clv(_bot_clv)) &&
+            (deadline > _last_execution));
   }
 
   std::mutex& getLock() { return *_lock; }
@@ -262,11 +265,11 @@ class SplitOperation {
     bool rready = true;
 
     for (auto& op : _lbranch_ops) {
-      lready = lready && op->ready(ws);
+      lready = lready && op->ready(ws, _last_execution);
     }
 
     for (auto& op : _rbranch_ops) {
-      rready = rready && op->ready(ws);
+      rready = rready && op->ready(ws, _last_execution);
     }
 
     return rready && lready;
@@ -339,7 +342,15 @@ class ReverseSplitOperation {
 
   size_t getStableCLV() const { return _ltop_clv_index; }
 
-  bool ready() const { return true; }
+  bool ready(const std::shared_ptr<Workspace>& ws) const {
+    bool branch_ops_ready = true;
+    for (auto& op : _branch_ops) {
+      branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
+    }
+
+    return branch_ops_ready ||
+           (ws->last_update_clv(_bot_clv_index) >= _last_execution);
+  }
 
   std::mutex& getLock() { return *_lock; }
 

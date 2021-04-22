@@ -166,8 +166,6 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
                                   _rbot_clv, _rate_matrix_op, _prob_matrix,
                                   _reverse_lbot_clv, _t);
 
-  _ws->update_clv(_reverse_ltop_clv) = 0.0;
-
   rsplit_op.eval(_ws);
 
   auto &root_clv = _ws->clv(_reverse_bot_clv);

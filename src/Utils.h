@@ -10,7 +10,6 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>

@@ -193,6 +193,12 @@ class Workspace {
 
   std::string report_node_vecs(size_t node_id) const;
 
+  inline void set_reverse_prior(size_t index) {
+    _clvs[index]._clv = 1.0;
+    _clvs[index]._last_update =
+        std::numeric_limits<lagrange_clock_tick_t>::max();
+  }
+
  private:
   inline size_t register_clv() { return _next_free_clv++; }
 

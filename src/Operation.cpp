@@ -170,10 +170,7 @@ inline std::string closing_line(const std::string &tabs) {
 }
 
 void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
-  std::lock_guard<std::mutex> t_lock(*_lock);
-  if (_last_update < _last_execution) {
-    return;
-  }
+  // std::lock_guard<std::mutex> t_lock(*_lock);
   auto &rm = ws->rate_matrix(_rate_matrix_index);
   rm = 0.0;
   auto &period = ws->get_period_params(_period_index);
@@ -235,9 +232,8 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
-  if (_rate_matrix_op != nullptr &&
-      _last_execution > _rate_matrix_op->last_update() &&
-      _last_execution > ws->last_update_prob_matrix(_prob_matrix_index)) {
+  if ((_rate_matrix_op != nullptr) &&
+      (_last_execution > _rate_matrix_op->last_update())) {
     return;
   }
 
@@ -324,8 +320,9 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     blaze::row(X_1, 0) = 0.0;
     X_1(0, 0) = 1.0;
   }
-  ws->update_prob_matrix(_prob_matrix_index, X_1);
+
   _last_execution = ws->advance_clock();
+  ws->update_prob_matrix(_prob_matrix_index, X_1);
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -374,12 +371,16 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
       _expm_op->eval(ws);
     }
   }
+  if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
+    /* we have already computed stuff, return */
+    return;
+  }
+
+  _last_execution = ws->advance_clock();
 
   ws->update_clv(_top_clv) =
       std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv));
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
-
-  _last_execution = ws->advance_clock();
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -392,7 +393,7 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << blaze::trans(ws->clv(_top_clv));
   os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_bot_clv));
-
+  os << tabs << "Last Executed: " << _last_execution << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
   if (_expm_op != nullptr) {
@@ -447,16 +448,20 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_lbranch_clv_index)
+     << ", update: " << ws->last_update_clv(_lbranch_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_lbranch_clv_index));
   os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
      << ", scalar: " << ws->clv_scalar(_rbranch_clv_index)
+     << ", update: " << ws->last_update_clv(_rbranch_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_rbranch_clv_index));
   os << tabs << "Parent clv (index: " << _parent_clv_index
      << ", scalar: " << ws->clv_scalar(_parent_clv_index)
-     << "): " << std::setprecision(10)
+     << ", update: " << ws->last_update_clv(_parent_clv_index)
+     << "): " << std::setprecision(10) << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_parent_clv_index));
+  os << tabs << "Last Executed: " << _last_execution << "\n";
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -519,11 +524,14 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ReverseSplitOperation:\n";
 
   os << tabs << "Bot clv (index: " << _bot_clv_index
+     << ", update: " << ws->last_update_clv(_bot_clv_index)
      << "): " << std::setprecision(10) << blaze::trans(ws->clv(_bot_clv_index));
   os << tabs << "Ltop clv (index: " << _ltop_clv_index
+     << ", update: " << ws->last_update_clv(_ltop_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_ltop_clv_index));
   os << tabs << "Rtop clv (index: " << _rtop_clv_index
+     << ", update: " << ws->last_update_clv(_rtop_clv_index)
      << "): " << std::setprecision(10)
      << blaze::trans(ws->clv(_rtop_clv_index));
 

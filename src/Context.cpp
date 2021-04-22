@@ -1,24 +1,33 @@
 #include <cmath>
+#include <cstddef>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <nlopt.hpp>
+#include <random>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "AncSplit.h"
 #include "Common.h"
 #include "Context.h"
+#include "Operation.h"
 #include "ThreadState.h"
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
-  _forward_operations = _tree->generateForwardOperations(*_workspace);
+  _forward_operations =
+      _tree->generateForwardOperations(*_workspace, _rate_matrix_op);
 }
 
 void Context::registerBackwardOperations() {
-  _reverse_operations = _tree->generateBackwardOperations(*_workspace);
+  _reverse_operations =
+      _tree->generateBackwardOperations(*_workspace, _rate_matrix_op);
 }
 
 void Context::registerLHGoal() {
@@ -55,7 +64,8 @@ void Context::init() {
 
   if (_reverse_operations.size() != 0) {
     size_t prior_index = (*_reverse_operations.begin())->getStableCLV();
-    _workspace->update_clv(prior_index) = 1.0;
+
+    _workspace->set_reverse_prior(prior_index);
   }
 }
 
@@ -73,19 +83,18 @@ void Context::registerTipClvs(
 
 void Context::computeForwardOperations() {
   ThreadState ts;
+  std::random_device rd;
+  std::default_random_engine gen(rd());
+  std::shuffle(_forward_operations.begin(), _forward_operations.end(), gen);
   ts.work(_forward_operations, _workspace);
-
-  /*
-  for (auto& op : _forward_operations) {
-    op.eval(_workspace);
-  }
-  */
 }
 
 void Context::computeBackwardOperations() {
-  for (auto& op : _reverse_operations) {
-    op->eval(_workspace);
-  }
+  ThreadState ts;
+  std::random_device rd;
+  std::default_random_engine gen(rd());
+  std::shuffle(_reverse_operations.begin(), _reverse_operations.end(), gen);
+  ts.work(_reverse_operations, _workspace);
 }
 
 double Context::computeLLH() {

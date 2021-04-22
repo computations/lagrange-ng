@@ -49,7 +49,7 @@ class ThreadState {
 
     /* Spin lock until we find a ready operation */
     while (true) {
-      if (local_index > work_buffer.size()) {
+      if (local_index >= work_buffer.size()) {
         local_index = _start_index;
       }
 
@@ -67,7 +67,7 @@ class ThreadState {
     return {};
   }
 
-  void start_thread() { _total_threads++; }
+  void start_thread() { _tid = _total_threads++; }
   void end_thread() {
     _total_threads--;
     if (_total_threads == 0) {
