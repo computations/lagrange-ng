@@ -82,18 +82,26 @@ void Context::registerTipClvs(
 }
 
 void Context::computeForwardOperations() {
-  ThreadState ts;
-  std::random_device rd;
-  std::default_random_engine gen(rd());
-  std::shuffle(_forward_operations.begin(), _forward_operations.end(), gen);
-  ts.work(_forward_operations, _workspace);
+  std::vector<ThreadState> thread_states;
+
+  for (size_t i = 0; i < 2; ++i) {
+    thread_states.emplace_back();
+  }
+
+  std::vector<std::thread> threads;
+  for (auto& ts : thread_states) {
+    threads.emplace_back(&ThreadState::work<std::shared_ptr<SplitOperation>>,
+                         std::ref(ts), std::ref(_forward_operations),
+                         std::ref(_workspace));
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
 }
 
 void Context::computeBackwardOperations() {
   ThreadState ts;
-  std::random_device rd;
-  std::default_random_engine gen(rd());
-  std::shuffle(_reverse_operations.begin(), _reverse_operations.end(), gen);
   ts.work(_reverse_operations, _workspace);
 }
 

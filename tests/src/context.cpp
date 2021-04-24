@@ -47,6 +47,9 @@ TEST_F(ContextTest, computelh1) {
   constexpr double regression_llh = -1.7596288538749982;
 
   EXPECT_NEAR(llh, regression_llh, 1e-9);
+
+  llh = context.computeLLH();
+  EXPECT_NEAR(llh, regression_llh, 1e-9);
 }
 
 TEST_F(ContextTest, optimizeSimple0) {

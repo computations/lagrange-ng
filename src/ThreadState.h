@@ -2,6 +2,7 @@
 #define LAGRANGE_THREAD_STATE_H__
 
 #include <atomic>
+#include <cctype>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -13,6 +14,23 @@
 
 class ThreadState {
  public:
+  ThreadState() : _tid{_total_threads++} {}
+  ThreadState(const ThreadState&) = delete;
+  ThreadState& operator=(const ThreadState&) = delete;
+
+  ThreadState(ThreadState&& ts) { *this = std::move(ts); }
+  ThreadState& operator=(ThreadState&& ts) {
+    _tid = ts._tid;
+    ++_total_threads;
+    return *this;
+  }
+
+  ~ThreadState() {
+    if (_total_threads > 0) {
+      _total_threads--;
+    }
+  }
+
   template <typename T>
   void work(std::vector<T>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
@@ -67,18 +85,21 @@ class ThreadState {
     return {};
   }
 
-  void start_thread() { _tid = _total_threads++; }
+  void start_thread() {}
   void end_thread() {
-    _total_threads--;
-    if (_total_threads == 0) {
+    _finished_threads++;
+    if (_finished_threads == _total_threads) {
       _start_index = 0;
+      _finished_threads = 0;
     }
   }
 
   size_t _tid;
 
   static std::mutex _work_buffer_mutex;
+  static std::mutex _io_lock;
   static std::atomic_size_t _total_threads;
+  static std::atomic_size_t _finished_threads;
   static std::atomic_size_t _start_index;
 };
 

@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <iomanip>
+#include <ios>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -20,8 +21,8 @@
 #include "Utils.h"
 #include "Workspace.h"
 
-void generate_splits(uint64_t state, size_t regions,
-                     std::vector<lagrange_region_split_t> &results) {
+inline void generate_splits(uint64_t state, size_t regions,
+                            std::vector<lagrange_region_split_t> &results) {
   results.clear();
   uint64_t valid_region_mask = (1ull << regions) - 1;
   if (state == 0) {
@@ -51,11 +52,11 @@ void generate_splits(uint64_t state, size_t regions,
   }
 }
 
-void weighted_combine(const lagrange_col_vector_t &c1,
-                      const lagrange_col_vector_t &c2,
-                      const std::vector<lagrange_dist_t> excl_dists,
-                      lagrange_col_vector_t &dest, size_t c1_scale,
-                      size_t c2_scale, size_t &scale_count) {
+inline void weighted_combine(const lagrange_col_vector_t &c1,
+                             const lagrange_col_vector_t &c2,
+                             const std::vector<lagrange_dist_t> excl_dists,
+                             lagrange_col_vector_t &dest, size_t c1_scale,
+                             size_t c2_scale, size_t &scale_count) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
@@ -98,10 +99,10 @@ void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
-void reverse_weighted_combine(const lagrange_col_vector_t &c1,
-                              const lagrange_col_vector_t &c2,
-                              const std::vector<lagrange_dist_t> excl_dists,
-                              lagrange_col_vector_t &dest) {
+inline void reverse_weighted_combine(
+    const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
+    const std::vector<lagrange_dist_t> excl_dists,
+    lagrange_col_vector_t &dest) {
   if (c1.size() != c2.size() && dest.size() == c1.size()) {
     throw std::runtime_error{"The vectors to combine are not equal sizes"};
   }
@@ -200,6 +201,7 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
   }
 
   _last_execution = ws->advance_clock();
+  ws->update_rate_matrix_clock(_rate_matrix_index);
 }
 
 void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -208,7 +210,9 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
   os << tabs << "MakeRateMatrixOperation:\n"
-     << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
+     << tabs << "Rate Matrix (index: " << _rate_matrix_index
+     << " update: " << ws->last_update_rate_matrix(_rate_matrix_index)
+     << "):\n";
 
   auto &rm = ws->rate_matrix(_rate_matrix_index);
 
@@ -220,7 +224,8 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Period index: " << _period_index << "\n"
      << tabs << ws->get_period_params(_period_index).toString() << "\n"
      << tabs << "_last_execution: " << _last_execution << "\n"
-     << tabs << "_last_update: " << _last_update << "\n";
+     << tabs << "_last_update: " << _last_update << "\n"
+     << tabs << "correct: " << std::boolalpha << correct(ws) << "\n";
   os << closing_line(tabs);
 }
 
@@ -244,6 +249,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   // large we run into numerical issues.
   int scale_exp =
       std::min(30, std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t)));
+
   A /= std::pow(2.0, scale_exp) / _t;
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
@@ -259,10 +265,10 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t D = I - c * X;
 #endif
 
-  X_2 = A;
-  N = I + c * X_2;
-  D = I - c * X_2;
-
+  lagrange_matrix_t X_2 = A;
+  lagrange_matrix_t N = I + c * X_2;
+  lagrange_matrix_t D = I - c * X_2;
+  lagrange_matrix_t X_1;
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup. Furhthermore, we are going to unroll the loop to allow us to skip
   // some assignments.
@@ -332,7 +338,9 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ExpmOperation:\n"
      << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
 
-  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << "):\n";
+  os << tabs << "Prob Matrix (index: " << _prob_matrix_index
+     << " update: " << ws->last_update_prob_matrix(_prob_matrix_index)
+     << "):\n";
 
   auto &pm = ws->prob_matrix(_prob_matrix_index);
 
@@ -342,7 +350,8 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   }
 
   os << tabs << "t: " << std::setprecision(16) << _t << "\n";
-  os << tabs << "_last_execution: " << _last_execution;
+  os << tabs << "_last_execution: " << _last_execution << "\n";
+  os << tabs << "correct:  " << std::boolalpha << correct(ws);
   if (_rate_matrix_op != nullptr) {
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
   } else {
@@ -371,6 +380,7 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
       _expm_op->eval(ws);
     }
   }
+
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed stuff, return */
     return;
@@ -378,8 +388,9 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
 
   _last_execution = ws->advance_clock();
 
-  ws->update_clv(_top_clv) =
-      std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv));
+  ws->update_clv(
+      std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv)),
+      _top_clv);
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
 }
 
@@ -389,11 +400,14 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << opening_line(tabs) << "\n";
   os << tabs << "DispersionOperation:\n";
-  os << tabs << "Top clv (index: " << _top_clv << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_top_clv));
-  os << tabs << "Bot clv (index: " << _bot_clv << "): " << std::setprecision(10)
-     << blaze::trans(ws->clv(_bot_clv));
+  os << tabs << "Top clv (index: " << _top_clv
+     << " update: " << ws->last_update_clv(_top_clv)
+     << "): " << std::setprecision(10) << blaze::trans(ws->clv(_top_clv));
+  os << tabs << "Bot clv (index: " << _bot_clv
+     << " update: " << ws->last_update_clv(_bot_clv)
+     << "): " << std::setprecision(10) << blaze::trans(ws->clv(_bot_clv));
   os << tabs << "Last Executed: " << _last_execution << "\n";
+  os << tabs << "correct: " << std::boolalpha << correct(ws) << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
   if (_expm_op != nullptr) {
@@ -428,7 +442,7 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
     }
   }
 
-  auto &parent_clv = ws->update_clv(_parent_clv_index);
+  auto &parent_clv = ws->clv_ref(_parent_clv_index);
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
@@ -438,6 +452,7 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
                    ws->clv_scalar(_parent_clv_index));
 
   _last_execution = ws->advance_clock();
+  ws->update_clv_clock(_parent_clv_index);
 }
 
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -459,9 +474,10 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Parent clv (index: " << _parent_clv_index
      << ", scalar: " << ws->clv_scalar(_parent_clv_index)
      << ", update: " << ws->last_update_clv(_parent_clv_index)
-     << "): " << std::setprecision(10) << "): " << std::setprecision(10)
+     << "):  " << std::setprecision(10)
      << blaze::trans(ws->clv(_parent_clv_index));
   os << tabs << "Last Executed: " << _last_execution << "\n";
+  os << tabs << "correct: " << std::boolalpha << correct(ws) << "\n";
 
   if (_excl_dists.size() != 0) {
     os << tabs << "Excluded dists:\n";
@@ -510,7 +526,7 @@ void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) {
 
     reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists, tmp);
 
-    ws->update_clv(_bot_clv_index) = std::move(tmp);
+    ws->update_clv(std::move(tmp), _bot_clv_index);
   }
 
   _last_execution = ws->advance_clock();
@@ -565,7 +581,6 @@ double LLHGoal::eval(std::shared_ptr<Workspace> ws) const {
   return std::log(blaze::dot(ws->clv(_root_clv_index),
                              ws->get_base_frequencies(_prior_index))) -
          lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
-  // return blaze::sum(ws->clv(_root_clv_index));
 }
 
 lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {

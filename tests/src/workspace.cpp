@@ -18,7 +18,7 @@ TEST(Workspace, simple0) {
   EXPECT_EQ(ws.rate_matrix(0).columns(), states);
   EXPECT_THROW(ws.rate_matrix(1), std::runtime_error);
 
-  EXPECT_EQ(ws.rate_matrix_count(), 1);
+  EXPECT_EQ(ws.prob_matrix_count(), 1);
   EXPECT_EQ(ws.prob_matrix(0).rows(), states);
   EXPECT_EQ(ws.prob_matrix(0).columns(), states);
   EXPECT_THROW(ws.prob_matrix(1), std::runtime_error);

@@ -60,12 +60,12 @@ class OperationTest : public ::testing::Test {
 
     _ws->rate_matrix(_rate_matrix) = _arbitrary_rate_matrix;
 
-    _ws->update_clv(_rbot_clv) = _arbitrary_clv1;
-    _ws->update_clv(_lbot_clv) = _arbitrary_clv2;
-    _ws->update_clv(_root_clv) = {0, 0, 0, 0};
+    _ws->update_clv(_arbitrary_clv1, _rbot_clv);
+    _ws->update_clv(_arbitrary_clv2, _lbot_clv);
+    _ws->update_clv({0, 0, 0, 0}, _root_clv);
 
-    _ws->update_clv(_reverse_bot_clv) = {0, 0, 0, 0};
-    _ws->update_clv(_reverse_lbot_clv) = _arbitrary_clv1;
+    _ws->update_clv({0, 0, 0, 0}, _reverse_bot_clv);
+    _ws->update_clv(_arbitrary_clv1, _reverse_lbot_clv);
     _ws->set_period_params(0, .3123, 1.1231);
 
     _rate_matrix_op = std::make_shared<MakeRateMatrixOperation>(_rate_matrix);

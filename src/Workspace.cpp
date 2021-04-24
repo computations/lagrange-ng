@@ -65,7 +65,8 @@ void Workspace::reserve() {
 
     _rate_matrix[i]._matrix = new lagrange_matrix_t(_states, _states);
   }
-  for (size_t i = 0; i < _rate_matrix.size(); i++) {
+
+  for (size_t i = 0; i < _prob_matrix.size(); i++) {
     if (_prob_matrix[i]._matrix != nullptr) {
       delete _prob_matrix[i]._matrix;
     }

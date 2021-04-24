@@ -31,9 +31,7 @@ class MakeRateMatrixOperation {
 
   void eval(std::shared_ptr<Workspace> ws);
 
-  lagrange_clock_tick_t last_update() const {
-    return std::max(_last_execution, _last_update);
-  }
+  inline lagrange_clock_tick_t last_update() const { return _last_execution; }
 
   inline void update_rates(const std::shared_ptr<Workspace>& ws, double disp,
                            double ext) {
@@ -52,6 +50,11 @@ class MakeRateMatrixOperation {
 
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
+
+  bool correct(const std::shared_ptr<Workspace>& ws) const {
+    return _last_execution > _last_update &&
+           ws->last_update_rate_matrix(_rate_matrix_index) > _last_execution;
+  }
 
  private:
   size_t _rate_matrix_index;
@@ -92,6 +95,17 @@ class ExpmOperation {
 
   std::mutex& getLock() { return *_lock; }
 
+  bool correct(const std::shared_ptr<Workspace>& ws) const {
+    bool rm_correct =
+        _rate_matrix_op == nullptr ? true : _rate_matrix_op->correct(ws);
+    bool pm_correct = _last_execution >
+                      (_rate_matrix_op == nullptr
+                           ? std::numeric_limits<lagrange_clock_tick_t>::max()
+                           : _rate_matrix_op->last_update());
+    return rm_correct && pm_correct &&
+           ws->last_update_prob_matrix(_prob_matrix_index) > _last_execution;
+  }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
@@ -99,10 +113,10 @@ class ExpmOperation {
 
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
-  lagrange_matrix_t X_1;
-  lagrange_matrix_t X_2;
-  lagrange_matrix_t N;
-  lagrange_matrix_t D;
+  // lagrange_matrix_t X_1;
+  // lagrange_matrix_t X_2;
+  // lagrange_matrix_t N;
+  // lagrange_matrix_t D;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -189,13 +203,26 @@ class DispersionOperation {
                           size_t tabLevel = 0) const;
 
   bool ready(const std::shared_ptr<Workspace>& ws,
-             lagrange_clock_tick_t deadline) {
-    return (ws->last_update_clv(_bot_clv) > _last_execution) ||
-           ((deadline > ws->last_update_clv(_bot_clv)) &&
-            (deadline > _last_execution));
+             lagrange_clock_tick_t deadline) const {
+    return ws->last_update_clv(_bot_clv) > deadline;
   }
 
   std::mutex& getLock() { return *_lock; }
+
+  bool correct(const std::shared_ptr<Workspace>& ws) const {
+    bool expm_correct = _expm_op == nullptr ? true : _expm_op->correct(ws);
+    bool pm_execution_correct =
+        _last_execution >
+        (_expm_op == nullptr ? std::numeric_limits<lagrange_clock_tick_t>::max()
+                             : _expm_op->last_execution());
+
+    bool clvs_correct =
+        ws->last_update_clv(_top_clv) > ws->last_update_clv(_bot_clv);
+    bool execution_correct = ws->last_update_clv(_top_clv) > _last_execution;
+
+    return expm_correct && pm_execution_correct && clvs_correct &&
+           execution_correct;
+  }
 
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
@@ -260,22 +287,46 @@ class SplitOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  bool ready(const std::shared_ptr<Workspace>& ws) {
+  bool ready(const std::shared_ptr<Workspace>& ws) const {
     bool lready = true;
     bool rready = true;
 
-    for (auto& op : _lbranch_ops) {
-      lready = lready && op->ready(ws, _last_execution);
-    }
-
-    for (auto& op : _rbranch_ops) {
-      rready = rready && op->ready(ws, _last_execution);
-    }
+    lready = _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution);
+    rready = _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
 
     return rready && lready;
   }
 
   std::mutex& getLock() { return *_lock; }
+
+  bool correct(const std::shared_ptr<Workspace>& ws) const {
+    bool disp_ops_correct = true;
+    for (auto& op : _rbranch_ops) {
+      disp_ops_correct = disp_ops_correct && op->correct(ws);
+    }
+
+    for (auto& op : _lbranch_ops) {
+      disp_ops_correct = disp_ops_correct && op->correct(ws);
+    }
+
+    bool left_clv_correct =
+        _last_execution > ws->last_update_clv(_lbranch_clv_index);
+    bool right_clv_correct =
+        _last_execution > ws->last_update_clv(_rbranch_clv_index);
+    bool parent_clv_correct =
+        ws->last_update_clv(_parent_clv_index) > _last_execution;
+
+    bool l_order_correct =
+        _last_execution > ws->last_update_clv(_lbranch_clv_index);
+    bool r_order_correct =
+        _last_execution > ws->last_update_clv(_lbranch_clv_index);
+    bool p_order_correct =
+        ws->last_update_clv(_parent_clv_index) > _last_execution;
+
+    return disp_ops_correct && left_clv_correct && right_clv_correct &&
+           parent_clv_correct && l_order_correct && r_order_correct &&
+           p_order_correct;
+  }
 
  private:
   size_t _lbranch_clv_index;
