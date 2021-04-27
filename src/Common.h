@@ -8,7 +8,7 @@
 
 #define BLAZE_BLAS_MODE 1
 #define BLAZE_BLAS_IS_64BIT 1
-#define BLAZE_BLAS_IS_PARALLEL 1
+#define BLAZE_BLAS_IS_PARALLEL 0
 #define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
 #define BLAZE_BLAS_INCLUDE_FILE <cblas.h>
 
@@ -63,12 +63,8 @@ struct period_t {
   void applyDerivative(const period_derivative_t& d) {
     dispersion_rate += d.d_dispersion;
     extinction_rate += d.d_extinction;
-    if (dispersion_rate < 0) {
-      dispersion_rate = 0.0;
-    }
-    if (extinction_rate < 0) {
-      extinction_rate = 0.0;
-    }
+    if (dispersion_rate < 0) { dispersion_rate = 0.0; }
+    if (extinction_rate < 0) { extinction_rate = 0.0; }
   }
 
   std::string toString() const {

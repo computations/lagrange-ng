@@ -31,9 +31,7 @@ void Context::registerBackwardOperations() {
 }
 
 void Context::registerLHGoal() {
-  if (_forward_operations.size() == 0) {
-    registerForwardOperations();
-  }
+  if (_forward_operations.size() == 0) { registerForwardOperations(); }
 
   auto root_clv = (*(_forward_operations.end() - 1))->get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
@@ -41,9 +39,7 @@ void Context::registerLHGoal() {
 }
 
 void Context::registerStateLHGoal() {
-  if (_reverse_operations.size() == 0) {
-    registerBackwardOperations();
-  }
+  if (_reverse_operations.size() == 0) { registerBackwardOperations(); }
 
   auto node_ids = _tree->traversePreorderInternalNodesOnly();
   for (auto nid : node_ids) {
@@ -75,74 +71,71 @@ void Context::registerTipClvs(
     throw std::runtime_error{
         "The forward operations need to be generated first"};
   }
-  if (!_workspace->reserved()) {
-    _workspace->reserve();
-  }
+  if (!_workspace->reserved()) { _workspace->reserve(); }
   _tree->assignTipData(*_workspace, dist_data);
 }
 
-void Context::computeForwardOperations() {
-  std::vector<ThreadState> thread_states;
+void Context::computeForwardOperations(ThreadState& ts, ThreadContext& tc) {
+  ts.work(ThreadMode::ComputeForward, tc, _workspace);
+}
 
-  for (size_t i = 0; i < 2; ++i) {
-    thread_states.emplace_back();
+void Context::computeBackwardOperations(ThreadState& ts, ThreadContext& tc) {
+  ts.work(ThreadMode::ComputeReverse, tc, _workspace);
+}
+
+double Context::computeLLH(ThreadState& ts) {
+  auto tc = makeThreadContext();
+  return computeLLH(ts, tc);
+}
+
+double Context::computeLLH(ThreadState& ts, ThreadContext& tc) {
+  ts.work(ThreadMode::ComputeForward, tc, _workspace);
+  ts.work(ThreadMode::ComputeLH, tc, _workspace);
+  return _llh_goal.begin()->result();
+}
+
+void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
+                                       bool splits) {
+  ThreadContext tc = makeThreadContext();
+  /* This blocks all but the main thread from proceeding until the halt mode
+   * is set, which means that
+   */
+  if (!ts.master_thread()) {
+    ts.work(tc, _workspace);
+    return;
   }
-
-  std::vector<std::thread> threads;
-  for (auto& ts : thread_states) {
-    threads.emplace_back(&ThreadState::work<std::shared_ptr<SplitOperation>>,
-                         std::ref(ts), std::ref(_forward_operations),
-                         std::ref(_workspace));
-  }
-
-  for (auto& t : threads) {
-    t.join();
-  }
+  double initial_lh = computeLLH(ts, tc);
+  std::cout << "Initial LH: " << initial_lh << std::endl;
+  double final_lh = optimize(ts, tc);
+  std::cout << "Final LH: " << final_lh << std::endl;
+  if (states) { computeStateGoal(ts, tc); }
+  if (splits) { computeSplitGoal(ts, tc); }
+  ts.halt_threads();
 }
 
-void Context::computeBackwardOperations() {
-  ThreadState ts;
-  ts.work(_reverse_operations, _workspace);
-}
+double Context::optimize(ThreadState& ts, ThreadContext& tc) {
+  struct OptContext {
+    Context& context;
+    ThreadContext& tc;
+    ThreadState& ts;
+  } oc{*this, tc, ts};
 
-double Context::computeLLH() {
-  computeForwardOperations();
-  return _llh_goal.begin()->eval(_workspace);
-}
-
-period_derivative_t Context::computeDLLH(double initial_lh) {
-  period_derivative_t derivative;
-
-  auto cur = _workspace->get_period_params(0);
-  auto tmp = cur;
-  tmp.dispersion_rate += 1e-4;
-  updateRates(tmp);
-  derivative.d_dispersion = computeLLH() - initial_lh;
-
-  tmp = cur;
-  tmp.extinction_rate += 1e-4;
-  updateRates(tmp);
-  derivative.d_extinction = computeLLH() - initial_lh;
-
-  return derivative;
-}
-
-double Context::optimize() {
   nlopt::opt opt(nlopt::LN_SBPLX, 2);
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
-    auto obj = static_cast<Context*>(f_data);
+    auto obj = static_cast<OptContext*>(f_data);
     period_t p{x[0], x[1]};
-    obj->updateRates(p);
-    auto llh = obj->computeLLH();
+    obj->context.updateRates(p);
+    double llh = obj->context.computeLLH(obj->ts, obj->tc);
+    // std::cout << p.toString() << ": " << llh << std::endl;
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }
     return llh;
   };
 
-  opt.set_max_objective(objective, this);
+  opt.set_max_objective(objective, &oc);
   opt.set_lower_bounds({1e-7, 1e-7});
 
   std::vector<double> results(2, 0.01);
@@ -153,37 +146,38 @@ double Context::optimize() {
   return obj_val;
 }
 
-double Context::computeLHGoal() { return computeLLH(); }
-
 /* Computes the registered state goals
  * If there are no reverse state goals, this operation does nothing. It also
  * requires that the forward operations be computed first.
  *
  * Returns:
- *   a map (really a vector) from node id to result. The result is a col vector
- *   indexed by lagrange_dist_t, where each entry contains the likelihood of
- *   that particular distribution at that node.
+ *   a map (really a vector) from node id to result. The result is a col
+ * vector indexed by lagrange_dist_t, where each entry contains the likelihood
+ * of that particular distribution at that node.
  */
-std::vector<lagrange_col_vector_t> Context::computeStateGoal() {
-  computeBackwardOperations();
+std::vector<lagrange_col_vector_t> Context::getStateResults() {
   std::vector<lagrange_col_vector_t> states;
   states.reserve(_state_lh_goal.size());
-  for (auto& op : _state_lh_goal) {
-    states.push_back(op.eval(_workspace));
-  }
+
+  for (auto& op : _state_lh_goal) { states.push_back(op.result()); }
 
   return states;
 }
 
-lagrange_split_goal_return_t Context::computeSplitGoal() {
-  computeBackwardOperations();
-  std::vector<std::unordered_map<lagrange_dist_t, std::vector<AncSplit>>>
-      splits;
+lagrange_split_list_t Context::getSplitResults() {
+  lagrange_split_list_t splits;
   splits.reserve(_split_lh_goal.size());
-  for (auto& op : _split_lh_goal) {
-    splits.push_back(op.eval(_workspace));
-  }
+
+  for (auto& op : _split_lh_goal) { splits.push_back(op.result()); }
+
   return splits;
+}
+
+void Context::computeStateGoal(ThreadState& ts, ThreadContext& tc) {
+  ts.work(ThreadMode::ComputeStateGoal, tc, _workspace);
+}
+void Context::computeSplitGoal(ThreadState& ts, ThreadContext& tc) {
+  ts.work(ThreadMode::ComputeSplitGoal, tc, _workspace);
 }
 
 period_t Context::currentParams() const {

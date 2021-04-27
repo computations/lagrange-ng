@@ -19,7 +19,7 @@
 #ifndef ANCSPLIT_H_
 #define ANCSPLIT_H_
 
-#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "Common.h"
@@ -38,5 +38,10 @@ class AncSplit {
   lagrange_dist_t ldescdistint;
   lagrange_dist_t rdescdistint;
 };
+
+typedef std::unordered_map<lagrange_dist_t, std::vector<AncSplit>>
+    lagrange_split_return_t;
+
+typedef std::vector<lagrange_split_return_t> lagrange_split_list_t;
 
 #endif /* ANCSPLIT_H_ */

@@ -21,6 +21,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -32,6 +33,7 @@ using namespace std;
 
 #include "Context.h"
 #include "InputReader.h"
+#include "ThreadState.h"
 #include "Utils.h"
 
 struct config_options_t {
@@ -102,9 +104,7 @@ config_options_t parse_config(const std::string &config_filename) {
 
   std::string line;
   while (getline(ifs, line)) {
-    if (line.size() == 0 || line[0] == '#') {
-      continue;
-    }
+    if (line.size() == 0 || line[0] == '#') { continue; }
     /* Make the token */
     vector<string> tokens = grab_token(line, "=");
 
@@ -188,9 +188,7 @@ config_options_t parse_config(const std::string &config_filename) {
         config.marginal = false;
       }
     } else if (!strcmp(tokens[0].c_str(), "report")) {
-      if (tokens[1].compare("split") != 0) {
-        config.splits = false;
-      }
+      if (tokens[1].compare("split") != 0) { config.splits = false; }
     } else if (!strcmp(tokens[0].c_str(), "sparse")) {
       config.sparse = true;
     } else if (!strcmp(tokens[0].c_str(), "splits")) {
@@ -321,18 +319,24 @@ void handle_tree(std::shared_ptr<Tree> intree,
   root_json["attributes"] = attributes_json;
   Context context(intree, config.region_count);
   context.registerLHGoal();
-  if (config.states) {
-    context.registerStateLHGoal();
-  }
+  if (config.states) { context.registerStateLHGoal(); }
   context.init();
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
 
-  double initial_lh = context.computeLLH();
-  std::cout << "Initial LH: " << initial_lh << std::endl;
+  constexpr size_t thread_count = 2;
 
-  double final_lh = context.optimize();
-  std::cout << "Final LH: " << final_lh << std::endl;
+  std::vector<ThreadState> thread_states;
+  thread_states.reserve(thread_count);
+  std::vector<std::thread> threads;
+  for (size_t i = 0; i < thread_count; i++) {
+    thread_states.emplace_back();
+    threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
+                         std::ref(thread_states[i]), config.states,
+                         config.splits);
+  }
+
+  for (auto &t : threads) { t.join(); }
 
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -345,20 +349,17 @@ void handle_tree(std::shared_ptr<Tree> intree,
 
   // invert the map
   if (config.states) {
-    auto states = context.computeStateGoal();
+    auto states = context.getStateResults();
     root_json["node-results"] =
         makeStateJsonOutput(states, stateGoalIndexToIdMap);
   }
-  if (config.splits) {
-    auto splits = context.computeSplitGoal();
-  }
+  if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
 }
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
-  blaze::setNumThreads(1);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

@@ -25,9 +25,7 @@ inline void generate_splits(uint64_t state, size_t regions,
                             std::vector<lagrange_region_split_t> &results) {
   results.clear();
   uint64_t valid_region_mask = (1ull << regions) - 1;
-  if (state == 0) {
-    return;
-  }
+  if (state == 0) { return; }
 
   if (lagrange_popcount(state) == 1) {
     results.push_back({state, state});
@@ -37,18 +35,14 @@ inline void generate_splits(uint64_t state, size_t regions,
   results.reserve(regions);
   for (size_t i = 0; i < regions; ++i) {
     uint64_t x = 1ull << i;
-    if ((state & x) == 0) {
-      continue;
-    }
+    if ((state & x) == 0) { continue; }
 
     results.push_back({x, state});
     results.push_back({state, x});
 
     uint64_t y = (x ^ state) & valid_region_mask;
     results.push_back({x, y});
-    if (lagrange_popcount(y) > 1) {
-      results.push_back({y, x});
-    }
+    if (lagrange_popcount(y) > 1) { results.push_back({y, x}); }
   }
 }
 
@@ -81,12 +75,8 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
       continue;
     }
     generate_splits(i, regions, splits);
-    for (auto &p : splits) {
-      dest[i] += c1[p.left] * c2[p.right];
-    }
-    if (splits.size() != 0) {
-      dest[i] /= static_cast<double>(splits.size());
-    }
+    for (auto &p : splits) { dest[i] += c1[p.left] * c2[p.right]; }
+    if (splits.size() != 0) { dest[i] /= static_cast<double>(splits.size()); }
     if (dest[i] < lagrange_scale_threshold) {
       scale &= true;
     } else {
@@ -125,23 +115,17 @@ inline void reverse_weighted_combine(
     }
 
     generate_splits(i, regions, splits);
-    if (splits.size() == 0) {
-      continue;
-    }
+    if (splits.size() == 0) { continue; }
 
     double weight = 1.0 / static_cast<double>(splits.size());
-    for (auto &p : splits) {
-      dest[p.left] += c1[i] * c2[p.right] * weight;
-    }
+    for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
   }
 }
 
 inline std::string make_tabs(size_t tabLevel) {
   std::ostringstream tabs;
   tabs << "|";
-  for (size_t i = 0; i < tabLevel; ++i) {
-    tabs << " |";
-  }
+  for (size_t i = 0; i < tabLevel; ++i) { tabs << " |"; }
   tabs << " ";
   return tabs.str();
 }
@@ -151,9 +135,7 @@ inline std::string opening_line(const std::string &tabs) {
 
   line << tabs.substr(0, tabs.size() - 2) << "┌";
   size_t cur_len = line.str().size();
-  for (size_t i = 0; i < (80 - cur_len); ++i) {
-    line << "─";
-  }
+  for (size_t i = 0; i < (80 - cur_len); ++i) { line << "─"; }
 
   return line.str();
 }
@@ -163,9 +145,7 @@ inline std::string closing_line(const std::string &tabs) {
 
   line << tabs.substr(0, tabs.size() - 2) << "└";
   size_t cur_len = line.str().size();
-  for (size_t i = 0; i < (80 - cur_len); ++i) {
-    line << "─";
-  }
+  for (size_t i = 0; i < (80 - cur_len); ++i) { line << "─"; }
 
   return line.str();
 }
@@ -177,14 +157,13 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
   auto &period = ws->get_period_params(_period_index);
   for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
     for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
-      if (lagrange_bextr(dist, i) != 0) {
-        continue;
-      }
+      if (lagrange_bextr(dist, i) != 0) { continue; }
+
       lagrange_dist_t gain_dist = dist | (1ul << i);
       rm(gain_dist, dist) = period.getExtinctionRate();
-      if (dist == 0) {
-        continue;
-      }
+
+      if (dist == 0) { continue; }
+
       for (size_t j = 0; j < ws->regions(); ++j) {
         rm(dist, gain_dist) +=
             period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
@@ -194,9 +173,9 @@ void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
 
   for (size_t i = 0; i < rm.rows(); i++) {
     double sum = 0;
-    for (size_t j = 0; j < rm.columns(); j++) {
-      sum += rm(i, j);
-    }
+
+    for (size_t j = 0; j < rm.columns(); j++) { sum += rm(i, j); }
+
     rm(i, i) = -sum;
   }
 
@@ -293,9 +272,7 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
 
     i += 1;
 
-    if (i > q) {
-      break;
-    }
+    if (i > q) { break; }
 
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     X_2 = A * X_1;
@@ -410,9 +387,7 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "correct: " << std::boolalpha << correct(ws) << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
-  if (_expm_op != nullptr) {
-    os << _expm_op->printStatus(ws, tabLevel + 1);
-  }
+  if (_expm_op != nullptr) { os << _expm_op->printStatus(ws, tabLevel + 1); }
   os << "\n";
   os << closing_line(tabs);
 }
@@ -488,15 +463,11 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << tabs << "Left Branch ops:\n";
   if (_lbranch_ops.size() != 0) {
-    for (auto &op : _lbranch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+    for (auto &op : _lbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
   }
   os << "\n" << tabs << "Right Branch ops:\n";
   if (_rbranch_ops.size() != 0) {
-    for (auto &op : _rbranch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+    for (auto &op : _rbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
   }
   os << "\n";
   os << closing_line(tabs);
@@ -562,9 +533,7 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   if (_branch_ops.size() != 0) {
     os << tabs << "Branch ops:\n";
-    for (auto &op : _branch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+    for (auto &op : _branch_ops) { os << op->printStatus(ws, tabLevel + 1); }
     os << "\n";
   }
   os << closing_line(tabs);
@@ -577,13 +546,13 @@ std::string ReverseSplitOperation::printStatus(
   return os.str();
 }
 
-double LLHGoal::eval(std::shared_ptr<Workspace> ws) const {
-  return std::log(blaze::dot(ws->clv(_root_clv_index),
-                             ws->get_base_frequencies(_prior_index))) -
-         lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
+void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+  _result = std::log(blaze::dot(ws->clv(_root_clv_index),
+                                ws->get_base_frequencies(_prior_index))) -
+            lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
 }
 
-lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
+void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   lagrange_col_vector_t tmp(ws->states());
   tmp = 0.0;
   size_t tmp_scalar = 0;
@@ -593,12 +562,11 @@ lagrange_col_vector_t StateLHGoal::eval(std::shared_ptr<Workspace> ws) const {
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 
-  return blaze::log(ws->clv(_parent_clv_index) * tmp) -
-         tmp_scalar * lagrange_scaling_factor_log;
+  _result = blaze::log(ws->clv(_parent_clv_index) * tmp) -
+            tmp_scalar * lagrange_scaling_factor_log;
 }
 
-std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
-    std::shared_ptr<Workspace> ws) const {
+void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> ret;
 
   auto &parent_clv = ws->clv(_parent_clv_index);
@@ -618,5 +586,5 @@ std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> SplitLHGoal::eval(
     }
     ret[dist] = anc_split_vec;
   }
-  return ret;
+  _result = ret;
 }

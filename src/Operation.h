@@ -288,13 +288,17 @@ class SplitOperation {
                           size_t tabLevel = 0) const;
 
   bool ready(const std::shared_ptr<Workspace>& ws) const {
-    bool lready = true;
-    bool rready = true;
+    // bool lready = true;
+    // bool rready = true;
 
+    /*
     lready = _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution);
     rready = _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
 
     return rready && lready;
+    */
+    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
+           _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
   }
 
   std::mutex& getLock() { return *_lock; }
@@ -422,10 +426,13 @@ class LLHGoal {
  public:
   LLHGoal(size_t root_clv, size_t prior_index)
       : _root_clv_index{root_clv}, _prior_index{prior_index} {}
-  double eval(std::shared_ptr<Workspace>) const;
+  void eval(const std::shared_ptr<Workspace>&);
+
+  inline double result() const { return _result; }
 
   size_t _root_clv_index;
   size_t _prior_index;
+  double _result = -std::numeric_limits<double>::infinity();
 
  private:
 };
@@ -437,23 +444,30 @@ class StateLHGoal {
         _lchild_clv_index{lchild_clv},
         _rchild_clv_index{rchild_clv} {}
 
-  lagrange_col_vector_t eval(std::shared_ptr<Workspace>) const;
+  void eval(const std::shared_ptr<Workspace>&);
+
+  inline lagrange_col_vector_t result() const { return _result; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_col_vector_t _result;
 };
 
 class SplitLHGoal {
  public:
-  std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> eval(
-      std::shared_ptr<Workspace> ws) const;
+  void eval(const std::shared_ptr<Workspace>&);
+
+  inline lagrange_split_return_t result() const { return _result; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_split_return_t _result;
 };
 
 typedef std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>
