@@ -244,10 +244,9 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
   lagrange_matrix_t D = I - c * X;
 #endif
 
-  lagrange_matrix_t X_2 = A;
-  lagrange_matrix_t N = I + c * X_2;
-  lagrange_matrix_t D = I - c * X_2;
-  lagrange_matrix_t X_1;
+  X_2 = A;
+  N = I + c * X_2;
+  D = I - c * X_2;
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup. Furhthermore, we are going to unroll the loop to allow us to skip
   // some assignments.

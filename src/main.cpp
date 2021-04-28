@@ -77,7 +77,7 @@ struct config_options_t {
   bool estimate_dispersal_mask = false;
 
   size_t region_count;
-  size_t threads = 0;
+  lagrange_option_t<size_t> threads;
 };
 
 lagrange_col_vector_t normalizeStateDistrubtionByLWR(
@@ -330,9 +330,9 @@ void handle_tree(std::shared_ptr<Tree> intree,
   context.registerTipClvs(data);
 
   std::vector<ThreadState> thread_states;
-  thread_states.reserve(config.threads);
+  thread_states.reserve(config.threads.get());
   std::vector<std::thread> threads;
-  for (size_t i = 0; i < config.threads; i++) {
+  for (size_t i = 0; i < config.threads.get(); i++) {
     thread_states.emplace_back();
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(thread_states[i]), config.states,
@@ -361,11 +361,8 @@ void handle_tree(std::shared_ptr<Tree> intree,
   writeJsonToFile(config, root_json);
 }
 
-void validateConfig(const config_options_t &config) {
-  if (config.threads == 0) {
-    throw std::runtime_error{
-        "Number of threads not found, please specifiy the number of threads"};
-  }
+void validateConfig(config_options_t &config) {
+  if (!config.threads.has_value()) { config.threads = 1; }
 }
 
 int main(int argc, char *argv[]) {
@@ -377,6 +374,7 @@ int main(int argc, char *argv[]) {
   } else {
     std::string config_filename(argv[1]);
     auto config = parse_config(config_filename);
+    validateConfig(config);
 
     /*****************
      * finish reading the configuration file

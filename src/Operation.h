@@ -113,10 +113,11 @@ class ExpmOperation {
 
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
-  // lagrange_matrix_t X_1;
-  // lagrange_matrix_t X_2;
-  // lagrange_matrix_t N;
-  // lagrange_matrix_t D;
+  /* Temp matrices for the computation of the exponential */
+  lagrange_matrix_t X_1;
+  lagrange_matrix_t X_2;
+  lagrange_matrix_t N;
+  lagrange_matrix_t D;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
