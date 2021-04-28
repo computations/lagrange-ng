@@ -78,22 +78,18 @@ class ThreadState {
           break;
 
         case ThreadMode::ComputeSplitGoal:
-          if (master_thread()) {
-            work(tc._split_lh_work_buffer, ws);
-            return;
-          }
+          work_goal(tc._split_lh_work_buffer, ws);
+          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeStateGoal:
-          if (master_thread()) {
-            work(tc._state_lh_work_buffer, ws);
-            return;
-          }
+          work_goal(tc._state_lh_work_buffer, ws);
+          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeLH:
           if (master_thread()) {
-            work(tc._lh_goal, ws);
+            work_goal(tc._lh_goal, ws);
             return;
           }
           break;
@@ -120,8 +116,8 @@ class ThreadState {
 
  private:
   template <typename T>
-  void work(std::vector<T>& work_buffer,
-            const std::shared_ptr<Workspace>& workspace) {
+  void work_goal(std::vector<T>& work_buffer,
+                 const std::shared_ptr<Workspace>& workspace) {
     if (!master_thread()) { return; }
 
     for (auto& w : work_buffer) { w.eval(workspace); }
@@ -166,6 +162,19 @@ class ThreadState {
   }
 
   template <typename T>
+  typename std::vector<T>::iterator find_work_goal(
+      std::vector<T>& work_buffer) {
+    // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
+    if (work_buffer.size() - _start_index == 0 ||
+        active_threads() > work_buffer.size()) {
+      return work_buffer.end();
+    }
+
+    size_t local_index = _start_index++;
+    return work_buffer.begin() + local_index;
+  }
+
+  template <typename T>
   std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
                                const std::shared_ptr<Workspace>& workspace) {
     // auto t1 = std::chrono::high_resolution_clock::now();
@@ -177,7 +186,7 @@ class ThreadState {
               */
 
     if (work_buffer.size() - _start_index == 0 ||
-        _total_threads > work_buffer.size()) {
+        active_threads() > work_buffer.size()) {
       return {};
     }
 
@@ -207,6 +216,10 @@ class ThreadState {
 
     /* This should never be hit, but put it here just in case */
     return {};
+  }
+
+  inline size_t active_threads() const {
+    return _total_threads - _finished_threads;
   }
 
   void end_work() {
