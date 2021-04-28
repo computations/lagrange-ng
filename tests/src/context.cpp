@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "Context.h"
+#include "ThreadState.h"
 #include "environment.hpp"
 #include "gtest/gtest.h"
 #include "tree_reader.h"
@@ -23,6 +24,7 @@ class ContextTest : public ::testing::Test {
   std::shared_ptr<Tree> _basic_tree;
   std::unordered_map<std::string, lagrange_dist_t> _basic_tree_data;
   size_t _basic_tree_data_region_count = 2;
+  ThreadState _thread_state;
 };
 
 TEST_F(ContextTest, simple0) {
@@ -43,12 +45,12 @@ TEST_F(ContextTest, computelh1) {
   context.init();
   context.registerTipClvs(_basic_tree_data);
 
-  double llh = context.computeLLH();
+  double llh = context.computeLLH(_thread_state);
   constexpr double regression_llh = -1.7596288538749982;
 
   EXPECT_NEAR(llh, regression_llh, 1e-9);
 
-  llh = context.computeLLH();
+  llh = context.computeLLH(_thread_state);
   EXPECT_NEAR(llh, regression_llh, 1e-9);
 }
 
@@ -59,21 +61,11 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.updateRates({10.5, 1.5});
   context.registerTipClvs(_basic_tree_data);
 
-  double initial_llh = context.computeLLH();
-  context.optimize();
-  double llh = context.computeLLH();
+  double initial_llh = context.computeLLH(_thread_state);
+  context.optimizeAndComputeValues(_thread_state, false, false, false);
+  double llh = context.computeLLH(_thread_state);
 
   EXPECT_GT(llh, initial_llh);
-}
-
-TEST_F(ContextTest, LHGoal0) {
-  Context context(_basic_tree, 2);
-  context.registerLHGoal();
-  context.init();
-  context.updateRates({10.5, 1.5});
-  context.registerTipClvs(_basic_tree_data);
-
-  context.computeLHGoal();
 }
 
 TEST_F(ContextTest, StateGoal0) {
@@ -84,7 +76,7 @@ TEST_F(ContextTest, StateGoal0) {
   context.updateRates({10.5, 1.5});
   context.registerTipClvs(_basic_tree_data);
 
-  context.computeLHGoal();
-  auto states = context.computeStateGoal();
+  context.computeLLH(_thread_state);
+  auto states = context.computeStateGoal(_thread_state);
   EXPECT_EQ(states.size(), 2);
 }

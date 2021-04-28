@@ -39,9 +39,13 @@ class Context {
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
-  void optimizeAndComputeValues(ThreadState& ts, bool states, bool splits);
+  void optimizeAndComputeValues(ThreadState& ts, bool states, bool splits,
+                                bool output);
   double computeLLH(ThreadState& ts);
   double computeLLH(ThreadState& ts, ThreadContext& tc);
+
+  std::vector<lagrange_col_vector_t> computeStateGoal(ThreadState& ts);
+  lagrange_split_list_t computeSplitGoal(ThreadState& ts);
 
   std::string toString() const;
 

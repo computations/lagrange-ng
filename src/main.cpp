@@ -336,7 +336,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
     thread_states.emplace_back();
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(thread_states[i]), config.states,
-                         config.splits);
+                         config.splits, true);
   }
 
   for (auto &t : threads) { t.join(); }

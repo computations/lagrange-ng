@@ -95,7 +95,7 @@ double Context::computeLLH(ThreadState& ts, ThreadContext& tc) {
 }
 
 void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
-                                       bool splits) {
+                                       bool splits, bool output) {
   ThreadContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that
@@ -105,9 +105,13 @@ void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
     return;
   }
   double initial_lh = computeLLH(ts, tc);
-  std::cout << "Initial LH: " << initial_lh << std::endl;
+
+  if (output) { std::cout << "Initial LH: " << initial_lh << std::endl; }
+
   double final_lh = optimize(ts, tc);
-  std::cout << "Final LH: " << final_lh << std::endl;
+
+  if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
+
   if (states) { computeStateGoal(ts, tc); }
   if (splits) { computeSplitGoal(ts, tc); }
   ts.halt_threads();
@@ -192,4 +196,16 @@ std::string Context::treeCLVStatus() const {
         << _workspace->report_node_vecs(nid) << std::endl;
   }
   return oss.str();
+}
+
+std::vector<lagrange_col_vector_t> Context::computeStateGoal(ThreadState& ts) {
+  auto tc = makeThreadContext();
+  computeStateGoal(ts, tc);
+  return getStateResults();
+}
+
+lagrange_split_list_t Context::computeSplitGoal(ThreadState& ts) {
+  auto tc = makeThreadContext();
+  computeSplitGoal(ts, tc);
+  return getSplitResults();
 }
