@@ -9,6 +9,7 @@
 
 #include <float.h>
 #include <math.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -20,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -75,6 +77,7 @@ struct config_options_t {
   bool estimate_dispersal_mask = false;
 
   size_t region_count;
+  size_t threads = 0;
 };
 
 lagrange_col_vector_t normalizeStateDistrubtionByLWR(
@@ -252,6 +255,8 @@ config_options_t parse_config(const std::string &config_filename) {
       config.extinction = atof(tokens[1].c_str());
       cout << "setting extinction: " << config.extinction << endl;
       config.estimate = false;
+    } else if (!strcmp(tokens[0].c_str(), "threads")) {
+      config.threads = std::stoi(tokens[1]);
     }
   }
   ifs.close();
@@ -324,12 +329,10 @@ void handle_tree(std::shared_ptr<Tree> intree,
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
 
-  constexpr size_t thread_count = 2;
-
   std::vector<ThreadState> thread_states;
-  thread_states.reserve(thread_count);
+  thread_states.reserve(config.threads);
   std::vector<std::thread> threads;
-  for (size_t i = 0; i < thread_count; i++) {
+  for (size_t i = 0; i < config.threads; i++) {
     thread_states.emplace_back();
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(thread_states[i]), config.states,
@@ -356,6 +359,13 @@ void handle_tree(std::shared_ptr<Tree> intree,
   if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
+}
+
+void validateConfig(const config_options_t &config) {
+  if (config.threads == 0) {
+    throw std::runtime_error{
+        "Number of threads not found, please specifiy the number of threads"};
+  }
 }
 
 int main(int argc, char *argv[]) {
