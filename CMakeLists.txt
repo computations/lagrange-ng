@@ -41,14 +41,14 @@ add_subdirectory(deps)
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE
-    ${BLAS_LIBS_INCLUDE_DIRS})
+    ${BLAS_LIBS_INCLUDE_DIRS} ${LAPACK_INCLUDE_DIRS})
 target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
-    ${BLAS_LIBS_BINARY} pthread lapack OpenMP::OpenMP_CXX)
+    ${BLAS_LIBS_BINARY} pthread OpenMP::OpenMP_CXX lapack)
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
     ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${BLAS_LIBS_INCLUDE_DIRS})
-target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
+target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread 
     ${BLAS_LIBS_BINARY} nlohmann_json::nlohmann_json lapack OpenMP::OpenMP_CXX)
 
 
