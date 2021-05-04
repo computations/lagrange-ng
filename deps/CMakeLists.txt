@@ -8,7 +8,7 @@ include(ExternalProject)
 #           HINTS "/usr/lib/"
 #           )
 
-add_subdirectory(nlopt)
+add_subdirectory(nlopt EXCLUDE_FROM_ALL)
 
 set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INSTALL_PREFIX}/include)
 set(BLAS_LIBS_BINARY ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.a)

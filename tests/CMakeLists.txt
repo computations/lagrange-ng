@@ -41,7 +41,7 @@ set(LAGRANGE_TEST_SOURCES
   src/context.cpp
   src/tree.cpp
   src/main.cpp)
-add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})
+add_executable(lagrange-test EXCLUDE_FROM_ALL ${LAGRANGE_TEST_SOURCES} )
 target_link_libraries(lagrange-test gtest_main lagrange-release-libs
   ${BLAS_LIBS_BINARY})
 target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/
