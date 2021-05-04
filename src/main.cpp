@@ -367,7 +367,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
                          config.splits, true);
   }
 
-  std::cout << "Waiting for workers" << std::endl;
+  std::cout << "Waiting for workers to finish" << std::endl;
   for (auto &t : threads) { t.join(); }
 
   nlohmann::json params_json;
