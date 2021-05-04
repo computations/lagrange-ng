@@ -295,7 +295,8 @@ nlohmann::json makeStateJsonOutput(
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
     auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
-    for (size_t dist = 0; dist < bli_obj_length(state_distribution.get());
+    for (size_t dist = 0;
+         dist < static_cast<size_t>(bli_obj_length(state_distribution.get()));
          ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
