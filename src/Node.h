@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 
-#include "BranchSegment.h"
 #include "Common.h"
 #include "Operation.h"
 #include "Utils.h"

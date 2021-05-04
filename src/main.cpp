@@ -7,8 +7,6 @@
  *      Author: Ben Bettisworth
  */
 
-//#include <pthread.h>
-
 #include <chrono>
 #include <ctime>
 #include <fstream>

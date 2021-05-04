@@ -10,7 +10,7 @@ find_package(OpenMP)
 
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
-        src/BranchSegment.cpp
+        #src/BranchSegment.cpp
         src/Context.cpp
         src/InputReader.cpp
         src/Node.cpp
