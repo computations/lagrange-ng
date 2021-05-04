@@ -7,10 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
-#include <float.h>
-#include <math.h>
-#include <pthread.h>
-#include <stdio.h>
+//#include <pthread.h>
 
 #include <chrono>
 #include <ctime>
