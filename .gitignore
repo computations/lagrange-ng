@@ -5,3 +5,4 @@ bin/*
 compile_commands.json
 .clangd/*
 .cache/*
+deps/blas/*

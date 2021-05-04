@@ -15,3 +15,4 @@
 [submodule "deps/blis"]
 	path = deps/blis
 	url = https://github.com/flame/blis
+	ignore = dirty
