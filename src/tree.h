@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "Common.h"
+#include "Node.h"
 #include "Operation.h"
-#include "node.h"
 
 class Tree {
  private:

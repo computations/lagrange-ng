@@ -13,7 +13,7 @@ set(LAGRANGE_SOURCES
         src/BranchSegment.cpp
         src/Context.cpp
         src/InputReader.cpp
-        src/node.cpp
+        src/Node.cpp
         src/tree.cpp
         src/tree_reader.cpp
         src/Utils.cpp

@@ -13,9 +13,6 @@
 #include <unordered_map>
 
 #include "Operation.h"
-
-using namespace std;
-
 #include "tree.h"
 
 Tree::Tree() : Tree(nullptr) {}
@@ -93,9 +90,7 @@ void Tree::setRoot(std::shared_ptr<Node> inroot) { _root = inroot; }
 
 void Tree::unRoot(std::shared_ptr<Node> inroot) {
   processRoot();
-  if (getRoot()->getChildCount() < 3) {
-    tritomyRoot(inroot);
-  }
+  if (getRoot()->getChildCount() < 3) { tritomyRoot(inroot); }
   processRoot();
 }
 
@@ -176,15 +171,11 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
 }
 
 std::shared_ptr<Node> Tree::getMRCA(vector<string> outgroup) {
-  if (outgroup.size() == 1) {
-    return getExternalNode(outgroup[0]);
-  }
+  if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
   std::shared_ptr<Node> mcra;
   std::vector<std::shared_ptr<Node>> outgroup_nodes;
   outgroup_nodes.reserve(outgroup.size());
-  for (auto &o : outgroup) {
-    outgroup_nodes.push_back(getExternalNode(o));
-  }
+  for (auto &o : outgroup) { outgroup_nodes.push_back(getExternalNode(o)); }
   return getMRCA(outgroup_nodes);
 }
 
@@ -232,12 +223,8 @@ void Tree::processRoot() {
 }
 
 void Tree::processReRoot(std::shared_ptr<Node> node) {
-  if (node != _root || node->isExternal()) {
-    return;
-  }
-  if (getParent(node) != nullptr) {
-    processReRoot(getParent(node));
-  }
+  if (node != _root || node->isExternal()) { return; }
+  if (getParent(node) != nullptr) { processReRoot(getParent(node)); }
   // Exchange branch label, length et cetera
   exchangeInfo(getParent(node), node);
   // Rearrange topology
@@ -276,9 +263,7 @@ void Tree::postOrderProcessRoot(std::shared_ptr<Node> node) {
 }
 
 void Tree::pruneExternalNode(std::shared_ptr<Node> node) {
-  if (node->isInternal()) {
-    return;
-  }
+  if (node->isInternal()) { return; }
   _root->pruneNode(node);
   processRoot();
 }

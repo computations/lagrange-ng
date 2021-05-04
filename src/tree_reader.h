@@ -13,13 +13,11 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
-#include "node.h"
+#include "Node.h"
 #include "tree.h"
 
 class TreeReader {
-public:
+ public:
   TreeReader() {}
   std::shared_ptr<Tree> readTree(string tree);
 };

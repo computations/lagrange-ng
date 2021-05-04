@@ -16,12 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Operation.h"
-
-using namespace std;
-
 #include "Common.h"
-#include "node.h"
+#include "Node.h"
+#include "Operation.h"
 
 Node::Node()
     : _branch_length(0.0),
@@ -60,9 +57,7 @@ void Node::setHeight(double he) { _height = he; }
 
 bool Node::hasChild(std::shared_ptr<Node> test) {
   for (unsigned int i = 0; i < _children.size(); i++) {
-    if (_children.at(i) == test) {
-      return true;
-    }
+    if (_children.at(i) == test) { return true; }
   }
   return false;
 }
@@ -107,9 +102,7 @@ string Node::getNewickLambda(
     const std::function<string(const Node &)> &newick_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
-    if (i == 0) {
-      newick_oss << "(";
-    }
+    if (i == 0) { newick_oss << "("; }
 
     newick_oss << getChild(i)->getNewickLambda(newick_lambda);
 
@@ -169,9 +162,7 @@ double Node::getMaxHeight() const {
 
 void Node::setHeightRecursive() {
   _height = getMaxHeight();
-  for (auto &c : _children) {
-    c->setHeightRecursive();
-  }
+  for (auto &c : _children) { c->setHeightRecursive(); }
 }
 
 void Node::pruneNode(std::shared_ptr<Node> n) {
@@ -188,9 +179,7 @@ void Node::pruneNode(std::shared_ptr<Node> n) {
       return;
     }
   }
-  for (auto &c : _children) {
-    c->pruneNode(n);
-  }
+  for (auto &c : _children) { c->pruneNode(n); }
 }
 
 std::shared_ptr<Node> getMRCAWithNode(
@@ -198,9 +187,7 @@ std::shared_ptr<Node> getMRCAWithNode(
     const std::vector<std::shared_ptr<Node>> &leaves) {
   if (current->_children.size() == 0) {
     for (auto &n : leaves) {
-      if (n == current) {
-        return current;
-      }
+      if (n == current) { return current; }
     }
     return {nullptr};
   } else {
@@ -209,9 +196,7 @@ std::shared_ptr<Node> getMRCAWithNode(
       auto tmp_mrca = getMRCAWithNode(c, leaves);
       if (tmp_mrca != nullptr) {
         // if this is our second match, then we can return with this pointer.
-        if (mrca != nullptr) {
-          return current;
-        }
+        if (mrca != nullptr) { return current; }
         mrca = tmp_mrca;
       }
     }
@@ -220,13 +205,9 @@ std::shared_ptr<Node> getMRCAWithNode(
 }
 
 bool Node::findNode(std::shared_ptr<Node> n) {
-  if (this == n.get()) {
-    return true;
-  }
+  if (this == n.get()) { return true; }
   for (auto c : _children) {
-    if (c->findNode(n)) {
-      return true;
-    }
+    if (c->findNode(n)) { return true; }
   }
   return false;
 }
@@ -234,13 +215,9 @@ bool Node::findNode(std::shared_ptr<Node> n) {
 std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
                                         const std::shared_ptr<Node> &n) {
   for (auto c : current->_children) {
-    if (n == c) {
-      return current;
-    }
+    if (n == c) { return current; }
     auto ret = getParentWithNode(c, n);
-    if (ret != nullptr) {
-      return ret;
-    }
+    if (ret != nullptr) { return ret; }
   }
   return {nullptr};
 }
@@ -291,9 +268,7 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
         "Tree is not bifircating when generating operations"};
   }
 
-  if (_children.size() == 0) {
-    return {{}, {}};
-  }
+  if (_children.size() == 0) { return {{}, {}}; }
 
   std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
 
@@ -389,17 +364,13 @@ void Node::assignTipData(Workspace &ws,
   if (_children.size() == 0) {
     ws.set_tip_clv(ws.get_top_clv(_id), distrib_data.at(_label));
   } else {
-    for (auto &c : _children) {
-      c->assignTipData(ws, distrib_data);
-    }
+    for (auto &c : _children) { c->assignTipData(ws, distrib_data); }
   }
 }
 
 void Node::assignIdRecursive(size_t &id) {
   _id = id++;
-  for (auto &c : _children) {
-    c->assignIdRecursive(id);
-  }
+  for (auto &c : _children) { c->assignIdRecursive(id); }
 }
 
 void Node::assignId() {
@@ -413,9 +384,7 @@ void Node::setSplitStringRecursive(
     const std::vector<size_t> &id_map,
     const std::vector<lagrange_col_vector_t> &dist_lhs,
     const std::vector<std::string> &names) {
-  if (isExternal()) {
-    return;
-  }
+  if (isExternal()) { return; }
 
   lagrange_dist_t best_dist =
       lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
@@ -429,9 +398,7 @@ void Node::setStateStringRecursive(
     const std::vector<size_t> &id_map,
     const std::vector<lagrange_col_vector_t> &dist_lhs,
     const std::vector<std::string> &names) {
-  if (isExternal()) {
-    return;
-  }
+  if (isExternal()) { return; }
 
   lagrange_dist_t best_dist =
       lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
