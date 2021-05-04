@@ -7,7 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <iomanip>
-#include <ios>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -32,7 +32,7 @@ inline void generate_splits(uint64_t state, size_t regions,
     return;
   }
 
-  results.reserve(regions);
+  // results.reserve(regions);
   for (size_t i = 0; i < regions; ++i) {
     uint64_t x = 1ull << i;
     if ((state & x) == 0) { continue; }
@@ -49,19 +49,13 @@ inline void generate_splits(uint64_t state, size_t regions,
 inline void weighted_combine(const lagrange_col_vector_t &c1,
                              const lagrange_col_vector_t &c2,
                              const std::vector<lagrange_dist_t> excl_dists,
-                             lagrange_col_vector_t &dest, size_t c1_scale,
+                             lagrange_col_vector_t dest, size_t c1_scale,
                              size_t c2_scale, size_t &scale_count) {
-  if (c1.size() != c2.size() && dest.size() == c1.size()) {
-    throw std::runtime_error{"The vectors to combine are not equal sizes"};
-  }
-  size_t states = c1.size();
+  size_t states = bli_obj_length(c1);
   size_t regions = lagrange_fast_log2(states);
 
   size_t idx_excl = 0;
 
-  dest = 0.0;
-
-  scale_count = c1_scale + c2_scale;
   bool scale = true;
 
   std::vector<lagrange_region_split_t> splits;
@@ -75,33 +69,38 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
       continue;
     }
     generate_splits(i, regions, splits);
-    for (auto &p : splits) { dest[i] += c1[p.left] * c2[p.right]; }
-    if (splits.size() != 0) { dest[i] /= static_cast<double>(splits.size()); }
-    if (dest[i] < lagrange_scale_threshold) {
+    double sum = 0.0;
+    for (auto &p : splits) {
+      double c1_val = bli_getiv_real(c1, p.left);
+      double c2_val = bli_getiv_real(c2, p.right);
+
+      sum += c1_val * c2_val;
+    }
+    if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
+    if (sum < lagrange_scale_threshold) {
       scale &= true;
     } else {
       scale &= false;
     }
+    bli_setiv_real(dest, sum, i);
   }
+
+  scale_count = c1_scale + c2_scale;
   if (scale) {
-    dest *= lagrange_scaling_factor;
+    double scal_copy = lagrange_scaling_factor;
+    auto scal_factor_obj = bli_obj_wrap_scalar(scal_copy);
+    bli_scalv(&scal_factor_obj, dest);
     scale_count += 1;
   }
 }
 
 inline void reverse_weighted_combine(
     const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
-    const std::vector<lagrange_dist_t> excl_dists,
-    lagrange_col_vector_t &dest) {
-  if (c1.size() != c2.size() && dest.size() == c1.size()) {
-    throw std::runtime_error{"The vectors to combine are not equal sizes"};
-  }
-  size_t states = c1.size();
+    const std::vector<lagrange_dist_t> excl_dists, lagrange_col_vector_t dest) {
+  size_t states = bli_obj_length(c1);
   size_t regions = lagrange_fast_log2(states);
 
   size_t idx_excl = 0;
-
-  dest = 0.0;
 
   std::vector<lagrange_region_split_t> splits;
 
@@ -118,7 +117,15 @@ inline void reverse_weighted_combine(
     if (splits.size() == 0) { continue; }
 
     double weight = 1.0 / static_cast<double>(splits.size());
-    for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+    for (auto &p : splits) {
+      double c1_val = bli_getiv_real(c1, i);
+      double c2_val = bli_getiv_real(c2, p.right);
+      double dest_val = bli_getiv_real(dest, p.left);
+
+      dest_val += c1_val * c2_val * weight;
+
+      bli_setiv_real(dest, dest_val, p.left);
+    }
   }
 }
 
@@ -150,39 +157,42 @@ inline std::string closing_line(const std::string &tabs) {
   return line.str();
 }
 
-void MakeRateMatrixOperation::eval(std::shared_ptr<Workspace> ws) {
-  // std::lock_guard<std::mutex> t_lock(*_lock);
+void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   auto &rm = ws->rate_matrix(_rate_matrix_index);
-  rm = 0.0;
+
+  bli_setm_scalar(0.0, rm);
+
   auto &period = ws->get_period_params(_period_index);
   for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
     for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
       if (lagrange_bextr(dist, i) != 0) { continue; }
-
       lagrange_dist_t gain_dist = dist | (1ul << i);
-      rm(gain_dist, dist) = period.getExtinctionRate();
+
+      bli_setijm_real(rm, period.getExtinctionRate(), gain_dist, dist);
 
       if (dist == 0) { continue; }
 
+      double sum = 0.0;
       for (size_t j = 0; j < ws->regions(); ++j) {
-        rm(dist, gain_dist) +=
-            period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
+        sum += period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
       }
+      bli_setijm_real(rm, sum, dist, gain_dist);
     }
   }
 
-  for (size_t i = 0; i < rm.rows(); i++) {
-    double sum = 0;
-
-    for (size_t j = 0; j < rm.columns(); j++) { sum += rm(i, j); }
-
-    rm(i, i) = -sum;
+  for (size_t i = 0; i < ws->states(); i++) {
+    double sum = 0.0;
+    for (size_t j = 0; j < ws->states(); j++) {
+      sum += bli_getijm_real(rm, i, j);
+    }
+    bli_setijm_real(rm, -sum, i, i);
   }
 
   _last_execution = ws->advance_clock();
   ws->update_rate_matrix_clock(_rate_matrix_index);
 }
 
+#if 0
 void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                           std::ostream &os,
                                           size_t tabLevel) const {
@@ -214,39 +224,70 @@ std::string MakeRateMatrixOperation::printStatus(
   printStatus(ws, os, tabLevel);
   return os.str();
 }
+#endif
 
-void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
+void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws,
+                         cntx_t *blis_context, rntm_t *blis_runtime) {
   if ((_rate_matrix_op != nullptr) &&
       (_last_execution > _rate_matrix_op->last_update())) {
     return;
   }
 
-  lagrange_matrix_t A(ws->rate_matrix(_rate_matrix_index));
+  if (_last_execution == 0) {
+    bli_obj_create_conf_to(ws->rate_matrix(_rate_matrix_index), &_A);
+  }
+  bli_copym(ws->rate_matrix(_rate_matrix_index), &_A);
 
-  size_t rows = A.rows();
+  // std::cout << "Prob Matrix(t:" << _t << ")" << std::endl;
+  // bli_printm("_A", &_A, "%1.10f", "");
+
   // We place an arbitrary limit on the size of scale exp because if it is too
   // large we run into numerical issues.
-  int scale_exp =
-      std::min(30, std::max(0, 1 + static_cast<int>(blaze::linfNorm(A) * _t)));
 
-  A /= std::pow(2.0, scale_exp) / _t;
+  int At_norm = static_cast<int>(bli_inf_normm(&_A) * _t);
+  int scale_exp = std::min(30, std::max(0, 1 + At_norm));
+
+  double Ascal = _t / std::pow(2.0, scale_exp);
+  auto Ascal_obj = bli_obj_wrap_scalar(Ascal);
+  bli_scalm(&Ascal_obj, &_A);
+
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
   // orders of magnitude. Anything above 12 is probably snake oil.
   constexpr int q = 3;
   double c = 0.5;
   double sign = -1.0;
-  blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
+  double signed_c = c * sign;
+  // blaze::IdentityMatrix<double, blaze::columnMajor> I(rows);
 
 #if 0
-  lagrange_matrix_t X = A;
+  lagrange_matrix_t X = _A;
   lagrange_matrix_t N = I + c * X;
   lagrange_matrix_t D = I - c * X;
 #endif
 
-  X_2 = A;
-  N = I + c * X_2;
-  D = I - c * X_2;
+  if (_last_execution == 0) {
+    bli_obj_create_conf_to(&_A, &_X_1);
+    bli_obj_create_conf_to(&_A, &_X_2);
+    bli_obj_create_conf_to(&_A, &_N);
+    bli_obj_create_conf_to(&_A, &_D);
+  }
+
+  bli_copym(&_A, &_X_1);
+
+  bli_setm_scalar(0.0, &_X_2);
+  bli_setm_scalar(0.0, &_N);
+  bli_setm_scalar(0.0, &_D);
+  bli_setd(&BLIS_ONE, &_N);
+  bli_setd(&BLIS_ONE, &_D);
+  // bli_printm("_N post init", &_N, "%1.15f", "");
+
+  obj_t c_obj = bli_obj_wrap_scalar(c);
+  obj_t signed_c_obj = bli_obj_wrap_scalar(signed_c);
+
+  bli_axpym_ex(&c_obj, &_X_1, &_N, blis_context, blis_runtime);
+  bli_axpym_ex(&signed_c_obj, &_X_1, &_D, blis_context, blis_runtime);
+
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup. Furhthermore, we are going to unroll the loop to allow us to skip
   // some assignments.
@@ -255,58 +296,94 @@ void ExpmOperation::eval(std::shared_ptr<Workspace> ws) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     std::cout << "C: " << c << std::endl;
     X = A * X;
-    N += c * X;
+    _N += c * X;
     sign *= -1.0;
-    D += sign * c * X;
+    _D += sign * c * X;
   }
 #endif
 
   for (int i = 2; i <= q;) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
-
-    X_1 = A * X_2;
-    N += c * X_1;
     sign *= -1.0;
-    D += sign * c * X_1;
+    signed_c = c * sign;
+
+    bli_gemm_ex(&BLIS_ONE, &_A, &_X_1, &BLIS_ZERO, &_X_2, blis_context,
+                blis_runtime);
+    bli_axpym_ex(&c_obj, &_X_2, &_N, blis_context, blis_runtime);
+    bli_axpym_ex(&signed_c_obj, &_X_2, &_D, blis_context, blis_runtime);
 
     i += 1;
 
     if (i > q) { break; }
 
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
-    X_2 = A * X_1;
-    N += c * X_2;
     sign *= -1.0;
-    D += sign * c * X_2;
+    signed_c = c * sign;
+
+    bli_gemm_ex(&BLIS_ONE, &_A, &_X_2, &BLIS_ZERO, &_X_1, blis_context,
+                blis_runtime);
+    bli_axpym_ex(&c_obj, &_X_1, &_N, blis_context, blis_runtime);
+    bli_axpym_ex(&signed_c_obj, &_X_1, &_D, blis_context, blis_runtime);
 
     i += 1;
   }
 
-  X_1 = blaze::solve(D, N);
-  auto &rX_1 = X_1;
-  auto &rX_2 = X_2;
-  for (int i = 0; i < scale_exp; ++i) {
-    rX_2 = rX_1 * rX_1;
-    std::swap(rX_1, rX_2);
+  {
+    int n = ws->states();
+    // int lwork = n * n;
+    int lda = bli_obj_col_stride(&_N);
+    int info = 0;
+    int *ipiv = (int *)malloc(sizeof(int) * n);
+
+    /*
+    double *tau = (double *)malloc(sizeof(double) * n);
+    double *workspace = (double *)malloc(sizeof(double) * lwork);
+
+    LAPACK_dgeqrf(&n, &n, static_cast<double *>(bli_obj_buffer(&_D)), &lda, tau,
+                  workspace, &lwork, &info);
+
+    LAPACK_dormqr("L", "T", &n, &n, &n,
+                  static_cast<double *>(bli_obj_buffer(&_D)), &lda, tau,
+                  static_cast<double *>(bli_obj_buffer(&_N)), &lda, workspace,
+                  &lwork, &info);
+
+    LAPACK_dtrtrs("U", "N", "N", &n, &n,
+                  static_cast<double *>(bli_obj_buffer(&_D)), &lda,
+                  static_cast<double *>(bli_obj_buffer(&_N)), &lda, &info);
+                 */
+
+    LAPACK_dgesv(&n, &n, static_cast<double *>(bli_obj_buffer(&_D)), &lda, ipiv,
+                 static_cast<double *>(bli_obj_buffer(&_N)), &lda, &info);
+
+    // free(tau);
+    // free(workspace);
+    free(ipiv);
   }
 
-#if 0
-  X = blaze::solve(D, N);
+  // bli_printm("final matrix before squaring", &_N, "%1.10f", "");
+
+  auto &r1 = _N;
+  auto &r2 = _D;
   for (int i = 0; i < scale_exp; ++i) {
-    X = X;
+    bli_gemm_ex(&BLIS_ONE, &r1, &r1, &BLIS_ZERO, &r2, blis_context,
+                blis_runtime);
+    std::swap(r1, r2);
   }
-#endif
 
   if (_transposed) {
-    blaze::transpose(X_1);
-    blaze::row(X_1, 0) = 0.0;
-    X_1(0, 0) = 1.0;
+    bli_obj_set_onlytrans(BLIS_TRANSPOSE, &r1);
+
+    for (size_t i = 1; i < ws->states(); ++i) { bli_setijm_real(&r1, 0, 0, i); }
+    bli_setijm_real(&r1, 1, 0, 0);
   }
 
+  // bli_printm("Final Matrix: ", &r1, "%1.10f", "");
+  ws->update_prob_matrix(_prob_matrix_index, &r1);
+
   _last_execution = ws->advance_clock();
-  ws->update_prob_matrix(_prob_matrix_index, X_1);
 }
 
+#if 0
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                 std::ostream &os, size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
@@ -346,14 +423,16 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   printStatus(ws, os, tabLevel);
   return os.str();
 }
+#endif
 
-void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
+void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws,
+                               cntx_t *blis_context, rntm_t *blis_runtime) {
   if (_expm_op != nullptr) {
     if (_expm_op.use_count() > 1) {
       std::lock_guard<std::mutex>(_expm_op->getLock());
-      _expm_op->eval(ws);
+      _expm_op->eval(ws, blis_context, blis_runtime);
     } else {
-      _expm_op->eval(ws);
+      _expm_op->eval(ws, blis_context, blis_runtime);
     }
   }
 
@@ -362,14 +441,28 @@ void DispersionOperation::eval(std::shared_ptr<Workspace> ws) {
     return;
   }
 
+  /*
+  std::cout << "Executing disp op" << std::endl;
+  bli_printv("bot clv:", ws->clv(_bot_clv), "%5.5f", "");
+  bli_printv("top clv:", ws->clv(_top_clv), "%5.5f", "");
+  bli_printm("prob matrix:", ws->prob_matrix(_prob_matrix_index), "%5.5f", "");
+  */
+
+  bli_gemv_ex(&BLIS_ONE, ws->prob_matrix(_prob_matrix_index), ws->clv(_bot_clv),
+              &BLIS_ZERO, ws->clv(_top_clv), blis_context, blis_runtime);
+
+  /*
+  bli_printv("bot clv:", ws->clv(_bot_clv), "%5.5f", "");
+  bli_printv("top clv:", ws->clv(_top_clv), "%5.5f", "");
+  */
+
   _last_execution = ws->advance_clock();
 
-  ws->update_clv(
-      std::move(ws->prob_matrix(_prob_matrix_index) * ws->clv(_bot_clv)),
-      _top_clv);
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
+  ws->update_clv_clock(_top_clv);
 }
 
+#if 0
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                       std::ostream &os, size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
@@ -397,22 +490,24 @@ std::string DispersionOperation::printStatus(
   printStatus(ws, os, tabLevel);
   return os.str();
 }
+#endif
 
-void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
+void SplitOperation::eval(const std::shared_ptr<Workspace> &ws,
+                          cntx_t *blis_context, rntm_t *blis_runtime) {
   for (auto &op : _lbranch_ops) {
     if (op.use_count() > 1) {
       std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     } else {
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     }
   }
   for (auto &op : _rbranch_ops) {
     if (op.use_count() > 1) {
       std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     } else {
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     }
   }
 
@@ -420,15 +515,23 @@ void SplitOperation::eval(std::shared_ptr<Workspace> ws) {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
+  /*
+  bli_printv("parent clv:", parent_clv, "%5.5f", "");
+  bli_printv("lchild clv:", lchild_clv, "%5.5f", "");
+  bli_printv("rchild clv:", rchild_clv, "%5.5f", "");
+  */
+
   weighted_combine(lchild_clv, rchild_clv, _excl_dists, parent_clv,
                    ws->clv_scalar(_lbranch_clv_index),
                    ws->clv_scalar(_rbranch_clv_index),
                    ws->clv_scalar(_parent_clv_index));
 
+  // bli_printv("parent clv:", parent_clv, "%5.5f", "");
   _last_execution = ws->advance_clock();
   ws->update_clv_clock(_parent_clv_index);
 }
 
+#if 0
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                  std::ostream &os, size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
@@ -478,30 +581,37 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   printStatus(ws, os, tabLevel);
   return os.str();
 }
+#endif
 
-void ReverseSplitOperation::eval(std::shared_ptr<Workspace> ws) {
+void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws,
+                                 cntx_t *blis_context, rntm_t *blis_runtime) {
   for (auto &op : _branch_ops) {
     if (op.use_count() > 1) {
       std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     } else {
-      op->eval(ws);
+      op->eval(ws, blis_context, blis_runtime);
     }
   }
 
   if (_eval_clvs) {
-    lagrange_col_vector_t tmp(ws->states());
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists, tmp);
+    // bli_printv("ltop_clv", ltop_clv, "%1.20f", "");
+    // bli_printv("rtop_clv", rtop_clv, "%1.20f", "");
 
-    ws->update_clv(std::move(tmp), _bot_clv_index);
+    reverse_weighted_combine(ltop_clv, rtop_clv, _excl_dists,
+                             ws->clv(_bot_clv_index));
+
+    // bli_printv("bot_clv", ws->clv(_bot_clv_index), "%1.20f", "");
+
+    _last_execution = ws->advance_clock();
+    ws->update_clv_clock(_bot_clv_index);
   }
-
-  _last_execution = ws->advance_clock();
 }
 
+#if 0
 void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                         std::ostream &os,
                                         size_t tabLevel) const {
@@ -544,25 +654,41 @@ std::string ReverseSplitOperation::printStatus(
   printStatus(ws, os, tabLevel);
   return os.str();
 }
+#endif
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  _result = std::log(blaze::dot(ws->clv(_root_clv_index),
-                                ws->get_base_frequencies(_prior_index))) -
+  double rho = bli_dotv_scalar(ws->clv(_root_clv_index),
+                               ws->get_base_frequencies(_prior_index));
+  _result = std::log(rho) -
             lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
 }
 
 void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  lagrange_col_vector_t tmp(ws->states());
-  tmp = 0.0;
+  bli_obj_free(_result.get());
+  bli_obj_create_conf_to(ws->clv(_lchild_clv_index), _result.get());
   size_t tmp_scalar = 0;
+
+  // bli_printv("lchild clv:", ws->clv(_lchild_clv_index), "%1.15f", "");
+  // bli_printv("rchild clv:", ws->clv(_rchild_clv_index), "%1.15f", "");
+
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
-                   /*excl_dists=*/{}, tmp, ws->clv_scalar(_lchild_clv_index),
+                   /*excl_dists=*/{}, _result.get(),
+                   ws->clv_scalar(_lchild_clv_index),
                    ws->clv_scalar(_rchild_clv_index), tmp_scalar);
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 
-  _result = blaze::log(ws->clv(_parent_clv_index) * tmp) -
-            tmp_scalar * lagrange_scaling_factor_log;
+  // bli_printv("parent clv:", ws->clv(_parent_clv_index), "%1.15f", "");
+
+  for (size_t i = 0; i < ws->states(); ++i) {
+    double tmp_val = bli_getiv_real(_result.get(), i);
+    double parent_val = bli_getiv_real(ws->clv(_parent_clv_index), i);
+    bli_setiv_real(_result.get(),
+                   std::log(tmp_val * parent_val) -
+                       tmp_scalar * lagrange_scaling_factor_log,
+                   i);
+  }
+  // bli_printv("result:", _result.get(), "%1.15f", "");
 }
 
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
@@ -578,8 +704,9 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
     double weight = 1.0 / splits.size();
     for (auto sp : splits) {
       AncSplit anc_split(dist, sp.left, sp.right, weight);
-      double lh = parent_clv[dist] * lchild_clv[sp.left] *
-                  rchild_clv[sp.right] * weight;
+      double lh = bli_getiv_real(parent_clv, dist) *
+                  bli_getiv_real(lchild_clv, sp.left) *
+                  bli_getiv_real(rchild_clv, sp.right) * weight;
       anc_split.setLikelihood(lh);
       anc_split_vec.push_back(anc_split);
     }

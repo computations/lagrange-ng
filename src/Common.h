@@ -6,14 +6,6 @@
 #ifndef LAGRANGE_COMMON_H__
 #define LAGRANGE_COMMON_H__
 
-#define BLAZE_BLAS_MODE 1
-#define BLAZE_BLAS_IS_64BIT 1
-#define BLAZE_BLAS_IS_PARALLEL 0
-#define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
-#define BLAZE_BLAS_INCLUDE_FILE <cblas.h>
-
-#include <blaze/Blaze.h>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -21,6 +13,8 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+
+#include "Quarantine.h"
 
 typedef uint64_t lagrange_dist_t;
 
@@ -82,8 +76,14 @@ struct period_t {
   inline double getExtinctionRate() const { return extinction_rate; }
 };
 
-typedef blaze::DynamicMatrix<double, blaze::columnMajor> lagrange_matrix_t;
-typedef blaze::DynamicVector<double, blaze::columnVector> lagrange_col_vector_t;
+typedef double lagrange_float_t;
+
+typedef obj_t lagrange_matrix_base_t;
+
+typedef lagrange_matrix_base_t* lagrange_matrix_t;
+typedef lagrange_matrix_base_t* lagrange_complex_matrix_t;
+typedef lagrange_matrix_base_t* lagrange_col_vector_t;
+typedef lagrange_matrix_base_t* lagrange_complex_col_vector_t;
 
 constexpr double lagrange_scaling_factor = 0x1p256;
 

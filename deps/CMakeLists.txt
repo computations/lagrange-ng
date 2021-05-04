@@ -1,3 +1,6 @@
+include(FetchContent)
+include(ExternalProject)
+
 # nlopt first
 
 #   find_library(nlopt REQUIRED
@@ -7,52 +10,23 @@
 
 add_subdirectory(nlopt)
 
-# blaze second
+set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INSTALL_PREFIX}/include)
+set(BLAS_LIBS_BINARY ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.a)
+set(BLAS_LIBS_BINARY_SHARED ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.so)
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/cmake/blaze_cmake.txt
-        DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/blaze)
-file(RENAME ${CMAKE_CURRENT_SOURCE_DIR}/blaze/blaze_cmake.txt
-        ${CMAKE_CURRENT_SOURCE_DIR}/blaze/CMakeLists.txt)
-add_subdirectory(blaze)
-set(BLAZE_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/blaze" PARENT_SCOPE)
-Blaze_Import(
-   QUIET
-   BLAS on
-   LAPACK on
-   THREADING on
-   CACHE_SIZE auto
-   VECTORIZATION on
-   STORAGE_ORDER rowMajor
-)
+set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INCLUDE_DIRS} PARENT_SCOPE)
+set(BLAS_LIBS_BINARY ${BLAS_LIBS_BINARY} PARENT_SCOPE)
 
-# OpenBLAS third
+set(LAPACK OFF CACHE BOOL "Building lapack")
+set(USE_OPTIMIZED_BLAS ON CACHE BOOL "Turning off LAPACK blas")
 
-#find_package(BLAS)
-find_package(CBLAS)
-find_package(LAPACK)
-#if(${LAPACK_FOUND} AND ${BLAS_FOUND} AND ${CBLAS_FOUND})
-if(${LAPACK_FOUND} AND ${CBLAS_FOUND})
-    set(OpenBLAS_INCLUDE_DIRS lapack blas cblas PARENT_SCOPE)
-    set(OpenBLAS_LIB lapack blas cblas PARENT_SCOPE)
-else()
-    set(OpenBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/OpenBLAS)
-    set(OpenBLAS_INCLUDE_DIRS ${OpenBLAS_INSTALL_PREFIX}/include PARENT_SCOPE)
-    set(OpenBLAS_LIB ${OpenBLAS_INSTALL_PREFIX}/lib/libopenblas.a PARENT_SCOPE)
+set(BUILD_SINGLE ON CACHE BOOL "Build single precision real" )
+set(BUILD_DOUBLE ON CACHE BOOL "Build double precision real" )
+set(BUILD_COMPLEX OFF CACHE BOOL "Build single precision complex" )
+set(BUILD_COMPLEX16 OFF CACHE BOOL "Build double precision complex" )
 
-    include(ExternalProject)
-    ExternalProject_Add(OpenBLAS
-        GIT_REPOSITORY https://github.com/xianyi/OpenBLAS
-        GIT_TAG v0.3.14
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND make USE_OPENMP=1 USE_THREAD=1
-        BUILD_IN_SOURCE TRUE
-        INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
-    )
-    add_dependencies(lagrange-release-libs OpenBLAS)
-    add_dependencies(lagrange OpenBLAS)
-endif()
+set(BLAS_LIBRARIES ${BLAS_LIBS_BINARY_SHARED})
+add_subdirectory(lapack EXCLUDE_FROM_ALL)
 
 # Jsonhpp fourth
 

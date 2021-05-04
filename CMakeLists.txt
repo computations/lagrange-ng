@@ -24,19 +24,14 @@ set(LAGRANGE_SOURCES
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O3 -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_C_FLAGS_DEBUG "-O3 -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-set(LAGRANGE_RELEASE_FLAGS -DBLAZE_USE_VECTORIZATION)
-list(APPEND ${LAGRANGE_RELEASE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE})
-
-#set(LINALG_LIBS gsl cblas lapack)
 set(OPT_LIBS nlopt)
 set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
-
 
 add_executable(lagrange src/main.cpp)
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
@@ -45,17 +40,16 @@ add_subdirectory(deps)
 
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS}
     ${WARNING_FLAGS})
-target_include_directories(lagrange-release-libs PRIVATE ${BLAZE_INCLUDES}
-    ${OpenBLAS_INCLUDE_DIRS})
+target_include_directories(lagrange-release-libs PRIVATE
+    ${BLAS_LIBS_INCLUDE_DIRS})
 target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
-    ${OpenBLAS_LIB} pthread OpenMP::OpenMP_CXX)
+    ${BLAS_LIBS_BINARY} pthread lapack OpenMP::OpenMP_CXX)
 
-target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
-    nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
     ${WARNING_FLAGS})
-target_include_directories(lagrange PRIVATE ${BLAZE_INCLUDES}
-    ${OpenBLAS_INCLUDE_DIRS})
+target_include_directories(lagrange PRIVATE ${BLAS_LIBS_INCLUDE_DIRS})
+target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
+    ${BLAS_LIBS_BINARY} nlohmann_json::nlohmann_json lapack OpenMP::OpenMP_CXX)
 
 
 add_subdirectory(tests)

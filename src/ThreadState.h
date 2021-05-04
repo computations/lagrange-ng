@@ -44,7 +44,11 @@ class ThreadContext {
 
 class ThreadState {
  public:
-  ThreadState() : _tid{_total_threads++} {}
+  ThreadState() : _tid{_total_threads++}, _blis_context{nullptr} {
+    _blis_runtime = BLIS_RNTM_INITIALIZER;
+    _blis_context = bli_gks_query_cntx();
+  }
+
   ThreadState(const ThreadState&) = delete;
   ThreadState& operator=(const ThreadState&) = delete;
 
@@ -69,34 +73,28 @@ class ThreadState {
       switch (_thread_mode) {
         case ThreadMode::ComputeForward:
           work(tc._forward_work_buffer, ws);
-          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeReverse:
           work(tc._reverse_work_buffer, ws);
-          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeSplitGoal:
           work_goal(tc._split_lh_work_buffer, ws);
-          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeStateGoal:
           work_goal(tc._state_lh_work_buffer, ws);
-          if (master_thread()) { return; }
           break;
 
         case ThreadMode::ComputeLH:
-          if (master_thread()) {
-            work_goal(tc._lh_goal, ws);
-            return;
-          }
+          if (master_thread()) { work_goal(tc._lh_goal, ws); }
           break;
 
         case ThreadMode::Halt:
           return;
       }
+      if (master_thread()) { return; }
     }
   }
 
@@ -126,6 +124,7 @@ class ThreadState {
   template <typename T>
   void work(std::vector<std::shared_ptr<T>>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
+    bli_rntm_set_num_threads(2, &_blis_runtime);
     for (auto w = find_work(work_buffer, workspace); w != nullptr;
          w = find_work(work_buffer, workspace)) {
       /* We only lock on greater than 2 here because we have 2 copies of the
@@ -134,9 +133,9 @@ class ThreadState {
        */
       if (w.use_count() > 2) {
         std::lock_guard<std::mutex> lock(w->getLock());
-        w->eval(workspace);
+        w->eval(workspace, _blis_context, &_blis_runtime);
       } else {
-        w->eval(workspace);
+        w->eval(workspace, _blis_context, &_blis_runtime);
       }
     }
     end_work();
@@ -231,6 +230,9 @@ class ThreadState {
   }
 
   size_t _tid;
+
+  cntx_t* _blis_context;
+  rntm_t _blis_runtime;
 
   static std::shared_ptr<SplitOperation> _forward_work_buffer;
   static std::shared_ptr<ReverseSplitOperation> _backwards_work_buffer;

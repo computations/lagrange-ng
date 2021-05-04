@@ -33,7 +33,7 @@ class Context {
   void registerStateLHGoal();
   void registerSplitLHGoal();
 
-  std::vector<lagrange_col_vector_t> getStateResults();
+  std::vector<std::unique_ptr<lagrange_matrix_base_t>> getStateResults();
   lagrange_split_list_t getSplitResults();
 
   void registerTipClvs(
@@ -43,8 +43,8 @@ class Context {
                                 bool output);
   double computeLLH(ThreadState& ts);
   double computeLLH(ThreadState& ts, ThreadContext& tc);
-
-  std::vector<lagrange_col_vector_t> computeStateGoal(ThreadState& ts);
+  std::vector<std::unique_ptr<lagrange_matrix_base_t>> computeStateGoal(
+      ThreadState& ts);
   lagrange_split_list_t computeSplitGoal(ThreadState& ts);
 
   std::string toString() const;
@@ -54,16 +54,11 @@ class Context {
 
   period_t currentParams() const;
 
-  std::string treeCLVStatus() const;
+  // std::string treeCLVStatus() const;
 
   ThreadContext makeThreadContext() {
     ThreadContext tc{_forward_operations, _reverse_operations, _llh_goal,
                      _state_lh_goal, _split_lh_goal};
-    tc._forward_work_buffer = _forward_operations;
-    tc._reverse_work_buffer = _reverse_operations;
-    tc._split_lh_work_buffer = _split_lh_goal;
-    tc._state_lh_work_buffer = _state_lh_goal;
-    tc._lh_goal = _llh_goal;
     return tc;
   }
 

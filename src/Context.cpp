@@ -1,6 +1,4 @@
 #include <cmath>
-#include <cstddef>
-#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -59,8 +57,7 @@ void Context::init() {
   updateRates({0.01, 0.01});
 
   if (_reverse_operations.size() != 0) {
-    size_t prior_index = (*_reverse_operations.begin())->getStableCLV();
-
+    size_t prior_index = _reverse_operations.front()->getStableCLV();
     _workspace->set_reverse_prior(prior_index);
   }
 }
@@ -104,6 +101,7 @@ void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
     ts.work(tc, _workspace);
     return;
   }
+
   double initial_lh = computeLLH(ts, tc);
 
   if (output) { std::cout << "Initial LH: " << initial_lh << std::endl; }
@@ -111,6 +109,8 @@ void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
   double final_lh = optimize(ts, tc);
 
   if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
+
+  if (states || splits) { computeBackwardOperations(ts, tc); }
 
   if (states) { computeStateGoal(ts, tc); }
   if (splits) { computeSplitGoal(ts, tc); }
@@ -159,8 +159,9 @@ double Context::optimize(ThreadState& ts, ThreadContext& tc) {
  * vector indexed by lagrange_dist_t, where each entry contains the likelihood
  * of that particular distribution at that node.
  */
-std::vector<lagrange_col_vector_t> Context::getStateResults() {
-  std::vector<lagrange_col_vector_t> states;
+std::vector<std::unique_ptr<lagrange_matrix_base_t>>
+Context::getStateResults() {
+  std::vector<std::unique_ptr<lagrange_matrix_base_t>> states;
   states.reserve(_state_lh_goal.size());
 
   for (auto& op : _state_lh_goal) { states.push_back(op.result()); }
@@ -188,6 +189,7 @@ period_t Context::currentParams() const {
   return _workspace->get_period_params(0);
 }
 
+#if 0
 std::string Context::treeCLVStatus() const {
   std::stringstream oss;
   auto node_ids = _tree->traversePreorderInternalNodesOnly();
@@ -197,8 +199,10 @@ std::string Context::treeCLVStatus() const {
   }
   return oss.str();
 }
+#endif
 
-std::vector<lagrange_col_vector_t> Context::computeStateGoal(ThreadState& ts) {
+std::vector<std::unique_ptr<lagrange_matrix_base_t>> Context::computeStateGoal(
+    ThreadState& ts) {
   auto tc = makeThreadContext();
   computeStateGoal(ts, tc);
   return getStateResults();

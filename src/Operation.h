@@ -29,7 +29,7 @@ class MakeRateMatrixOperation {
         _last_execution{0},
         _last_update{0} {}
 
-  void eval(std::shared_ptr<Workspace> ws);
+  void eval(const std::shared_ptr<Workspace>& ws);
 
   inline lagrange_clock_tick_t last_update() const { return _last_execution; }
 
@@ -81,7 +81,20 @@ class ExpmOperation {
                 const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
       : ExpmOperation(prob_matrix, t, rm_op, false) {}
 
-  void eval(std::shared_ptr<Workspace> ws);
+  ExpmOperation(const ExpmOperation&) = delete;
+  ExpmOperation& operator=(const ExpmOperation&) = delete;
+
+  ~ExpmOperation() {
+    if (_last_execution == 0) { return; }
+    if (bli_obj_buffer(&_A) != nullptr) { bli_obj_free(&_A); }
+    if (bli_obj_buffer(&_X_1) != nullptr) { bli_obj_free(&_X_1); }
+    if (bli_obj_buffer(&_X_2) != nullptr) { bli_obj_free(&_X_2); }
+    if (bli_obj_buffer(&_N) != nullptr) { bli_obj_free(&_N); }
+    if (bli_obj_buffer(&_D) != nullptr) { bli_obj_free(&_D); }
+  }
+
+  void eval(const std::shared_ptr<Workspace>& ws, cntx_t* blis_context,
+            rntm_t* blis_runtime);
 
   size_t prob_matrix() const { return _prob_matrix_index; }
 
@@ -114,10 +127,11 @@ class ExpmOperation {
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   /* Temp matrices for the computation of the exponential */
-  lagrange_matrix_t X_1;
-  lagrange_matrix_t X_2;
-  lagrange_matrix_t N;
-  lagrange_matrix_t D;
+  lagrange_matrix_base_t _A;
+  lagrange_matrix_base_t _X_1;
+  lagrange_matrix_base_t _X_2;
+  lagrange_matrix_base_t _N;
+  lagrange_matrix_base_t _D;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -176,7 +190,8 @@ class DispersionOperation {
         _prob_matrix_index{prob_matrix},
         _expm_op{nullptr} {}
 
-  void eval(std::shared_ptr<Workspace> ws);
+  void eval(const std::shared_ptr<Workspace>& ws, cntx_t* blis_context,
+            rntm_t* blis_runtime);
 
   void terminate_top(size_t clv_index) {
     if (_top_clv != std::numeric_limits<size_t>::max()) {
@@ -278,7 +293,8 @@ class SplitOperation {
         _lbranch_ops{{l_ops}},
         _rbranch_ops{{r_ops}} {}
 
-  void eval(std::shared_ptr<Workspace>);
+  void eval(const std::shared_ptr<Workspace>&, cntx_t* blis_context,
+            rntm_t* blis_runtime);
 
   size_t get_parent_clv() const { return _parent_clv_index; }
 
@@ -378,7 +394,7 @@ class ReverseSplitOperation {
         _eval_clvs{false},
         _branch_ops{{branch_op}} {}
 
-  void eval(std::shared_ptr<Workspace>);
+  void eval(const std::shared_ptr<Workspace>&, cntx_t*, rntm_t*);
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -443,18 +459,35 @@ class StateLHGoal {
   StateLHGoal(size_t parent_clv, size_t lchild_clv, size_t rchild_clv)
       : _parent_clv_index{parent_clv},
         _lchild_clv_index{lchild_clv},
-        _rchild_clv_index{rchild_clv} {}
+        _rchild_clv_index{rchild_clv},
+        _result{new lagrange_matrix_base_t} {
+    memset(_result.get(), 0, sizeof(lagrange_matrix_base_t));
+  }
+  StateLHGoal(const StateLHGoal&) = delete;
+  StateLHGoal& operator=(const StateLHGoal&) = delete;
+  StateLHGoal(StateLHGoal&& other)
+      : _parent_clv_index{other._parent_clv_index},
+        _lchild_clv_index{other._lchild_clv_index},
+        _rchild_clv_index{other._rchild_clv_index},
+        _result{std::move(other._result)} {}
+  StateLHGoal& operator=(StateLHGoal&&) = delete;
+  ~StateLHGoal() { bli_obj_free(_result.get()); }
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline lagrange_col_vector_t result() const { return _result; }
+  inline auto result() {
+    decltype(_result) ret{new decltype(_result)::element_type};
+    bli_obj_create_conf_to(_result.get(), ret.get());
+    bli_copyv(_result.get(), ret.get());
+    return ret;
+  }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  lagrange_col_vector_t _result;
+  std::unique_ptr<lagrange_matrix_base_t> _result;
 };
 
 class SplitLHGoal {

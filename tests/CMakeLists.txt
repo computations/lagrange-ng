@@ -42,9 +42,10 @@ set(LAGRANGE_TEST_SOURCES
   src/tree.cpp
   src/main.cpp)
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES})
-target_link_libraries(lagrange-test gtest_main lagrange-release-libs)
+target_link_libraries(lagrange-test gtest_main lagrange-release-libs
+  ${BLAS_LIBS_BINARY})
 target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/
-  ${BLAZE_INCLUDES})
+  ${BLAS_LIBS_INCLUDE_DIRS})
 target_compile_options(lagrange-test PRIVATE ${LAGRANGE_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address)
 target_link_options(lagrange-test PRIVATE -fno-omit-frame-pointer -fsanitize=address)
 target_compile_definitions(lagrange-test PRIVATE -DTREEPATH=${TREEPATH})

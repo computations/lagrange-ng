@@ -28,15 +28,12 @@
 #include <vector>
 
 #include "Common.h"
-#include "cblas.h"
-#include "nlohmann/json.hpp"
-
-using namespace std;
-
 #include "Context.h"
 #include "InputReader.h"
 #include "ThreadState.h"
 #include "Utils.h"
+#include "blis/blis.h"
+#include "nlohmann/json.hpp"
 
 struct config_options_t {
   std::string treefile;
@@ -63,7 +60,6 @@ struct config_options_t {
   bool marginal = true;  // false means joint
   bool splits = false;
   bool states = false;
-  int numthreads = 0;
   bool sparse = false;
 
   double dispersal = 0.01;
@@ -80,11 +76,40 @@ struct config_options_t {
   lagrange_option_t<size_t> threads;
 };
 
-lagrange_col_vector_t normalizeStateDistrubtionByLWR(
-    const lagrange_col_vector_t &states) {
-  double max_llh = blaze::max(states);
-  double total_llh = blaze::sum(blaze::exp(states - max_llh));
-  return blaze::exp(states - max_llh) / total_llh;
+std::unique_ptr<lagrange_matrix_base_t> normalizeStateDistrubtionByLWR(
+    const std::unique_ptr<lagrange_matrix_base_t> &states) {
+  std::unique_ptr<lagrange_matrix_base_t> normalized_states{
+      new lagrange_matrix_base_t};
+
+  // bli_printv("States prenormal:", states.get(), "%1.5f", "");
+  bli_obj_create_conf_to(states.get(), normalized_states.get());
+  bli_copyv(states.get(), normalized_states.get());
+
+  double max_llh = -std::numeric_limits<double>::infinity();
+  size_t states_size = bli_obj_length(normalized_states.get());
+
+  if (states_size == 1) { throw std::runtime_error{"YOU FUCKED UP BEN"}; }
+
+  for (size_t i = 0; i < states_size; ++i) {
+    double tmp = bli_getiv_real(normalized_states.get(), i);
+    max_llh = std::max(max_llh, tmp);
+  }
+
+  double total_llh = 0.0;
+  for (size_t i = 0; i < states_size; i++) {
+    total_llh += std::exp(bli_getiv_real(normalized_states.get(), i) - max_llh);
+  }
+
+  for (size_t i = 0; i < states_size; i++) {
+    double tmp =
+        std::exp(bli_getiv_real(normalized_states.get(), i) - max_llh) /
+        total_llh;
+
+    bli_setiv_real(normalized_states.get(), tmp, i);
+  }
+  // bli_printv("States postnormal:", normalized_states.get(), "%1.5f", "");
+
+  return normalized_states;
 }
 
 std::vector<std::string> grab_token(const std::string &token,
@@ -200,8 +225,6 @@ config_options_t parse_config(const std::string &config_filename) {
       config.states = true;
     } else if (!strcmp(tokens[0].c_str(), "estimate_dispersal_mask")) {
       config.estimate_dispersal_mask = true;
-    } else if (!strcmp(tokens[0].c_str(), "numthreads")) {
-      config.numthreads = atoi(tokens[1].c_str());
     } else if (!strcmp(tokens[0].c_str(), "stochastic_time")) {
       config.states = true;  // requires ancestral states
       if (config.ancstates.size() > 0) {
@@ -264,7 +287,7 @@ config_options_t parse_config(const std::string &config_filename) {
 }
 
 nlohmann::json makeStateJsonOutput(
-    const std::vector<lagrange_col_vector_t> &states,
+    const std::vector<std::unique_ptr<lagrange_matrix_base_t>> &states,
     const std::vector<size_t> &stateToIdMap) {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
@@ -272,14 +295,18 @@ nlohmann::json makeStateJsonOutput(
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
     auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
-    for (size_t dist = 0; dist < state_distribution.size(); ++dist) {
+    for (size_t dist = 0; dist < bli_obj_length(state_distribution.get());
+         ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      tmp["llh"] = state_distribution[dist];
-      tmp["ratio"] = lwr_distribution[dist];
+      double llh = bli_getiv_real(state_distribution.get(), dist);
+      tmp["llh"] = llh;
+      double ratio = bli_getiv_real(lwr_distribution.get(), dist);
+      tmp["ratio"] = ratio;
       node_json["states"].push_back(tmp);
     }
     states_json.push_back(node_json);
+    bli_obj_free(lwr_distribution.get());
   }
   return states_json;
 }
@@ -332,14 +359,18 @@ void handle_tree(std::shared_ptr<Tree> intree,
   std::vector<ThreadState> thread_states;
   thread_states.reserve(config.threads.get());
   std::vector<std::thread> threads;
+  std::cout << "Starting Threads" << std::endl;
   for (size_t i = 0; i < config.threads.get(); i++) {
+    std::cout << "Making Thread #" << i << std::endl;
     thread_states.emplace_back();
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(thread_states[i]), config.states,
                          config.splits, true);
   }
 
+  std::cout << "Joining Threads" << std::endl;
   for (auto &t : threads) { t.join(); }
+  std::cout << "Joined Threads" << std::endl;
 
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -355,6 +386,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
     auto states = context.getStateResults();
     root_json["node-results"] =
         makeStateJsonOutput(states, stateGoalIndexToIdMap);
+    for (auto &s : states) { bli_obj_free(s.get()); }
   }
   if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
@@ -362,11 +394,13 @@ void handle_tree(std::shared_ptr<Tree> intree,
 }
 
 void validateConfig(config_options_t &config) {
+  std::cout << "num threads " << config.threads.get() << std::endl;
   if (!config.threads.has_value()) { config.threads = 1; }
 }
 
 int main(int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
+  bli_thread_set_num_threads(1);
   if (argc != 2) {
     cout << "you need more arguments." << endl;
     cout << "usage: lagrange configfile" << endl;

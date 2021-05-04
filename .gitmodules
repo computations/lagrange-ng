@@ -9,3 +9,9 @@
 [submodule "deps/nlopt"]
 	path = deps/nlopt
 	url = https://github.com/stevengj/nlopt
+[submodule "deps/lapack"]
+	path = deps/lapack
+	url = https://github.com/Reference-LAPACK/lapack-release.git
+[submodule "deps/blis"]
+	path = deps/blis
+	url = https://github.com/flame/blis
