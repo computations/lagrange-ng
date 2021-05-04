@@ -11,8 +11,8 @@
 #include <iostream>
 
 #include "InputReader.h"
+#include "TreeReader.h"
 #include "Utils.h"
-#include "tree_reader.h"
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
 

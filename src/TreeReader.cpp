@@ -11,7 +11,7 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "tree_reader.h"
+#include "TreeReader.h"
 
 enum lexeme_type_t {
   OPENING_SQUARE_BRACKET,
