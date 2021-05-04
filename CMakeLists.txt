@@ -47,7 +47,8 @@ target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS}
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} 
     ${WARNING_FLAGS})
-target_include_directories(lagrange PRIVATE ${BLAS_LIBS_INCLUDE_DIRS})
+target_include_directories(lagrange PRIVATE ${BLAS_LIBS_INCLUDE_DIRS}
+    ${LAPACK_INCLUDE_DIRS})
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread 
     ${BLAS_LIBS_BINARY} nlohmann_json::nlohmann_json lapack OpenMP::OpenMP_CXX)
 

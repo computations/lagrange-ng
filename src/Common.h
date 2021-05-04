@@ -19,7 +19,7 @@
 typedef uint64_t lagrange_dist_t;
 
 typedef uint64_t lagrange_clock_tick_t;
-typedef std::atomic_uint64_t lagrange_clock_t;
+typedef std::atomic<uint64_t> lagrange_clock_t;
 
 typedef uint64_t lagrange_op_id_t;
 
