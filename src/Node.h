@@ -34,13 +34,13 @@ class Node {
   size_t _number;
   size_t _id;
   size_t _period;
-  string _label;
-  string _comment;
-  string _split_string;
-  string _state_string;
-  string _stoch_string;
-  vector<std::shared_ptr<Node>> _children;
-  std::shared_ptr<vector<lagrange_dist_t>> _excluded_dists;
+  std::string _label;
+  std::string _comment;
+  std::string _split_string;
+  std::string _state_string;
+  std::string _stoch_string;
+  std::vector<std::shared_ptr<Node>> _children;
+  std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
 
   std::shared_ptr<MakeRateMatrixOperation> getRateMatrixOperation(
       Workspace &ws, PeriodRateMatrixMap &rm_map) const {
@@ -79,14 +79,12 @@ class Node {
 
  public:
   Node();
-  Node(double bl, int number, const string &name);
+  Node(double bl, int number, const std::string &name);
   ~Node() {
-    for (auto &c : _children) {
-      c.reset();
-    }
+    for (auto &c : _children) { c.reset(); }
   }
 
-  vector<std::shared_ptr<Node>> getChildren();
+  std::vector<std::shared_ptr<Node>> getChildren();
   bool isExternal() const;
   bool isInternal() const;
 
@@ -106,13 +104,14 @@ class Node {
   bool removeChild(std::shared_ptr<Node> c);
   std::shared_ptr<Node> getChild(int c) const;
 
-  string getName() const;
-  string getComment() const;
-  void setName(const string &s);
-  void setComment(const string &s);
+  std::string getName() const;
+  std::string getComment() const;
+  void setName(const std::string &s);
+  void setComment(const std::string &s);
 
-  string getNewick() const;
-  string getNewickLambda(const std::function<string(const Node &)> &) const;
+  std::string getNewick() const;
+  std::string getNewickLambda(
+      const std::function<std::string(const Node &)> &) const;
 
   int getChildCount() const;
 
@@ -125,15 +124,15 @@ class Node {
       const std::vector<lagrange_col_vector_t> &dist_lhs,
       const std::vector<std::string> &names);
 
-  void setSplitString(const string &splitstring);
-  void setStateString(const string &splitstring);
-  void setStochString(const string &stochstring);
-  string getSplitString() const;
-  string getStateString() const;
-  string getStochString() const;
+  void setSplitString(const std::string &splitstring);
+  void setStateString(const std::string &splitstring);
+  void setStochString(const std::string &stochstring);
+  std::string getSplitString() const;
+  std::string getStateString() const;
+  std::string getStochString() const;
 
   void initExclDistVector();
-  std::shared_ptr<vector<lagrange_dist_t>> &getExclDistVector();
+  std::shared_ptr<std::vector<lagrange_dist_t>> &getExclDistVector();
 
   bool findNode(std::shared_ptr<Node> n);
 
@@ -192,6 +191,7 @@ class Node {
 
   void assignId();
 };
+
 std::shared_ptr<Node> getMRCAWithNode(
     const std::shared_ptr<Node> &current,
     const std::vector<std::shared_ptr<Node>> &nodes);

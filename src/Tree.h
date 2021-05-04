@@ -23,9 +23,9 @@
 class Tree {
  private:
   std::shared_ptr<Node> _root;
-  vector<std::shared_ptr<Node>> _nodes;
-  vector<std::shared_ptr<Node>> _internal_nodes;
-  vector<std::shared_ptr<Node>> _external_nodes;
+  std::vector<std::shared_ptr<Node>> _nodes;
+  std::vector<std::shared_ptr<Node>> _internal_nodes;
+  std::vector<std::shared_ptr<Node>> _external_nodes;
   unsigned int _internal_node_count;
   unsigned int _external_node_count;
 
@@ -67,9 +67,9 @@ class Tree {
       const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
 
   std::shared_ptr<Node> getExternalNode(int num);
-  std::shared_ptr<Node> getExternalNode(string &name);
+  std::shared_ptr<Node> getExternalNode(std::string &name);
   std::shared_ptr<Node> getInternalNode(int num);
-  std::shared_ptr<Node> getInternalNode(string &name);
+  std::shared_ptr<Node> getInternalNode(std::string &name);
   std::shared_ptr<Node> getNode(int num);
 
   unsigned int getNodeCount() const;
@@ -83,8 +83,8 @@ class Tree {
   void tritomyRoot(std::shared_ptr<Node> toberoot);
   void processRoot();
 
-  std::shared_ptr<Node> getMRCA(vector<string> innodes);
-  std::shared_ptr<Node> getMRCA(vector<std::shared_ptr<Node>> innodes);
+  std::shared_ptr<Node> getMRCA(std::vector<std::string> innodes);
+  std::shared_ptr<Node> getMRCA(std::vector<std::shared_ptr<Node>> innodes);
 
   double getLongestPathRootToTip() const;
   std::shared_ptr<Node> getParent(std::shared_ptr<Node> n) const;
@@ -94,7 +94,7 @@ class Tree {
 
   std::string getNewick() const;
   std::string getNewickLambda(
-      const std::function<string(const Node &)> &newick_lambda) const;
+      const std::function<std::string(const Node &)> &newick_lambda) const;
 
   void setStateStrings(const std::vector<size_t> &id_map,
                        const std::vector<lagrange_col_vector_t> &dist_lhs,

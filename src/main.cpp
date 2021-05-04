@@ -11,7 +11,6 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <string.h>
 
 #include <chrono>
 #include <ctime>
@@ -43,19 +42,19 @@ struct config_options_t {
 
   int maxareas = 0;
 
-  vector<double> periods;
-  unordered_map<string, vector<string>> mrcas;
-  unordered_map<string, lagrange_dist_t> fixnodewithmrca;
-  vector<lagrange_dist_t> excludedists;
-  vector<lagrange_dist_t> includedists;
-  vector<string> areaNames;
-  unordered_map<string, lagrange_dist_t> areaNameToDistMap;
-  vector<string> ancstates;
-  vector<string> areacolors;
-  vector<string> fossilmrca;
-  vector<string> fossiltype;
-  vector<string> fossilarea;
-  vector<double> fossilage;
+  std::vector<double> periods;
+  std::unordered_map<std::string, std::vector<std::string>> mrcas;
+  std::unordered_map<std::string, lagrange_dist_t> fixnodewithmrca;
+  std::vector<lagrange_dist_t> excludedists;
+  std::vector<lagrange_dist_t> includedists;
+  std::vector<std::string> areaNames;
+  std::unordered_map<std::string, lagrange_dist_t> areaNameToDistMap;
+  std::vector<std::string> ancstates;
+  std::vector<std::string> areacolors;
+  std::vector<std::string> fossilmrca;
+  std::vector<std::string> fossiltype;
+  std::vector<std::string> fossilarea;
+  std::vector<double> fossilage;
 
   bool marginal = true;  // false means joint
   bool splits = false;
@@ -66,8 +65,8 @@ struct config_options_t {
   double extinction = 0.01;
   bool estimate = true;
 
-  vector<vector<lagrange_dist_t>> stochastic_number_from_tos;
-  vector<lagrange_dist_t> stochastic_time_dists;
+  std::vector<std::vector<lagrange_dist_t>> stochastic_number_from_tos;
+  std::vector<lagrange_dist_t> stochastic_time_dists;
 
   // estimating the dispersal mask
   bool estimate_dispersal_mask = false;
@@ -115,7 +114,7 @@ std::unique_ptr<lagrange_matrix_base_t> normalizeStateDistrubtionByLWR(
 
 std::vector<std::string> grab_token(const std::string &token,
                                     const std::string &deliminators) {
-  vector<string> searchtokens;
+  std::vector<std::string> searchtokens;
   Tokenize(token, searchtokens, deliminators);
   for (unsigned int j = 0; j < searchtokens.size(); j++) {
     TrimSpaces(searchtokens[j]);
@@ -126,7 +125,7 @@ std::vector<std::string> grab_token(const std::string &token,
 config_options_t parse_config(const std::string &config_filename) {
   config_options_t config;
 
-  ifstream ifs(config_filename);
+  std::ifstream ifs(config_filename);
   if (!ifs) {
     throw std::runtime_error{"Could not open the config file for parsing"};
   }
@@ -135,7 +134,7 @@ config_options_t parse_config(const std::string &config_filename) {
   while (getline(ifs, line)) {
     if (line.size() == 0 || line[0] == '#') { continue; }
     /* Make the token */
-    vector<string> tokens = grab_token(line, "=");
+    std::vector<std::string> tokens = grab_token(line, "=");
 
     /* Parse the option in the token */
     if (!strcmp(tokens[0].c_str(), "treefile")) {
@@ -148,11 +147,11 @@ config_options_t parse_config(const std::string &config_filename) {
         config.ratematrixfile = "";
       }
     } else if (!strcmp(tokens[0].c_str(), "areanames")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.areaNames = searchtokens;
     } else if (!strcmp(tokens[0].c_str(), "fixnode")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
-      vector<int> dist;
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<int> dist;
       for (unsigned int j = 0; j < searchtokens[1].size(); j++) {
         char c = (searchtokens[1].c_str())[j];
         dist.push_back(atoi(&c));
@@ -160,9 +159,9 @@ config_options_t parse_config(const std::string &config_filename) {
       config.fixnodewithmrca[searchtokens[0]] =
           convert_vector_to_lagrange_dist(dist);
     } else if (!strcmp(tokens[0].c_str(), "excludedists")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       for (unsigned int j = 0; j < searchtokens.size(); j++) {
-        vector<int> dist;
+        std::vector<int> dist;
         for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
           char c = (searchtokens[j].c_str())[k];
           dist.push_back(atoi(&c));
@@ -170,12 +169,12 @@ config_options_t parse_config(const std::string &config_filename) {
         config.excludedists.push_back(convert_vector_to_lagrange_dist(dist));
       }
     } else if (!strcmp(tokens[0].c_str(), "includedists")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       if (searchtokens[0].size() == 1) {
         config.maxareas = atoi(searchtokens[0].c_str());
       } else {
         for (unsigned int j = 0; j < searchtokens.size(); j++) {
-          vector<int> dist;
+          std::vector<int> dist;
           for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
             char c = (searchtokens[j].c_str())[k];
             dist.push_back(atoi(&c));
@@ -184,25 +183,25 @@ config_options_t parse_config(const std::string &config_filename) {
         }
       }
     } else if (!strcmp(tokens[0].c_str(), "areacolors")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.areacolors = searchtokens;
     } else if (!strcmp(tokens[0].c_str(), "periods")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       for (unsigned int j = 0; j < searchtokens.size(); j++) {
         config.periods.push_back(atof(searchtokens[j].c_str()));
       }
     } else if (!strcmp(tokens[0].c_str(), "mrca")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
-      vector<string> mrc;
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> mrc;
       for (unsigned int j = 1; j < searchtokens.size(); j++) {
         mrc.push_back(searchtokens[j]);
       }
       config.mrcas[searchtokens[0]] = mrc;
     } else if (!strcmp(tokens[0].c_str(), "ancstate")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.ancstates.push_back(searchtokens[0]);
     } else if (!strcmp(tokens[0].c_str(), "fossil")) {
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.fossiltype.push_back(searchtokens[0]);
       config.fossilmrca.push_back(searchtokens[1]);
       config.fossilarea.push_back(searchtokens[2]);
@@ -212,7 +211,7 @@ config_options_t parse_config(const std::string &config_filename) {
         config.fossilage.push_back(0.0);
       }
     } else if (!strcmp(tokens[0].c_str(), "calctype")) {
-      string calctype = tokens[1];
+      std::string calctype = tokens[1];
       if (calctype.compare("m") != 0 && calctype.compare("M") != 0) {
         config.marginal = false;
       }
@@ -233,9 +232,9 @@ config_options_t parse_config(const std::string &config_filename) {
       } else {
         config.ancstates.push_back("_all_");
       }
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       for (unsigned int j = 0; j < searchtokens.size(); j++) {
-        vector<int> dist;
+        std::vector<int> dist;
         for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
           char c = (searchtokens[j].c_str())[k];
           dist.push_back(atoi(&c));
@@ -250,19 +249,19 @@ config_options_t parse_config(const std::string &config_filename) {
       } else {
         config.ancstates.push_back("_all_");
       }
-      vector<string> searchtokens = grab_token(tokens[1], ",     ");
+      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       if (searchtokens.size() != 2) {
-        cout << "ERROR: distributions for stochastic_number need to be "
-                "in the form from_to"
-             << endl;
+        std::cout << "ERROR: distributions for stochastic_number need to be "
+                     "in the form from_to"
+                  << std::endl;
       } else {
-        vector<lagrange_dist_t> dists;
-        vector<int> dist0;
+        std::vector<lagrange_dist_t> dists;
+        std::vector<int> dist0;
         for (unsigned int k = 0; k < searchtokens[0].size(); k++) {
           char c = (searchtokens[0].c_str())[k];
           dist0.push_back(atoi(&c));
         }
-        vector<int> dist1;
+        std::vector<int> dist1;
         for (unsigned int k = 0; k < searchtokens[1].size(); k++) {
           char c = (searchtokens[1].c_str())[k];
           dist1.push_back(atoi(&c));
@@ -273,11 +272,11 @@ config_options_t parse_config(const std::string &config_filename) {
       }
     } else if (!strcmp(tokens[0].c_str(), "dispersal")) {
       config.dispersal = atof(tokens[1].c_str());
-      cout << "setting dispersal: " << config.dispersal << endl;
+      std::cout << "setting dispersal: " << config.dispersal << std::endl;
       config.estimate = false;
     } else if (!strcmp(tokens[0].c_str(), "extinction")) {
       config.extinction = atof(tokens[1].c_str());
-      cout << "setting extinction: " << config.extinction << endl;
+      std::cout << "setting extinction: " << config.extinction << std::endl;
       config.estimate = false;
     } else if (!strcmp(tokens[0].c_str(), "workers")) {
       config.workers = std::stoi(tokens[1]);
@@ -344,7 +343,7 @@ void writeResultTree(const config_options_t &config,
 }
 
 void handle_tree(std::shared_ptr<Tree> intree,
-                 const std::unordered_map<string, lagrange_dist_t> data,
+                 const std::unordered_map<std::string, lagrange_dist_t> data,
                  const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
@@ -403,11 +402,11 @@ void validateConfig(config_options_t &config) {
 }
 
 int main(int argc, char *argv[]) {
-  auto start_time = chrono::high_resolution_clock::now();
+  auto start_time = std::chrono::high_resolution_clock::now();
   bli_thread_set_num_threads(1);
   if (argc != 2) {
-    cout << "you need more arguments." << endl;
-    cout << "usage: lagrange configfile" << endl;
+    std::cout << "you need more arguments." << std::endl;
+    std::cout << "usage: lagrange configfile" << std::endl;
     exit(0);
   } else {
     std::string config_filename(argv[1]);
@@ -421,13 +420,13 @@ int main(int argc, char *argv[]) {
      * after reading the input file
      */
     InputReader ir;
-    cout << "reading tree..." << endl;
-    vector<std::shared_ptr<Tree>> intrees;
+    std::cout << "reading tree..." << std::endl;
+    std::vector<std::shared_ptr<Tree>> intrees;
     ir.readMultipleTreeFile(config.treefile, intrees);
-    cout << "reading data..." << endl;
-    unordered_map<string, lagrange_dist_t> data =
+    std::cout << "reading data..." << std::endl;
+    std::unordered_map<std::string, lagrange_dist_t> data =
         ir.readStandardInputData(config.datafile);
-    cout << "checking data..." << endl;
+    std::cout << "checking data..." << std::endl;
     ir.checkData(data, intrees);
 
     config.region_count = ir.nareas;
@@ -436,8 +435,8 @@ int main(int argc, char *argv[]) {
       handle_tree(intrees[i], data, config);
     }
   }
-  auto end_time = chrono::high_resolution_clock::now();
-  chrono::duration<double> duration = end_time - start_time;
-  cout << "Analysis took: " << duration.count() << "s" << std::endl;
+  auto end_time = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end_time - start_time;
+  std::cout << "Analysis took: " << duration.count() << "s" << std::endl;
   return 0;
 }

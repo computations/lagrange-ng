@@ -13,17 +13,18 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-using namespace std;
 
-#include "tree.h"
+#include "Tree.h"
 
 class InputReader {
-public:
+ public:
   InputReader();
-  void readMultipleTreeFile(string filename, vector<std::shared_ptr<Tree>> &);
-  unordered_map<string, lagrange_dist_t> readStandardInputData(string filename);
-  void checkData(const unordered_map<string, lagrange_dist_t> &,
-                 const vector<std::shared_ptr<Tree>> &);
+  void readMultipleTreeFile(std::string filename,
+                            std::vector<std::shared_ptr<Tree>> &);
+  std::unordered_map<std::string, lagrange_dist_t> readStandardInputData(
+      std::string filename);
+  void checkData(const std::unordered_map<std::string, lagrange_dist_t> &,
+                 const std::vector<std::shared_ptr<Tree>> &);
   int nareas;
   int nspecies;
 };

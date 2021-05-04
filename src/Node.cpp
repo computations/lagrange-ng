@@ -29,7 +29,7 @@ Node::Node()
       _comment(""),
       _children{} {}
 
-Node::Node(double bl, int innumber, const string &inname)
+Node::Node(double bl, int innumber, const std::string &inname)
     : _branch_length(bl),
       _height(0.0),
       _number(innumber),
@@ -37,7 +37,7 @@ Node::Node(double bl, int innumber, const string &inname)
       _comment(""),
       _children{} {}
 
-vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
+std::vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
 
 bool Node::isExternal() const { return _children.size() == 0; }
 
@@ -84,22 +84,22 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
 
 std::shared_ptr<Node> Node::getChild(int c) const { return _children.at(c); }
 
-string Node::getName() const { return _label; }
+std::string Node::getName() const { return _label; }
 
-void Node::setName(const string &s) { _label = s; }
+void Node::setName(const std::string &s) { _label = s; }
 
-string Node::getComment() const { return _comment; }
+std::string Node::getComment() const { return _comment; }
 
-void Node::setComment(const string &s) { _comment = s; }
+void Node::setComment(const std::string &s) { _comment = s; }
 
-string Node::getNewick() const {
+std::string Node::getNewick() const {
   static auto newick_lambda = [](const Node &n) { return n.getName(); };
 
   return getNewickLambda(newick_lambda);
 }
 
-string Node::getNewickLambda(
-    const std::function<string(const Node &)> &newick_lambda) const {
+std::string Node::getNewickLambda(
+    const std::function<std::string(const Node &)> &newick_lambda) const {
   std::ostringstream newick_oss;
   for (int i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
@@ -118,29 +118,29 @@ string Node::getNewickLambda(
 
 int Node::getChildCount() const { return _children.size(); }
 
-void Node::setSplitString(const string &splitstring) {
+void Node::setSplitString(const std::string &splitstring) {
   _split_string = splitstring;
 }
 
-void Node::setStateString(const string &statestring) {
+void Node::setStateString(const std::string &statestring) {
   _state_string = statestring;
 }
 
-void Node::setStochString(const string &stochstring) {
+void Node::setStochString(const std::string &stochstring) {
   _stoch_string = stochstring;
 }
 
-string Node::getStateString() const { return _state_string; }
+std::string Node::getStateString() const { return _state_string; }
 
-string Node::getSplitString() const { return _split_string; }
+std::string Node::getSplitString() const { return _split_string; }
 
-string Node::getStochString() const { return _stoch_string; }
+std::string Node::getStochString() const { return _stoch_string; }
 
 void Node::initExclDistVector() {
-  _excluded_dists = std::make_shared<vector<lagrange_dist_t>>();
+  _excluded_dists = std::make_shared<std::vector<lagrange_dist_t>>();
 }
 
-std::shared_ptr<vector<lagrange_dist_t>> &Node::getExclDistVector() {
+std::shared_ptr<std::vector<lagrange_dist_t>> &Node::getExclDistVector() {
   return _excluded_dists;
 }
 

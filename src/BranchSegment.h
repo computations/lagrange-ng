@@ -12,13 +12,12 @@
 
 #include <memory>
 #include <vector>
-using namespace std;
 
 class BranchSegment {
  private:
   double _duration;
   int _period;
-  vector<int> _fossil_area_indices;
+  std::vector<int> _fossil_area_indices;
   int _start_dist;
 
  public:
@@ -28,7 +27,7 @@ class BranchSegment {
   int getPeriod() const;
   void set_start_dist_int(int d);
   int get_start_dist_int();
-  vector<int> getFossilAreas();
+  std::vector<int> getFossilAreas();
   void setFossilArea(int area);
 };
 

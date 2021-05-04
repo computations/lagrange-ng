@@ -18,7 +18,6 @@
 
 #include "AncSplit.h"
 #include "Common.h"
-using namespace std;
 
 AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
                    lagrange_dist_t rdesc, double we)

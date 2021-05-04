@@ -14,7 +14,7 @@ set(LAGRANGE_SOURCES
         src/Context.cpp
         src/InputReader.cpp
         src/Node.cpp
-        src/tree.cpp
+        src/Tree.cpp
         src/tree_reader.cpp
         src/Utils.cpp
         src/Workspace.cpp

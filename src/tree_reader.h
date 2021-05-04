@@ -14,12 +14,12 @@
 #include <vector>
 
 #include "Node.h"
-#include "tree.h"
+#include "Tree.h"
 
 class TreeReader {
  public:
   TreeReader() {}
-  std::shared_ptr<Tree> readTree(string tree);
+  std::shared_ptr<Tree> readTree(const std::string &tree);
 };
 
 #endif /* TREE_READER_H_ */

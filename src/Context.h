@@ -16,9 +16,9 @@
 #include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
+#include "Tree.h"
 #include "WorkerState.h"
 #include "Workspace.h"
-#include "tree.h"
 
 class Context {
  public:

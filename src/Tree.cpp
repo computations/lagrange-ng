@@ -13,15 +13,15 @@
 #include <unordered_map>
 
 #include "Operation.h"
-#include "tree.h"
+#include "Tree.h"
 
 Tree::Tree() : Tree(nullptr) {}
 
 Tree::Tree(std::shared_ptr<Node> inroot)
     : _root(inroot),
-      _nodes(vector<std::shared_ptr<Node>>()),
-      _internal_nodes(vector<std::shared_ptr<Node>>()),
-      _external_nodes(vector<std::shared_ptr<Node>>()),
+      _nodes{},
+      _internal_nodes{},
+      _external_nodes{},
       _internal_node_count(0),
       _external_node_count(0) {
   _root = inroot;
@@ -53,7 +53,7 @@ std::shared_ptr<Node> Tree::getExternalNode(int num) {
 /*
  * could precompute this, check for run time differences
  */
-std::shared_ptr<Node> Tree::getExternalNode(string &name) {
+std::shared_ptr<Node> Tree::getExternalNode(std::string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _external_nodes.size(); i++) {
     if (_external_nodes.at(i)->getName() == name) ret = _external_nodes.at(i);
@@ -68,7 +68,7 @@ std::shared_ptr<Node> Tree::getInternalNode(int num) {
 /*
  * could precompute this, check for run time differences
  */
-std::shared_ptr<Node> Tree::getInternalNode(string &name) {
+std::shared_ptr<Node> Tree::getInternalNode(std::string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _internal_nodes.size(); i++) {
     if (_internal_nodes.at(i)->getName() == name) ret = _internal_nodes.at(i);
@@ -108,7 +108,7 @@ void Tree::reRoot(std::shared_ptr<Node> outgroup) {
                             // instead of NULL
   }
   if (_root == outgroup) {
-    cout << "you asked to root at the current root" << endl;
+    std::cout << "you asked to root at the current root" << std::endl;
   } else {
     std::shared_ptr<Node> tempParent = getParent(outgroup);
     auto newRoot = std::make_shared<Node>(*tempParent);
@@ -170,7 +170,7 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
   }
 }
 
-std::shared_ptr<Node> Tree::getMRCA(vector<string> outgroup) {
+std::shared_ptr<Node> Tree::getMRCA(std::vector<std::string> outgroup) {
   if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
   std::shared_ptr<Node> mcra;
   std::vector<std::shared_ptr<Node>> outgroup_nodes;
@@ -179,7 +179,8 @@ std::shared_ptr<Node> Tree::getMRCA(vector<string> outgroup) {
   return getMRCA(outgroup_nodes);
 }
 
-std::shared_ptr<Node> Tree::getMRCA(vector<std::shared_ptr<Node>> outgroup) {
+std::shared_ptr<Node> Tree::getMRCA(
+    std::vector<std::shared_ptr<Node>> outgroup) {
   return getMRCAWithNode(_root, outgroup);
 }
 
@@ -235,7 +236,7 @@ void Tree::processReRoot(std::shared_ptr<Node> node) {
 
 void Tree::exchangeInfo(std::shared_ptr<Node> node1,
                         std::shared_ptr<Node> node2) {
-  string swaps;
+  std::string swaps;
   double swapd;
   swaps = node1->getName();
   node1->setName(node2->getName());
@@ -337,7 +338,7 @@ void Tree::assignTipData(
 std::string Tree::getNewick() const { return _root->getNewick(); }
 
 std::string Tree::getNewickLambda(
-    const std::function<string(const Node &)> &newick_lambda) const {
+    const std::function<std::string(const Node &)> &newick_lambda) const {
   return _root->getNewickLambda(newick_lambda);
 }
 

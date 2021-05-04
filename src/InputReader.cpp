@@ -9,7 +9,6 @@
 
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 #include "InputReader.h"
 #include "Utils.h"
@@ -17,34 +16,34 @@ using namespace std;
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
 
-void InputReader::readMultipleTreeFile(string filename,
-                                       vector<std::shared_ptr<Tree>> &ret) {
+void InputReader::readMultipleTreeFile(
+    std::string filename, std::vector<std::shared_ptr<Tree>> &ret) {
   TreeReader tr;
-  ifstream ifs(filename.c_str());
-  string temp;
+  std::ifstream ifs(filename.c_str());
+  std::string temp;
   int count = 1;
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
       auto intree = tr.readTree(temp);
-      cout << "Tree " << count << " has " << intree->getExternalNodeCount()
-           << " leaves." << endl;
+      std::cout << "Tree " << count << " has " << intree->getExternalNodeCount()
+                << " leaves." << std::endl;
       ret.push_back(intree);
       count++;
     }
   }
 }
 
-unordered_map<string, lagrange_dist_t> InputReader::readStandardInputData(
-    string filename) {
-  ifstream ifs(filename.c_str());
-  string temp;
+std::unordered_map<std::string, lagrange_dist_t>
+InputReader::readStandardInputData(std::string filename) {
+  std::ifstream ifs(filename.c_str());
+  std::string temp;
   bool first = false;
   nareas = 0;
   nspecies = 0;
-  unordered_map<string, lagrange_dist_t> data;
-  string line;
-  vector<string> tokens;
-  string del("\t ");
+  std::unordered_map<std::string, lagrange_dist_t> data;
+  std::string line;
+  std::vector<std::string> tokens;
+  std::string del("\t ");
   while (getline(ifs, line)) {
     if (first == false) {
       first = true;
@@ -61,14 +60,14 @@ unordered_map<string, lagrange_dist_t> InputReader::readStandardInputData(
       for (unsigned int j = 0; j < tokens.size(); j++) {
         TrimSpaces(tokens[j]);
       }
-      cout << "Reading species: " << tokens[0] << " ";
-      vector<int> speciesdata(nareas, 0);
+      std::cout << "Reading species: " << tokens[0] << " ";
+      std::vector<int> speciesdata(nareas, 0);
       for (int i = 0; i < nareas; i++) {
         char spot = tokens[1][i];
         if (spot == '1') speciesdata[i] = 1;
-        cout << spot - '0';
+        std::cout << spot - '0';
       }
-      cout << endl;
+      std::cout << std::endl;
       data[tokens[0]] = convert_vector_to_lagrange_dist(speciesdata);
     }
   }
@@ -76,13 +75,14 @@ unordered_map<string, lagrange_dist_t> InputReader::readStandardInputData(
   return data;
 }
 
-void InputReader::checkData(const unordered_map<string, lagrange_dist_t> &data,
-                            const vector<std::shared_ptr<Tree>> &trees) {
-  vector<string> dataspecies;
+void InputReader::checkData(
+    const std::unordered_map<std::string, lagrange_dist_t> &data,
+    const std::vector<std::shared_ptr<Tree>> &trees) {
+  std::vector<std::string> dataspecies;
   for (auto itr = data.begin(); itr != data.end(); ++itr) {
     dataspecies.push_back(itr->first);
   }
-  vector<string> treespecies;
+  std::vector<std::string> treespecies;
   for (unsigned int j = 0; j < trees[0]->getExternalNodeCount(); j++) {
     treespecies.push_back(trees[0]->getExternalNode(j)->getName());
     int count = 0;
@@ -90,21 +90,19 @@ void InputReader::checkData(const unordered_map<string, lagrange_dist_t> &data,
       if (trees[0]->getExternalNode(j)->getName() == dataspecies[k]) count += 1;
     }
     if (count != 1) {
-      cout << "Error: " << trees[0]->getExternalNode(j)->getName() << " found"
-           << count << " times in data file." << endl;
+      std::cout << "Error: " << trees[0]->getExternalNode(j)->getName()
+                << " found" << count << " times in data file." << std::endl;
       exit(0);
     }
   }
   for (size_t j = 0; j < dataspecies.size(); j++) {
     int count = 0;
     for (size_t k = 0; k < treespecies.size(); k++) {
-      if (dataspecies[j] == treespecies[k]) {
-        count += 1;
-      }
+      if (dataspecies[j] == treespecies[k]) { count += 1; }
     }
     if (count != 1) {
-      cerr << "Error: " << dataspecies[j] << " found " << count
-           << " times in tree file." << endl;
+      std::cerr << "Error: " << dataspecies[j] << " found " << count
+                << " times in tree file." << std::endl;
       exit(0);
     }
   }

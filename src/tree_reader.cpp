@@ -11,8 +11,6 @@
 #include <sstream>
 #include <unordered_map>
 
-using namespace std;
-
 #include "tree_reader.h"
 
 enum lexeme_type_t {
@@ -68,8 +66,7 @@ class lexer_t {
   }
 
   void consume_until(lexeme_type_t token_type) {
-    while (token_type != consume()) {
-    }
+    while (token_type != consume()) {}
   }
 
   bool at_end() { return _input.size() == _current_index; }
@@ -115,9 +112,7 @@ class lexer_t {
     // while (char c = _input[_current_index]) {
     while (_current_index < _input.size()) {
       char c = _input[_current_index];
-      if (!std::isspace(c)) {
-        break;
-      }
+      if (!std::isspace(c)) { break; }
       _current_index++;
     }
   }
@@ -164,9 +159,7 @@ lexeme_type_t lexer_t::consume() {
     // the end of the string
     std::stringstream builder;
     while (char tmp = _input[_current_index]) {
-      if (is_punct(tmp)) {
-        break;
-      }
+      if (is_punct(tmp)) { break; }
       builder << tmp;
       _current_index++;
     }
@@ -335,7 +328,7 @@ void parser_t::parse_comment() {
   }
 }
 
-std::shared_ptr<Tree> TreeReader::readTree(string tree) {
+std::shared_ptr<Tree> TreeReader::readTree(const std::string &tree) {
   parser_t parser(tree);
   return parser.parse();
 }
