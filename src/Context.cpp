@@ -15,7 +15,7 @@
 #include "Common.h"
 #include "Context.h"
 #include "Operation.h"
-#include "ThreadState.h"
+#include "WorkerState.h"
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
@@ -72,28 +72,28 @@ void Context::registerTipClvs(
   _tree->assignTipData(*_workspace, dist_data);
 }
 
-void Context::computeForwardOperations(ThreadState& ts, ThreadContext& tc) {
-  ts.work(ThreadMode::ComputeForward, tc, _workspace);
+void Context::computeForwardOperations(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::ComputeForward, tc, _workspace);
 }
 
-void Context::computeBackwardOperations(ThreadState& ts, ThreadContext& tc) {
-  ts.work(ThreadMode::ComputeReverse, tc, _workspace);
+void Context::computeBackwardOperations(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::ComputeReverse, tc, _workspace);
 }
 
-double Context::computeLLH(ThreadState& ts) {
+double Context::computeLLH(WorkerState& ts) {
   auto tc = makeThreadContext();
   return computeLLH(ts, tc);
 }
 
-double Context::computeLLH(ThreadState& ts, ThreadContext& tc) {
-  ts.work(ThreadMode::ComputeForward, tc, _workspace);
-  ts.work(ThreadMode::ComputeLH, tc, _workspace);
+double Context::computeLLH(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::ComputeForward, tc, _workspace);
+  ts.work(WorkerMode::ComputeLH, tc, _workspace);
   return _llh_goal.begin()->result();
 }
 
-void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
+void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
                                        bool splits, bool output) {
-  ThreadContext tc = makeThreadContext();
+  WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that
    */
@@ -117,11 +117,11 @@ void Context::optimizeAndComputeValues(ThreadState& ts, bool states,
   ts.halt_threads();
 }
 
-double Context::optimize(ThreadState& ts, ThreadContext& tc) {
+double Context::optimize(WorkerState& ts, WorkerContext& tc) {
   struct OptContext {
     Context& context;
-    ThreadContext& tc;
-    ThreadState& ts;
+    WorkerContext& tc;
+    WorkerState& ts;
   } oc{*this, tc, ts};
 
   nlopt::opt opt(nlopt::LN_SBPLX, 2);
@@ -178,11 +178,11 @@ lagrange_split_list_t Context::getSplitResults() {
   return splits;
 }
 
-void Context::computeStateGoal(ThreadState& ts, ThreadContext& tc) {
-  ts.work(ThreadMode::ComputeStateGoal, tc, _workspace);
+void Context::computeStateGoal(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::ComputeStateGoal, tc, _workspace);
 }
-void Context::computeSplitGoal(ThreadState& ts, ThreadContext& tc) {
-  ts.work(ThreadMode::ComputeSplitGoal, tc, _workspace);
+void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
 }
 
 period_t Context::currentParams() const {
@@ -202,13 +202,13 @@ std::string Context::treeCLVStatus() const {
 #endif
 
 std::vector<std::unique_ptr<lagrange_matrix_base_t>> Context::computeStateGoal(
-    ThreadState& ts) {
+    WorkerState& ts) {
   auto tc = makeThreadContext();
   computeStateGoal(ts, tc);
   return getStateResults();
 }
 
-lagrange_split_list_t Context::computeSplitGoal(ThreadState& ts) {
+lagrange_split_list_t Context::computeSplitGoal(WorkerState& ts) {
   auto tc = makeThreadContext();
   computeSplitGoal(ts, tc);
   return getSplitResults();

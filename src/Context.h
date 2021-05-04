@@ -16,7 +16,7 @@
 #include "AncSplit.h"
 #include "Common.h"
 #include "Operation.h"
-#include "ThreadState.h"
+#include "WorkerState.h"
 #include "Workspace.h"
 #include "tree.h"
 
@@ -39,13 +39,13 @@ class Context {
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
-  void optimizeAndComputeValues(ThreadState& ts, bool states, bool splits,
+  void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
                                 bool output);
-  double computeLLH(ThreadState& ts);
-  double computeLLH(ThreadState& ts, ThreadContext& tc);
+  double computeLLH(WorkerState& ts);
+  double computeLLH(WorkerState& ts, WorkerContext& tc);
   std::vector<std::unique_ptr<lagrange_matrix_base_t>> computeStateGoal(
-      ThreadState& ts);
-  lagrange_split_list_t computeSplitGoal(ThreadState& ts);
+      WorkerState& ts);
+  lagrange_split_list_t computeSplitGoal(WorkerState& ts);
 
   std::string toString() const;
 
@@ -56,8 +56,8 @@ class Context {
 
   // std::string treeCLVStatus() const;
 
-  ThreadContext makeThreadContext() {
-    ThreadContext tc{_forward_operations, _reverse_operations, _llh_goal,
+  WorkerContext makeThreadContext() {
+    WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,
                      _state_lh_goal, _split_lh_goal};
     return tc;
   }
@@ -66,13 +66,13 @@ class Context {
   void registerForwardOperations();
   void registerBackwardOperations();
 
-  void computeForwardOperations(ThreadState& ts, ThreadContext& tc);
-  void computeBackwardOperations(ThreadState& ts, ThreadContext& tc);
+  void computeForwardOperations(WorkerState& ts, WorkerContext& tc);
+  void computeBackwardOperations(WorkerState& ts, WorkerContext& tc);
 
-  void computeStateGoal(ThreadState& ts, ThreadContext& tc);
-  void computeSplitGoal(ThreadState& ts, ThreadContext& tc);
+  void computeStateGoal(WorkerState& ts, WorkerContext& tc);
+  void computeSplitGoal(WorkerState& ts, WorkerContext& tc);
 
-  double optimize(ThreadState& ts, ThreadContext& tc);
+  double optimize(WorkerState& ts, WorkerContext& tc);
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;

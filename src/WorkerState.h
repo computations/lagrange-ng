@@ -14,7 +14,7 @@
 #include "Utils.h"
 #include "Workspace.h"
 
-enum class ThreadMode {
+enum class WorkerMode {
   ComputeForward,
   ComputeReverse,
   ComputeLH,
@@ -23,9 +23,9 @@ enum class ThreadMode {
   Halt
 };
 
-class ThreadContext {
+class WorkerContext {
  public:
-  ThreadContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
+  WorkerContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
                 std::vector<std::shared_ptr<ReverseSplitOperation>>& rwb,
                 std::vector<LLHGoal>& lhg, std::vector<StateLHGoal>& stg,
                 std::vector<SplitLHGoal>& slg)
@@ -42,63 +42,63 @@ class ThreadContext {
   std::vector<SplitLHGoal>& _split_lh_work_buffer;
 };
 
-class ThreadState {
+class WorkerState {
  public:
-  ThreadState() : _tid{_total_threads++}, _blis_context{nullptr} {
+  WorkerState() : _tid{_total_threads++}, _blis_context{nullptr} {
     _blis_runtime = BLIS_RNTM_INITIALIZER;
     _blis_context = bli_gks_query_cntx();
   }
 
-  ThreadState(const ThreadState&) = delete;
-  ThreadState& operator=(const ThreadState&) = delete;
+  WorkerState(const WorkerState&) = delete;
+  WorkerState& operator=(const WorkerState&) = delete;
 
-  ThreadState(ThreadState&& ts) { *this = std::move(ts); }
-  ThreadState& operator=(ThreadState&& ts) {
+  WorkerState(WorkerState&& ts) { *this = std::move(ts); }
+  WorkerState& operator=(WorkerState&& ts) {
     _tid = ts._tid;
     ++_total_threads;
     return *this;
   }
 
-  ~ThreadState() {
+  ~WorkerState() {
     if (_total_threads > 0) { _total_threads--; }
   }
 
-  void set_mode(ThreadMode tm) {
-    if (master_thread()) { _thread_mode = tm; }
+  void set_mode(WorkerMode tm) {
+    if (master_thread()) { _mode = tm; }
   }
 
-  void work(ThreadContext& tc, const std::shared_ptr<Workspace>& ws) {
+  void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
     while (true) {
       barrier();
-      switch (_thread_mode) {
-        case ThreadMode::ComputeForward:
+      switch (_mode) {
+        case WorkerMode::ComputeForward:
           work(tc._forward_work_buffer, ws);
           break;
 
-        case ThreadMode::ComputeReverse:
+        case WorkerMode::ComputeReverse:
           work(tc._reverse_work_buffer, ws);
           break;
 
-        case ThreadMode::ComputeSplitGoal:
+        case WorkerMode::ComputeSplitGoal:
           work_goal(tc._split_lh_work_buffer, ws);
           break;
 
-        case ThreadMode::ComputeStateGoal:
+        case WorkerMode::ComputeStateGoal:
           work_goal(tc._state_lh_work_buffer, ws);
           break;
 
-        case ThreadMode::ComputeLH:
+        case WorkerMode::ComputeLH:
           if (master_thread()) { work_goal(tc._lh_goal, ws); }
           break;
 
-        case ThreadMode::Halt:
+        case WorkerMode::Halt:
           return;
       }
       if (master_thread()) { return; }
     }
   }
 
-  inline void work(ThreadMode tm, ThreadContext& tc,
+  inline void work(WorkerMode tm, WorkerContext& tc,
                    const std::shared_ptr<Workspace>& ws) {
     set_mode(tm);
     work(tc, ws);
@@ -108,9 +108,11 @@ class ThreadState {
   size_t thread_id() const { return _tid; }
 
   void halt_threads() {
-    set_mode(ThreadMode::Halt);
+    set_mode(WorkerMode::Halt);
     barrier();
   }
+
+  void set_assigned_threads(size_t at) { _assigned_threads = at; }
 
  private:
   template <typename T>
@@ -124,7 +126,7 @@ class ThreadState {
   template <typename T>
   void work(std::vector<std::shared_ptr<T>>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
-    bli_rntm_set_num_threads(2, &_blis_runtime);
+    bli_rntm_set_num_threads(_assigned_threads, &_blis_runtime);
     for (auto w = find_work(work_buffer, workspace); w != nullptr;
          w = find_work(work_buffer, workspace)) {
       /* We only lock on greater than 2 here because we have 2 copies of the
@@ -231,6 +233,8 @@ class ThreadState {
 
   size_t _tid;
 
+  size_t _assigned_threads;
+
   cntx_t* _blis_context;
   rntm_t _blis_runtime;
 
@@ -241,7 +245,7 @@ class ThreadState {
   static std::atomic_size_t _total_threads;
   static std::atomic_size_t _finished_threads;
   static std::atomic_size_t _start_index;
-  static std::atomic<ThreadMode> _thread_mode;
+  static std::atomic<WorkerMode> _mode;
 };
 
 #endif

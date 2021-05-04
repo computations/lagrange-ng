@@ -19,7 +19,7 @@ set(LAGRANGE_SOURCES
         src/Utils.cpp
         src/Workspace.cpp
         src/Operation.cpp
-        src/ThreadState.cpp
+        src/WorkerState.cpp
         )
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)

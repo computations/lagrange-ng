@@ -30,8 +30,8 @@
 #include "Common.h"
 #include "Context.h"
 #include "InputReader.h"
-#include "ThreadState.h"
 #include "Utils.h"
+#include "WorkerState.h"
 #include "blis/blis.h"
 #include "nlohmann/json.hpp"
 
@@ -73,7 +73,8 @@ struct config_options_t {
   bool estimate_dispersal_mask = false;
 
   size_t region_count;
-  lagrange_option_t<size_t> threads;
+  lagrange_option_t<size_t> workers;
+  lagrange_option_t<size_t> threads_per_worker;
 };
 
 std::unique_ptr<lagrange_matrix_base_t> normalizeStateDistrubtionByLWR(
@@ -278,8 +279,10 @@ config_options_t parse_config(const std::string &config_filename) {
       config.extinction = atof(tokens[1].c_str());
       cout << "setting extinction: " << config.extinction << endl;
       config.estimate = false;
-    } else if (!strcmp(tokens[0].c_str(), "threads")) {
-      config.threads = std::stoi(tokens[1]);
+    } else if (!strcmp(tokens[0].c_str(), "workers")) {
+      config.workers = std::stoi(tokens[1]);
+    } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
+      config.threads_per_worker = std::stoi(tokens[1]);
     }
   }
   ifs.close();
@@ -357,21 +360,21 @@ void handle_tree(std::shared_ptr<Tree> intree,
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
 
-  std::vector<ThreadState> thread_states;
-  thread_states.reserve(config.threads.get());
+  std::vector<WorkerState> thread_states;
+  thread_states.reserve(config.workers.get());
   std::vector<std::thread> threads;
-  std::cout << "Starting Threads" << std::endl;
-  for (size_t i = 0; i < config.threads.get(); i++) {
-    std::cout << "Making Thread #" << i << std::endl;
+  std::cout << "Starting Workers" << std::endl;
+  for (size_t i = 0; i < config.workers.get(); i++) {
+    std::cout << "Making Worker #" << i + 1 << std::endl;
     thread_states.emplace_back();
+    thread_states.back().set_assigned_threads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(thread_states[i]), config.states,
                          config.splits, true);
   }
 
-  std::cout << "Joining Threads" << std::endl;
+  std::cout << "Waiting for workers" << std::endl;
   for (auto &t : threads) { t.join(); }
-  std::cout << "Joined Threads" << std::endl;
 
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -395,7 +398,8 @@ void handle_tree(std::shared_ptr<Tree> intree,
 }
 
 void validateConfig(config_options_t &config) {
-  if (!config.threads.has_value()) { config.threads = 1; }
+  if (!config.workers.has_value()) { config.workers = 1; }
+  if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
 }
 
 int main(int argc, char *argv[]) {
