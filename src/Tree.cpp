@@ -7,7 +7,6 @@
  *      Author: Ben Bettisworth
  */
 
-#include <cstring>
 #include <exception>
 #include <limits>
 #include <unordered_map>

@@ -1,5 +1,5 @@
-#ifndef LAGRANGE_THREAD_STATE_H__
-#define LAGRANGE_THREAD_STATE_H__
+#ifndef LAGRANGE_WORKER_STATE_H_
+#define LAGRANGE_WORKER_STATE_H_
 
 #include <atomic>
 #include <cctype>

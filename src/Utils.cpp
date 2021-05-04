@@ -7,8 +7,6 @@
  *      Author: Ben Bettisworth
  */
 
-#include <iostream>
-
 #include "Common.h"
 #include "Utils.h"
 
