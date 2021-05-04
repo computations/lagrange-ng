@@ -1,7 +1,3 @@
-[submodule "deps/blaze"]
-	path = deps/blaze
-	url = https://bitbucket.org/blaze-lib/blaze.git
-	ignore = dirty
 [submodule "tools"]
 	path = tools
 	url = https://github.com/computations/lagrange_tools
