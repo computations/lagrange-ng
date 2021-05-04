@@ -395,7 +395,6 @@ void handle_tree(std::shared_ptr<Tree> intree,
 }
 
 void validateConfig(config_options_t &config) {
-  std::cout << "num threads " << config.threads.get() << std::endl;
   if (!config.threads.has_value()) { config.threads = 1; }
 }
 
