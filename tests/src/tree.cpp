@@ -1,18 +1,15 @@
-#include <tree_reader.h>
-
 #include <algorithm>
-#include <iomanip>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
 #include "Common.h"
+#include "Node.h"
+#include "Tree.h"
+#include "TreeReader.h"
 #include "Workspace.h"
 #include "environment.hpp"
 #include "gtest/gtest.h"
-#include "node.h"
-#include "tree.h"
 
 class TreeTest : public ::testing::Test {
  protected:

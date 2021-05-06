@@ -4,7 +4,7 @@
 
 #include "environment.hpp"
 #include "gtest/gtest.h"
-#include "tree_reader.h"
+#include "TreeReader.h"
 
 TEST(TreeReader, simple0) {
   auto tr = TreeReader();
