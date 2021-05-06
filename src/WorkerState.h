@@ -68,7 +68,6 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
-    _start_index = 0;
     while (true) {
       barrier();
       switch (_mode) {
@@ -149,7 +148,7 @@ class WorkerState {
         w->eval(workspace, _blis_context, &_blis_runtime);
       }
     }
-    //end_work();
+    // end_work();
   }
 
   void barrier() {
