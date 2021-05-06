@@ -154,19 +154,22 @@ class WorkerState {
   void barrier() {
     static thread_local volatile int local_wait_flag = 0;
     static volatile int wait_flag = 0;
-    static std::atomic<size_t> barrier_threads{0};
+    static volatile size_t barrier_threads{0};
+    static std::mutex b_lock;
 
-    if (_total_threads == 1) { return; }
+    b_lock.lock();
+
+    // if (_total_threads == 1) { return; }
 
     barrier_threads++;
 
-    if (master_thread()) {
-      while (barrier_threads != _total_threads) {}
+    if (barrier_threads == _total_threads) {
+      b_lock.unlock();
       barrier_threads = 0;
       wait_flag = !wait_flag;
     } else {
+      b_lock.unlock();
       while (local_wait_flag == wait_flag) {}
-      local_wait_flag = !local_wait_flag;
     }
   }
 
