@@ -451,7 +451,10 @@ class LLHGoal {
   size_t _prior_index;
   double _result = -std::numeric_limits<double>::infinity();
 
+  bool ready(const std::shared_ptr<Workspace>&) const;
+
  private:
+  lagrange_clock_tick_t _last_execution = 0;
 };
 
 class StateLHGoal {
@@ -482,10 +485,14 @@ class StateLHGoal {
     return ret;
   }
 
+  bool ready(const std::shared_ptr<Workspace>&) const;
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_clock_tick_t _last_execution = 0;
 
   std::unique_ptr<lagrange_matrix_base_t> _result;
 };
@@ -496,10 +503,14 @@ class SplitLHGoal {
 
   inline lagrange_split_return_t result() const { return _result; }
 
+  bool ready(const std::shared_ptr<Workspace>&) const;
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_clock_tick_t _last_execution = 0;
 
   lagrange_split_return_t _result;
 };

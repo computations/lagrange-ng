@@ -661,6 +661,12 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
                                ws->get_base_frequencies(_prior_index));
   _result = std::log(rho) -
             lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
+
+  _last_execution = ws->advance_clock();
+}
+
+bool LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+  return ws->last_update_clv(_root_clv_index) > _last_execution;
 }
 
 void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
@@ -688,7 +694,14 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
                        tmp_scalar * lagrange_scaling_factor_log,
                    i);
   }
+  _last_execution = ws->advance_clock();
   // bli_printv("result:", _result.get(), "%1.15f", "");
+}
+
+bool StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+  return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
+         ws->last_update_clv(_rchild_clv_index) > _last_execution &&
+         ws->last_update_clv(_parent_clv_index) > _last_execution;
 }
 
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
@@ -713,4 +726,10 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
     ret[dist] = anc_split_vec;
   }
   _result = ret;
+}
+
+bool SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+  return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
+         ws->last_update_clv(_rchild_clv_index) > _last_execution &&
+         ws->last_update_clv(_parent_clv_index) > _last_execution;
 }

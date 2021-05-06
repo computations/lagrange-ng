@@ -128,7 +128,10 @@ class WorkerState {
                  const std::shared_ptr<Workspace>& workspace) {
     if (!master_thread()) { return; }
 
-    for (auto& w : work_buffer) { w.eval(workspace); }
+    for (auto& w : work_buffer) {
+      while (!w.ready(workspace)) {}
+      w.eval(workspace);
+    }
   }
 
   template <typename T>
@@ -161,7 +164,7 @@ class WorkerState {
     barrier_threads++;
 
     if (master_thread()) {
-      while (barrier_threads != _total_threads) {}
+      while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
       wait_flag = !wait_flag;
     } else {
@@ -172,7 +175,8 @@ class WorkerState {
 
   template <typename T>
   typename std::vector<T>::iterator find_work_goal(
-      std::vector<T>& work_buffer) {
+      std::vector<T>& work_buffer,
+      const std::shared_ptr<Workspace>& workspace) {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {
@@ -180,6 +184,7 @@ class WorkerState {
     }
 
     size_t local_index = _start_index++;
+    while (!work_buffer[local_index].ready(workspace)) {}
     return work_buffer.begin() + local_index;
   }
 
