@@ -10,33 +10,23 @@ include(ExternalProject)
 
 add_subdirectory(nlopt EXCLUDE_FROM_ALL)
 
-set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INSTALL_PREFIX}/include)
-set(BLAS_LIBS_BINARY ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.a)
-set(BLAS_LIBS_BINARY_SHARED ${BLAS_LIBS_INSTALL_PREFIX}/lib/libblis.so)
+set(OpenBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/OpenBLAS)
+set(OpenBLAS_INCLUDE_DIRS ${OpenBLAS_INSTALL_PREFIX}/include PARENT_SCOPE)
+set(OpenBLAS_LIB_BINARY ${OpenBLAS_INSTALL_PREFIX}/lib/libopenblas.a PARENT_SCOPE)
 
-set(BLAS_LIBS_INCLUDE_DIRS ${BLAS_LIBS_INCLUDE_DIRS} PARENT_SCOPE)
-set(BLAS_LIBS_BINARY ${BLAS_LIBS_BINARY} PARENT_SCOPE)
+ExternalProject_Add(OpenBLAS
+  GIT_REPOSITORY https://github.com/xianyi/OpenBLAS
+  GIT_TAG v0.3.15
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+  CONFIGURE_COMMAND ""
+  BUILD_IN_SOURCE TRUE
+  BUILD_COMMAND make USE_OPENMP=1
+  INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
+  UPDATE_DISCONNECTED TRUE
+)
 
-set(LAPACK OFF CACHE BOOL "Building lapack")
-set(LAPACKE ON CACHE BOOL "Building lapacke")
-set(USE_OPTIMIZED_BLAS ON CACHE BOOL "Turning off LAPACK blas")
-
-set(BUILD_SINGLE ON CACHE BOOL "Build single precision real" )
-set(BUILD_DOUBLE ON CACHE BOOL "Build double precision real" )
-set(BUILD_COMPLEX OFF CACHE BOOL "Build single precision complex" )
-set(BUILD_COMPLEX16 OFF CACHE BOOL "Build double precision complex" )
-
-set(LAPACKE_BUILD_SINGLE ON CACHE BOOL "Build LAPACKE single precision real" )
-set(LAPACKE_BUILD_DOUBLE ON CACHE BOOL "Build LAPACKE double precision real" )
-set(LAPACKE_BUILD_COMPLEX OFF CACHE BOOL "Build LAPACKE single precision complex" )
-set(LAPACKE_BUILD_COMPLEX16 OFF CACHE BOOL "Build LAPACKE double precision complex" )
-
-set(BLAS_LIBRARIES ${BLAS_LIBS_BINARY_SHARED})
-#add_subdirectory(lapack EXCLUDE_FROM_ALL)
-add_subdirectory(lapack EXCLUDE_FROM_ALL)
-
-set(LAPACK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lapack/LAPACKE/include
-  PARENT_SCOPE)
+add_dependencies(lagrange OpenBLAS)
 
 # Jsonhpp fourth
 

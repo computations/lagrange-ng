@@ -381,28 +381,28 @@ size_t Node::getId() const { return _id; }
 
 void Node::setSplitStringRecursive(
     const std::vector<size_t> &id_map,
-    const std::vector<lagrange_col_vector_t> &dist_lhs,
+    const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
     const std::vector<std::string> &names) {
   if (isExternal()) { return; }
 
   lagrange_dist_t best_dist =
-      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
+      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]], states);
   _split_string = lagrange_convert_dist_string(best_dist, names);
   for (auto &c : _children) {
-    c->setSplitStringRecursive(id_map, dist_lhs, names);
+    c->setSplitStringRecursive(id_map, dist_lhs, states, names);
   }
 }
 
 void Node::setStateStringRecursive(
     const std::vector<size_t> &id_map,
-    const std::vector<lagrange_col_vector_t> &dist_lhs,
+    const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
     const std::vector<std::string> &names) {
   if (isExternal()) { return; }
 
   lagrange_dist_t best_dist =
-      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]]);
+      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]], states);
   _state_string = lagrange_convert_dist_string(best_dist, names);
   for (auto &c : _children) {
-    c->setStateStringRecursive(id_map, dist_lhs, names);
+    c->setStateStringRecursive(id_map, dist_lhs, states, names);
   }
 }

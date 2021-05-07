@@ -79,5 +79,4 @@ TEST_F(ContextTest, StateGoal0) {
   context.computeLLH(_worker_state);
   auto states = context.computeStateGoal(_worker_state);
   EXPECT_EQ(states.size(), 2);
-  for (auto& s : states) { bli_obj_free(s.get()); }
 }

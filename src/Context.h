@@ -33,7 +33,7 @@ class Context {
   void registerStateLHGoal();
   void registerSplitLHGoal();
 
-  std::vector<std::unique_ptr<lagrange_matrix_base_t>> getStateResults();
+  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> getStateResults();
   lagrange_split_list_t getSplitResults();
 
   void registerTipClvs(
@@ -43,7 +43,7 @@ class Context {
                                 bool output);
   double computeLLH(WorkerState& ts);
   double computeLLH(WorkerState& ts, WorkerContext& tc);
-  std::vector<std::unique_ptr<lagrange_matrix_base_t>> computeStateGoal(
+  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> computeStateGoal(
       WorkerState& ts);
   lagrange_split_list_t computeSplitGoal(WorkerState& ts);
 
@@ -51,6 +51,8 @@ class Context {
 
   void updateRates(const period_t& p);
   void init();
+
+  size_t stateCount() const { return _workspace->states(); }
 
   period_t currentParams() const;
 

@@ -27,31 +27,28 @@ class TreeTest : public ::testing::Test {
     };
     */
 
-    lagrange_set_bli_matrix(&_arbitrary_rate_matrix, 4, 4,
-                            {
-                                0.00000,
-                                0.00000,
-                                0.00000,
-                                0.00000,
-                                0.08851,
-                                -1.71766,
-                                0.00000,
-                                1.62915,
-                                0.75966,
-                                0.00000,
-                                -0.81937,
-                                0.05971,
-                                0.00000,
-                                0.37406,
-                                1.26782,
-                                -1.64188,
-                            });
+    _arbitrary_rate_matrix.reset(new lagrange_matrix_base_t[4 * 4]{
+        0.00000,
+        0.00000,
+        0.00000,
+        0.00000,
+        0.08851,
+        -1.71766,
+        0.00000,
+        1.62915,
+        0.75966,
+        0.00000,
+        -0.81937,
+        0.05971,
+        0.00000,
+        0.37406,
+        1.26782,
+        -1.64188,
+    });
 
     _rate_matrix_op =
         std::make_shared<MakeRateMatrixOperation>(_rate_matrix_index);
   }
-
-  void TearDown() override { bli_obj_free(&_arbitrary_rate_matrix); }
 
   std::shared_ptr<Tree> parse_tree(const std::string& newick) {
     return TreeReader().readTree(newick);
@@ -67,7 +64,7 @@ class TreeTest : public ::testing::Test {
 
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
-  lagrange_matrix_base_t _arbitrary_rate_matrix;
+  std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
 };
 
 TEST_F(TreeTest, simple0) { auto t = parse_tree(_basic_tree_newick); }

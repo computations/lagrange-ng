@@ -44,10 +44,7 @@ class WorkerContext {
 
 class WorkerState {
  public:
-  WorkerState() : _tid{_total_threads++}, _blis_context{nullptr} {
-    _blis_runtime = BLIS_RNTM_INITIALIZER;
-    _blis_context = bli_gks_query_cntx();
-  }
+  WorkerState() : _tid{_total_threads++} {}
 
   WorkerState(const WorkerState&) = delete;
   WorkerState& operator=(const WorkerState&) = delete;
@@ -68,22 +65,19 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
+    openblas_set_num_threads(_assigned_threads);
     while (true) {
       barrier();
+      if (master_thread()) {
+        _start_index = 0;
+        _finished_threads = 0;
+      }
       switch (_mode) {
         case WorkerMode::ComputeForward:
-          if (master_thread()) {
-            _start_index = 0;
-            _finished_threads = 0;
-          }
           work(tc._forward_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeReverse:
-          if (master_thread()) {
-            _start_index = 0;
-            _finished_threads = 0;
-          }
           work(tc._reverse_work_buffer, ws);
           break;
 
@@ -137,7 +131,6 @@ class WorkerState {
   template <typename T>
   void work(std::vector<std::shared_ptr<T>>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
-    bli_rntm_set_num_threads(_assigned_threads, &_blis_runtime);
     for (auto w = find_work(work_buffer, workspace); w != nullptr;
          w = find_work(work_buffer, workspace)) {
       /* We only lock on greater than 2 here because we have 2 copies of the
@@ -146,9 +139,9 @@ class WorkerState {
        */
       if (w.use_count() > 2) {
         std::lock_guard<std::mutex> lock(w->getLock());
-        w->eval(workspace, _blis_context, &_blis_runtime);
+        w->eval(workspace);
       } else {
-        w->eval(workspace, _blis_context, &_blis_runtime);
+        w->eval(workspace);
       }
     }
     // end_work();
@@ -247,9 +240,6 @@ class WorkerState {
   size_t _tid;
 
   size_t _assigned_threads;
-
-  cntx_t* _blis_context;
-  rntm_t _blis_runtime;
 
   static std::shared_ptr<SplitOperation> _forward_work_buffer;
   static std::shared_ptr<ReverseSplitOperation> _backwards_work_buffer;

@@ -116,11 +116,11 @@ class Node {
 
   void setSplitStringRecursive(
       const std::vector<size_t> &id_map,
-      const std::vector<lagrange_col_vector_t> &dist_lhs,
+      const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
       const std::vector<std::string> &names);
   void setStateStringRecursive(
       const std::vector<size_t> &id_map,
-      const std::vector<lagrange_col_vector_t> &dist_lhs,
+      const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
       const std::vector<std::string> &names);
 
   void setSplitString(const std::string &splitstring);

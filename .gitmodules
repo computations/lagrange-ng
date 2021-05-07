@@ -12,3 +12,6 @@
 	path = deps/blis
 	url = https://github.com/flame/blis
 	ignore = dirty
+[submodule "deps/openblas"]
+	path = deps/openblas
+	url = https://github.com/xianyi/OpenBLAS.git

@@ -26,7 +26,6 @@
 #include "InputReader.h"
 #include "Utils.h"
 #include "WorkerState.h"
-#include "blis/blis.h"
 #include "nlohmann/json.hpp"
 
 struct config_options_t {
@@ -71,38 +70,36 @@ struct config_options_t {
   lagrange_option_t<size_t> threads_per_worker;
 };
 
-std::unique_ptr<lagrange_matrix_base_t> normalizeStateDistrubtionByLWR(
-    const std::unique_ptr<lagrange_matrix_base_t> &states) {
-  std::unique_ptr<lagrange_matrix_base_t> normalized_states{
-      new lagrange_matrix_base_t};
+std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
+    const std::unique_ptr<lagrange_matrix_base_t[]> &states,
+    size_t states_len) {
+  std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
+      new lagrange_matrix_base_t[states_len]};
 
-  // bli_printv("States prenormal:", states.get(), "%1.5f", "");
-  bli_obj_create_conf_to(states.get(), normalized_states.get());
-  bli_copyv(states.get(), normalized_states.get());
+  for (size_t i = 0; i < states_len; i++) {
+    normalized_states.get()[i] = states.get()[i];
+  }
 
   double max_llh = -std::numeric_limits<double>::infinity();
-  size_t states_size = bli_obj_length(normalized_states.get());
 
-  if (states_size == 1) { throw std::runtime_error{"YOU FUCKED UP BEN"}; }
+  if (states_len == 1) { throw std::runtime_error{"YOU FUCKED UP BEN"}; }
 
-  for (size_t i = 0; i < states_size; ++i) {
-    double tmp = bli_getiv_real(normalized_states.get(), i);
+  for (size_t i = 0; i < states_len; ++i) {
+    double tmp = normalized_states.get()[i];
+
     max_llh = std::max(max_llh, tmp);
   }
 
   double total_llh = 0.0;
-  for (size_t i = 0; i < states_size; i++) {
-    total_llh += std::exp(bli_getiv_real(normalized_states.get(), i) - max_llh);
+  for (size_t i = 0; i < states_len; i++) {
+    total_llh += std::exp(normalized_states.get()[i] - max_llh);
   }
 
-  for (size_t i = 0; i < states_size; i++) {
-    double tmp =
-        std::exp(bli_getiv_real(normalized_states.get(), i) - max_llh) /
-        total_llh;
+  for (size_t i = 0; i < states_len; i++) {
+    double tmp = std::exp(normalized_states.get()[i] - max_llh) / total_llh;
 
-    bli_setiv_real(normalized_states.get(), tmp, i);
+    normalized_states.get()[i] = tmp;
   }
-  // bli_printv("States postnormal:", normalized_states.get(), "%1.5f", "");
 
   return normalized_states;
 }
@@ -284,27 +281,25 @@ config_options_t parse_config(const std::string &config_filename) {
 }
 
 nlohmann::json makeStateJsonOutput(
-    const std::vector<std::unique_ptr<lagrange_matrix_base_t>> &states,
-    const std::vector<size_t> &stateToIdMap) {
+    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
+    size_t states_len, const std::vector<size_t> &stateToIdMap) {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
     nlohmann::json node_json;
     node_json["number"] = stateToIdMap[i];
     auto &state_distribution = states[i];
-    auto lwr_distribution = normalizeStateDistrubtionByLWR(state_distribution);
-    for (size_t dist = 0;
-         dist < static_cast<size_t>(bli_obj_length(state_distribution.get()));
-         ++dist) {
+    auto lwr_distribution =
+        normalizeStateDistrubtionByLWR(state_distribution, states_len);
+    for (size_t dist = 0; dist < states_len; ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      double llh = bli_getiv_real(state_distribution.get(), dist);
+      double llh = state_distribution.get()[dist];
       tmp["llh"] = llh;
-      double ratio = bli_getiv_real(lwr_distribution.get(), dist);
+      double ratio = lwr_distribution.get()[dist];
       tmp["ratio"] = ratio;
       node_json["states"].push_back(tmp);
     }
     states_json.push_back(node_json);
-    bli_obj_free(lwr_distribution.get());
   }
   return states_json;
 }
@@ -354,16 +349,16 @@ void handle_tree(std::shared_ptr<Tree> intree,
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
 
-  std::vector<WorkerState> thread_states;
-  thread_states.reserve(config.workers.get());
+  std::vector<WorkerState> worker_states;
+  worker_states.reserve(config.workers.get());
   std::vector<std::thread> threads;
   std::cout << "Starting Workers" << std::endl;
   for (size_t i = 0; i < config.workers.get(); i++) {
     std::cout << "Making Worker #" << i + 1 << std::endl;
-    thread_states.emplace_back();
-    thread_states.back().set_assigned_threads(config.threads_per_worker.get());
+    worker_states.emplace_back();
+    worker_states.back().set_assigned_threads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
-                         std::ref(thread_states[i]), config.states,
+                         std::ref(worker_states[i]), config.states,
                          config.splits, true);
   }
 
@@ -382,23 +377,22 @@ void handle_tree(std::shared_ptr<Tree> intree,
   // invert the map
   if (config.states) {
     auto states = context.getStateResults();
-    root_json["node-results"] =
-        makeStateJsonOutput(states, stateGoalIndexToIdMap);
-    for (auto &s : states) { bli_obj_free(s.get()); }
+    root_json["node-results"] = makeStateJsonOutput(
+        states, context.stateCount(), stateGoalIndexToIdMap);
   }
   if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
 }
 
-void validateConfig(config_options_t &config) {
+void setThreads(config_options_t &config) {
   if (!config.workers.has_value()) { config.workers = 1; }
   if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
 }
 
 int main(int argc, char *argv[]) {
+  openblas_set_num_threads(1);
   auto start_time = std::chrono::high_resolution_clock::now();
-  bli_thread_set_num_threads(1);
   if (argc != 2) {
     std::cout << "you need more arguments." << std::endl;
     std::cout << "usage: lagrange configfile" << std::endl;
@@ -406,7 +400,7 @@ int main(int argc, char *argv[]) {
   } else {
     std::string config_filename(argv[1]);
     auto config = parse_config(config_filename);
-    validateConfig(config);
+    setThreads(config);
 
     /*****************
      * finish reading the configuration file

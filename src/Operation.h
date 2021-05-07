@@ -51,11 +51,6 @@ class MakeRateMatrixOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  bool correct(const std::shared_ptr<Workspace>& ws) const {
-    return _last_execution > _last_update &&
-           ws->last_update_rate_matrix(_rate_matrix_index) > _last_execution;
-  }
-
  private:
   size_t _rate_matrix_index;
   size_t _period_index;
@@ -84,17 +79,7 @@ class ExpmOperation {
   ExpmOperation(const ExpmOperation&) = delete;
   ExpmOperation& operator=(const ExpmOperation&) = delete;
 
-  ~ExpmOperation() {
-    if (_last_execution == 0) { return; }
-    if (bli_obj_buffer(&_A) != nullptr) { bli_obj_free(&_A); }
-    if (bli_obj_buffer(&_X_1) != nullptr) { bli_obj_free(&_X_1); }
-    if (bli_obj_buffer(&_X_2) != nullptr) { bli_obj_free(&_X_2); }
-    if (bli_obj_buffer(&_N) != nullptr) { bli_obj_free(&_N); }
-    if (bli_obj_buffer(&_D) != nullptr) { bli_obj_free(&_D); }
-  }
-
-  void eval(const std::shared_ptr<Workspace>& ws, cntx_t* blis_context,
-            rntm_t* blis_runtime);
+  void eval(const std::shared_ptr<Workspace>& ws);
 
   size_t prob_matrix() const { return _prob_matrix_index; }
 
@@ -108,17 +93,6 @@ class ExpmOperation {
 
   std::mutex& getLock() { return *_lock; }
 
-  bool correct(const std::shared_ptr<Workspace>& ws) const {
-    bool rm_correct =
-        _rate_matrix_op == nullptr ? true : _rate_matrix_op->correct(ws);
-    bool pm_correct = _last_execution >
-                      (_rate_matrix_op == nullptr
-                           ? std::numeric_limits<lagrange_clock_tick_t>::max()
-                           : _rate_matrix_op->last_update());
-    return rm_correct && pm_correct &&
-           ws->last_update_prob_matrix(_prob_matrix_index) > _last_execution;
-  }
-
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
@@ -127,11 +101,12 @@ class ExpmOperation {
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   /* Temp matrices for the computation of the exponential */
-  lagrange_matrix_base_t _A;
-  lagrange_matrix_base_t _X_1;
-  lagrange_matrix_base_t _X_2;
-  lagrange_matrix_base_t _N;
-  lagrange_matrix_base_t _D;
+  std::unique_ptr<lagrange_matrix_base_t[]> _A = nullptr;
+  std::unique_ptr<lagrange_matrix_base_t[]> _X_1 = nullptr;
+  std::unique_ptr<lagrange_matrix_base_t[]> _X_2 = nullptr;
+  std::unique_ptr<lagrange_matrix_base_t[]> _N = nullptr;
+  std::unique_ptr<lagrange_matrix_base_t[]> _D = nullptr;
+  std::unique_ptr<lagrange_matrix_base_t[]> _lapack_work_buffer = nullptr;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -190,8 +165,7 @@ class DispersionOperation {
         _prob_matrix_index{prob_matrix},
         _expm_op{nullptr} {}
 
-  void eval(const std::shared_ptr<Workspace>& ws, cntx_t* blis_context,
-            rntm_t* blis_runtime);
+  void eval(const std::shared_ptr<Workspace>& ws);
 
   void terminate_top(size_t clv_index) {
     if (_top_clv != std::numeric_limits<size_t>::max()) {
@@ -224,21 +198,6 @@ class DispersionOperation {
   }
 
   std::mutex& getLock() { return *_lock; }
-
-  bool correct(const std::shared_ptr<Workspace>& ws) const {
-    bool expm_correct = _expm_op == nullptr ? true : _expm_op->correct(ws);
-    bool pm_execution_correct =
-        _last_execution >
-        (_expm_op == nullptr ? std::numeric_limits<lagrange_clock_tick_t>::max()
-                             : _expm_op->last_execution());
-
-    bool clvs_correct =
-        ws->last_update_clv(_top_clv) > ws->last_update_clv(_bot_clv);
-    bool execution_correct = ws->last_update_clv(_top_clv) > _last_execution;
-
-    return expm_correct && pm_execution_correct && clvs_correct &&
-           execution_correct;
-  }
 
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
@@ -293,8 +252,7 @@ class SplitOperation {
         _lbranch_ops{{l_ops}},
         _rbranch_ops{{r_ops}} {}
 
-  void eval(const std::shared_ptr<Workspace>&, cntx_t* blis_context,
-            rntm_t* blis_runtime);
+  void eval(const std::shared_ptr<Workspace>&);
 
   size_t get_parent_clv() const { return _parent_clv_index; }
 
@@ -319,35 +277,6 @@ class SplitOperation {
   }
 
   std::mutex& getLock() { return *_lock; }
-
-  bool correct(const std::shared_ptr<Workspace>& ws) const {
-    bool disp_ops_correct = true;
-    for (auto& op : _rbranch_ops) {
-      disp_ops_correct = disp_ops_correct && op->correct(ws);
-    }
-
-    for (auto& op : _lbranch_ops) {
-      disp_ops_correct = disp_ops_correct && op->correct(ws);
-    }
-
-    bool left_clv_correct =
-        _last_execution > ws->last_update_clv(_lbranch_clv_index);
-    bool right_clv_correct =
-        _last_execution > ws->last_update_clv(_rbranch_clv_index);
-    bool parent_clv_correct =
-        ws->last_update_clv(_parent_clv_index) > _last_execution;
-
-    bool l_order_correct =
-        _last_execution > ws->last_update_clv(_lbranch_clv_index);
-    bool r_order_correct =
-        _last_execution > ws->last_update_clv(_lbranch_clv_index);
-    bool p_order_correct =
-        ws->last_update_clv(_parent_clv_index) > _last_execution;
-
-    return disp_ops_correct && left_clv_correct && right_clv_correct &&
-           parent_clv_correct && l_order_correct && r_order_correct &&
-           p_order_correct;
-  }
 
  private:
   size_t _lbranch_clv_index;
@@ -394,7 +323,7 @@ class ReverseSplitOperation {
         _eval_clvs{false},
         _branch_ops{{branch_op}} {}
 
-  void eval(const std::shared_ptr<Workspace>&, cntx_t*, rntm_t*);
+  void eval(const std::shared_ptr<Workspace>&);
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -463,9 +392,8 @@ class StateLHGoal {
       : _parent_clv_index{parent_clv},
         _lchild_clv_index{lchild_clv},
         _rchild_clv_index{rchild_clv},
-        _result{new lagrange_matrix_base_t} {
-    memset(_result.get(), 0, sizeof(lagrange_matrix_base_t));
-  }
+        _result{nullptr},
+        _states{0} {}
   StateLHGoal(const StateLHGoal&) = delete;
   StateLHGoal& operator=(const StateLHGoal&) = delete;
   StateLHGoal(StateLHGoal&& other)
@@ -474,14 +402,12 @@ class StateLHGoal {
         _rchild_clv_index{other._rchild_clv_index},
         _result{std::move(other._result)} {}
   StateLHGoal& operator=(StateLHGoal&&) = delete;
-  ~StateLHGoal() { bli_obj_free(_result.get()); }
 
   void eval(const std::shared_ptr<Workspace>&);
 
   inline auto result() {
-    decltype(_result) ret{new decltype(_result)::element_type};
-    bli_obj_create_conf_to(_result.get(), ret.get());
-    bli_copyv(_result.get(), ret.get());
+    decltype(_result) ret{new decltype(_result)::element_type[_states]};
+    for (size_t i = 0; i < _states; i++) { ret.get()[i] = _result.get()[i]; }
     return ret;
   }
 
@@ -494,7 +420,8 @@ class StateLHGoal {
 
   lagrange_clock_tick_t _last_execution = 0;
 
-  std::unique_ptr<lagrange_matrix_base_t> _result;
+  std::unique_ptr<lagrange_matrix_base_t[]> _result;
+  size_t _states;
 };
 
 class SplitLHGoal {

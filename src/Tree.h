@@ -98,10 +98,12 @@ class Tree {
 
   void setStateStrings(const std::vector<size_t> &id_map,
                        const std::vector<lagrange_col_vector_t> &dist_lhs,
+                       size_t states,
+
                        const std::vector<std::string> &names);
   void setSplitStrings(const std::vector<size_t> &id_map,
                        const std::vector<lagrange_col_vector_t> &dist_lhs,
-                       const std::vector<std::string> &names);
+                       size_t states, const std::vector<std::string> &names);
 
   ~Tree();
 };

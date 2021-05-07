@@ -15,13 +15,9 @@ TEST(Workspace, simple0) {
   EXPECT_EQ(ws.states(), states);
 
   EXPECT_EQ(ws.rate_matrix_count(), 1);
-  EXPECT_EQ(bli_obj_width(ws.rate_matrix(0)), states);
-  EXPECT_EQ(bli_obj_length(ws.rate_matrix(0)), states);
   EXPECT_THROW(ws.rate_matrix(1), std::runtime_error);
 
   EXPECT_EQ(ws.prob_matrix_count(), 1);
-  EXPECT_EQ(bli_obj_width(ws.prob_matrix(0)), states);
-  EXPECT_EQ(bli_obj_length(ws.prob_matrix(0)), states);
   EXPECT_THROW(ws.prob_matrix(1), std::runtime_error);
 }
 
@@ -32,7 +28,6 @@ TEST(Workspace, simple1) {
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
   EXPECT_EQ(clv_index, 0);
-  EXPECT_EQ(bli_obj_length(ws.clv(clv_index)), states);
 }
 
 TEST(Workspace, minsize) {

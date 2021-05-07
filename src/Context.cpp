@@ -159,9 +159,9 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
  * vector indexed by lagrange_dist_t, where each entry contains the likelihood
  * of that particular distribution at that node.
  */
-std::vector<std::unique_ptr<lagrange_matrix_base_t>>
+std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>
 Context::getStateResults() {
-  std::vector<std::unique_ptr<lagrange_matrix_base_t>> states;
+  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> states;
   states.reserve(_state_lh_goal.size());
 
   for (auto& op : _state_lh_goal) { states.push_back(op.result()); }
@@ -201,15 +201,17 @@ std::string Context::treeCLVStatus() const {
 }
 #endif
 
-std::vector<std::unique_ptr<lagrange_matrix_base_t>> Context::computeStateGoal(
-    WorkerState& ts) {
+std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>
+Context::computeStateGoal(WorkerState& ts) {
   auto tc = makeThreadContext();
+  computeBackwardOperations(ts, tc);
   computeStateGoal(ts, tc);
   return getStateResults();
 }
 
 lagrange_split_list_t Context::computeSplitGoal(WorkerState& ts) {
   auto tc = makeThreadContext();
+  computeBackwardOperations(ts, tc);
   computeSplitGoal(ts, tc);
   return getSplitResults();
 }

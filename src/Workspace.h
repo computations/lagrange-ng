@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 #include "Common.h"
 
@@ -36,6 +37,7 @@ class Workspace {
         _regions{regions},
         _states{1ull << regions},
         _next_free_clv{0},
+        _leading_dim{_states},
         _rate_matrix{1},
         _prob_matrix{1},
         _base_frequencies_count{1},
@@ -65,14 +67,31 @@ class Workspace {
     return _rate_matrix[i]._matrix;
   }
 
-  inline void update_rate_matrix(size_t i, const lagrange_matrix_t &A) {
-    if (i >= _rate_matrix.size()) {
+  inline void update_rate_matrix(size_t index, const lagrange_matrix_t &A) {
+    if (index >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range when updating"};
     }
 
-    bli_copym(A, _rate_matrix[i]._matrix);
-    _rate_matrix[i]._last_update = advance_clock();
+    for (size_t i = 0; i < matrix_size(); i++) {
+      _rate_matrix[index]._matrix[i] = A[i];
+    }
+
+    _rate_matrix[index]._last_update = advance_clock();
   }
+
+  /*
+  inline void update_rate_matrix(size_t index, lagrange_matrix_t &&A) {
+    if (index >= _rate_matrix.size()) {
+      throw std::runtime_error{"Rate matrix access out of range when updating"};
+    }
+
+    if (A != _rate_matrix[index]._matrix) {
+      delete[] _rate_matrix[index]._matrix;
+      _rate_matrix[index]._matrix = A;
+    }
+    _rate_matrix[index]._last_update = advance_clock();
+  }
+  */
 
   inline void update_rate_matrix_clock(size_t i) {
     _rate_matrix[i]._last_update = advance_clock();
@@ -85,15 +104,34 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline lagrange_clock_tick_t update_prob_matrix(size_t i,
+  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
                                                   const lagrange_matrix_t &A) {
-    if (i >= _prob_matrix.size()) {
+    if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
 
-    bli_copym(A, _prob_matrix[i]._matrix);
-    return _prob_matrix[i]._last_update = advance_clock();
+    for (size_t i = 0; i < matrix_size(); i++) {
+      _prob_matrix[index]._matrix[i] = A[i];
+    }
+
+    return _prob_matrix[index]._last_update = advance_clock();
   }
+
+  /*
+  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
+                                                  lagrange_matrix_t &&A) {
+    if (index >= _prob_matrix.size()) {
+      throw std::runtime_error{"Prob matrix access out of range when updating"};
+    }
+
+    if (A != _prob_matrix[index]._matrix) {
+      delete[] _prob_matrix[index]._matrix;
+      _prob_matrix[index]._matrix = A;
+    }
+
+    return _prob_matrix[index]._last_update = advance_clock();
+  }
+  */
 
   inline lagrange_clock_tick_t last_update_prob_matrix(size_t i) {
     return _prob_matrix[i]._last_update;
@@ -103,9 +141,7 @@ class Workspace {
     return _rate_matrix[i]._last_update;
   }
 
-  inline const lagrange_col_vector_t &clv(size_t i) { return clv_ref(i); }
-
-  inline lagrange_col_vector_t &clv_ref(size_t i) {
+  inline const lagrange_col_vector_t &clv(size_t i) {
     if (i >= clv_count()) {
       throw std::runtime_error{"CLV access out of range"};
     }
@@ -116,7 +152,9 @@ class Workspace {
     if (index >= clv_count()) {
       throw std::runtime_error{"CLV access out of range"};
     }
-    bli_copyv(clv, _clvs[index]._clv);
+
+    for (size_t i = 0; i < states(); i++) { _clvs[index]._clv[i] = clv[i]; }
+
     _clvs[index]._last_update = advance_clock();
   }
 
@@ -125,10 +163,16 @@ class Workspace {
     if (index >= clv_count()) {
       throw std::runtime_error{"CLV access out of range"};
     }
+    delete[] _clvs[index]._clv;
     _clvs[index]._clv = clv;
     _clvs[index]._last_update = advance_clock();
   }
   */
+
+  inline std::tuple<lagrange_col_vector_t, size_t> clv_size_tuple(
+      size_t index) {
+    return std::make_tuple(clv(index), states());
+  }
 
   inline void update_clv_clock(size_t index) {
     _clvs[index]._last_update = advance_clock();
@@ -143,7 +187,7 @@ class Workspace {
   inline size_t prob_matrix_count() const { return _prob_matrix.size(); }
   inline size_t rate_matrix_count() const { return _rate_matrix.size(); }
   inline size_t clv_count() const { return _next_free_clv; }
-  inline size_t matrix_size() const { return _states * _states; }
+  inline size_t matrix_size() const { return leading_dimension() * _states; }
   inline size_t node_count() const { return _inner_count + _taxa_count; }
 
   inline size_t suggest_prob_matrix_index() {
@@ -221,7 +265,7 @@ class Workspace {
   std::string report_node_vecs(size_t node_id) const;
 
   inline size_t compute_matrix_index(size_t i, size_t j) {
-    return i * states() + j;
+    return i * leading_dimension() + j;
   }
 
   inline void set_reverse_prior(size_t index) {
@@ -230,10 +274,14 @@ class Workspace {
           "Attempting to access a clv that doesn't exist when setting a "
           "reverse prior"};
     }
-    bli_setv(&BLIS_ONE, _clvs[index]._clv);
+
+    for (size_t i = 0; i < states(); i++) { _clvs[index]._clv[i] = 1.0; }
+
     _clvs[index]._last_update =
         std::numeric_limits<lagrange_clock_tick_t>::max();
   }
+
+  inline size_t leading_dimension() const { return _leading_dim; }
 
  private:
   inline size_t register_clv() { return _next_free_clv++; }
@@ -243,6 +291,8 @@ class Workspace {
   size_t _regions;
   size_t _states;
   size_t _next_free_clv;
+
+  size_t _leading_dim;
 
   std::vector<matrix_reservation_t> _rate_matrix;
   std::vector<matrix_reservation_t> _prob_matrix;

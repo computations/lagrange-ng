@@ -11,30 +11,20 @@
 #include "Workspace.h"
 
 Workspace::~Workspace() {
-  for (auto &res : _rate_matrix) {
-    bli_obj_free(res._matrix);
-    delete res._matrix;
-  }
+  for (auto &res : _rate_matrix) { delete[] res._matrix; }
 
-  for (auto &res : _prob_matrix) {
-    bli_obj_free(res._matrix);
-    delete res._matrix;
-  }
+  for (auto &res : _prob_matrix) { delete[] res._matrix; }
 
   if (_base_frequencies != nullptr) {
     for (size_t i = 0; i < _base_frequencies_count; ++i) {
-      if (_base_frequencies[i] != nullptr) {
-        bli_obj_free(_base_frequencies[i]);
-        delete _base_frequencies[i];
-      }
+      if (_base_frequencies[i] != nullptr) { delete[] _base_frequencies[i]; }
     }
     delete[] _base_frequencies;
   }
 
   for (size_t i = 0; i < _clvs.size(); ++i) {
     if (_clvs[i]._clv == nullptr) { continue; }
-    bli_obj_free(_clvs[i]._clv);
-    delete _clvs[i]._clv;
+    delete[] _clvs[i]._clv;
   }
   if (_clv_scalars != nullptr) delete[] _clv_scalars;
 }
@@ -49,15 +39,14 @@ void Workspace::register_children_clv(size_t node_id) {
 }
 
 void Workspace::set_tip_clv(size_t index, lagrange_dist_t dist) {
-  bli_setiv_real(_clvs[index]._clv, 1.0, dist);
+  _clvs[index]._clv[dist] = 1.0;
   _clvs[index]._last_update = std::numeric_limits<size_t>::max();
 }
 
 void Workspace::reserve() {
   if (_base_frequencies != nullptr) {
     for (size_t i = 0; i < _base_frequencies_count; ++i) {
-      bli_obj_free(_base_frequencies[i]);
-      delete _base_frequencies[i];
+      delete[] _base_frequencies[i];
     }
     delete[] _base_frequencies;
   }
@@ -65,21 +54,18 @@ void Workspace::reserve() {
   _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
 
   for (size_t i = 0; i < _base_frequencies_count; ++i) {
-    _base_frequencies[i] = new lagrange_matrix_base_t;
-    bli_obj_create(BLIS_DOUBLE, states(), 1, 0, 0, _base_frequencies[i]);
-    bli_setv_real(_base_frequencies[i], 1.0);
+    _base_frequencies[i] = new lagrange_matrix_base_t[states()];
+    for (size_t j = 0; j < states(); j++) { _base_frequencies[i][j] = 1.0; }
   }
 
   _clvs.resize(clv_count());
 
   for (size_t i = 0; i < _clvs.size(); ++i) {
-    if (_clvs[i]._clv != nullptr) {
-      bli_obj_free(_clvs[i]._clv);
-      delete _clvs[i]._clv;
-    }
-    _clvs[i]._clv = new lagrange_matrix_base_t;
-    bli_obj_create(BLIS_DOUBLE, states(), 1, 0, 0, _clvs[i]._clv);
-    bli_setv_real(_clvs[i]._clv, 0.0);
+    if (_clvs[i]._clv != nullptr) { delete[] _clvs[i]._clv; }
+
+    _clvs[i]._clv = new lagrange_matrix_base_t[states()];
+
+    for (size_t j = 0; j < states(); j++) { _clvs[i]._clv[j] = 0.0; }
   }
 
   if (_clv_scalars != nullptr) { delete[] _clv_scalars; }
@@ -90,23 +76,16 @@ void Workspace::reserve() {
 
   for (size_t i = 0; i < _rate_matrix.size(); i++) {
     if (_rate_matrix[i]._matrix != nullptr) {
-      bli_obj_free(_rate_matrix[i]._matrix);
-      delete _rate_matrix[i]._matrix;
+      delete[] _rate_matrix[i]._matrix;
     }
-    _rate_matrix[i]._matrix = new lagrange_matrix_base_t;
-
-    bli_obj_create(BLIS_DOUBLE, states(), states(), 0, 0,
-                   _rate_matrix[i]._matrix);
+    _rate_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 
   for (size_t i = 0; i < _prob_matrix.size(); i++) {
     if (_prob_matrix[i]._matrix != nullptr) {
-      bli_obj_free(_prob_matrix[i]._matrix);
-      delete _prob_matrix[i]._matrix;
+      delete[] _prob_matrix[i]._matrix;
     }
-    _prob_matrix[i]._matrix = new lagrange_matrix_base_t;
-    bli_obj_create(BLIS_DOUBLE, states(), states(), 0, 0,
-                   _prob_matrix[i]._matrix);
+    _prob_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 
   _reserved = true;

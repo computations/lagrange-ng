@@ -78,7 +78,7 @@ struct period_t {
 
 typedef double lagrange_float_t;
 
-typedef obj_t lagrange_matrix_base_t;
+typedef lagrange_float_t lagrange_matrix_base_t;
 
 typedef lagrange_matrix_base_t* lagrange_matrix_t;
 typedef lagrange_matrix_base_t* lagrange_complex_matrix_t;

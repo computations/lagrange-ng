@@ -343,12 +343,14 @@ std::string Tree::getNewickLambda(
 
 void Tree::setStateStrings(const std::vector<size_t> &id_map,
                            const std::vector<lagrange_col_vector_t> &dist_lhs,
+                           size_t states,
                            const std::vector<std::string> &names) {
-  _root->setStateStringRecursive(id_map, dist_lhs, names);
+  _root->setStateStringRecursive(id_map, dist_lhs, states, names);
 }
 
 void Tree::setSplitStrings(const std::vector<size_t> &id_map,
                            const std::vector<lagrange_col_vector_t> &dist_lhs,
+                           size_t states,
                            const std::vector<std::string> &names) {
-  _root->setSplitStringRecursive(id_map, dist_lhs, names);
+  _root->setSplitStringRecursive(id_map, dist_lhs, states, names);
 }
