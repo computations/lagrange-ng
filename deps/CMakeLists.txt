@@ -26,6 +26,7 @@ ExternalProject_Add(OpenBLAS
   UPDATE_DISCONNECTED TRUE
 )
 
+add_dependencies(lagrange-release-libs OpenBLAS)
 add_dependencies(lagrange OpenBLAS)
 
 # Jsonhpp fourth

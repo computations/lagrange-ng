@@ -132,7 +132,7 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     period_t p{x[0], x[1]};
     obj->context.updateRates(p);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
-    // std::cout << p.toString() << ": " << llh << std::endl;
+    std::cout << p.toString() << ": " << llh << std::endl;
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }
