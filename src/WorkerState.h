@@ -65,7 +65,7 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
-    openblas_set_num_threads(_assigned_threads);
+    mkl_set_num_threads_local(_assigned_threads);
     while (true) {
       barrier();
       if (master_thread()) {

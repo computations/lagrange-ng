@@ -37,13 +37,18 @@ add_executable(lagrange src/main.cpp)
 
 add_subdirectory(deps)
 
+set(MKL_INCLUDE_DIR ${MKL_PREFIX}/include)
+set(MKL_LIB_DIR ${MKL_PREFIX}/lib/intel64)
+
 target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS} ${WARNING_FLAGS})
-target_include_directories(lagrange-release-libs PRIVATE ${OpenBLAS_INCLUDE_DIRS})
-target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} pthread OpenMP::OpenMP_CXX ${OpenBLAS_LIB_BINARY})
+target_include_directories(lagrange-release-libs PRIVATE ${MKL_INCLUDE_DIR})
+target_link_directories(lagrange-release-libs PRIVATE ${MKL_LIB_DIR})
+target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} pthread mkl_intel_lp64 mkl_intel_thread mkl_core 
+    iomp5)
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} ${WARNING_FLAGS})
-target_include_directories(lagrange PRIVATE ${OpenBLAS_INCLUDE_DIRS})
-target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread nlohmann_json::nlohmann_json
-    OpenMP::OpenMP_CXX ${OpenBLAS_LIB_BINARY})
+target_include_directories(lagrange PRIVATE ${MKL_INCLUDE_DIR})
+target_link_directories(lagrange PRIVATE ${MKL_LIB_DIR})
+target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread nlohmann_json::nlohmann_json)
 
 add_subdirectory(tests)

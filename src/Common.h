@@ -13,6 +13,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 #include "Quarantine.h"
 

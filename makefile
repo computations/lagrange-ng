@@ -1,5 +1,6 @@
 deps_dir = $(shell pwd)/deps
-extra_flags = -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
+mkl_dir = /opt/intel/mkl/
+extra_flags = -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DMKL_PREFIX=$(mkl_dir)
 
 .PHONY: all clean tests debug-flags release-flags install-prefix-flags build
 

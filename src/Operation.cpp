@@ -249,8 +249,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   // We place an arbitrary limit on the size of scale exp because if it is too
   // large we run into numerical issues.
-  double inf_norm = LAPACK_dlange("I", &rows, &rows, _A.get(), &leading_dim,
-                                  _lapack_work_buffer.get());
+  double inf_norm =
+      LAPACKE_dlange(CblasRowMajor, 'I', rows, rows, _A.get(), leading_dim);
   int At_norm = static_cast<int>(inf_norm * _t);
   int scale_exp = std::min(30, std::max(0, 1 + At_norm));
 
@@ -343,7 +343,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   {
     // int lwork = n * n;
-    int info = 0;
     int *ipiv = (int *)malloc(sizeof(int) * rows);
 
     /*
@@ -363,8 +362,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
                   static_cast<double *>(bli_obj_buffer(&_N)), &lda, &info);
                  */
 
-    LAPACK_dgesv(&rows, &rows, _D.get(), &leading_dim, ipiv, _N.get(),
-                 &leading_dim, &info);
+    LAPACKE_dgesv(CblasRowMajor, rows, rows, _D.get(), leading_dim, ipiv,
+                  _N.get(), leading_dim);
 
     // free(tau);
     // free(workspace);
@@ -381,8 +380,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   if (_transposed) {
-    cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
-                    leading_dim, r2.get(), leading_dim);
+    mkl_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
+                  leading_dim, r2.get(), leading_dim);
 
     for (int i = 0; i < rows; i++) {
       r2.get()[ws->compute_matrix_index(i, 0)] = 0.0;

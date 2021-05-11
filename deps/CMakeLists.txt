@@ -14,20 +14,20 @@ set(OpenBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/OpenBLAS)
 set(OpenBLAS_INCLUDE_DIRS ${OpenBLAS_INSTALL_PREFIX}/include PARENT_SCOPE)
 set(OpenBLAS_LIB_BINARY ${OpenBLAS_INSTALL_PREFIX}/lib/libopenblas.a PARENT_SCOPE)
 
-ExternalProject_Add(OpenBLAS
-  GIT_REPOSITORY https://github.com/xianyi/OpenBLAS
-  GIT_TAG v0.3.15
-  GIT_SHALLOW TRUE
-  GIT_PROGRESS TRUE
-  CONFIGURE_COMMAND ""
-  BUILD_IN_SOURCE TRUE
-  BUILD_COMMAND make USE_OPENMP=1
-  INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
-  UPDATE_DISCONNECTED TRUE
-)
+#ExternalProject_Add(OpenBLAS
+#  GIT_REPOSITORY https://github.com/xianyi/OpenBLAS
+#  GIT_TAG v0.3.15
+#  GIT_SHALLOW TRUE
+#  GIT_PROGRESS TRUE
+#  CONFIGURE_COMMAND ""
+#  BUILD_IN_SOURCE TRUE
+#  BUILD_COMMAND make USE_OPENMP=1
+#  INSTALL_COMMAND make PREFIX=${OpenBLAS_INSTALL_PREFIX} install
+#  UPDATE_DISCONNECTED TRUE
+#)
 
-add_dependencies(lagrange-release-libs OpenBLAS)
-add_dependencies(lagrange OpenBLAS)
+#add_dependencies(lagrange-release-libs OpenBLAS)
+#add_dependencies(lagrange OpenBLAS)
 
 # Jsonhpp fourth
 
