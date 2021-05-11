@@ -229,15 +229,13 @@ std::string MakeRateMatrixOperation::printStatus(
   return os.str();
 }
 
-std::mutex ExpmOperation::_lapack_lock;
-
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if ((_rate_matrix_op != nullptr) &&
-      (_last_execution > _rate_matrix_op->last_update())) {
-    return;
-  }
-
-  if (!_lock->try_lock()) { return; }
+  do {
+    if ((_rate_matrix_op != nullptr) &&
+        (_last_execution > _rate_matrix_op->last_update())) {
+      return;
+    }
+  } while (!_lock->try_lock());
 
   if (_last_execution == 0) {
     _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
@@ -448,6 +446,9 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
     /* we have already computed this operation, return */
     return;
   }
+
+  /* we could be trying to evaluate an expm op that is being computed by another
+   * thread, so we need to spin lock here until the execution is complete */
 
   cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->states(), ws->states(), 1.0,
               ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
