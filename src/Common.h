@@ -7,13 +7,13 @@
 #define LAGRANGE_COMMON_H__
 
 #include <atomic>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <sstream>
 #include <vector>
-#include <cmath>
 
 #include "Quarantine.h"
 
@@ -90,7 +90,6 @@ constexpr double lagrange_scaling_factor = 0x1p256;
 
 constexpr double lagrange_scale_threshold = 1.0 / lagrange_scaling_factor;
 
-constexpr double lagrange_scaling_factor_log =
-    std::log(lagrange_scaling_factor);
+const double lagrange_scaling_factor_log = std::log(lagrange_scaling_factor);
 
 #endif  // LAGRANGE_COMMON_H__

@@ -229,11 +229,15 @@ std::string MakeRateMatrixOperation::printStatus(
   return os.str();
 }
 
+std::mutex ExpmOperation::_lapack_lock;
+
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if ((_rate_matrix_op != nullptr) &&
       (_last_execution > _rate_matrix_op->last_update())) {
     return;
   }
+
+  if (!_lock->try_lock()) { return; }
 
   if (_last_execution == 0) {
     _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
@@ -393,6 +397,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_prob_matrix(_prob_matrix_index, r1.get());
 
   _last_execution = ws->advance_clock();
+  _lock->unlock();
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -437,14 +442,7 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (_expm_op != nullptr) {
-    if (_expm_op.use_count() > 1) {
-      std::lock_guard<std::mutex>(_expm_op->getLock());
-      _expm_op->eval(ws);
-    } else {
-      _expm_op->eval(ws);
-    }
-  }
+  if (_expm_op != nullptr) { _expm_op->eval(ws); }
 
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed this operation, return */

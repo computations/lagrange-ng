@@ -64,6 +64,8 @@ class Context {
     return tc;
   }
 
+  void printStatusForward() const;
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();

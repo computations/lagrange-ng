@@ -18,6 +18,12 @@
 #include "WorkerState.h"
 #include "Workspace.h"
 
+void Context::printStatusForward() const {
+  for (auto& op : _forward_operations) {
+    std::cout << op->printStatus(_workspace) << std::endl;
+  }
+}
+
 void Context::registerForwardOperations() {
   _forward_operations =
       _tree->generateForwardOperations(*_workspace, _rate_matrix_op);

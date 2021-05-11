@@ -157,7 +157,7 @@ class WorkerState {
     barrier_threads++;
 
     if (master_thread()) {
-      while (barrier_threads != _total_threads) {}
+      while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
       wait_flag = !wait_flag;
     } else {
@@ -186,11 +186,11 @@ class WorkerState {
                                const std::shared_ptr<Workspace>& workspace) {
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
-    /*
+#if 0
     std::cout << "[thread: " << _tid
               << "] looking for work, starting index: " << _start_index
               << std::endl;
-              */
+#endif
 
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {

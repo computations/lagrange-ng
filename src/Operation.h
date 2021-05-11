@@ -91,8 +91,6 @@ class ExpmOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  std::mutex& getLock() { return *_lock; }
-
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;

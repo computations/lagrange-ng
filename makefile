@@ -7,7 +7,7 @@ extra_flags = -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -DMKL_PREFIX=$(mkl_dir)
 all: release
 
 build:
-	@cmake -Bbuild -H. $(extra_flags)
+	cmake -Bbuild -H. $(extra_flags)
 
 tests: build
 	@cd build && make lagrange-test

@@ -23,11 +23,11 @@ set(LAGRANGE_SOURCES
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(LAGRANGE_CMAKE_CXX_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-set(LAGRANGE_CMAKE_C_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-set(LAGRANGE_CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
-set(LAGRANGE_CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
-set(LAGRANGE_CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=thread")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=thread")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=thread")
 
 set(OPT_LIBS nlopt)
 set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
@@ -39,9 +39,10 @@ add_subdirectory(deps)
 
 set(MKL_INCLUDE_DIR ${MKL_PREFIX}/include)
 set(MKL_LIB_DIR ${MKL_PREFIX}/lib/intel64)
-if(${OMP_PREFIX})
+if(EXISTS ${OMP_PREFIX})
     set(MKL_OMP_DIR ${OMP_PREFIX}/)
 else()
+    message("Warning: The path for OMP_PREFIX does not exist")
     set(MKL_OMP_DIR ${MKL_LIB_DIR})
 endif()
 
