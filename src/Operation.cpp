@@ -666,7 +666,7 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   for (size_t i = 0; i < ws->states(); ++i) {
     double tmp_val = _result.get()[i];
     double parent_val = ws->clv(_parent_clv_index)[i];
-    _result.get()[i] = std::log(tmp_val * parent_val) -
+    _result.get()[i] = std::log(tmp_val) + std::log(parent_val) -
                        tmp_scalar * lagrange_scaling_factor_log;
   }
   _last_execution = ws->advance_clock();
