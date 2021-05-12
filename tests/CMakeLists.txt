@@ -45,7 +45,8 @@ add_executable(lagrange-test EXCLUDE_FROM_ALL ${LAGRANGE_TEST_SOURCES} )
 target_link_libraries(lagrange-test gtest_main lagrange-release-libs
   ${BLAS_LIBS_BINARY})
 target_include_directories(lagrange-test PRIVATE ${CMAKE_SOURCE_DIR}/src/
-  ${BLAS_LIBS_INCLUDE_DIRS} ${LAPACK_INCLUDE_DIRS})
+  ${BLAS_LIBS_INCLUDE_DIRS} ${MKL_INCLUDE_DIR})
 target_compile_options(lagrange-test PRIVATE ${LAGRANGE_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -g -O0)
 target_link_options(lagrange-test PRIVATE -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -g -O0)
+target_link_directories(lagrange-test PRIVATE ${MKL_LIB_DIR} ${MKL_OMP_DIR})
 target_compile_definitions(lagrange-test PRIVATE -DTREEPATH=${TREEPATH})
