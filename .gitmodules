@@ -3,5 +3,5 @@
 	url = https://github.com/computations/lagrange_tools
 	ignore = dirty
 [submodule "subprojects/nlopt"]
-	path = subprojects/nlopt
+	path = subprojects/nlopt-wrap/nlopt
 	url = https://github.com/stevengj/nlopt.git
