@@ -27,7 +27,7 @@ endif
 
 cmake = import('cmake')
 
-nloptdep = dependency('NLopt', fallback: ['nlopt', 'nlopt'])
+nloptdep = dependency('NLopt', fallback: ['nlopt-wrap', 'nlopt_dep'])
 
 jsondep = dependency('nlohmann_json', version: '>= 3.9.0',
   fallback : ['nlohmann_json'])

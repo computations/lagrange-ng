@@ -1,6 +1,0 @@
-[wrap-git]
-url = https://github.com/stevengj/nlopt
-revision = head
-
-[provides]
-dependency_names = nlopt
