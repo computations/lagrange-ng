@@ -3,7 +3,6 @@
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <nlopt.hpp>
 #include <random>
 #include <sstream>
 #include <string>
@@ -17,6 +16,7 @@
 #include "Operation.h"
 #include "WorkerState.h"
 #include "Workspace.h"
+#include "nlopt.hpp"
 
 void Context::printStatusForward() const {
   for (auto& op : _forward_operations) {

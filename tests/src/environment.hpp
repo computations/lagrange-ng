@@ -7,20 +7,16 @@
 #include "Common.h"
 #include "Utils.h"
 #include "gtest/gtest.h"
-
-#define STRING(s) #s
-#define STRINGIFY(s) STRING(s)
+#include "test_data_paths.h"
 
 class LagrangeEnvironment : public ::testing::Environment {
  public:
   LagrangeEnvironment() {}
 
-  std::ifstream get_datafile() {
-    return std::ifstream(STRINGIFY(TREEPATH / random_test_trees));
-  }
+  std::ifstream get_datafile() { return std::ifstream(RANDOM_TREE_FILE); }
 
   std::ifstream get_pathological_data() {
-    return std::ifstream(STRINGIFY(TREEPATH / pathological_trees));
+    return std::ifstream(PATHOLOGICAL_TREE_FILE);
   }
 };
 

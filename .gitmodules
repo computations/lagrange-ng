@@ -2,16 +2,3 @@
 	path = tools
 	url = https://github.com/computations/lagrange_tools
 	ignore = dirty
-[submodule "deps/nlopt"]
-	path = deps/nlopt
-	url = https://github.com/stevengj/nlopt
-[submodule "deps/lapack"]
-	path = deps/lapack
-	url = https://github.com/Reference-LAPACK/lapack.git
-[submodule "deps/blis"]
-	path = deps/blis
-	url = https://github.com/flame/blis
-	ignore = dirty
-[submodule "deps/openblas"]
-	path = deps/openblas
-	url = https://github.com/xianyi/OpenBLAS.git
