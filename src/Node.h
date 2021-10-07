@@ -41,12 +41,11 @@ class Node {
   std::vector<std::shared_ptr<Node>> _children;
   std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
 
-  std::shared_ptr<MakeRateMatrixOperation> getRateMatrixOperation(
+  MakeRateMatrixOperation *getRateMatrixOperation(
       Workspace &ws, PeriodRateMatrixMap &rm_map) const {
     auto it = rm_map.find(_period);
     if (it == rm_map.end()) {
-      auto rm = std::make_shared<MakeRateMatrixOperation>(
-          ws.suggest_rate_matrix_index());
+      auto rm = new MakeRateMatrixOperation(ws.suggest_rate_matrix_index());
       rm_map.emplace(_period, rm);
       return rm;
     } else {
@@ -57,15 +56,16 @@ class Node {
     }
   }
 
-  std::shared_ptr<ExpmOperation> getProbMatrixOperation(
-      Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
-      bool transpose = false) const {
+  ExpmOperation *getProbMatrixOperation(Workspace &ws,
+                                        PeriodRateMatrixMap &rm_map,
+                                        BranchProbMatrixMap &pm_map,
+                                        bool transpose = false) const {
     auto key = std::make_pair(_period, _branch_length);
     auto it = pm_map.find(key);
     if (it == pm_map.end()) {
       auto rm = getRateMatrixOperation(ws, rm_map);
-      auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
-                                                _branch_length, rm, transpose);
+      auto pm = new ExpmOperation(ws.suggest_prob_matrix_index(),
+                                  _branch_length, rm, transpose);
       pm_map.emplace(key, pm);
       return pm;
     } else {
@@ -148,28 +148,25 @@ class Node {
       const std::shared_ptr<Node> &current,
       const std::vector<std::shared_ptr<Node>> &nodes);
 
-  std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-            std::shared_ptr<DispersionOperation>>
+  std::pair<std::vector<SplitOperation *>, DispersionOperation *>
   traverseAndGenerateForwardOperations(Workspace &ws,
                                        PeriodRateMatrixMap &pm_map,
                                        BranchProbMatrixMap &bm_map) const;
 
-  std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-            std::shared_ptr<DispersionOperation>>
+  std::pair<std::vector<ReverseSplitOperation *>, DispersionOperation *>
   traverseAndGenerateBackwardOperations(Workspace &ws,
                                         PeriodRateMatrixMap &rm_map,
                                         BranchProbMatrixMap &pm_map) const;
 
-  std::shared_ptr<DispersionOperation> generateDispersionOperations(
+  DispersionOperation *generateDispersionOperations(
       Workspace &ws, PeriodRateMatrixMap &rm_map,
       BranchProbMatrixMap &pm_map) const;
 
-  std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
+  DispersionOperation *generateDispersionOperationsReverse(
       Workspace &ws, PeriodRateMatrixMap &rm_map,
       BranchProbMatrixMap &pm_map) const;
 
-  std::pair<std::vector<ReverseSplitOperation>,
-            std::shared_ptr<DispersionOperation>>
+  std::pair<std::vector<ReverseSplitOperation>, DispersionOperation *>
   traverseAndGenerateBackwardOperations(
       Workspace &ws,
       const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;

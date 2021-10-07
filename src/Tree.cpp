@@ -280,31 +280,29 @@ std::shared_ptr<Node> Tree::getParent(std::shared_ptr<Node> n) const {
   return getParentWithNode(_root, n);
 }
 
-std::vector<std::shared_ptr<SplitOperation>> Tree::generateForwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm) {
+std::vector<SplitOperation *> Tree::generateForwardOperations(
+    Workspace &ws, MakeRateMatrixOperation *rm) {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   rm_map[0] = rm;
   return generateForwardOperations(ws, rm_map, pm_map);
 }
 
-std::vector<std::shared_ptr<SplitOperation>> Tree::generateForwardOperations(
+std::vector<SplitOperation *> Tree::generateForwardOperations(
     Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
   return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
 }
 
-std::vector<std::shared_ptr<ReverseSplitOperation>>
-Tree::generateBackwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm) {
+std::vector<ReverseSplitOperation *> Tree::generateBackwardOperations(
+    Workspace &ws, MakeRateMatrixOperation *rm) {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   rm_map[0] = rm;
   return generateBackwardOperations(ws, rm_map, pm_map);
 }
 
-std::vector<std::shared_ptr<ReverseSplitOperation>>
-Tree::generateBackwardOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
-                                 BranchProbMatrixMap &pm_map) {
+std::vector<ReverseSplitOperation *> Tree::generateBackwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map) {
   auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
   (*ret.first.begin())
       ->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));

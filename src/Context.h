@@ -24,9 +24,8 @@ class Context {
  public:
   Context(std::shared_ptr<Tree> tree, size_t regions)
       : _tree{tree},
-        _workspace{std::make_shared<Workspace>(_tree->getExternalNodeCount(),
-                                               regions)},
-        _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(
+        _workspace{new Workspace(_tree->getExternalNodeCount(), regions)},
+        _rate_matrix_op{new MakeRateMatrixOperation(
             _workspace->suggest_rate_matrix_index())} {}
 
   void registerLHGoal();
@@ -79,14 +78,14 @@ class Context {
   double optimize(WorkerState& ts, WorkerContext& tc);
 
   std::shared_ptr<Tree> _tree;
-  std::shared_ptr<Workspace> _workspace;
+  Workspace* _workspace;
   std::vector<LLHGoal> _llh_goal;
   std::vector<StateLHGoal> _state_lh_goal;
   std::vector<SplitLHGoal> _split_lh_goal;
 
-  std::vector<std::shared_ptr<SplitOperation>> _forward_operations;
-  std::vector<std::shared_ptr<ReverseSplitOperation>> _reverse_operations;
-  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
+  std::vector<SplitOperation*> _forward_operations;
+  std::vector<ReverseSplitOperation*> _reverse_operations;
+  MakeRateMatrixOperation* _rate_matrix_op;
 };
 
 #endif /* end of include guard */

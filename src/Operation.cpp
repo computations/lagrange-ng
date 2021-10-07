@@ -161,7 +161,7 @@ inline std::string closing_line(const std::string &tabs) {
   return line.str();
 }
 
-void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
+void MakeRateMatrixOperation::eval(Workspace *ws) {
   auto &rm = ws->rate_matrix(_rate_matrix_index);
 
   for (size_t i = 0; i < ws->matrix_size(); i++) { rm[i] = 0.0; }
@@ -197,8 +197,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_rate_matrix_clock(_rate_matrix_index);
 }
 
-void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                          std::ostream &os,
+void MakeRateMatrixOperation::printStatus(Workspace *ws, std::ostream &os,
                                           size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
@@ -222,14 +221,14 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string MakeRateMatrixOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+std::string MakeRateMatrixOperation::printStatus(Workspace *ws,
+                                                 size_t tabLevel) const {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
 }
 
-void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
+void ExpmOperation::eval(Workspace *ws) {
   do {
     if ((_rate_matrix_op != nullptr) &&
         (_last_execution > _rate_matrix_op->last_update())) {
@@ -398,8 +397,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   _lock->unlock();
 }
 
-void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                std::ostream &os, size_t tabLevel) const {
+void ExpmOperation::printStatus(Workspace *ws, std::ostream &os,
+                                size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
   os << tabs << "ExpmOperation:\n"
@@ -432,14 +431,13 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                       size_t tabLevel) const {
+std::string ExpmOperation::printStatus(Workspace *ws, size_t tabLevel) const {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
 }
 
-void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
+void DispersionOperation::eval(Workspace *ws) {
   if (_expm_op != nullptr) { _expm_op->eval(ws); }
 
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
@@ -460,8 +458,8 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_clv_clock(_top_clv);
 }
 
-void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                      std::ostream &os, size_t tabLevel) const {
+void DispersionOperation::printStatus(Workspace *ws, std::ostream &os,
+                                      size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
 
   os << opening_line(tabs) << "\n";
@@ -482,29 +480,21 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string DispersionOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+std::string DispersionOperation::printStatus(Workspace *ws,
+                                             size_t tabLevel) const {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
 }
 
-void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
+void SplitOperation::eval(Workspace *ws) {
   for (auto &op : _lbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
+    std::lock_guard<std::mutex> lock(op->getLock());
+    op->eval(ws);
   }
   for (auto &op : _rbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
+    std::lock_guard<std::mutex> lock(op->getLock());
+    op->eval(ws);
   }
 
   auto &parent_clv = ws->clv(_parent_clv_index);
@@ -520,8 +510,8 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_clv_clock(_parent_clv_index);
 }
 
-void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                 std::ostream &os, size_t tabLevel) const {
+void SplitOperation::printStatus(Workspace *ws, std::ostream &os,
+                                 size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
   os << tabs << "SplitOperation:\n";
@@ -562,21 +552,16 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                        size_t tabLevel) const {
+std::string SplitOperation::printStatus(Workspace *ws, size_t tabLevel) const {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
 }
 
-void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
+void ReverseSplitOperation::eval(Workspace *ws) {
   for (auto &op : _branch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
+    std::lock_guard<std::mutex> lock(op->getLock());
+    op->eval(ws);
   }
 
   if (_eval_clvs) {
@@ -591,8 +576,7 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 }
 
-void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                        std::ostream &os,
+void ReverseSplitOperation::printStatus(Workspace *ws, std::ostream &os,
                                         size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
@@ -628,14 +612,14 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string ReverseSplitOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+std::string ReverseSplitOperation::printStatus(Workspace *ws,
+                                               size_t tabLevel) const {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
 }
 
-void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+void LLHGoal::eval(Workspace *ws) {
   double rho = cblas_ddot(ws->states(), ws->clv(_root_clv_index), 1,
                           ws->get_base_frequencies(_prior_index), 1);
   _result = std::log(rho) -
@@ -644,11 +628,11 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _last_execution = ws->advance_clock();
 }
 
-bool LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+bool LLHGoal::ready(Workspace *ws) const {
   return ws->last_update_clv(_root_clv_index) > _last_execution;
 }
 
-void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+void StateLHGoal::eval(Workspace *ws) {
   if (_last_execution == 0) {
     _result.reset(new lagrange_matrix_base_t[ws->states()]);
     _states = ws->states();
@@ -672,13 +656,13 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _last_execution = ws->advance_clock();
 }
 
-bool StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+bool StateLHGoal::ready(Workspace *ws) const {
   return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
          ws->last_update_clv(_rchild_clv_index) > _last_execution &&
          ws->last_update_clv(_parent_clv_index) > _last_execution;
 }
 
-void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+void SplitLHGoal::eval(Workspace *ws) {
   std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> ret;
 
   auto &parent_clv = ws->clv(_parent_clv_index);
@@ -703,7 +687,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _result = ret;
 }
 
-bool SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+bool SplitLHGoal::ready(Workspace *ws) const {
   return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
          ws->last_update_clv(_rchild_clv_index) > _last_execution &&
          ws->last_update_clv(_parent_clv_index) > _last_execution;

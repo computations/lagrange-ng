@@ -221,8 +221,7 @@ std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
+std::pair<std::vector<SplitOperation *>, DispersionOperation *>
 Node::traverseAndGenerateForwardOperations(Workspace &ws,
                                            PeriodRateMatrixMap &rm_map,
                                            BranchProbMatrixMap &pm_map) const {
@@ -236,7 +235,7 @@ Node::traverseAndGenerateForwardOperations(Workspace &ws,
     return {{}, generateDispersionOperations(ws, rm_map, pm_map)};
   }
 
-  std::vector<std::shared_ptr<SplitOperation>> split_ops;
+  std::vector<SplitOperation *> split_ops;
 
   auto lchild =
       _children[0]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
@@ -252,13 +251,12 @@ Node::traverseAndGenerateForwardOperations(Workspace &ws,
   lchild.second->terminate_top(ws.get_lchild_clv(_id));
   rchild.second->terminate_top(ws.get_rchild_clv(_id));
 
-  split_ops.push_back(std::make_shared<SplitOperation>(
-      ws.get_top_clv(_id), lchild.second, rchild.second));
+  split_ops.push_back(
+      new SplitOperation(ws.get_top_clv(_id), lchild.second, rchild.second));
   return {split_ops, generateDispersionOperations(ws, rm_map, pm_map)};
 }
 
-std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
+std::pair<std::vector<ReverseSplitOperation *>, DispersionOperation *>
 Node::traverseAndGenerateBackwardOperations(Workspace &ws,
                                             PeriodRateMatrixMap &rm_map,
                                             BranchProbMatrixMap &pm_map) const {
@@ -269,18 +267,18 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   if (_children.size() == 0) { return {{}, {}}; }
 
-  std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
+  std::vector<ReverseSplitOperation *> rsplit_ops;
 
   ws.register_top_clv_reverse(_id);
 
   auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
   ws.register_bot1_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+  rsplit_ops.push_back(new ReverseSplitOperation(
       ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id), disp_ops));
 
   ws.register_bot2_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+  rsplit_ops.push_back(new ReverseSplitOperation(
       ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
 
   if (_children[0]->isInternal()) {
@@ -305,17 +303,17 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
   return {rsplit_ops, disp_ops};
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperations(
+DispersionOperation *Node::generateDispersionOperations(
     Workspace &ws, PeriodRateMatrixMap &rm_map,
     BranchProbMatrixMap &pm_map) const {
-  return std::make_shared<DispersionOperation>(
-      ws.get_top_clv(_id), getProbMatrixOperation(ws, rm_map, pm_map));
+  return new DispersionOperation(ws.get_top_clv(_id),
+                                 getProbMatrixOperation(ws, rm_map, pm_map));
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
+DispersionOperation *Node::generateDispersionOperationsReverse(
     Workspace &ws, PeriodRateMatrixMap &rm_map,
     BranchProbMatrixMap &pm_map) const {
-  return std::make_shared<DispersionOperation>(
+  return new DispersionOperation(
       ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
       getProbMatrixOperation(ws, rm_map, pm_map, true));
 }

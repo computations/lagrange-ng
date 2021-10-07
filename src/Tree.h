@@ -45,19 +45,18 @@ class Tree {
   void addInternalNode(std::shared_ptr<Node> tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
-  std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
+  std::vector<SplitOperation *> generateForwardOperations(
+      Workspace &ws, MakeRateMatrixOperation *rm);
 
-  std::vector<std::shared_ptr<ReverseSplitOperation>>
-  generateBackwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
+  std::vector<ReverseSplitOperation *> generateBackwardOperations(
+      Workspace &ws, MakeRateMatrixOperation *rm);
 
-  std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
+  std::vector<SplitOperation *> generateForwardOperations(
       Workspace &ws, PeriodRateMatrixMap &period_rm_map,
       BranchProbMatrixMap &period_pm_map);
-  std::vector<std::shared_ptr<ReverseSplitOperation>>
-  generateBackwardOperations(Workspace &ws, PeriodRateMatrixMap &period_rm_map,
-                             BranchProbMatrixMap &period_pm_map);
+  std::vector<ReverseSplitOperation *> generateBackwardOperations(
+      Workspace &ws, PeriodRateMatrixMap &period_rm_map,
+      BranchProbMatrixMap &period_pm_map);
 
   std::vector<size_t> traversePreorderInternalNodesOnly() const;
   std::vector<size_t> traversePreorderInternalNodesOnlyNumbers() const;
