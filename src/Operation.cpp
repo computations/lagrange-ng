@@ -442,10 +442,12 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_expm_op != nullptr) { _expm_op->eval(ws); }
 
+#if 0
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed this operation, return */
     return;
   }
+#endif
 
   /* we could be trying to evaluate an expm op that is being computed by another
    * thread, so we need to spin lock here until the execution is complete */
@@ -571,12 +573,8 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   for (auto &op : _branch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
+    std::lock_guard<std::mutex> lock(op->getLock());
+    op->eval(ws);
   }
 
   if (_eval_clvs) {

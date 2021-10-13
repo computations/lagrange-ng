@@ -137,12 +137,15 @@ class WorkerState {
        * shared pointer here. One in the vector, and one returned by value from
        * the find_work function
        */
-      if (w.use_count() > 2) {
-        std::lock_guard<std::mutex> lock(w->getLock());
-        w->eval(workspace);
-      } else {
-        w->eval(workspace);
-      }
+      // if (w.use_count() > 2) {
+      std::lock_guard<std::mutex> lock(w->getLock());
+      w->eval(workspace);
+      // std::cout << w->printStatus(workspace) << std::endl;
+      /*
+    } else {
+      w->eval(workspace);
+    }
+    */
     }
     // end_work();
   }

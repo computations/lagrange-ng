@@ -290,7 +290,7 @@ nlohmann::json makeStateJsonOutput(
     auto &state_distribution = states[i];
     auto lwr_distribution =
         normalizeStateDistrubtionByLWR(state_distribution, states_len);
-    for (size_t dist = 0; dist < states_len; ++dist) {
+    for (size_t dist = 1; dist < states_len; ++dist) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
       double llh = state_distribution.get()[dist];

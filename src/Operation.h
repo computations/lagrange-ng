@@ -294,7 +294,7 @@ class ReverseSplitOperation {
  public:
   ReverseSplitOperation(
       size_t bot_clv,  /* Where the result is stored*/
-      size_t ltop_clv, /* Where the result of the dispop is stored */
+      size_t ltop_clv, /* Where the result of the disp op is stored */
       size_t rtop_clv, /* Should be a _non_ reverse CLV */
       std::shared_ptr<MakeRateMatrixOperation> rate_matrix_op,
       size_t prob_matrix_index, size_t disp_clv_index, double brlen)
