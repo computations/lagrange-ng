@@ -349,8 +349,8 @@ class ReverseSplitOperation {
       branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
     }
 
-    return branch_ops_ready ||
-           (ws->last_update_clv(_bot_clv_index) >= _last_execution);
+    return branch_ops_ready &&
+           (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
   }
 
   std::mutex& getLock() { return *_lock; }

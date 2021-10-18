@@ -123,6 +123,7 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     Context& context;
     WorkerContext& tc;
     WorkerState& ts;
+    size_t iter = 0;
   } oc{*this, tc, ts};
 
   nlopt::opt opt(nlopt::LN_SBPLX, 2);
@@ -133,10 +134,13 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     period_t p{x[0], x[1]};
     obj->context.updateRates(p);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
-    std::cout << p.toString() << ": " << llh << std::endl;
+    if (obj->iter % 10 == 0) {
+      std::cout << p.toString() << ": " << llh << std::endl;
+    }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }
+    obj->iter += 1;
     return llh;
   };
 
