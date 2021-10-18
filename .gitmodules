@@ -8,10 +8,6 @@
 [submodule "deps/lapack"]
 	path = deps/lapack
 	url = https://github.com/Reference-LAPACK/lapack.git
-[submodule "deps/blis"]
-	path = deps/blis
-	url = https://github.com/flame/blis
-	ignore = dirty
 [submodule "deps/openblas"]
 	path = deps/openblas
 	url = https://github.com/xianyi/OpenBLAS.git
