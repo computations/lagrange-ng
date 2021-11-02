@@ -56,8 +56,6 @@ class Context {
 
   period_t currentParams() const;
 
-  // std::string treeCLVStatus() const;
-
   WorkerContext makeThreadContext() {
     WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,
                      _state_lh_goal, _split_lh_goal};
