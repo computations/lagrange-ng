@@ -22,6 +22,11 @@
 #include "Utils.h"
 #include "Workspace.h"
 
+lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
+  while (__builtin_popcountll(d) > n) { d++; }
+  return d;
+}
+
 std::ostream &operator<<(std::ostream &os,
                          std::tuple<double *, size_t> vector_tuple) {
   double *v;
@@ -48,7 +53,7 @@ inline void generate_splits(uint64_t state, size_t regions,
   }
 
   // results.reserve(regions);
-  for (size_t i = 0; i < regions; ++i) {
+  for (size_t i = 0; i < regions; i++) {
     uint64_t x = 1ull << i;
     if ((state & x) == 0) { continue; }
 
@@ -63,36 +68,23 @@ inline void generate_splits(uint64_t state, size_t regions,
 
 inline void weighted_combine(const lagrange_col_vector_t &c1,
                              const lagrange_col_vector_t &c2, size_t states,
-                             const std::vector<lagrange_dist_t> excl_dists,
-                             lagrange_col_vector_t dest, size_t c1_scale,
-                             size_t c2_scale, size_t &scale_count) {
+                             size_t max_areas, lagrange_col_vector_t dest,
+                             size_t c1_scale, size_t c2_scale,
+                             size_t &scale_count) {
   size_t regions = lagrange_fast_log2(states);
-
-  size_t idx_excl = 0;
 
   bool scale = true;
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i++) {
-    while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
-      idx_excl++;
-    }
-    if (idx_excl < excl_dists.size() && i == excl_dists[idx_excl]) {
-      idx_excl++;
-      continue;
-    }
+  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
     generate_splits(i, regions, splits);
     double sum = 0.0;
     for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
 
     if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
 
-    if (sum < lagrange_scale_threshold) {
-      scale &= true;
-    } else {
-      scale &= false;
-    }
+    scale &= sum < lagrange_scale_threshold;
 
     dest[i] = sum;
   }
@@ -108,15 +100,15 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
 
 inline void reverse_weighted_combine(
     const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
-    size_t states, const std::vector<lagrange_dist_t> excl_dists,
-    lagrange_col_vector_t dest) {
+    size_t states, size_t max_areas,
+    const std::vector<lagrange_dist_t> excl_dists, lagrange_col_vector_t dest) {
   size_t regions = lagrange_fast_log2(states);
 
   size_t idx_excl = 0;
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i++) {
+  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
     while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
       idx_excl++;
     }
@@ -513,8 +505,8 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
-  weighted_combine(lchild_clv, rchild_clv, ws->states(), _excl_dists,
-                   parent_clv, ws->clv_scalar(_lbranch_clv_index),
+  weighted_combine(lchild_clv, rchild_clv, ws->states(), parent_clv,
+                   ws->clv_scalar(_lbranch_clv_index),
                    ws->clv_scalar(_rbranch_clv_index),
                    ws->clv_scalar(_parent_clv_index));
 
@@ -544,13 +536,6 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << "):  " << std::setprecision(10) << ws->clv_size_tuple(_parent_clv_index)
      << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
-
-  if (_excl_dists.size() != 0) {
-    os << tabs << "Excluded dists:\n";
-    for (size_t i = 0; i < _excl_dists.size(); ++i) {
-      os << tabs << _excl_dists[i] << "\n";
-    }
-  }
 
   os << tabs << "Left Branch ops:\n";
   if (_lbranch_ops.size() != 0) {
@@ -658,10 +643,10 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 
   size_t tmp_scalar = 0;
 
-  weighted_combine(
-      ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index), ws->states(),
-      /*excl_dists=*/{}, _result.get(), ws->clv_scalar(_lchild_clv_index),
-      ws->clv_scalar(_rchild_clv_index), tmp_scalar);
+  weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
+                   ws->states(), _result.get(),
+                   ws->clv_scalar(_lchild_clv_index),
+                   ws->clv_scalar(_rchild_clv_index), tmp_scalar);
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 

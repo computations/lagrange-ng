@@ -104,5 +104,7 @@ struct hash<std::pair<size_t, double>> {
   }
 };
 
+size_t dist_size(size_t regions, size_t max_areas);
+
 }  // namespace std
 #endif /* UTILS_H_ */

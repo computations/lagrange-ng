@@ -36,6 +36,8 @@ class Workspace {
         _inner_count{inner_count},
         _regions{regions},
         _states{1ull << regions},
+        _max_areas{regions},
+        _restricted_state_count{dist_size(regions, max_areas)},
         _next_free_clv{0},
         _leading_dim{_states},
         _rate_matrix{1},
@@ -283,6 +285,12 @@ class Workspace {
 
   inline size_t leading_dimension() const { return _leading_dim; }
 
+  inline size_t restricted_state_count() const {
+    return _restricted_state_count;
+  }
+
+  inline size_t max_areas() const { return _max_areas; }
+
  private:
   inline size_t register_clv() { return _next_free_clv++; }
 
@@ -290,6 +298,8 @@ class Workspace {
   size_t _inner_count;
   size_t _regions;
   size_t _states;
+  size_t _max_areas;
+  size_t _restricted_state_count;
   size_t _next_free_clv;
 
   size_t _leading_dim;
