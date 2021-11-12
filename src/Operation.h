@@ -243,7 +243,7 @@ class SplitOperation {
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
                        rate_matrix, rate_matrix, parent_clv) {}
 
-  // NOTE: Fix this for periods
+  // TODO: Fix this for periods
   SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
                  std::shared_ptr<DispersionOperation> r_ops)
       : _lbranch_clv_index{l_ops->top_clv_index()},
