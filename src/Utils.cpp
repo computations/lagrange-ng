@@ -59,6 +59,9 @@ std::string lagrange_convert_dist_string(
   return oss.str();
 }
 
+/* Code for the combinations function take from phylourny with permision from
+ * author.*/
+
 constexpr size_t factorial_table_size = 11;
 
 constexpr std::array<double, factorial_table_size> factorial_table = {
@@ -81,5 +84,5 @@ constexpr inline double combinations(uint64_t n, uint64_t i) {
 size_t dist_size(size_t regions, size_t max_areas) {
   size_t sum = 0;
   for (size_t i = 0; i < max_areas; i++) { sum += combinations(regions, i); }
-  return sum;
+  return sum + 1;
 }

@@ -23,7 +23,8 @@
 #include "Workspace.h"
 
 lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
-  while (__builtin_popcountll(d) > n) { d++; }
+  d += 1;
+  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
   return d;
 }
 
@@ -159,21 +160,38 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   for (size_t i = 0; i < ws->matrix_size(); i++) { rm[i] = 0.0; }
 
   auto &period = ws->get_period_params(_period_index);
-  for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
-    for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
-      if (lagrange_bextr(dist, i) != 0) { continue; }
-      lagrange_dist_t gain_dist = dist | (1ul << i);
 
-      rm[ws->compute_matrix_index(gain_dist, dist)] =
-          period.getExtinctionRate();
+  size_t source_index = 0;
+  lagrange_dist_t source_dist = 0;
 
-      if (dist == 0) { continue; }
+  for (source_index = 0, source_dist = 0;
+       source_dist < ws->restricted_state_count();
+       source_dist = next_dist(source_dist, ws->max_areas()), ++source_index) {
+    size_t dest_index = 0;
+    lagrange_dist_t dest_dist = 0;
 
-      double sum = 0.0;
-      for (size_t j = 0; j < ws->regions(); ++j) {
-        sum += period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
+    for (dest_index = 0, dest_dist = 0;
+         dest_dist < ws->restricted_state_count();
+         dest_dist = next_dist(dest_dist, ws->max_areas()), ++dest_index) {
+      if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
+
+      /* Source is "gaining" a region, so we add */
+      if (source_dist < dest_dist && source_dist != 0) {
+        double sum = 0.0;
+        size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
+        for (size_t j = 0; j < ws->regions(); ++j) {
+          sum +=
+              period.getDispersionRate(i, j) * lagrange_bextr(source_dist, j);
+        }
+
+        rm[ws->compute_matrix_index(source_index, dest_index)] = sum;
+
       }
-      rm[ws->compute_matrix_index(dist, gain_dist)] = sum;
+      /* Otherwise, source is loosing a region, so we just set the value */
+      else if (source_dist != 0) {
+        rm[ws->compute_matrix_index(source_index, dest_index)] =
+            period.getExtinctionRate();
+      }
     }
   }
 
@@ -232,7 +250,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     _lapack_work_buffer.reset(new lagrange_matrix_base_t[ws->states()]);
   }
 
-  int rows = static_cast<int>(ws->states());
+  int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
   for (size_t i = 0; i < ws->matrix_size(); i++) {
@@ -505,8 +523,8 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
-  weighted_combine(lchild_clv, rchild_clv, ws->states(), parent_clv,
-                   ws->clv_scalar(_lbranch_clv_index),
+  weighted_combine(lchild_clv, rchild_clv, ws->states(), ws->max_areas(),
+                   parent_clv, ws->clv_scalar(_lbranch_clv_index),
                    ws->clv_scalar(_rbranch_clv_index),
                    ws->clv_scalar(_parent_clv_index));
 
@@ -570,8 +588,8 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, ws->states(), _excl_dists,
-                             ws->clv(_bot_clv_index));
+    reverse_weighted_combine(ltop_clv, rtop_clv, ws->states(), ws->max_areas(),
+                             _excl_dists, ws->clv(_bot_clv_index));
 
     _last_execution = ws->advance_clock();
     ws->update_clv_clock(_bot_clv_index);
@@ -644,7 +662,7 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   size_t tmp_scalar = 0;
 
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
-                   ws->states(), _result.get(),
+                   ws->states(), ws->max_areas(), _result.get(),
                    ws->clv_scalar(_lchild_clv_index),
                    ws->clv_scalar(_rchild_clv_index), tmp_scalar);
 

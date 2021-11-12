@@ -96,6 +96,8 @@ class lagrange_option_t {
   bool _has_value;
 };
 
+size_t dist_size(size_t regions, size_t max_areas);
+
 namespace std {
 template <>
 struct hash<std::pair<size_t, double>> {
@@ -103,8 +105,6 @@ struct hash<std::pair<size_t, double>> {
     return std::hash<size_t>{}(p.first) ^ std::hash<double>{}(p.second);
   }
 };
-
-size_t dist_size(size_t regions, size_t max_areas);
 
 }  // namespace std
 #endif /* UTILS_H_ */

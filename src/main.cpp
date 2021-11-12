@@ -274,6 +274,8 @@ config_options_t parse_config(const std::string &config_filename) {
       config.workers = std::stoi(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
       config.threads_per_worker = std::stoi(tokens[1]);
+    } else if (!strcmp(tokens[0].c_str(), "maxaraes")) {
+      config.maxareas = std::stoi(tokens[1]);
     }
   }
   ifs.close();
@@ -342,7 +344,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
-  Context context(intree, config.region_count);
+  Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
   if (config.states) { context.registerStateLHGoal(); }
   context.init();
@@ -419,6 +421,7 @@ int main(int argc, char *argv[]) {
     ir.checkData(data, intrees);
 
     config.region_count = ir.nareas;
+    if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
     for (unsigned int i = 0; i < intrees.size(); i++) {
       handle_tree(intrees[i], data, config);

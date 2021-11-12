@@ -17,6 +17,7 @@
 #include <tuple>
 
 #include "Common.h"
+#include "Utils.h"
 
 struct matrix_reservation_t {
   lagrange_matrix_t _matrix = nullptr;
@@ -31,13 +32,14 @@ struct clv_reservation_t {
 
 class Workspace {
  public:
-  Workspace(size_t taxa_count, size_t inner_count, size_t regions)
+  Workspace(size_t taxa_count, size_t inner_count, size_t regions,
+            size_t max_areas)
       : _taxa_count{taxa_count},
         _inner_count{inner_count},
         _regions{regions},
         _states{1ull << regions},
-        _max_areas{regions},
-        _restricted_state_count{dist_size(regions, max_areas)},
+        _max_areas{max_areas},
+        _restricted_state_count{dist_size(_regions, _max_areas)},
         _next_free_clv{0},
         _leading_dim{_states},
         _rate_matrix{1},
@@ -55,8 +57,8 @@ class Workspace {
     }
   }
 
-  Workspace(size_t taxa_count, size_t regions)
-      : Workspace(taxa_count, taxa_count - 1, regions) {}
+  Workspace(size_t taxa_count, size_t regions, size_t max_areas)
+      : Workspace(taxa_count, taxa_count - 1, regions, max_areas) {}
 
   ~Workspace();
 
@@ -160,20 +162,9 @@ class Workspace {
     _clvs[index]._last_update = advance_clock();
   }
 
-  /*
-  inline void update_clv(lagrange_col_vector_t &&clv, size_t index) {
-    if (index >= clv_count()) {
-      throw std::runtime_error{"CLV access out of range"};
-    }
-    delete[] _clvs[index]._clv;
-    _clvs[index]._clv = clv;
-    _clvs[index]._last_update = advance_clock();
-  }
-  */
-
   inline std::tuple<lagrange_col_vector_t, size_t> clv_size_tuple(
       size_t index) {
-    return std::make_tuple(clv(index), states());
+    return std::make_tuple(clv(index), clv_size());
   }
 
   inline void update_clv_clock(size_t index) {
@@ -290,6 +281,10 @@ class Workspace {
   }
 
   inline size_t max_areas() const { return _max_areas; }
+
+  inline size_t matrix_rows() const { return restricted_state_count(); }
+
+  inline size_t clv_size() const { return restricted_state_count(); }
 
  private:
   inline size_t register_clv() { return _next_free_clv++; }

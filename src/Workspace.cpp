@@ -54,7 +54,7 @@ void Workspace::reserve() {
   _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
 
   for (size_t i = 0; i < _base_frequencies_count; ++i) {
-    _base_frequencies[i] = new lagrange_matrix_base_t[states()];
+    _base_frequencies[i] = new lagrange_matrix_base_t[clv_size()];
     for (size_t j = 0; j < states(); j++) { _base_frequencies[i][j] = 1.0; }
   }
 
@@ -63,7 +63,7 @@ void Workspace::reserve() {
   for (size_t i = 0; i < _clvs.size(); ++i) {
     if (_clvs[i]._clv != nullptr) { delete[] _clvs[i]._clv; }
 
-    _clvs[i]._clv = new lagrange_matrix_base_t[states()];
+    _clvs[i]._clv = new lagrange_matrix_base_t[clv_size()];
 
     for (size_t j = 0; j < states(); j++) { _clvs[i]._clv[j] = 0.0; }
   }
