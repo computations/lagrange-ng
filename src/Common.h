@@ -90,6 +90,7 @@ constexpr double lagrange_scaling_factor = 0x1p256;
 constexpr double lagrange_scale_threshold = 1.0 / lagrange_scaling_factor;
 
 constexpr double lagrange_scaling_factor_log =
-    std::log(lagrange_scaling_factor);
+    177.445678223345993274051579646766185760498046875;
+/* = std::log(lagrange_scaling_factor) */
 
 #endif  // LAGRANGE_COMMON_H__
