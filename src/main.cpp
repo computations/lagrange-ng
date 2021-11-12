@@ -218,7 +218,7 @@ config_options_t parse_config(const std::string &config_filename) {
       config.workers = std::stoi(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
       config.threads_per_worker = std::stoi(tokens[1]);
-    } else if (!strcmp(tokens[0].c_str(), "maxaraes")) {
+    } else if (!strcmp(tokens[0].c_str(), "maxareas")) {
       config.maxareas = std::stoi(tokens[1]);
     }
   }
@@ -359,8 +359,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<Tree>> intrees;
     ir.readMultipleTreeFile(config.treefile, intrees);
     std::cout << "reading data..." << std::endl;
-    std::unordered_map<std::string, lagrange_dist_t> data =
-        ir.readStandardInputData(config.datafile);
+    std::unordered_map<std::string, size_t> data =
+        ir.readStandardInputData(config.datafile, config.maxareas);
     std::cout << "checking data..." << std::endl;
     ir.checkData(data, intrees);
 

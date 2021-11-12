@@ -39,7 +39,8 @@ class Workspace {
         _regions{regions},
         _states{1ull << regions},
         _max_areas{max_areas},
-        _restricted_state_count{dist_size(_regions, _max_areas)},
+        _restricted_state_count{
+            lagrange_compute_restricted_state_count(_regions, _max_areas)},
         _next_free_clv{0},
         _leading_dim{_states},
         _rate_matrix{1},
@@ -157,7 +158,9 @@ class Workspace {
       throw std::runtime_error{"CLV access out of range"};
     }
 
-    for (size_t i = 0; i < states(); i++) { _clvs[index]._clv[i] = clv[i]; }
+    for (size_t i = 0; i < restricted_state_count(); i++) {
+      _clvs[index]._clv[i] = clv[i];
+    }
 
     _clvs[index]._last_update = advance_clock();
   }
@@ -180,7 +183,9 @@ class Workspace {
   inline size_t prob_matrix_count() const { return _prob_matrix.size(); }
   inline size_t rate_matrix_count() const { return _rate_matrix.size(); }
   inline size_t clv_count() const { return _next_free_clv; }
-  inline size_t matrix_size() const { return leading_dimension() * _states; }
+  inline size_t matrix_size() const {
+    return leading_dimension() * restricted_state_count();
+  }
   inline size_t node_count() const { return _inner_count + _taxa_count; }
 
   inline size_t suggest_prob_matrix_index() {
@@ -268,7 +273,9 @@ class Workspace {
           "reverse prior"};
     }
 
-    for (size_t i = 0; i < states(); i++) { _clvs[index]._clv[i] = 1.0; }
+    for (size_t i = 0; i < restricted_state_count(); i++) {
+      _clvs[index]._clv[i] = 1.0;
+    }
 
     _clvs[index]._last_update =
         std::numeric_limits<lagrange_clock_tick_t>::max();
