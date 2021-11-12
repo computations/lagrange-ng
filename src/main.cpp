@@ -367,6 +367,7 @@ int main(int argc, char *argv[]) {
     config.region_count = ir.nareas;
     if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
+    std::cout << "running analysis..." << std::endl;
     for (unsigned int i = 0; i < intrees.size(); i++) {
       handle_tree(intrees[i], data, config);
     }
