@@ -450,7 +450,7 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_expm_op != nullptr) {
     if (_expm_op.use_count() > 1) {
-      std::lock_guard<std::mutex>(_expm_op->getLock());
+      std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
       _expm_op->eval(ws);
     } else {
       _expm_op->eval(ws);
