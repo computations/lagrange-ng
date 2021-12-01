@@ -53,17 +53,10 @@ struct config_options_t {
   bool marginal = true;  // false means joint
   bool splits = false;
   bool states = false;
-  bool sparse = false;
 
   double dispersal = 0.01;
   double extinction = 0.01;
   bool estimate = true;
-
-  std::vector<std::vector<lagrange_dist_t>> stochastic_number_from_tos;
-  std::vector<lagrange_dist_t> stochastic_time_dists;
-
-  // estimating the dispersal mask
-  bool estimate_dispersal_mask = false;
 
   size_t region_count;
   lagrange_option_t<size_t> workers;
@@ -209,59 +202,10 @@ config_options_t parse_config(const std::string &config_filename) {
       }
     } else if (!strcmp(tokens[0].c_str(), "report")) {
       if (tokens[1].compare("split") != 0) { config.splits = false; }
-    } else if (!strcmp(tokens[0].c_str(), "sparse")) {
-      config.sparse = true;
     } else if (!strcmp(tokens[0].c_str(), "splits")) {
       config.splits = true;
     } else if (!strcmp(tokens[0].c_str(), "states")) {
       config.states = true;
-    } else if (!strcmp(tokens[0].c_str(), "estimate_dispersal_mask")) {
-      config.estimate_dispersal_mask = true;
-    } else if (!strcmp(tokens[0].c_str(), "stochastic_time")) {
-      config.states = true;  // requires ancestral states
-      if (config.ancstates.size() > 0) {
-        config.ancstates[0] = "_all_";
-      } else {
-        config.ancstates.push_back("_all_");
-      }
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      for (unsigned int j = 0; j < searchtokens.size(); j++) {
-        std::vector<int> dist;
-        for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
-          char c = (searchtokens[j].c_str())[k];
-          dist.push_back(atoi(&c));
-        }
-        config.stochastic_time_dists.push_back(
-            convert_vector_to_lagrange_dist(dist));
-      }
-    } else if (!strcmp(tokens[0].c_str(), "stochastic_number")) {
-      config.states = true;  // requires ancestral states
-      if (config.ancstates.size() > 0) {
-        config.ancstates[0] = "_all_";
-      } else {
-        config.ancstates.push_back("_all_");
-      }
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      if (searchtokens.size() != 2) {
-        std::cout << "ERROR: distributions for stochastic_number need to be "
-                     "in the form from_to"
-                  << std::endl;
-      } else {
-        std::vector<lagrange_dist_t> dists;
-        std::vector<int> dist0;
-        for (unsigned int k = 0; k < searchtokens[0].size(); k++) {
-          char c = (searchtokens[0].c_str())[k];
-          dist0.push_back(atoi(&c));
-        }
-        std::vector<int> dist1;
-        for (unsigned int k = 0; k < searchtokens[1].size(); k++) {
-          char c = (searchtokens[1].c_str())[k];
-          dist1.push_back(atoi(&c));
-        }
-        dists.push_back(convert_vector_to_lagrange_dist(dist0));
-        dists.push_back(convert_vector_to_lagrange_dist(dist1));
-        config.stochastic_number_from_tos.push_back(dists);
-      }
     } else if (!strcmp(tokens[0].c_str(), "dispersal")) {
       config.dispersal = atof(tokens[1].c_str());
       std::cout << "setting dispersal: " << config.dispersal << std::endl;
@@ -274,6 +218,8 @@ config_options_t parse_config(const std::string &config_filename) {
       config.workers = std::stoi(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
       config.threads_per_worker = std::stoi(tokens[1]);
+    } else if (!strcmp(tokens[0].c_str(), "maxareas")) {
+      config.maxareas = std::stoi(tokens[1]);
     }
   }
   ifs.close();
@@ -342,7 +288,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
-  Context context(intree, config.region_count);
+  Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
   if (config.states) { context.registerStateLHGoal(); }
   context.init();
@@ -413,13 +359,15 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<Tree>> intrees;
     ir.readMultipleTreeFile(config.treefile, intrees);
     std::cout << "reading data..." << std::endl;
-    std::unordered_map<std::string, lagrange_dist_t> data =
-        ir.readStandardInputData(config.datafile);
+    std::unordered_map<std::string, size_t> data =
+        ir.readStandardInputData(config.datafile, config.maxareas);
     std::cout << "checking data..." << std::endl;
     ir.checkData(data, intrees);
 
     config.region_count = ir.nareas;
+    if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
+    std::cout << "running analysis..." << std::endl;
     for (unsigned int i = 0; i < intrees.size(); i++) {
       handle_tree(intrees[i], data, config);
     }

@@ -22,7 +22,7 @@ class InputReader {
   void readMultipleTreeFile(std::string filename,
                             std::vector<std::shared_ptr<Tree>> &);
   std::unordered_map<std::string, lagrange_dist_t> readStandardInputData(
-      std::string filename);
+      std::string filename, size_t max_areas);
   void checkData(const std::unordered_map<std::string, lagrange_dist_t> &,
                  const std::vector<std::shared_ptr<Tree>> &);
   int nareas;
