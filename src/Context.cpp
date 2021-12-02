@@ -111,10 +111,19 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
 
-  if (states || splits) { computeBackwardOperations(ts, tc); }
+  if (states || splits) {
+    std::cout << "Computing reverse operations" << std::endl;
+    computeBackwardOperations(ts, tc);
+  }
 
-  if (states) { computeStateGoal(ts, tc); }
-  if (splits) { computeSplitGoal(ts, tc); }
+  if (states) {
+    std::cout << "Computing state goals" << std::endl;
+    computeStateGoal(ts, tc);
+  }
+  if (splits) {
+    std::cout << "Computing split goals" << std::endl;
+    computeSplitGoal(ts, tc);
+  }
   ts.halt_threads();
 }
 
