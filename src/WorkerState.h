@@ -153,11 +153,13 @@ class WorkerState {
   void barrier() {
     static thread_local volatile int local_wait_flag = 0;
     static volatile int wait_flag = 0;
-    static std::atomic<size_t> barrier_threads{0};
+    // static std::atomic<size_t> barrier_threads{0};
+    static size_t barrier_threads = 0;
 
     // if (_total_threads == 1) { return; }
 
-    barrier_threads++;
+    // barrier_threads++;
+    __sync_fetch_and_add(&barrier_threads, 1);
 
     if (master_thread()) {
       while (barrier_threads < _total_threads) {}
