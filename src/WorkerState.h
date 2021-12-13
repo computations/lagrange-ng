@@ -76,26 +76,40 @@ class WorkerState {
       }
       switch (_mode) {
         case WorkerMode::ComputeForward:
+          if (master_thread()) {
+            std::cout << "Computing Foward Operations" << std::endl;
+          }
           work(tc._forward_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeReverse:
+          if (master_thread()) {
+            std::cout << "Computing Reverse Operations" << std::endl;
+          }
           work(tc._reverse_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeSplitGoal:
+          if (master_thread()) {
+            std::cout << "Computing Split Goals" << std::endl;
+          }
           work_goal(tc._split_lh_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeStateGoal:
+          if (master_thread()) {
+            std::cout << "Computing State Goals" << std::endl;
+          }
           work_goal(tc._state_lh_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeLH:
+          if (master_thread()) { std::cout << "Computing LH" << std::endl; }
           if (master_thread()) { work_goal(tc._lh_goal, ws); }
           break;
 
         case WorkerMode::Halt:
+          if (master_thread()) { std::cout << "Halting" << std::endl; }
           return;
 
         default:
