@@ -66,7 +66,6 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
-    if (master_thread()) { std::cout << "Switching modes" << std::endl; }
     openblas_set_num_threads(_assigned_threads);
     while (true) {
       barrier();
