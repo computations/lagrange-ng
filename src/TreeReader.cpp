@@ -282,6 +282,7 @@ void parser_t::parse_node_set(std::shared_ptr<Node> current_node) {
 
 void parser_t::parse_node_attrs(std::shared_ptr<Node> current_node) {
   parse_name(current_node);
+  parse_comment();
   parse_length(current_node);
   parse_comment();
 }
