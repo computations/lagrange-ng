@@ -133,7 +133,7 @@ class OperationTest : public ::testing::Test {
         0.0564923,
     });
 
-    _ws = std::make_shared<Workspace>(_taxa, _regions);
+    _ws = std::make_shared<Workspace>(_taxa, _regions, _regions);
 
     _lbot_clv = _ws->register_generic_clv();
     _ltop_clv = _ws->register_generic_clv();
@@ -198,9 +198,7 @@ TEST_F(OperationTest, ExpmSimple0) {
 TEST_F(OperationTest, ExpmSimple1) {
   ExpmOperation expm_op(_prob_matrix, _t, _rate_matrix_op);
 
-  std::cout << expm_op.printStatus(_ws) << std::endl;
   expm_op.eval(_ws);
-  std::cout << expm_op.printStatus(_ws) << std::endl;
 
   lagrange_compute_error_fro_matrix(_ws->prob_matrix(_prob_matrix),
                                     _correct_prob_matrix, _ws);
@@ -272,7 +270,7 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
-  auto local_ws = std::make_shared<Workspace>(_taxa, 3);
+  auto local_ws = std::make_shared<Workspace>(_taxa, 3, 3);
   local_ws->reserve();
   local_ws->set_period_params(0, .3123, 1.1231);
   MakeRateMatrixOperation make_op(_rate_matrix);

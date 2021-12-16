@@ -28,19 +28,19 @@ class ContextTest : public ::testing::Test {
 };
 
 TEST_F(ContextTest, simple0) {
-  Context context(_basic_tree, 2);
+  Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.registerTipClvs(_basic_tree_data);
   context.init();
 }
 
 TEST_F(ContextTest, error0) {
-  Context context(_basic_tree, 2);
+  Context context(_basic_tree, 2, 2);
   EXPECT_THROW(context.registerTipClvs(_basic_tree_data), std::runtime_error);
 }
 
 TEST_F(ContextTest, computelh1) {
-  Context context(_basic_tree, 2);
+  Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.init();
   context.registerTipClvs(_basic_tree_data);
@@ -55,7 +55,7 @@ TEST_F(ContextTest, computelh1) {
 }
 
 TEST_F(ContextTest, optimizeSimple0) {
-  Context context(_basic_tree, 2);
+  Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.init();
   context.updateRates({10.5, 1.5});
@@ -69,7 +69,7 @@ TEST_F(ContextTest, optimizeSimple0) {
 }
 
 TEST_F(ContextTest, StateGoal0) {
-  Context context(_basic_tree, 2);
+  Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.registerStateLHGoal();
   context.init();

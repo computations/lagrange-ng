@@ -16,11 +16,15 @@ class LagrangeEnvironment : public ::testing::Environment {
   LagrangeEnvironment() {}
 
   std::ifstream get_datafile() {
-    return std::ifstream(STRINGIFY(TREEPATH / random_test_trees));
+    return std::ifstream(STRINGIFY(TREEPATH/random_test_trees));
   }
 
   std::ifstream get_pathological_data() {
-    return std::ifstream(STRINGIFY(TREEPATH / pathological_trees));
+    return std::ifstream(STRINGIFY(TREEPATH/pathological_trees));
+  }
+
+  std::ifstream get_sloth_tree() {
+    return std::ifstream(STRINGIFY(TREEPATH/sloths.tre));
   }
 };
 

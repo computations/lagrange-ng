@@ -8,7 +8,7 @@
 TEST(Workspace, simple0) {
   constexpr size_t regions = 3;
   constexpr size_t states = 1 << regions;
-  Workspace ws(10, regions);
+  Workspace ws(10, regions, regions);
 
   ws.reserve();
 
@@ -24,16 +24,18 @@ TEST(Workspace, simple0) {
 TEST(Workspace, simple1) {
   constexpr size_t regions = 3;
   constexpr size_t states = 1 << regions;
-  Workspace ws(10, regions);
+  Workspace ws(10, regions, regions);
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
   EXPECT_EQ(clv_index, 0);
 }
 
 TEST(Workspace, minsize) {
-  EXPECT_ANY_THROW(Workspace(0, 2));
-  EXPECT_NO_THROW(Workspace(1, 2));
+  EXPECT_ANY_THROW(Workspace(0, 2, 2));
+  EXPECT_NO_THROW(Workspace(1, 2, 2));
 }
+
+TEST(Workspace, maxareas) { EXPECT_ANY_THROW(Workspace(2, 2, 12)); }
 
 /*
 TEST(Workspace, setters) {
