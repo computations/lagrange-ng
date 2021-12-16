@@ -101,7 +101,7 @@ void InputReader::checkData(
     }
     if (count != 1) {
       std::cout << "Error: " << trees[0]->getExternalNode(j)->getName()
-                << " found" << count << " times in data file." << std::endl;
+                << " found " << count << " times in data file." << std::endl;
       exit(0);
     }
   }
