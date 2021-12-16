@@ -39,8 +39,6 @@ class Workspace {
         _regions{regions},
         _states{1ull << regions},
         _max_areas{max_areas},
-        _restricted_state_count{
-            lagrange_compute_restricted_state_count(_regions, _max_areas)},
         _next_free_clv{0},
         _leading_dim{_states},
         _rate_matrix{1},
@@ -56,6 +54,12 @@ class Workspace {
     if (taxa_count == 0) {
       throw std::runtime_error{"We cannot make a workspace with zero taxa"};
     }
+    if (_max_areas > _regions) {
+      throw std::runtime_error{
+          "Max areas cannot be larger than the number of regions"};
+    }
+    _restricted_state_count =
+        lagrange_compute_restricted_state_count(_regions, _max_areas);
   }
 
   Workspace(size_t taxa_count, size_t regions, size_t max_areas)
