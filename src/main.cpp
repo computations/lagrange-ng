@@ -329,6 +329,11 @@ void handle_tree(std::shared_ptr<Tree> intree,
   if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
+  std::ofstream node_tree(config.treefile + ".nodes.tre");
+
+  node_tree << intree->getNewickLambda([](const Node &n) -> std::string {
+    return std::to_string(n.getNumber());
+  });
 }
 
 void setThreads(config_options_t &config) {

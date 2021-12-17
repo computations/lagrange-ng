@@ -334,11 +334,11 @@ void Tree::assignTipData(
   _root->assignTipData(ws, dist_data);
 }
 
-std::string Tree::getNewick() const { return _root->getNewick(); }
+std::string Tree::getNewick() const { return _root->getNewick() + ";"; }
 
 std::string Tree::getNewickLambda(
     const std::function<std::string(const Node &)> &newick_lambda) const {
-  return _root->getNewickLambda(newick_lambda);
+  return _root->getNewickLambda(newick_lambda) + ";";
 }
 
 void Tree::setStateStrings(const std::vector<size_t> &id_map,
