@@ -58,3 +58,59 @@ std::string lagrange_convert_dist_string(
   }
   return oss.str();
 }
+
+/* Code for the combinations function take from phylourny with permision from
+ * author.*/
+
+constexpr size_t factorial_table_size = 11;
+
+constexpr std::array<double, factorial_table_size> factorial_table = {
+    1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
+};
+
+constexpr inline double factorial(uint64_t i) {
+  if (i < factorial_table_size) { return factorial_table.at(i); }
+  double f = factorial_table[factorial_table_size - 1];
+  for (size_t k = factorial_table_size; k <= i; ++k) {
+    f *= static_cast<double>(k);
+  }
+  return f;
+}
+
+constexpr inline double combinations(uint64_t n, uint64_t i) {
+  return factorial(n) / (factorial(i) * factorial(n - i));
+}
+
+size_t lagrange_compute_restricted_state_count(size_t regions,
+                                               size_t max_areas) {
+  size_t sum = 0;
+  for (size_t i = 0; i <= max_areas; i++) { sum += combinations(regions, i); }
+  return sum;
+}
+
+size_t compute_skips_power_of_2(size_t k, size_t n) {
+  size_t skips = 0;
+  for (size_t i = n + 1; i < k; ++i) { skips += combinations(k - 1, i); }
+  return skips;
+}
+
+size_t compute_skips(size_t i, size_t n) {
+  size_t skips = 0;
+  while (i != 0 && n != 0) {
+    size_t first_index = sizeof(i) * 8 - __builtin_clzll(i | 1);
+    skips += compute_skips_power_of_2(first_index, n);
+    n -= 1;
+    i -= 1 << (first_index - 1);
+  }
+  skips += i;
+  return skips;
+}
+
+size_t compute_index_from_dist(lagrange_dist_t i, size_t max_areas) {
+  if (lagrange_popcount(i) > max_areas) {
+    throw std::lagrange_util_dist_index_conversion_exception{};
+  }
+  size_t skips = compute_skips(i, max_areas);
+
+  return i - skips;
+}

@@ -17,7 +17,8 @@ class TreeTest : public ::testing::Test {
     _basic_tree_newick = "((a:1.0,b:1.0):1.0, c:2.0);";
     _basic_tree_dist_data = {{"a", 0b01}, {"b", 0b11}, {"c", 0b01}};
     _basic_ws = std::make_shared<Workspace>(/*taxa=*/3,
-                                            /*regions=*/2);
+                                            /*regions=*/2,
+                                            /*maxareas=*/2);
     /*
     _arbitrary_rate_matrix = {
         {0.00000, 0.00000, 0.00000, 0.00000},

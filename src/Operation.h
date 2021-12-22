@@ -91,6 +91,8 @@ class ExpmOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
+  std::mutex& getLock() { return *_lock; }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
@@ -241,7 +243,7 @@ class SplitOperation {
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
                        rate_matrix, rate_matrix, parent_clv) {}
 
-  // NOTE: Fix this for periods
+  // TODO: Fix this for periods
   SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
                  std::shared_ptr<DispersionOperation> r_ops)
       : _lbranch_clv_index{l_ops->top_clv_index()},
@@ -261,15 +263,6 @@ class SplitOperation {
                           size_t tabLevel = 0) const;
 
   bool ready(const std::shared_ptr<Workspace>& ws) const {
-    // bool lready = true;
-    // bool rready = true;
-
-    /*
-    lready = _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution);
-    rready = _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
-
-    return rready && lready;
-    */
     return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
            _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
   }
@@ -283,8 +276,6 @@ class SplitOperation {
 
   std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
   std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
-
-  std::vector<lagrange_dist_t> _excl_dists;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -347,8 +338,8 @@ class ReverseSplitOperation {
       branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
     }
 
-    return branch_ops_ready ||
-           (ws->last_update_clv(_bot_clv_index) >= _last_execution);
+    return branch_ops_ready &&
+           (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
   }
 
   std::mutex& getLock() { return *_lock; }

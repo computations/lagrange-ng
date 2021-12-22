@@ -353,12 +353,15 @@ TEST(TreeReader, badtrees11) {
 
 TEST(TreeReader, manytrees) {
   auto treefile = env->get_datafile();
+
+  if (!treefile.is_open()) {
+    throw std::runtime_error{"Could not find data file"};
+  }
+
   size_t line_number = 1;
   std::string line;
   while (std::getline(treefile, line)) {
-    if (!treefile) {
-      break;
-    }
+    if (!treefile) { break; }
     auto tr = TreeReader();
     try {
       auto t = tr.readTree(line);
@@ -376,12 +379,39 @@ TEST(TreeReader, manytrees) {
 TEST(TreeReader, DISABLED_pathologic0) {
   auto treefile = env->get_pathological_data();
 
+  if (!treefile.is_open()) {
+    throw std::runtime_error{"Could not find data file"};
+  }
+
   size_t line_number = 1;
   std::string line;
   while (std::getline(treefile, line)) {
-    if (!treefile) {
-      break;
+    if (!treefile) { break; }
+    auto tr = TreeReader();
+    try {
+      auto t = tr.readTree(line);
+      EXPECT_GT(t->getExternalNodeCount(), 0);
+    } catch (const std::exception &e) {
+      throw std::runtime_error{std::string("Got error on line ") +
+                               std::to_string(line_number) +
+                               " with the error: \n" + e.what()};
     }
+    line_number++;
+    line.clear();
+  }
+}
+
+TEST(TreeReader, SlothsTree) {
+  auto treefile = env->get_sloth_tree();
+
+  if (!treefile.is_open()) {
+    throw std::runtime_error{"Could not find data file"};
+  }
+
+  size_t line_number = 1;
+  std::string line;
+  while (std::getline(treefile, line)) {
+    if (!treefile) { break; }
     auto tr = TreeReader();
     try {
       auto t = tr.readTree(line);

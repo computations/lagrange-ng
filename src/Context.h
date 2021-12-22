@@ -22,10 +22,10 @@
 
 class Context {
  public:
-  Context(std::shared_ptr<Tree> tree, size_t regions)
+  Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas)
       : _tree{tree},
         _workspace{std::make_shared<Workspace>(_tree->getExternalNodeCount(),
-                                               regions)},
+                                               regions, max_areas)},
         _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(
             _workspace->suggest_rate_matrix_index())} {}
 

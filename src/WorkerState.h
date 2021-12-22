@@ -95,6 +95,9 @@ class WorkerState {
 
         case WorkerMode::Halt:
           return;
+
+        default:
+          throw std::runtime_error{"Found a mode that doesn't exist"};
       }
       if (master_thread()) { return; }
     }
@@ -115,6 +118,8 @@ class WorkerState {
   }
 
   void set_assigned_threads(size_t at) { _assigned_threads = at; }
+
+  void assign_threads() const { mkl_set_num_threads(_assigned_threads); }
 
  private:
   template <typename T>
@@ -137,15 +142,12 @@ class WorkerState {
        * shared pointer here. One in the vector, and one returned by value from
        * the find_work function
        */
-      // if (w.use_count() > 2) {
-      std::lock_guard<std::mutex> lock(w->getLock());
-      w->eval(workspace);
-      // std::cout << w->printStatus(workspace) << std::endl;
-      /*
-    } else {
-      w->eval(workspace);
-    }
-    */
+      if (w.use_count() > 2) {
+        std::lock_guard<std::mutex> lock(w->getLock());
+        w->eval(workspace);
+      } else {
+        w->eval(workspace);
+      }
     }
     // end_work();
   }
@@ -153,11 +155,13 @@ class WorkerState {
   void barrier() {
     static thread_local volatile int local_wait_flag = 0;
     static volatile int wait_flag = 0;
-    static std::atomic<size_t> barrier_threads{0};
+    // static std::atomic<size_t> barrier_threads{0};
+    static size_t barrier_threads = 0;
 
-    if (_total_threads == 1) { return; }
+    // if (_total_threads == 1) { return; }
 
-    barrier_threads++;
+    // barrier_threads++;
+    __sync_fetch_and_add(&barrier_threads, 1);
 
     if (master_thread()) {
       while (barrier_threads < _total_threads) {}
@@ -189,11 +193,11 @@ class WorkerState {
                                const std::shared_ptr<Workspace>& workspace) {
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
-#if 0
+    /*
     std::cout << "[thread: " << _tid
               << "] looking for work, starting index: " << _start_index
               << std::endl;
-#endif
+              */
 
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {

@@ -38,8 +38,12 @@ void Workspace::register_children_clv(size_t node_id) {
   _node_reservations[node_id]._bot2_clv = register_clv();
 }
 
-void Workspace::set_tip_clv(size_t index, lagrange_dist_t dist) {
-  _clvs[index]._clv[dist] = 1.0;
+void Workspace::set_tip_clv(size_t index, size_t clv_index) {
+  if (clv_index >= restricted_state_count()) {
+    throw std::runtime_error{
+        "Attempted to set a state that is too large for this dataset"};
+  }
+  _clvs[index]._clv[clv_index] = 1.0;
   _clvs[index]._last_update = std::numeric_limits<size_t>::max();
 }
 
@@ -54,8 +58,10 @@ void Workspace::reserve() {
   _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
 
   for (size_t i = 0; i < _base_frequencies_count; ++i) {
-    _base_frequencies[i] = new lagrange_matrix_base_t[states()];
-    for (size_t j = 0; j < states(); j++) { _base_frequencies[i][j] = 1.0; }
+    _base_frequencies[i] = new lagrange_matrix_base_t[clv_size()];
+    for (size_t j = 0; j < restricted_state_count(); j++) {
+      _base_frequencies[i][j] = 1.0;
+    }
   }
 
   _clvs.resize(clv_count());
@@ -63,9 +69,11 @@ void Workspace::reserve() {
   for (size_t i = 0; i < _clvs.size(); ++i) {
     if (_clvs[i]._clv != nullptr) { delete[] _clvs[i]._clv; }
 
-    _clvs[i]._clv = new lagrange_matrix_base_t[states()];
+    _clvs[i]._clv = new lagrange_matrix_base_t[clv_size()];
 
-    for (size_t j = 0; j < states(); j++) { _clvs[i]._clv[j] = 0.0; }
+    for (size_t j = 0; j < restricted_state_count(); j++) {
+      _clvs[i]._clv[j] = 0.0;
+    }
   }
 
   if (_clv_scalars != nullptr) { delete[] _clv_scalars; }

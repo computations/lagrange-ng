@@ -22,6 +22,12 @@
 #include "Utils.h"
 #include "Workspace.h"
 
+lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
+  d += 1;
+  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
+  return d;
+}
+
 std::ostream &operator<<(std::ostream &os,
                          std::tuple<double *, size_t> vector_tuple) {
   double *v;
@@ -48,7 +54,7 @@ inline void generate_splits(uint64_t state, size_t regions,
   }
 
   // results.reserve(regions);
-  for (size_t i = 0; i < regions; ++i) {
+  for (size_t i = 0; i < regions; i++) {
     uint64_t x = 1ull << i;
     if ((state & x) == 0) { continue; }
 
@@ -63,36 +69,23 @@ inline void generate_splits(uint64_t state, size_t regions,
 
 inline void weighted_combine(const lagrange_col_vector_t &c1,
                              const lagrange_col_vector_t &c2, size_t states,
-                             const std::vector<lagrange_dist_t> excl_dists,
-                             lagrange_col_vector_t dest, size_t c1_scale,
-                             size_t c2_scale, size_t &scale_count) {
+                             size_t max_areas, lagrange_col_vector_t dest,
+                             size_t c1_scale, size_t c2_scale,
+                             size_t &scale_count) {
   size_t regions = lagrange_fast_log2(states);
-
-  size_t idx_excl = 0;
 
   bool scale = true;
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i++) {
-    while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
-      idx_excl++;
-    }
-    if (idx_excl < excl_dists.size() && i == excl_dists[idx_excl]) {
-      idx_excl++;
-      continue;
-    }
+  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
     generate_splits(i, regions, splits);
     double sum = 0.0;
     for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
 
     if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
 
-    if (sum < lagrange_scale_threshold) {
-      scale &= true;
-    } else {
-      scale &= false;
-    }
+    scale &= sum < lagrange_scale_threshold;
 
     dest[i] = sum;
   }
@@ -106,25 +99,15 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
-inline void reverse_weighted_combine(
-    const lagrange_col_vector_t &c1, const lagrange_col_vector_t &c2,
-    size_t states, const std::vector<lagrange_dist_t> excl_dists,
-    lagrange_col_vector_t dest) {
+inline void reverse_weighted_combine(const lagrange_col_vector_t &c1,
+                                     const lagrange_col_vector_t &c2,
+                                     size_t states, size_t max_areas,
+                                     lagrange_col_vector_t dest) {
   size_t regions = lagrange_fast_log2(states);
-
-  size_t idx_excl = 0;
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i++) {
-    while (idx_excl < excl_dists.size() && i > excl_dists[idx_excl]) {
-      idx_excl++;
-    }
-    if (idx_excl < excl_dists.size() && i == excl_dists[idx_excl]) {
-      idx_excl++;
-      continue;
-    }
-
+  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
     generate_splits(i, regions, splits);
     if (splits.size() == 0) { continue; }
 
@@ -167,27 +150,44 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   for (size_t i = 0; i < ws->matrix_size(); i++) { rm[i] = 0.0; }
 
   auto &period = ws->get_period_params(_period_index);
-  for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
-    for (lagrange_dist_t i = 0; i < ws->regions(); i++) {
-      if (lagrange_bextr(dist, i) != 0) { continue; }
-      lagrange_dist_t gain_dist = dist | (1ul << i);
 
-      rm[ws->compute_matrix_index(gain_dist, dist)] =
-          period.getExtinctionRate();
+  size_t source_index = 0;
+  lagrange_dist_t source_dist = 0;
 
-      if (dist == 0) { continue; }
+  for (source_index = 0, source_dist = 0;
+       source_dist < ws->restricted_state_count();
+       source_dist = next_dist(source_dist, ws->max_areas()), ++source_index) {
+    size_t dest_index = 0;
+    lagrange_dist_t dest_dist = 0;
 
-      double sum = 0.0;
-      for (size_t j = 0; j < ws->regions(); ++j) {
-        sum += period.getDispersionRate(j, i) * lagrange_bextr(dist, j);
+    for (dest_index = 0, dest_dist = 0;
+         dest_dist < ws->restricted_state_count();
+         dest_dist = next_dist(dest_dist, ws->max_areas()), ++dest_index) {
+      if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
+
+      /* Source is "gaining" a region, so we add */
+      if (source_dist < dest_dist && source_dist != 0) {
+        double sum = 0.0;
+        size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
+        for (size_t j = 0; j < ws->regions(); ++j) {
+          sum +=
+              period.getDispersionRate(i, j) * lagrange_bextr(source_dist, j);
+        }
+
+        rm[ws->compute_matrix_index(source_index, dest_index)] = sum;
+
       }
-      rm[ws->compute_matrix_index(dist, gain_dist)] = sum;
+      /* Otherwise, source is loosing a region, so we just set the value */
+      else if (source_dist != 0) {
+        rm[ws->compute_matrix_index(source_index, dest_index)] =
+            period.getExtinctionRate();
+      }
     }
   }
 
-  for (size_t i = 0; i < ws->states(); i++) {
+  for (size_t i = 0; i < ws->restricted_state_count(); i++) {
     double sum = 0.0;
-    for (size_t j = 0; j < ws->states(); j++) {
+    for (size_t j = 0; j < ws->restricted_state_count(); j++) {
       sum += rm[ws->compute_matrix_index(i, j)];
     }
     rm[ws->compute_matrix_index(i, i)] = -sum;
@@ -209,9 +209,10 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   auto &rm = ws->rate_matrix(_rate_matrix_index);
 
-  for (size_t i = 0; i < ws->states(); ++i) {
+  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     os << tabs << std::setprecision(10)
-       << std::make_tuple(rm + ws->compute_matrix_index(i, 0), ws->states())
+       << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
+                          ws->restricted_state_count())
        << "\n";
   }
 
@@ -230,19 +231,18 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  do {
-    if ((_rate_matrix_op != nullptr) &&
-        (_last_execution > _rate_matrix_op->last_update())) {
-      return;
-    }
-  } while (!_lock->try_lock());
+  if ((_rate_matrix_op != nullptr) &&
+      (_last_execution > _rate_matrix_op->last_update())) {
+    return;
+  }
 
   if (_last_execution == 0) {
     _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _lapack_work_buffer.reset(new lagrange_matrix_base_t[ws->states()]);
+    _lapack_work_buffer.reset(
+        new lagrange_matrix_base_t[ws->restricted_state_count()]);
   }
 
-  int rows = static_cast<int>(ws->states());
+  int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
   for (size_t i = 0; i < ws->matrix_size(); i++) {
@@ -395,7 +395,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_prob_matrix(_prob_matrix_index, r1.get());
 
   _last_execution = ws->advance_clock();
-  _lock->unlock();
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -411,9 +410,10 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   auto &pm = ws->prob_matrix(_prob_matrix_index);
 
-  for (size_t i = 0; i < ws->states(); ++i) {
+  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     os << tabs << std::setprecision(10)
-       << std::make_tuple(pm + ws->compute_matrix_index(i, 0), ws->states())
+       << std::make_tuple(pm + ws->compute_matrix_index(i, 0),
+                          ws->restricted_state_count())
        << "\n";
   }
 
@@ -423,9 +423,10 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
   } else {
     auto &rm = ws->rate_matrix(_rate_matrix_index);
-    for (size_t i = 0; i < ws->states(); ++i) {
+    for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
       os << tabs << std::setprecision(10)
-         << std::make_tuple(rm + ws->compute_matrix_index(i, 0), ws->states())
+         << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
+                            ws->restricted_state_count())
          << "\n";
     }
   }
@@ -440,19 +441,18 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (_expm_op != nullptr) { _expm_op->eval(ws); }
+  if (_expm_op != nullptr) {
+    std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
+    _expm_op->eval(ws);
+  }
 
-#if 0
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed this operation, return */
     return;
   }
-#endif
 
-  /* we could be trying to evaluate an expm op that is being computed by another
-   * thread, so we need to spin lock here until the execution is complete */
-
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->states(), ws->states(), 1.0,
+  cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restricted_state_count(),
+              ws->restricted_state_count(), 1.0,
               ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
               ws->clv(_bot_clv), 1, 0.0, ws->clv(_top_clv), 1);
 
@@ -471,11 +471,13 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Top clv (index: " << _top_clv
      << " update: " << ws->last_update_clv(_top_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->clv(_top_clv), ws->states()) << "\n";
+     << std::make_tuple(ws->clv(_top_clv), ws->restricted_state_count())
+     << "\n";
   os << tabs << "Bot clv (index: " << _bot_clv
      << " update: " << ws->last_update_clv(_bot_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->clv(_bot_clv), ws->states()) << "\n";
+     << std::make_tuple(ws->clv(_bot_clv), ws->restricted_state_count())
+     << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
@@ -513,10 +515,10 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
   auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
-  weighted_combine(lchild_clv, rchild_clv, ws->states(), _excl_dists,
-                   parent_clv, ws->clv_scalar(_lbranch_clv_index),
-                   ws->clv_scalar(_rbranch_clv_index),
-                   ws->clv_scalar(_parent_clv_index));
+  weighted_combine(
+      lchild_clv, rchild_clv, ws->restricted_state_count(), ws->max_areas(),
+      parent_clv, ws->clv_scalar(_lbranch_clv_index),
+      ws->clv_scalar(_rbranch_clv_index), ws->clv_scalar(_parent_clv_index));
 
   _last_execution = ws->advance_clock();
   ws->update_clv_clock(_parent_clv_index);
@@ -545,13 +547,6 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
 
-  if (_excl_dists.size() != 0) {
-    os << tabs << "Excluded dists:\n";
-    for (size_t i = 0; i < _excl_dists.size(); ++i) {
-      os << tabs << _excl_dists[i] << "\n";
-    }
-  }
-
   os << tabs << "Left Branch ops:\n";
   if (_lbranch_ops.size() != 0) {
     for (auto &op : _lbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
@@ -573,16 +568,20 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   for (auto &op : _branch_ops) {
-    std::lock_guard<std::mutex> lock(op->getLock());
-    op->eval(ws);
+    if (op.use_count() > 1) {
+      std::lock_guard<std::mutex> lock(op->getLock());
+      op->eval(ws);
+    } else {
+      op->eval(ws);
+    }
   }
 
   if (_eval_clvs) {
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, ws->states(), _excl_dists,
-                             ws->clv(_bot_clv_index));
+    reverse_weighted_combine(ltop_clv, rtop_clv, ws->restricted_state_count(),
+                             ws->max_areas(), ws->clv(_bot_clv_index));
 
     _last_execution = ws->advance_clock();
     ws->update_clv_clock(_bot_clv_index);
@@ -634,8 +633,9 @@ std::string ReverseSplitOperation::printStatus(
 }
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  double rho = cblas_ddot(ws->states(), ws->clv(_root_clv_index), 1,
-                          ws->get_base_frequencies(_prior_index), 1);
+  double rho =
+      cblas_ddot(ws->restricted_state_count(), ws->clv(_root_clv_index), 1,
+                 ws->get_base_frequencies(_prior_index), 1);
   _result = std::log(rho) -
             lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
 
@@ -648,20 +648,20 @@ bool LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
 
 void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   if (_last_execution == 0) {
-    _result.reset(new lagrange_matrix_base_t[ws->states()]);
-    _states = ws->states();
+    _result.reset(new lagrange_matrix_base_t[ws->restricted_state_count()]);
+    _states = ws->restricted_state_count();
   }
 
   size_t tmp_scalar = 0;
 
-  weighted_combine(
-      ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index), ws->states(),
-      /*excl_dists=*/{}, _result.get(), ws->clv_scalar(_lchild_clv_index),
-      ws->clv_scalar(_rchild_clv_index), tmp_scalar);
+  weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
+                   ws->restricted_state_count(), ws->max_areas(), _result.get(),
+                   ws->clv_scalar(_lchild_clv_index),
+                   ws->clv_scalar(_rchild_clv_index), tmp_scalar);
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
 
-  for (size_t i = 0; i < ws->states(); ++i) {
+  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     double tmp_val = _result.get()[i];
     double parent_val = ws->clv(_parent_clv_index)[i];
     _result.get()[i] = std::log(tmp_val * parent_val) -
@@ -685,7 +685,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (lagrange_dist_t dist = 0; dist < ws->states(); dist++) {
+  for (lagrange_dist_t dist = 0; dist < ws->restricted_state_count(); dist++) {
     std::vector<AncSplit> anc_split_vec;
     generate_splits(dist, ws->regions(), splits);
     double weight = 1.0 / splits.size();

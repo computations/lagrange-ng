@@ -99,6 +99,7 @@ double Context::computeLLH(WorkerState& ts, WorkerContext& tc) {
 
 void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
                                        bool splits, bool output) {
+  ts.assign_threads();
   WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that
@@ -116,10 +117,19 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
 
-  if (states || splits) { computeBackwardOperations(ts, tc); }
+  if (states || splits) {
+    std::cout << "Computing reverse operations" << std::endl;
+    computeBackwardOperations(ts, tc);
+  }
 
-  if (states) { computeStateGoal(ts, tc); }
-  if (splits) { computeSplitGoal(ts, tc); }
+  if (states) {
+    std::cout << "Computing state goals" << std::endl;
+    computeStateGoal(ts, tc);
+  }
+  if (splits) {
+    std::cout << "Computing split goals" << std::endl;
+    computeSplitGoal(ts, tc);
+  }
   ts.halt_threads();
 }
 
@@ -128,6 +138,7 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     Context& context;
     WorkerContext& tc;
     WorkerState& ts;
+    size_t iter = 0;
   } oc{*this, tc, ts};
 
   nlopt::opt opt(nlopt::LN_SBPLX, 2);
@@ -138,10 +149,13 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     period_t p{x[0], x[1]};
     obj->context.updateRates(p);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
-    std::cout << p.toString() << ": " << llh << std::endl;
+    if (obj->iter % 10 == 0) {
+      std::cout << p.toString() << ": " << llh << std::endl;
+    }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }
+    obj->iter += 1;
     return llh;
   };
 

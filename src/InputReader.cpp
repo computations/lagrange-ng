@@ -33,42 +33,52 @@ void InputReader::readMultipleTreeFile(
   }
 }
 
-std::unordered_map<std::string, lagrange_dist_t>
-InputReader::readStandardInputData(std::string filename) {
+std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
+    std::string filename, size_t max_areas) {
   std::ifstream ifs(filename.c_str());
   std::string temp;
-  bool first = false;
   nareas = 0;
   nspecies = 0;
-  std::unordered_map<std::string, lagrange_dist_t> data;
+  std::unordered_map<std::string, size_t> data;
   std::string line;
   std::vector<std::string> tokens;
   std::string del("\t ");
+
+  getline(ifs, line);
+
+  Tokenize(line, tokens, del);
+  for (unsigned int j = 0; j < tokens.size(); j++) { TrimSpaces(tokens[j]); }
+  nspecies = atoi(tokens[0].c_str());
+  nareas = atoi(tokens[1].c_str());
+
+  if (max_areas == 0) { max_areas = nareas; }
+
   while (getline(ifs, line)) {
-    if (first == false) {
-      first = true;
-      tokens.clear();
-      Tokenize(line, tokens, del);
-      for (unsigned int j = 0; j < tokens.size(); j++) {
-        TrimSpaces(tokens[j]);
-      }
-      nspecies = atoi(tokens[0].c_str());
-      nareas = atoi(tokens[1].c_str());
-    } else {
-      tokens.clear();
-      Tokenize(line, tokens, del);
-      for (unsigned int j = 0; j < tokens.size(); j++) {
-        TrimSpaces(tokens[j]);
-      }
-      std::cout << "Reading species: " << tokens[0] << " ";
-      std::vector<int> speciesdata(nareas, 0);
-      for (int i = 0; i < nareas; i++) {
-        char spot = tokens[1][i];
-        if (spot == '1') speciesdata[i] = 1;
-        std::cout << spot - '0';
-      }
-      std::cout << std::endl;
-      data[tokens[0]] = convert_vector_to_lagrange_dist(speciesdata);
+    tokens.clear();
+
+    Tokenize(line, tokens, del);
+
+    for (unsigned int j = 0; j < tokens.size(); j++) { TrimSpaces(tokens[j]); }
+    std::cout << "Reading species: " << tokens[0] << " ";
+
+    std::vector<int> speciesdata(nareas, 0);
+
+    for (int i = 0; i < nareas; i++) {
+      char spot = tokens[1][i];
+      if (spot == '1') speciesdata[i] = 1;
+      std::cout << spot - '0';
+    }
+    std::cout << std::endl;
+
+    lagrange_dist_t dist = convert_vector_to_lagrange_dist(speciesdata);
+
+    try {
+      data[tokens[0]] = compute_index_from_dist(dist, max_areas);
+    } catch (std::lagrange_util_dist_index_conversion_exception &e) {
+      throw std::runtime_error(
+          std::string(
+              "found invalid dist when parsing the dist for species: ") +
+          tokens[0]);
     }
   }
   ifs.close();
@@ -91,7 +101,7 @@ void InputReader::checkData(
     }
     if (count != 1) {
       std::cout << "Error: " << trees[0]->getExternalNode(j)->getName()
-                << " found" << count << " times in data file." << std::endl;
+                << " found " << count << " times in data file." << std::endl;
       exit(0);
     }
   }

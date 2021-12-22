@@ -33,7 +33,9 @@ inline size_t lagrange_popcount(lagrange_dist_t a) {
   return __builtin_popcountll(a);
 }
 
-inline size_t lagrange_clz(lagrange_dist_t a) { return __builtin_clzll(a); }
+constexpr inline size_t lagrange_clz(lagrange_dist_t a) {
+  return __builtin_clzll(a);
+}
 
 inline lagrange_dist_t convert_vector_to_lagrange_dist(
     const std::vector<int> &vec_dist) {
@@ -48,7 +50,7 @@ inline lagrange_dist_t convert_vector_to_lagrange_dist(
 }
 
 constexpr inline size_t lagrange_fast_log2(size_t x) {
-  return __builtin_clzll(x);
+  return sizeof(x) * 8 - lagrange_clz(x | 1);
 }
 
 inline lagrange_dist_t lagrange_compute_best_dist(
@@ -67,6 +69,11 @@ inline lagrange_dist_t lagrange_compute_best_dist(
 
   return best_dist;
 }
+
+size_t lagrange_compute_restricted_state_count(size_t regions,
+                                               size_t max_areas);
+
+size_t compute_index_from_dist(lagrange_dist_t i, size_t max_areas);
 
 std::string lagrange_convert_dist_string(lagrange_dist_t dist,
                                          const std::vector<std::string> &names);
@@ -103,6 +110,8 @@ struct hash<std::pair<size_t, double>> {
     return std::hash<size_t>{}(p.first) ^ std::hash<double>{}(p.second);
   }
 };
+
+class lagrange_util_dist_index_conversion_exception : public std::exception {};
 
 }  // namespace std
 #endif /* UTILS_H_ */
