@@ -22,7 +22,7 @@
 #include "Utils.h"
 #include "Workspace.h"
 
-lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
+inline lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
   return d;
@@ -78,16 +78,30 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
-    generate_splits(i, regions, splits);
-    double sum = 0.0;
-    for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
+  if (max_areas == states) {
+    for (size_t i = 0; i < states; i++) {
+      generate_splits(i, regions, splits);
+      double sum = 0.0;
+      for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
 
-    if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
+      if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
 
-    scale &= sum < lagrange_scale_threshold;
+      scale &= sum < lagrange_scale_threshold;
 
-    dest[i] = sum;
+      dest[i] = sum;
+    }
+  } else {
+    for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
+      generate_splits(i, regions, splits);
+      double sum = 0.0;
+      for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
+
+      if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
+
+      scale &= sum < lagrange_scale_threshold;
+
+      dest[i] = sum;
+    }
   }
 
   scale_count = c1_scale + c2_scale;
@@ -107,12 +121,22 @@ inline void reverse_weighted_combine(const lagrange_col_vector_t &c1,
 
   std::vector<lagrange_region_split_t> splits;
 
-  for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
-    generate_splits(i, regions, splits);
-    if (splits.size() == 0) { continue; }
+  if (max_areas == regions) {
+    for (size_t i = 0; i < states; i++) {
+      generate_splits(i, regions, splits);
+      if (splits.size() == 0) { continue; }
 
-    double weight = 1.0 / static_cast<double>(splits.size());
-    for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+      double weight = 1.0 / static_cast<double>(splits.size());
+      for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+    }
+  } else {
+    for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
+      generate_splits(i, regions, splits);
+      if (splits.size() == 0) { continue; }
+
+      double weight = 1.0 / static_cast<double>(splits.size());
+      for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+    }
   }
 }
 
