@@ -321,12 +321,14 @@ void handle_tree(std::shared_ptr<Tree> intree,
       intree->traversePreorderInternalNodesOnlyNumbers();
 
   // invert the map
+  /*
   if (config.states) {
     auto states = context.getStateResults();
     root_json["node-results"] = makeStateJsonOutput(
         states, context.stateCount(), stateGoalIndexToIdMap);
   }
   if (config.splits) { auto splits = context.getStateResults(); }
+  */
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
   std::ofstream node_tree(config.treefile + ".nodes.tre");

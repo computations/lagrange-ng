@@ -24,10 +24,7 @@
 class MakeRateMatrixOperation {
  public:
   MakeRateMatrixOperation(size_t index)
-      : _rate_matrix_index{index},
-        _period_index{0},
-        _last_execution{0},
-        _last_update{0} {}
+      : _rate_matrix_index{index}, _period_index{0} {}
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
@@ -55,28 +52,26 @@ class MakeRateMatrixOperation {
   size_t _rate_matrix_index;
   size_t _period_index;
 
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
-
-  lagrange_clock_tick_t _last_execution;
-  lagrange_clock_tick_t _last_update;
+  lagrange_clock_tick_t _last_execution = 0;
+  lagrange_clock_tick_t _last_update = 0;
 };
 
 class ExpmOperation {
  public:
-  ExpmOperation(size_t prob_matrix, double t,
-                const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
+  ExpmOperation(size_t prob_matrix, size_t rate_matrix_index, double t,
                 bool transpose)
       : _prob_matrix_index{prob_matrix},
-        _rate_matrix_index{rm_op->rate_matrix_index()},
+        _rate_matrix_index{rate_matrix_index},
         _t{t},
-        _rate_matrix_op{rm_op},
         _transposed{transpose} {}
 
-  ExpmOperation(size_t prob_matrix, double t,
-                const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
-      : ExpmOperation(prob_matrix, t, rm_op, false) {}
+  ExpmOperation(const ExpmOperation& op) {
+    _prob_matrix_index = op._prob_matrix_index;
+    _rate_matrix_index = op._rate_matrix_index;
+    _t = op._t;
+    _transposed = op._transposed;
+  }
 
-  ExpmOperation(const ExpmOperation&) = delete;
   ExpmOperation& operator=(const ExpmOperation&) = delete;
 
   void eval(const std::shared_ptr<Workspace>& ws);
@@ -88,6 +83,8 @@ class ExpmOperation {
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
+  size_t get_index() const { return _prob_matrix_index; }
+
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
@@ -97,8 +94,6 @@ class ExpmOperation {
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
   double _t;
-
-  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   /* Temp matrices for the computation of the exponential */
   std::unique_ptr<lagrange_matrix_base_t[]> _A = nullptr;
@@ -116,54 +111,8 @@ class ExpmOperation {
 
 class DispersionOperation {
  public:
-  DispersionOperation(size_t top, size_t bot, double brlen, size_t prob_matrix,
-                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
-      : _top_clv{top},
-        _bot_clv{bot},
-        _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op}} {}
-
-  DispersionOperation(size_t top, size_t bot, double brlen, size_t prob_matrix,
-                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
-                      bool transpose)
-      : _top_clv{top},
-        _bot_clv{bot},
-        _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op, transpose}} {}
-
-  DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
-                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op)
-      : _top_clv{std::numeric_limits<size_t>::max()},
-        _bot_clv{bot},
-        _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op}} {}
-
-  DispersionOperation(size_t bot, double brlen, size_t prob_matrix,
-                      const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
-                      bool transpose)
-      : _top_clv{std::numeric_limits<size_t>::max()},
-        _bot_clv{bot},
-        _prob_matrix_index{prob_matrix},
-        _expm_op{new ExpmOperation{prob_matrix, brlen, rm_op, transpose}} {}
-
-  DispersionOperation(size_t top, size_t bot,
-                      const std::shared_ptr<ExpmOperation>& op)
-      : _top_clv{top},
-        _bot_clv{bot},
-        _prob_matrix_index{op->prob_matrix()},
-        _expm_op{op} {}
-
-  DispersionOperation(size_t bot, const std::shared_ptr<ExpmOperation>& op)
-      : _top_clv{std::numeric_limits<size_t>::max()},
-        _bot_clv{bot},
-        _prob_matrix_index{op->prob_matrix()},
-        _expm_op{op} {}
-
   DispersionOperation(size_t top, size_t bot, size_t prob_matrix)
-      : _top_clv{top},
-        _bot_clv{bot},
-        _prob_matrix_index{prob_matrix},
-        _expm_op{nullptr} {}
+      : _top_clv{top}, _bot_clv{bot}, _prob_matrix_index{prob_matrix} {}
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
@@ -183,6 +132,10 @@ class DispersionOperation {
     _bot_clv = clv_index;
   }
 
+  bool is_bot_terminated() const {
+    return _bot_clv == std::numeric_limits<size_t>::max();
+  }
+
   size_t top_clv_index() const { return _top_clv; };
   size_t bot_clv_index() const { return _bot_clv; };
 
@@ -197,8 +150,6 @@ class DispersionOperation {
     return ws->last_update_clv(_bot_clv) > deadline;
   }
 
-  std::mutex& getLock() { return *_lock; }
-
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
@@ -210,47 +161,16 @@ class DispersionOperation {
   size_t _bot_clv;
   size_t _prob_matrix_index;
 
-  /* _expm_op is an owning pointer, and can be null */
-  std::shared_ptr<ExpmOperation> _expm_op;
-
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
 };
 
 class SplitOperation {
  public:
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
-                 size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
-                 double rbrlen, size_t lprob_mat, size_t rprob_mat,
-                 std::shared_ptr<MakeRateMatrixOperation> lrate_matrix,
-                 std::shared_ptr<MakeRateMatrixOperation> rrate_matrix,
                  size_t parent_clv)
       : _lbranch_clv_index{lchild_clv_top},
         _rbranch_clv_index{rchild_clv_top},
-        _parent_clv_index{parent_clv},
-        _lbranch_ops{{std::make_shared<DispersionOperation>(
-            lchild_clv_top, lchild_clv_bot, lbrlen, lprob_mat, lrate_matrix)}},
-        _rbranch_ops{{std::make_shared<DispersionOperation>(
-            rchild_clv_top, rchild_clv_bot, rbrlen, rprob_mat, rrate_matrix)}} {
-  }
-
-  SplitOperation(size_t lchild_clv_top, size_t lchild_clv_bot,
-                 size_t rchild_clv_top, size_t rchild_clv_bot, double lbrlen,
-                 double rbrlen, size_t prob_mat,
-                 std::shared_ptr<MakeRateMatrixOperation> rate_matrix,
-                 size_t parent_clv)
-      : SplitOperation(lchild_clv_top, rchild_clv_top, lchild_clv_bot,
-                       rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
-                       rate_matrix, rate_matrix, parent_clv) {}
-
-  // TODO: Fix this for periods
-  SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
-                 std::shared_ptr<DispersionOperation> r_ops)
-      : _lbranch_clv_index{l_ops->top_clv_index()},
-        _rbranch_clv_index{r_ops->top_clv_index()},
-        _parent_clv_index{parent_clv},
-        _lbranch_ops{{l_ops}},
-        _rbranch_ops{{r_ops}} {}
+        _parent_clv_index{parent_clv} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -263,22 +183,59 @@ class SplitOperation {
                           size_t tabLevel = 0) const;
 
   bool ready(const std::shared_ptr<Workspace>& ws) const {
-    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
-           _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
+    throw std::runtime_error{"Not implemented"};
+    return false;
   }
-
-  std::mutex& getLock() { return *_lock; }
 
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
   size_t _parent_clv_index;
 
-  std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
-  std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
-
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
+};
+
+class Operation {
+ public:
+  Operation(const SplitOperation& sp_op,
+            const std::vector<DispersionOperation>& left_disp_ops,
+            const std::vector<DispersionOperation>& right_disp_ops,
+            const std::vector<ExpmOperation>& expm_ops)
+      : _split_op{sp_op},
+        _lbranch_ops{left_disp_ops},
+        _rbranch_ops{right_disp_ops},
+        _expm_ops{expm_ops} {}
+
+  void eval(const std::shared_ptr<Workspace>& workspace);
+  bool ready(const std::shared_ptr<Workspace>& workspace) { return true; }
+
+  void set_split_operation(const SplitOperation& split_op) {
+    _split_op = split_op;
+  }
+
+  void add_lbranch_op(const DispersionOperation& disp_op) {
+    _lbranch_ops.push_back(disp_op);
+  }
+
+  void add_rbranch_op(const DispersionOperation& disp_op) {
+    _lbranch_ops.push_back(disp_op);
+  }
+
+  void add_expm_op(const ExpmOperation& expm_op) {
+    _expm_ops.push_back(expm_op);
+  }
+
+  size_t get_parent_clv() const { return _split_op.get_parent_clv(); }
+
+ private:
+  SplitOperation _split_op;
+
+  std::vector<DispersionOperation> _lbranch_ops;
+  std::vector<DispersionOperation> _rbranch_ops;
+
+  std::vector<ExpmOperation> _expm_ops;
+
+  lagrange_clock_tick_t _last_execution;
 };
 
 class ReverseSplitOperation {
@@ -286,31 +243,12 @@ class ReverseSplitOperation {
   ReverseSplitOperation(
       size_t bot_clv,  /* Where the result is stored*/
       size_t ltop_clv, /* Where the result of the dispop is stored */
-      size_t rtop_clv, /* Should be a _non_ reverse CLV */
-      std::shared_ptr<MakeRateMatrixOperation> rate_matrix_op,
-      size_t prob_matrix_index, size_t disp_clv_index, double brlen)
+      size_t rtop_clv  /* Should be a _non_ reverse CLV */
+      )
       : _bot_clv_index{bot_clv},
         _ltop_clv_index{ltop_clv},
         _rtop_clv_index{rtop_clv},
-        _eval_clvs{true},
-        _branch_ops{{std::make_shared<DispersionOperation>(
-            ltop_clv, disp_clv_index, brlen, prob_matrix_index,
-            rate_matrix_op)}} {}
-
-  ReverseSplitOperation(size_t bot_clv, size_t rtop_clv,
-                        std::shared_ptr<DispersionOperation> branch_op)
-      : _bot_clv_index{bot_clv},
-        _ltop_clv_index{branch_op->top_clv_index()},
-        _rtop_clv_index{rtop_clv},
-        _eval_clvs{true},
-        _branch_ops{{branch_op}} {}
-
-  ReverseSplitOperation(std::shared_ptr<DispersionOperation> branch_op)
-      : _bot_clv_index{std::numeric_limits<size_t>::max()},
-        _ltop_clv_index{std::numeric_limits<size_t>::max()},
-        _rtop_clv_index{std::numeric_limits<size_t>::max()},
-        _eval_clvs{false},
-        _branch_ops{{branch_op}} {}
+        _eval_clvs{true} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -320,29 +258,28 @@ class ReverseSplitOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
+  size_t getStableCLV() const { return _ltop_clv_index; }
+
+  bool ready(const std::shared_ptr<Workspace>& ws) const {
+    throw std::runtime_error{
+        "Ready is Not Implementd for ReverseSplitOperation"};
+  }
+
   void makeRootOperation(size_t clv_index) {
-    _branch_ops.clear();
     if (_ltop_clv_index == std::numeric_limits<size_t>::max()) {
       _ltop_clv_index = clv_index;
-    }
-    if (_rtop_clv_index == std::numeric_limits<size_t>::max()) {
+    } else if (_rtop_clv_index == std::numeric_limits<size_t>::max()) {
       _rtop_clv_index = clv_index;
     }
   }
 
-  size_t getStableCLV() const { return _ltop_clv_index; }
+  size_t getLTopCLVIndex() const { return _ltop_clv_index; }
+  size_t getRTopCLVIndex() const { return _rtop_clv_index; }
+  size_t getBotCLVIndex() const { return _bot_clv_index; }
 
-  bool ready(const std::shared_ptr<Workspace>& ws) const {
-    bool branch_ops_ready = true;
-    for (auto& op : _branch_ops) {
-      branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
-    }
+  void setLTopCLVIndex(size_t index) { _ltop_clv_index = index; }
 
-    return branch_ops_ready &&
-           (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
-  }
-
-  std::mutex& getLock() { return *_lock; }
+  void setRTopCLVIndex(size_t index) { _rtop_clv_index = index; }
 
  private:
   size_t _bot_clv_index;
@@ -350,11 +287,42 @@ class ReverseSplitOperation {
   size_t _rtop_clv_index;
   bool _eval_clvs;
 
-  std::vector<std::shared_ptr<DispersionOperation>> _branch_ops;
-  std::vector<lagrange_dist_t> _excl_dists;
-
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
+};
+
+class ReverseOperation {
+ public:
+  ReverseOperation(ReverseSplitOperation rs_op,
+                   std::vector<DispersionOperation> disp_ops,
+                   std::vector<ExpmOperation> expm_ops)
+      : _rsplit_op{rs_op}, _branch_ops{disp_ops}, _expm_ops{expm_ops} {}
+
+  void eval(const std::shared_ptr<Workspace>& ws);
+
+  void makeRootOperation(size_t clv_index) {
+    _branch_ops.clear();
+    _rsplit_op.makeRootOperation(clv_index);
+  }
+
+  void terminate_bot(size_t clv_index) {
+    _branch_ops.back().terminate_bot(clv_index);
+  }
+
+  bool is_bot_terminated() const {
+    return _branch_ops.back().is_bot_terminated();
+  }
+
+  size_t getStableCLV() const { return _rsplit_op.getStableCLV(); }
+
+  bool ready(const std::shared_ptr<Workspace>& ws) const { return true; }
+
+ private:
+  ReverseSplitOperation _rsplit_op;
+  std::vector<DispersionOperation> _branch_ops;
+
+  std::vector<ExpmOperation> _expm_ops;
+
+  lagrange_clock_tick_t _last_execution;
 };
 
 class LLHGoal {
@@ -431,11 +399,9 @@ class SplitLHGoal {
   lagrange_split_return_t _result;
 };
 
-typedef std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>
-    PeriodRateMatrixMap;
+typedef std::unordered_map<size_t, MakeRateMatrixOperation> PeriodRateMatrixMap;
 
-typedef std::unordered_map<std::pair<size_t, double>,
-                           std::shared_ptr<ExpmOperation>>
+typedef std::unordered_map<std::pair<size_t, double>, ExpmOperation>
     BranchProbMatrixMap;
 
 #endif

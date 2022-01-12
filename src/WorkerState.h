@@ -26,8 +26,7 @@ enum class WorkerMode {
 
 class WorkerContext {
  public:
-  WorkerContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
-                std::vector<std::shared_ptr<ReverseSplitOperation>>& rwb,
+  WorkerContext(std::vector<Operation>& fwb, std::vector<ReverseOperation>& rwb,
                 std::vector<LLHGoal>& lhg, std::vector<StateLHGoal>& stg,
                 std::vector<SplitLHGoal>& slg)
       : _forward_work_buffer{fwb},
@@ -36,8 +35,8 @@ class WorkerContext {
         _state_lh_work_buffer{stg},
         _split_lh_work_buffer{slg} {}
 
-  std::vector<std::shared_ptr<SplitOperation>>& _forward_work_buffer;
-  std::vector<std::shared_ptr<ReverseSplitOperation>>& _reverse_work_buffer;
+  std::vector<Operation>& _forward_work_buffer;
+  std::vector<ReverseOperation>& _reverse_work_buffer;
   std::vector<LLHGoal>& _lh_goal;
   std::vector<StateLHGoal>& _state_lh_work_buffer;
   std::vector<SplitLHGoal>& _split_lh_work_buffer;
@@ -135,20 +134,12 @@ class WorkerState {
   }
 
   template <typename T>
-  void work(std::vector<std::shared_ptr<T>>& work_buffer,
+  void work(std::vector<T>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
     for (auto w = find_work(work_buffer, workspace); w != nullptr;
          w = find_work(work_buffer, workspace)) {
-      /* We only lock on greater than 2 here because we have 2 copies of the
-       * shared pointer here. One in the vector, and one returned by value from
-       * the find_work function
-       */
-      if (w.use_count() > 2) {
-        std::lock_guard<std::mutex> lock(w->getLock());
-        w->eval(workspace);
-      } else {
-        w->eval(workspace);
-      }
+      // std::lock_guard<std::mutex> lock(w->getLock());
+      w->eval(workspace);
     }
     // end_work();
   }
@@ -190,8 +181,8 @@ class WorkerState {
   }
 
   template <typename T>
-  std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
-                               const std::shared_ptr<Workspace>& workspace) {
+  T* find_work(std::vector<T>& work_buffer,
+               const std::shared_ptr<Workspace>& workspace) {
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     /*
@@ -202,7 +193,7 @@ class WorkerState {
 
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {
-      return {};
+      return nullptr;
     }
 
     size_t local_index = _start_index;
@@ -211,11 +202,11 @@ class WorkerState {
     while (true) {
       if (local_index >= work_buffer.size()) { local_index = _start_index; }
 
-      if (work_buffer[local_index]->ready(workspace)) {
+      if (work_buffer[local_index].ready(workspace)) {
         // if (local_index != _start_index) {
         std::swap(work_buffer[local_index], work_buffer[_start_index]);
         //}
-        auto op = work_buffer[_start_index];
+        auto op = &work_buffer[_start_index];
         _start_index++;
         /*
         auto t2 = std::chrono::high_resolution_clock::now();
@@ -249,8 +240,6 @@ class WorkerState {
 
   size_t _assigned_threads;
 
-  static std::shared_ptr<SplitOperation> _forward_work_buffer;
-  static std::shared_ptr<ReverseSplitOperation> _backwards_work_buffer;
   static std::mutex _work_buffer_mutex;
   static std::mutex _io_lock;
   static std::atomic_size_t _total_threads;

@@ -31,7 +31,7 @@ void Context::registerBackwardOperations() {
 void Context::registerLHGoal() {
   if (_forward_operations.size() == 0) { registerForwardOperations(); }
 
-  auto root_clv = (*(_forward_operations.end() - 1))->get_parent_clv();
+  auto root_clv = _forward_operations.back().get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
@@ -48,8 +48,8 @@ void Context::registerStateLHGoal() {
 }
 
 void Context::updateRates(const period_t& params) {
-  _rate_matrix_op->update_rates(_workspace, params);
-  _rate_matrix_op->eval(_workspace);
+  _rate_matrix_op.update_rates(_workspace, params);
+  _rate_matrix_op.eval(_workspace);
 }
 
 void Context::init() {
@@ -57,7 +57,7 @@ void Context::init() {
   updateRates({0.01, 0.01});
 
   if (_reverse_operations.size() != 0) {
-    size_t prior_index = _reverse_operations.front()->getStableCLV();
+    size_t prior_index = _reverse_operations.front().getStableCLV();
     _workspace->set_reverse_prior(prior_index);
   }
 }
@@ -111,6 +111,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
 
+  /*
   if (states || splits) {
     std::cout << "Computing reverse operations" << std::endl;
     computeBackwardOperations(ts, tc);
@@ -123,7 +124,9 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
   if (splits) {
     std::cout << "Computing split goals" << std::endl;
     computeSplitGoal(ts, tc);
+
   }
+  */
   ts.halt_threads();
 }
 

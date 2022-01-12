@@ -255,10 +255,7 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if ((_rate_matrix_op != nullptr) &&
-      (_last_execution > _rate_matrix_op->last_update())) {
-    return;
-  }
+  if (!ws->timepoint_is_stale(_last_execution)) { return; }
 
   if (_last_execution == 0) {
     _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
@@ -337,13 +334,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_daxpy(ws->matrix_size(), c, _X_2.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrix_size(), sign * c, _X_2.get(), 1, _D.get(), 1);
 
-    /*
-    bli_gemm_ex(&BLIS_ONE, &_A, &_X_1, &BLIS_ZERO, &_X_2, blis_context,
-                blis_runtime);
-    bli_axpym_ex(&c_obj, &_X_2, &_N, blis_context, blis_runtime);
-    bli_axpym_ex(&signed_c_obj, &_X_2, &_D, blis_context, blis_runtime);
-    */
-
     i += 1;
 
     if (i > q) { break; }
@@ -357,43 +347,16 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_daxpy(ws->matrix_size(), c, _X_1.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrix_size(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
-    /*
-    bli_gemm_ex(&BLIS_ONE, &_A, &_X_2, &BLIS_ZERO, &_X_1, blis_context,
-                blis_runtime);
-    bli_axpym_ex(&c_obj, &_X_1, &_N, blis_context, blis_runtime);
-    bli_axpym_ex(&signed_c_obj, &_X_1, &_D, blis_context, blis_runtime);
-    */
-
     i += 1;
   }
 
   {
-    // int lwork = n * n;
     int info = 0;
     int *ipiv = (int *)malloc(sizeof(int) * rows);
-
-    /*
-    double *tau = (double *)malloc(sizeof(double) * n);
-    double *workspace = (double *)malloc(sizeof(double) * lwork);
-
-    LAPACK_dgeqrf(&n, &n, static_cast<double *>(bli_obj_buffer(&_D)), &lda, tau,
-                  workspace, &lwork, &info);
-
-    LAPACK_dormqr("L", "T", &n, &n, &n,
-                  static_cast<double *>(bli_obj_buffer(&_D)), &lda, tau,
-                  static_cast<double *>(bli_obj_buffer(&_N)), &lda, workspace,
-                  &lwork, &info);
-
-    LAPACK_dtrtrs("U", "N", "N", &n, &n,
-                  static_cast<double *>(bli_obj_buffer(&_D)), &lda,
-                  static_cast<double *>(bli_obj_buffer(&_N)), &lda, &info);
-                 */
 
     LAPACK_dgesv(&rows, &rows, _D.get(), &leading_dim, ipiv, _N.get(),
                  &leading_dim, &info);
 
-    // free(tau);
-    // free(workspace);
     free(ipiv);
   }
 
@@ -444,16 +407,12 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << tabs << "t: " << std::setprecision(16) << _t << "\n";
   os << tabs << "_last_execution: " << _last_execution << "\n";
-  if (_rate_matrix_op != nullptr) {
-    os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
-  } else {
-    auto &rm = ws->rate_matrix(_rate_matrix_index);
-    for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
-      os << tabs << std::setprecision(10)
-         << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
-                            ws->restricted_state_count())
-         << "\n";
-    }
+  auto &rm = ws->rate_matrix(_rate_matrix_index);
+  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
+    os << tabs << std::setprecision(10)
+       << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
+                          ws->restricted_state_count())
+       << "\n";
   }
   os << closing_line(tabs);
 }
@@ -466,14 +425,7 @@ std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (_expm_op != nullptr) {
-    if (_expm_op.use_count() > 1) {
-      std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
-      _expm_op->eval(ws);
-    } else {
-      _expm_op->eval(ws);
-    }
-  }
+  if (!ws->timepoint_is_stale(_last_execution)) { return; }
 
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed this operation, return */
@@ -510,7 +462,6 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Last Executed: " << _last_execution << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
-  if (_expm_op != nullptr) { os << _expm_op->printStatus(ws, tabLevel + 1); }
   os << "\n";
   os << closing_line(tabs);
 }
@@ -523,22 +474,7 @@ std::string DispersionOperation::printStatus(
 }
 
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  for (auto &op : _lbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
-  for (auto &op : _rbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
+  if (!ws->timepoint_is_stale(_last_execution)) { return; }
 
   auto &parent_clv = ws->clv(_parent_clv_index);
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
@@ -577,13 +513,6 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Last Executed: " << _last_execution << "\n";
 
   os << tabs << "Left Branch ops:\n";
-  if (_lbranch_ops.size() != 0) {
-    for (auto &op : _lbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
-  }
-  os << "\n" << tabs << "Right Branch ops:\n";
-  if (_rbranch_ops.size() != 0) {
-    for (auto &op : _rbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
-  }
   os << "\n";
   os << closing_line(tabs);
 }
@@ -595,16 +524,19 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
-void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  for (auto &op : _branch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
+void Operation::eval(const std::shared_ptr<Workspace> &workspace) {
+  for (auto &expm : _expm_ops) { expm.eval(workspace); }
 
+  for (auto &disp_op : _lbranch_ops) { disp_op.eval(workspace); }
+
+  for (auto &disp_op : _rbranch_ops) { disp_op.eval(workspace); }
+
+  _split_op.eval(workspace);
+
+  _last_execution = workspace->advance_clock();
+}
+
+void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_eval_clvs) {
     auto &ltop_clv = ws->clv(_ltop_clv_index);
     auto &rtop_clv = ws->clv(_rtop_clv_index);
@@ -637,20 +569,7 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << "): " << std::setprecision(10) << ws->clv_size_tuple(_rtop_clv_index)
      << "\n";
 
-  if (_excl_dists.size() != 0) {
-    os << tabs << "Excluded dists:\n";
-    for (size_t i = 0; i < _excl_dists.size(); ++i) {
-      os << tabs << _excl_dists[i] << "\n";
-    }
-  }
-
   os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
-
-  if (_branch_ops.size() != 0) {
-    os << tabs << "Branch ops:\n";
-    for (auto &op : _branch_ops) { os << op->printStatus(ws, tabLevel + 1); }
-    os << "\n";
-  }
   os << closing_line(tabs);
 }
 
@@ -659,6 +578,15 @@ std::string ReverseSplitOperation::printStatus(
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
+}
+
+void ReverseOperation::eval(const std::shared_ptr<Workspace> &ws) {
+  for (auto &expm_op : _expm_ops) { expm_op.eval(ws); }
+  for (auto &br_op : _branch_ops) { br_op.eval(ws); }
+
+  _rsplit_op.eval(ws);
+
+  _last_execution = ws->advance_clock();
 }
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {

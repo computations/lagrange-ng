@@ -221,103 +221,145 @@ std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateForwardOperations(Workspace &ws,
-                                           PeriodRateMatrixMap &rm_map,
-                                           BranchProbMatrixMap &pm_map) const {
+void Node::traverseAndGenerateForwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
+    std::vector<Operation> &out_vector) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
   }
 
+  /* Steps:
+   * 0. Check that there are children.
+   * 1. Generate Operations from Children
+   * 2. Generate Expm Ops
+   * 3. Generate Dispersion Operations from children
+   * 4. Make split operation
+   * 5. Bind into an Operation and add to vector
+   */
+
+  /* Step 0 */
   if (_children.size() == 0) {
     ws.register_top_clv(_id);
-    return {{}, generateDispersionOperations(ws, rm_map, pm_map)};
+    return;
   }
 
-  std::vector<std::shared_ptr<SplitOperation>> split_ops;
+  /* Step 1 */
+  _children[0]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map,
+                                                     out_vector);
+  _children[1]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map,
+                                                     out_vector);
 
-  auto lchild =
-      _children[0]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
-  auto rchild =
-      _children[1]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
+  /* Steps 2 & 3 */
+  std::vector<ExpmOperation> expm_ops;
+  /* First the left child */
 
-  split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
-  split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
-  split_ops.insert(split_ops.end(), rchild.first.begin(), rchild.first.end());
-
-  ws.register_top_clv(_id);
   ws.register_children_clv(_id);
-  lchild.second->terminate_top(ws.get_lchild_clv(_id));
-  rchild.second->terminate_top(ws.get_rchild_clv(_id));
+  ws.register_top_clv(_id);
 
-  split_ops.push_back(std::make_shared<SplitOperation>(
-      ws.get_top_clv(_id), lchild.second, rchild.second));
-  return {split_ops, generateDispersionOperations(ws, rm_map, pm_map)};
+  std::vector<DispersionOperation> left_disp_ops;
+  _children[0]->generateDispersionOperations(ws, rm_map, pm_map, left_disp_ops,
+                                             expm_ops);
+  left_disp_ops.back().terminate_top(getLeftCLVIndex(ws));
+
+  /* Then then right child */
+  std::vector<DispersionOperation> right_disp_ops;
+  _children[1]->generateDispersionOperations(ws, rm_map, pm_map, right_disp_ops,
+                                             expm_ops);
+  right_disp_ops.back().terminate_top(getRightCLVIndex(ws));
+
+  /* Step 4 */
+  SplitOperation sp_op(getLeftCLVIndex(ws), getRightCLVIndex(ws),
+                       getTopCLVIndex(ws));
+
+  /* Step 5 */
+  out_vector.emplace_back(sp_op, left_disp_ops, right_disp_ops, expm_ops);
 }
 
-std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateBackwardOperations(Workspace &ws,
-                                            PeriodRateMatrixMap &rm_map,
-                                            BranchProbMatrixMap &pm_map) const {
+void Node::traverseAndGenerateBackwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
+    std::vector<ReverseOperation> &out_vector) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
   }
 
-  if (_children.size() == 0) { return {{}, {}}; }
+  /* The reverse operation is just weird, and we need to generate 2 for every
+   * node we visit. One of the two children will be the "parent" node. This will
+   * generate the 2 operations that we said would be made.
+   *
+   * Steps:
+   * 0. Check if there are children.
+   * 1. Generate Expm Operations
+   * 2. Generate Disperial Operations
+   * 3. Generate Reverse Split Operation
+   * 4. Terminate Dispersal Operations
+   * 5. Generate Reverse Operations
+   */
 
-  std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
+  /* Step 1 */
+  if (_children.size() == 0) { return; }
+
+  /* Steps 2 and 3 */
+  std::vector<DispersionOperation> disp_ops;
+  std::vector<ExpmOperation> expm_ops;
 
   ws.register_top_clv_reverse(_id);
 
-  auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
+  generateDispersionOperationsReverse(ws, rm_map, pm_map, disp_ops, expm_ops);
 
+  /* Step 4 */
   ws.register_bot1_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-      ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id), disp_ops));
+  size_t dispersion_end_clv_index = disp_ops.back().top_clv_index();
+  ReverseSplitOperation rsplit_op1(ws.get_bot1_clv_reverse(_id),
+                                   dispersion_end_clv_index,
+                                   ws.get_rchild_clv(_id));
 
   ws.register_bot2_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-      ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
+  ReverseSplitOperation rsplit_op2(ws.get_bot2_clv_reverse(_id),
+                                   dispersion_end_clv_index,
+                                   ws.get_lchild_clv(_id));
+
+  out_vector.emplace_back(rsplit_op1, disp_ops, expm_ops);
+  out_vector.emplace_back(rsplit_op2, disp_ops, expm_ops);
 
   if (_children[0]->isInternal()) {
-    auto child_trav =
-        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-    auto child_disp_op = child_trav.second;
-
-    child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
-    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
-                      child_trav.first.end());
+    _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map,
+                                                        out_vector);
+    if (out_vector.back().is_bot_terminated()) {
+      out_vector.back().terminate_bot(ws.get_bot1_clv_reverse(_id));
+    }
   }
 
   if (_children[1]->isInternal()) {
-    auto child_trav =
-        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-    auto child_disp_op = child_trav.second;
-
-    child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));
-    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
-                      child_trav.first.end());
+    _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map,
+                                                        out_vector);
+    if (out_vector.back().is_bot_terminated()) {
+      out_vector.back().terminate_bot(ws.get_bot1_clv_reverse(_id));
+    }
   }
-  return {rsplit_ops, disp_ops};
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperations(
-    Workspace &ws, PeriodRateMatrixMap &rm_map,
-    BranchProbMatrixMap &pm_map) const {
-  return std::make_shared<DispersionOperation>(
-      ws.get_top_clv(_id), getProbMatrixOperation(ws, rm_map, pm_map));
+void Node::generateDispersionOperations(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
+    std::vector<DispersionOperation> &disp_ops,
+    std::vector<ExpmOperation> &expm_ops) const {
+  auto pm = getProbMatrixOperation(ws, rm_map, pm_map);
+  expm_ops.emplace_back(pm);
+  disp_ops.emplace_back(std::numeric_limits<size_t>::max(), ws.get_top_clv(_id),
+                        pm.get_index());
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
-    Workspace &ws, PeriodRateMatrixMap &rm_map,
-    BranchProbMatrixMap &pm_map) const {
-  return std::make_shared<DispersionOperation>(
-      ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
-      getProbMatrixOperation(ws, rm_map, pm_map, true));
+void Node::generateDispersionOperationsReverse(
+    Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
+    std::vector<DispersionOperation> &disp_ops,
+    std::vector<ExpmOperation> &expm_ops) const {
+  auto pm = getProbMatrixOperation(ws, rm_map, pm_map, true);
+  expm_ops.push_back(pm);
+  DispersionOperation disp_op(ws.get_top_clv_reverse(_id),
+                              std::numeric_limits<size_t>::max(),
+                              pm.get_index());
+  disp_ops.push_back(disp_op);
 }
 
 void Node::traverseAndGenerateBackwardNodeIds(std::vector<size_t> &ret) const {

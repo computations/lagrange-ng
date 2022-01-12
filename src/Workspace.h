@@ -23,6 +23,7 @@ struct matrix_reservation_t {
   lagrange_matrix_t _matrix = nullptr;
   lagrange_clock_tick_t _last_update = 0;
   lagrange_op_id_t _op_id;
+  std::unique_ptr<std::mutex> _matrix_lock;
 };
 
 struct clv_reservation_t {
@@ -88,20 +89,6 @@ class Workspace {
     _rate_matrix[index]._last_update = advance_clock();
   }
 
-  /*
-  inline void update_rate_matrix(size_t index, lagrange_matrix_t &&A) {
-    if (index >= _rate_matrix.size()) {
-      throw std::runtime_error{"Rate matrix access out of range when updating"};
-    }
-
-    if (A != _rate_matrix[index]._matrix) {
-      delete[] _rate_matrix[index]._matrix;
-      _rate_matrix[index]._matrix = A;
-    }
-    _rate_matrix[index]._last_update = advance_clock();
-  }
-  */
-
   inline void update_rate_matrix_clock(size_t i) {
     _rate_matrix[i]._last_update = advance_clock();
   }
@@ -125,22 +112,6 @@ class Workspace {
 
     return _prob_matrix[index]._last_update = advance_clock();
   }
-
-  /*
-  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
-                                                  lagrange_matrix_t &&A) {
-    if (index >= _prob_matrix.size()) {
-      throw std::runtime_error{"Prob matrix access out of range when updating"};
-    }
-
-    if (A != _prob_matrix[index]._matrix) {
-      delete[] _prob_matrix[index]._matrix;
-      _prob_matrix[index]._matrix = A;
-    }
-
-    return _prob_matrix[index]._last_update = advance_clock();
-  }
-  */
 
   inline lagrange_clock_tick_t last_update_prob_matrix(size_t i) {
     return _prob_matrix[i]._last_update;
@@ -296,6 +267,18 @@ class Workspace {
   inline size_t matrix_rows() const { return restricted_state_count(); }
 
   inline size_t clv_size() const { return restricted_state_count(); }
+
+  inline std::mutex &get_rate_matrix_lock(size_t index) {
+    return *_rate_matrix[index]._matrix_lock;
+  }
+
+  inline std::mutex &get_prob_matrix_lock(size_t index) {
+    return *_prob_matrix[index]._matrix_lock;
+  }
+
+  bool timepoint_is_stale(lagrange_clock_tick_t tick) {
+    return tick < _current_clock;
+  }
 
  private:
   inline size_t register_clv() { return _next_free_clv++; }
