@@ -112,6 +112,7 @@ class ExpmOperation {
   std::unique_ptr<std::mutex> _lock{new std::mutex};
 
   bool _transposed;
+  size_t _execution_count = 0;
 };
 
 class DispersionOperation {

@@ -123,6 +123,8 @@ class Workspace {
       _prob_matrix[index]._matrix[i] = A[i];
     }
 
+    _expm_count += 1;
+
     return _prob_matrix[index]._last_update = advance_clock();
   }
 
@@ -297,6 +299,8 @@ class Workspace {
 
   inline size_t clv_size() const { return restricted_state_count(); }
 
+  size_t expm_execution_count() const { return _expm_count; }
+
  private:
   inline size_t register_clv() { return _next_free_clv++; }
 
@@ -325,6 +329,8 @@ class Workspace {
 
   lagrange_clock_t _current_clock;
   bool _reserved;
+
+  size_t _expm_count = 0;
 };
 
 #endif

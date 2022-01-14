@@ -135,7 +135,7 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
     size_t iter = 0;
   } oc{*this, tc, ts};
 
-  nlopt::opt opt(nlopt::LN_SBPLX, 2);
+  nlopt::opt opt(nlopt::LN_NELDERMEAD, 2);
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
