@@ -78,8 +78,6 @@ class ExpmOperation {
 
   size_t prob_matrix() const { return _prob_matrix_index; }
 
-  lagrange_clock_tick_t last_execution() const { return _last_execution; }
-
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
@@ -88,9 +86,30 @@ class ExpmOperation {
   std::string printStatus(const std::shared_ptr<Workspace>& ws,
                           size_t tabLevel = 0) const;
 
-  std::mutex& getLock() { return *_lock; }
+  bool is_stale(const std::shared_ptr<Workspace>& ws) {
+    return ws->last_update_prob_matrix(_prob_matrix_index) <
+           ws->last_update_rate_matrix(_rate_matrix_index);
+  }
 
  private:
+  inline bool is_not_allocated() const {
+    return _A == nullptr && _lapack_work_buffer == nullptr && _X_1 == nullptr &&
+           _X_2 == nullptr && _N == nullptr && _D == nullptr;
+  }
+
+  void init_buffers(const std::shared_ptr<Workspace>& ws) {
+    if (!is_not_allocated()) { return; }
+
+    _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _lapack_work_buffer.reset(
+        new lagrange_matrix_base_t[ws->restricted_state_count()]);
+
+    _X_1.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _X_2.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _N.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _D.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+  }
+
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
   double _t;
@@ -102,9 +121,6 @@ class ExpmOperation {
   std::unique_ptr<lagrange_matrix_base_t[]> _N = nullptr;
   std::unique_ptr<lagrange_matrix_base_t[]> _D = nullptr;
   std::unique_ptr<lagrange_matrix_base_t[]> _lapack_work_buffer = nullptr;
-
-  lagrange_clock_tick_t _last_execution = 0;
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
 
   bool _transposed;
 };

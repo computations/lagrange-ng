@@ -255,14 +255,7 @@ std::string MakeRateMatrixOperation::printStatus(
 }
 
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (!ws->timepoint_is_stale(_last_execution)) { return; }
-
-  if (_last_execution == 0) {
-    _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _lapack_work_buffer.reset(
-        new lagrange_matrix_base_t[ws->restricted_state_count()]);
-  }
-
+  init_buffers(ws);
   int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
@@ -286,13 +279,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   constexpr int q = 3;
   double c = 0.5;
   double sign = -1.0;
-
-  if (_last_execution == 0) {
-    _X_1.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _X_2.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _N.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _D.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-  }
 
   cblas_dcopy(ws->matrix_size(), _A.get(), 1, _X_1.get(), 1);
 
@@ -381,8 +367,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   ws->update_prob_matrix(_prob_matrix_index, r1.get());
-
-  _last_execution = ws->advance_clock();
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -406,7 +390,6 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   }
 
   os << tabs << "t: " << std::setprecision(16) << _t << "\n";
-  os << tabs << "_last_execution: " << _last_execution << "\n";
   auto &rm = ws->rate_matrix(_rate_matrix_index);
   for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     os << tabs << std::setprecision(10)
@@ -474,7 +457,7 @@ std::string DispersionOperation::printStatus(
 }
 
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (!ws->timepoint_is_stale(_last_execution)) { return; }
+  // if (!ws->timepoint_is_stale(_last_execution)) { return; }
 
   auto &parent_clv = ws->clv(_parent_clv_index);
   auto &lchild_clv = ws->clv(_lbranch_clv_index);
@@ -525,7 +508,9 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void Operation::eval(const std::shared_ptr<Workspace> &workspace) {
-  for (auto &expm : _expm_ops) { expm.eval(workspace); }
+  for (auto &expm : _expm_ops) {
+    if (expm.is_stale(workspace)) { expm.eval(workspace); }
+  }
 
   for (auto &disp_op : _lbranch_ops) { disp_op.eval(workspace); }
 
