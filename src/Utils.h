@@ -78,6 +78,9 @@ size_t compute_index_from_dist(lagrange_dist_t i, size_t max_areas);
 std::string lagrange_convert_dist_string(lagrange_dist_t dist,
                                          const std::vector<std::string> &names);
 
+std::vector<std::string> lagrange_convert_dist_to_list(
+    lagrange_dist_t dist, const std::vector<std::string> &names);
+
 template <typename T>
 class lagrange_option_t {
  public:

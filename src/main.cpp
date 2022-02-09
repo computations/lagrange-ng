@@ -228,7 +228,8 @@ config_options_t parse_config(const std::string &config_filename) {
 
 nlohmann::json makeStateJsonOutput(
     const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
-    size_t states_len, const std::vector<size_t> &stateToIdMap) {
+    size_t states_len, const std::vector<size_t> &stateToIdMap,
+    const std::vector<std::string> &regionNames) {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
     nlohmann::json node_json;
@@ -243,6 +244,7 @@ nlohmann::json makeStateJsonOutput(
       tmp["llh"] = llh;
       double ratio = lwr_distribution.get()[dist];
       tmp["ratio"] = ratio;
+      tmp["regions"] = lagrange_convert_dist_to_list(dist, regionNames);
       node_json["states"].push_back(tmp);
     }
     states_json.push_back(node_json);
@@ -324,7 +326,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   if (config.states) {
     auto states = context.getStateResults();
     root_json["node-results"] = makeStateJsonOutput(
-        states, context.stateCount(), stateGoalIndexToIdMap);
+        states, context.stateCount(), stateGoalIndexToIdMap, config.areaNames);
   }
   if (config.splits) { auto splits = context.getStateResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;

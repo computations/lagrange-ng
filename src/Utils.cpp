@@ -59,6 +59,17 @@ std::string lagrange_convert_dist_string(
   return oss.str();
 }
 
+std::vector<std::string> lagrange_convert_dist_to_list(
+    lagrange_dist_t dist, const std::vector<std::string> &names) {
+  std::vector<std::string> ret;
+
+  size_t states = lagrange_clz(dist);
+  for (size_t i = 0; i < states; ++i) {
+    if (lagrange_bextr(dist, i)) { ret.push_back(names[i]); }
+  }
+  return ret;
+}
+
 /* Code for the combinations function take from phylourny with permision from
  * author.*/
 
