@@ -25,9 +25,9 @@ set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -mtune=native -march=native -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS_RELEASE "-O2 -mtune=native -march=native -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
-set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=thread")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
 
 set(OPT_LIBS nlopt)
 set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
