@@ -13,7 +13,6 @@
 #include "Operation.h"
 #include "Utils.h"
 #include "Workspace.h"
-#include "cblas.h"
 
 enum class WorkerMode {
   ComputeForward,
@@ -66,7 +65,7 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
-    openblas_set_num_threads(_assigned_threads);
+    mkl_set_num_threads(_assigned_threads);
     while (true) {
       barrier();
       if (master_thread()) {
@@ -120,7 +119,7 @@ class WorkerState {
 
   void set_assigned_threads(size_t at) { _assigned_threads = at; }
 
-  void assign_threads() const { openblas_set_num_threads(_assigned_threads); }
+  void assign_threads() const { mkl_set_num_threads(_assigned_threads); }
 
  private:
   template <typename T>

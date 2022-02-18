@@ -342,7 +342,7 @@ void setThreads(config_options_t &config) {
 }
 
 int main(int argc, char *argv[]) {
-  openblas_set_num_threads(1);
+  mkl_set_num_threads(1);
   auto start_time = std::chrono::high_resolution_clock::now();
   if (argc != 2) {
     std::cout << "you need more arguments." << std::endl;
