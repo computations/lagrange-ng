@@ -26,8 +26,9 @@ pkg_search_module(MKL mkl-dynamic-lp64-iomp)
 
 option(ENABLE_MKL "Enable MKL for linalg computations" ON)
 
-if((${MKL_FOUND} OR ${MKL_PREFIX_DIR}) AND (${ENABLE_MKL}))
+set(MKL_PREFIX_DIR CACHE STRING "")
 
+if((${MKL_FOUND} OR ${MKL_PREFIX_DIR}) AND (${ENABLE_MKL}))
   if(${MKL_FOUND})
     set(LAGRANGE_LINALG_LDFLAGS ${MKL_LDFLAGS})
     set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
