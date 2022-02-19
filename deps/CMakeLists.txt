@@ -1,12 +1,6 @@
 include(FetchContent)
-include(ExternalProject)
 
 # nlopt first
-
-#   find_library(nlopt REQUIRED
-#           NAMES nlopt libnlopt
-#           HINTS "/usr/lib/"
-#           )
 
 add_subdirectory(nlopt EXCLUDE_FROM_ALL)
 

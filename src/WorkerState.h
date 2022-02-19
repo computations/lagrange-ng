@@ -11,6 +11,7 @@
 
 #include "Common.h"
 #include "Operation.h"
+#include "Quarantine.h"
 #include "Utils.h"
 #include "Workspace.h"
 
@@ -65,7 +66,11 @@ class WorkerState {
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
+#ifdef MKL_ENABLED
     mkl_set_num_threads(_assigned_threads);
+#else
+    openblas_set_num_threads(_assigned_threads);
+#endif
     while (true) {
       barrier();
       if (master_thread()) {
@@ -119,7 +124,13 @@ class WorkerState {
 
   void set_assigned_threads(size_t at) { _assigned_threads = at; }
 
-  void assign_threads() const { mkl_set_num_threads(_assigned_threads); }
+  void assign_threads() const {
+#ifdef MKL_ENABLED
+    mkl_set_num_threads(_assigned_threads);
+#else
+    openblas_set_num_threads(_assigned_threads);
+#endif
+  }
 
  private:
   template <typename T>
