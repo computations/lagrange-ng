@@ -25,7 +25,7 @@ find_package(PkgConfig)
 pkg_search_module(MKL mkl-dynamic-lp64-iomp)
 
 option(ENABLE_MKL "Enable MKL for linalg computations" ON)
-option(MKL_PREFIX "Prefix for MKL" OFF)
+option(MKL_PREFIX "Prefix for MKL" "")
 
 if((${MKL_FOUND} OR ${MKL_PREFIX}) AND (${ENABLE_MKL}))
 
