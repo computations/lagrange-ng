@@ -28,7 +28,7 @@ option(ENABLE_MKL "Enable MKL for linalg computations" ON)
 
 set(MKL_PREFIX_DIR CACHE STRING "")
 
-if((${MKL_ENABLED} AND ${MKL_FOUND}) OR (NOT "${MKL_PREFIX_DIR}" STREQUAL ""))
+if((${ENABLE_MKL} AND ${MKL_FOUND}) OR (NOT "${MKL_PREFIX_DIR}" STREQUAL ""))
   if(${MKL_FOUND})
     set(LAGRANGE_LINALG_LDFLAGS ${MKL_LDFLAGS})
     set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
@@ -78,13 +78,13 @@ set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
 
 add_subdirectory(deps)
 
-target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
-target_include_directories(lagrange-release-libs PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
-target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} pthread
+target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
+target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LINALG_INCLUDE_DIRS})
+target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread
   ${LAGRANGE_LINALG_LDFLAGS})
-target_compile_definitions(lagrange-release-libs PRIVATE
+target_compile_definitions(lagrange-release-libs PUBLIC
   ${LAGRANGE_LINALG_COMPILE_DEFS})
-target_link_directories(lagrange-release-libs PRIVATE ${LAGRANGE_LINALG_LINK_DIRS})
+target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LINALG_LINK_DIRS})
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
