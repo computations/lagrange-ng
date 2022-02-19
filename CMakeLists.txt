@@ -25,11 +25,19 @@ find_package(PkgConfig)
 pkg_search_module(MKL mkl-dynamic-lp64-iomp)
 
 option(ENABLE_MKL "Enable MKL for linalg computations" ON)
+option(MKL_PREFIX "Prefix for MKL" OFF)
 
-if(${MKL_FOUND} AND ${ENABLE_MKL})
-  set(LAGRANGE_LINALG_LDFLAGS ${MKL_LDFLAGS})
-  set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
-  set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
+if((${MKL_FOUND} OR ${MKL_PREFIX}) AND (${ENABLE_MKL}))
+
+  if(${MKL_FOUND})
+    set(LAGRANGE_LINALG_LDFLAGS ${MKL_LDFLAGS})
+    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
+    set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
+  else()
+    set(LAGRANGE_LINALG_LDFLAGS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 m dl)
+    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_PREFIX}/include)
+    set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
+  endif()
 else()
   find_package(OpenMP REQUIRED)
   include(ExternalProject)
@@ -58,25 +66,25 @@ endif()
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
-set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
+if(${CMAKE_BUILD_TYPE} EQUAL "Release")
+  set(LAGRANGE_BUILD_FLAGS "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
+elseif(${CMAKE_BUILD_TYPE} EQUAL "Debug")
+  set(LAGRANGE_BUILD_FLAGS "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
+endif()
 
 set(OPT_LIBS nlopt)
 set(LAGRANGE_LIBS ${OPT_LIBS} nlohmann_json::nlohmann_json)
 
 add_subdirectory(deps)
 
-target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_RELEASE_FLAGS} ${WARNING_FLAGS})
+target_compile_options(lagrange-release-libs PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
 target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} pthread
   ${LAGRANGE_LINALG_LDFLAGS})
 target_compile_definitions(lagrange-release-libs PRIVATE
   ${LAGRANGE_LINALG_COMPILE_DEFS})
 
-target_compile_options(lagrange PRIVATE ${LAGRANGE_RELEASE_FLAGS} ${WARNING_FLAGS})
+target_compile_options(lagrange PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
   nlohmann_json::nlohmann_json ${LAGRANGE_LINALG_LDFLAGS})
