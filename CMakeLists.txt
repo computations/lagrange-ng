@@ -35,7 +35,8 @@ if((${MKL_FOUND} OR ${MKL_PREFIX}) AND (${ENABLE_MKL}))
     set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
   else()
     set(LAGRANGE_LINALG_LDFLAGS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 m dl)
-    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_PREFIX}/include)
+    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_PREFIX}/include/)
+    set(LAGRANGE_LINALG_LINK_DIRS ${MKL_PREFIX}/lib/)
     set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
   endif()
 else()
@@ -83,11 +84,13 @@ target_link_libraries(lagrange-release-libs PRIVATE ${LAGRANGE_LIBS} pthread
   ${LAGRANGE_LINALG_LDFLAGS})
 target_compile_definitions(lagrange-release-libs PRIVATE
   ${LAGRANGE_LINALG_COMPILE_DEFS})
+target_link_directories(lagrange-release-libs PRIVATE ${LAGRANGE_LINALG_LINK_DIRS})
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
 target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
   nlohmann_json::nlohmann_json ${LAGRANGE_LINALG_LDFLAGS})
 target_compile_definitions(lagrange PRIVATE ${LAGRANGE_LINALG_COMPILE_DEFS})
+target_link_directories(lagrange PRIVATE ${LAGRANGE_LINALG_LINK_DIRS})
 
 add_subdirectory(tests)
