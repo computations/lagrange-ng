@@ -67,9 +67,9 @@ endif()
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-if(${CMAKE_BUILD_TYPE} EQUAL "Release")
+if(${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} EQUAL "Release")
   set(LAGRANGE_BUILD_FLAGS "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-elseif(${CMAKE_BUILD_TYPE} EQUAL "Debug")
+elseif(${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} EQUAL "Debug")
   set(LAGRANGE_BUILD_FLAGS "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
 endif()
 
