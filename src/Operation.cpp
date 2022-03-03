@@ -442,7 +442,7 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   }
 
   os << tabs << "t: " << std::setprecision(16) << _t << "\n";
-  os << tabs << "_last_execution: " << _last_execution << "\n";
+  os << tabs << "_last_execution: " << _last_execution;
   if (_rate_matrix_op != nullptr) {
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
   } else {
