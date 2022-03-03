@@ -326,7 +326,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
     root_json["node-results"] = makeStateJsonOutput(
         states, context.stateCount(), stateGoalIndexToIdMap);
   }
-  if (config.splits) { auto splits = context.getStateResults(); }
+  if (config.splits) { auto splits = context.getSplitResults(); }
   // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
   std::ofstream node_tree(config.treefile + ".nodes.tre");
