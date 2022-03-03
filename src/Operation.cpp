@@ -399,18 +399,21 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   if (_transposed) {
 #ifdef MKL_ENABLED
-    mkl_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
-                  leading_dim, r2.get(), leading_dim);
+    mkl_dimatcopy('r', 't', rows, rows, 1.0, r1.get(), leading_dim,
+                  leading_dim);
+    for (int i = 0; i < rows; i++) {
+      r1.get()[ws->compute_matrix_index(i, 0)] = 0.0;
+    }
+    r1.get()[0] = 1.0;
 #else
     cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
                     leading_dim, r2.get(), leading_dim);
-#endif
-
     for (int i = 0; i < rows; i++) {
       r2.get()[ws->compute_matrix_index(i, 0)] = 0.0;
     }
     r2.get()[0] = 1.0;
     std::swap(r1, r2);
+#endif
   }
 
   ws->update_prob_matrix(_prob_matrix_index, r1.get());
