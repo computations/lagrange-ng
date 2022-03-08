@@ -30,11 +30,11 @@ inline uint64_t lagrange_bextr(lagrange_dist_t a, size_t i) {
 }
 
 inline size_t lagrange_popcount(lagrange_dist_t a) {
-  return __builtin_popcountll(a);
+  return static_cast<size_t>(__builtin_popcountll(a));
 }
 
 constexpr inline size_t lagrange_clz(lagrange_dist_t a) {
-  return __builtin_clzll(a);
+  return static_cast<size_t>(__builtin_clzll(a));
 }
 
 inline lagrange_dist_t convert_vector_to_lagrange_dist(

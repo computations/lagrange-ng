@@ -64,11 +64,11 @@ std::string lagrange_convert_dist_string(
 
 constexpr size_t factorial_table_size = 11;
 
-constexpr std::array<double, factorial_table_size> factorial_table = {
+constexpr std::array<size_t, factorial_table_size> factorial_table = {
     1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
 };
 
-constexpr inline double factorial(uint64_t i) {
+constexpr inline size_t factorial(uint64_t i) {
   if (i < factorial_table_size) { return factorial_table.at(i); }
   double f = factorial_table[factorial_table_size - 1];
   for (size_t k = factorial_table_size; k <= i; ++k) {
@@ -77,7 +77,7 @@ constexpr inline double factorial(uint64_t i) {
   return f;
 }
 
-constexpr inline double combinations(uint64_t n, uint64_t i) {
+constexpr inline size_t combinations(uint64_t n, uint64_t i) {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 

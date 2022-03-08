@@ -28,7 +28,7 @@ Node::Node()
       _comment(""),
       _children{} {}
 
-Node::Node(double bl, int innumber, const std::string &inname)
+Node::Node(double bl, size_t innumber, const std::string &inname)
     : _branch_length(bl),
       _height(0.0),
       _number(innumber),
@@ -81,7 +81,7 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
   return false;
 }
 
-std::shared_ptr<Node> Node::getChild(int c) const { return _children.at(c); }
+std::shared_ptr<Node> Node::getChild(size_t c) const { return _children.at(c); }
 
 std::string Node::getName() const { return _label; }
 

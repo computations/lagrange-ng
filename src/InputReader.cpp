@@ -63,7 +63,7 @@ std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
 
     std::vector<int> speciesdata(nareas, 0);
 
-    for (int i = 0; i < nareas; i++) {
+    for (size_t i = 0; i < nareas; i++) {
       char spot = tokens[1][i];
       if (spot == '1') speciesdata[i] = 1;
       std::cout << spot - '0';

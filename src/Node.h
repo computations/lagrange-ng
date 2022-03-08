@@ -78,7 +78,7 @@ class Node {
 
  public:
   Node();
-  Node(double bl, int number, const std::string &name);
+  Node(double bl, size_t number, const std::string &name);
   ~Node() {
     for (auto &c : _children) { c.reset(); }
   }
@@ -101,7 +101,7 @@ class Node {
   bool hasChild(std::shared_ptr<Node> test);
   bool addChild(std::shared_ptr<Node> c);
   bool removeChild(std::shared_ptr<Node> c);
-  std::shared_ptr<Node> getChild(int c) const;
+  std::shared_ptr<Node> getChild(size_t c) const;
 
   std::string getName() const;
   std::string getComment() const;

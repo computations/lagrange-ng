@@ -25,8 +25,8 @@ class InputReader {
       std::string filename, size_t max_areas);
   void checkData(const std::unordered_map<std::string, lagrange_dist_t> &,
                  const std::vector<std::shared_ptr<Tree>> &);
-  int nareas;
-  int nspecies;
+  size_t nareas;
+  size_t nspecies;
 };
 
 #endif /* INPUTREADER_H_ */

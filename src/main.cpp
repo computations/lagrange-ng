@@ -34,7 +34,7 @@ struct config_options_t {
   std::string ratematrixfile;
   std::string logfile;
 
-  int maxareas = 0;
+  size_t maxareas = 0;
 
   std::vector<double> periods;
   std::unordered_map<std::string, std::vector<std::string>> mrcas;
@@ -156,7 +156,11 @@ config_options_t parse_config(const std::string &config_filename) {
     } else if (!strcmp(tokens[0].c_str(), "includedists")) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       if (searchtokens[0].size() == 1) {
-        config.maxareas = atoi(searchtokens[0].c_str());
+        int temp = atoi(searchtokens[0].c_str());
+        if (temp < 0) {
+          throw std::invalid_argument{"include dists cannot be negative"};
+        }
+        config.maxareas = static_cast<size_t>(temp);
       } else {
         for (unsigned int j = 0; j < searchtokens.size(); j++) {
           std::vector<int> dist;
@@ -217,7 +221,7 @@ config_options_t parse_config(const std::string &config_filename) {
     } else if (!strcmp(tokens[0].c_str(), "workers")) {
       config.workers = std::stoi(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
-      config.threads_per_worker = std::stoi(tokens[1]);
+      config.threads_per_worker = static_cast<size_t>(std::stoi(tokens[1]));
     } else if (!strcmp(tokens[0].c_str(), "maxareas")) {
       config.maxareas = std::stoi(tokens[1]);
     }

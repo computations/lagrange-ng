@@ -45,7 +45,7 @@ void Tree::addInternalNode(std::shared_ptr<Node> tn) {
   _nodes.push_back(tn);
 }
 
-std::shared_ptr<Node> Tree::getExternalNode(int num) {
+std::shared_ptr<Node> Tree::getExternalNode(size_t num) {
   return _external_nodes.at(num);
 }
 
@@ -60,7 +60,7 @@ std::shared_ptr<Node> Tree::getExternalNode(std::string &name) {
   return ret;
 }
 
-std::shared_ptr<Node> Tree::getInternalNode(int num) {
+std::shared_ptr<Node> Tree::getInternalNode(size_t num) {
   return _internal_nodes.at(num);
 }
 
@@ -79,7 +79,7 @@ unsigned int Tree::getExternalNodeCount() const { return _external_node_count; }
 
 unsigned int Tree::getInternalNodeCount() const { return _internal_node_count; }
 
-std::shared_ptr<Node> Tree::getNode(int num) { return _nodes.at(num); }
+std::shared_ptr<Node> Tree::getNode(size_t num) { return _nodes.at(num); }
 
 unsigned int Tree::getNodeCount() const { return _nodes.size(); }
 

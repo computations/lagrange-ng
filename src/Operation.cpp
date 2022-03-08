@@ -92,7 +92,7 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
       dest[i] = sum;
     }
   } else {
-    for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
+    for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
       generate_splits(i, regions, splits);
       double sum = 0.0;
       for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
@@ -131,7 +131,7 @@ inline void reverse_weighted_combine(const lagrange_col_vector_t &c1,
       for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
     }
   } else {
-    for (size_t i = 0; i < states; i = next_dist(i, max_areas)) {
+    for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
       generate_splits(i, regions, splits);
       if (splits.size() == 0) { continue; }
 
@@ -187,7 +187,9 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
     for (dest_index = 0, dest_dist = 0;
          dest_dist < ws->restricted_state_count();
-         dest_dist = next_dist(dest_dist, ws->max_areas()), ++dest_index) {
+         dest_dist =
+             next_dist(dest_dist, static_cast<uint32_t>(ws->max_areas())),
+        ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
 
       /* Source is "gaining" a region, so we add */
@@ -311,7 +313,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     _D.get()[i] = 0.0;
   }
 
-  for (int i = 0; i < rows; i++) {
+  for (size_t i = 0; i < static_cast<size_t>(rows); i++) {
     _N.get()[ws->compute_matrix_index(i, i)] = 1.0;
     _D.get()[ws->compute_matrix_index(i, i)] = 1.0;
   }
@@ -374,7 +376,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   {
-    int *ipiv = (int *)malloc(sizeof(int) * rows);
+    int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
 
 #ifdef MKL_ENABLED
     LAPACKE_dgesv(CblasRowMajor, rows, rows, _D.get(), leading_dim, ipiv,
@@ -401,7 +403,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 #ifdef MKL_ENABLED
     mkl_dimatcopy('r', 't', rows, rows, 1.0, r1.get(), leading_dim,
                   leading_dim);
-    for (int i = 0; i < rows; i++) {
+    for (size_t i = 0; i < static_cast<size_t>(rows); i++) {
       r1.get()[ws->compute_matrix_index(i, 0)] = 0.0;
     }
     r1.get()[0] = 1.0;

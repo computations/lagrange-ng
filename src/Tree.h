@@ -26,8 +26,8 @@ class Tree {
   std::vector<std::shared_ptr<Node>> _nodes;
   std::vector<std::shared_ptr<Node>> _internal_nodes;
   std::vector<std::shared_ptr<Node>> _external_nodes;
-  unsigned int _internal_node_count;
-  unsigned int _external_node_count;
+  size_t _internal_node_count;
+  size_t _external_node_count;
 
   void processReRoot(std::shared_ptr<Node> node);
   void exchangeInfo(std::shared_ptr<Node> node1, std::shared_ptr<Node> node2);
@@ -66,11 +66,11 @@ class Tree {
       Workspace &ws,
       const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
 
-  std::shared_ptr<Node> getExternalNode(int num);
+  std::shared_ptr<Node> getExternalNode(size_t num);
   std::shared_ptr<Node> getExternalNode(std::string &name);
-  std::shared_ptr<Node> getInternalNode(int num);
+  std::shared_ptr<Node> getInternalNode(size_t num);
   std::shared_ptr<Node> getInternalNode(std::string &name);
-  std::shared_ptr<Node> getNode(int num);
+  std::shared_ptr<Node> getNode(size_t num);
 
   unsigned int getNodeCount() const;
   unsigned int getExternalNodeCount() const;
