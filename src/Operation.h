@@ -4,8 +4,8 @@
  * Author: Ben Bettisworth
  */
 
-#ifndef _LAGRANGE_OPERATION_H
-#define _LAGRANGE_OPERATION_H
+#ifndef LAGRANGE_OPERATION_H
+#define LAGRANGE_OPERATION_H
 
 #include <cstddef>
 #include <iostream>
@@ -184,8 +184,8 @@ class DispersionOperation {
     _bot_clv = clv_index;
   }
 
-  size_t top_clv_index() const { return _top_clv; };
-  size_t bot_clv_index() const { return _bot_clv; };
+  size_t top_clv_index() const { return _top_clv; }
+  size_t bot_clv_index() const { return _bot_clv; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;

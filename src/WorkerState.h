@@ -202,6 +202,7 @@ class WorkerState {
   template <typename T>
   std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
                                const std::shared_ptr<Workspace>& workspace) {
+    assert(work_buffer.size() != 0);
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     /*

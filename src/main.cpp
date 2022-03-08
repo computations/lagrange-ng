@@ -63,7 +63,7 @@ struct config_options_t {
   lagrange_option_t<size_t> threads_per_worker;
 };
 
-std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
+static std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
     const std::unique_ptr<lagrange_matrix_base_t[]> &states,
     size_t states_len) {
   std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
@@ -97,8 +97,8 @@ std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
   return normalized_states;
 }
 
-std::vector<std::string> grab_token(const std::string &token,
-                                    const std::string &deliminators) {
+static std::vector<std::string> grab_token(const std::string &token,
+                                           const std::string &deliminators) {
   std::vector<std::string> searchtokens;
   Tokenize(token, searchtokens, deliminators);
   for (unsigned int j = 0; j < searchtokens.size(); j++) {
@@ -107,7 +107,7 @@ std::vector<std::string> grab_token(const std::string &token,
   return searchtokens;
 }
 
-config_options_t parse_config(const std::string &config_filename) {
+static config_options_t parse_config(const std::string &config_filename) {
   config_options_t config;
 
   std::ifstream ifs(config_filename);
@@ -190,7 +190,7 @@ config_options_t parse_config(const std::string &config_filename) {
   return config;
 }
 
-nlohmann::json makeStateJsonOutput(
+static nlohmann::json makeStateJsonOutput(
     const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
     size_t states_len, const std::vector<size_t> &stateToIdMap) {
   nlohmann::json states_json;
@@ -214,15 +214,15 @@ nlohmann::json makeStateJsonOutput(
   return states_json;
 }
 
-void writeJsonToFile(const config_options_t &config,
-                     const nlohmann ::json &root_json) {
+static void writeJsonToFile(const config_options_t &config,
+                            const nlohmann ::json &root_json) {
   std::string json_filename = config.treefile + ".results.json";
   std::ofstream outfile(json_filename);
   outfile << root_json.dump();
 }
 
-void writeResultTree(const config_options_t &config,
-                     const std::shared_ptr<Tree> &tree) {
+static void writeResultTree(const config_options_t &config,
+                            const std::shared_ptr<Tree> &tree) {
   std::string result_tree_filename = config.treefile + ".results.tree";
   std::ofstream outfile(result_tree_filename);
   outfile << tree->getNewickLambda([](const Node &n) -> std::string {
@@ -242,9 +242,10 @@ void writeResultTree(const config_options_t &config,
   });
 }
 
-void handle_tree(std::shared_ptr<Tree> intree,
-                 const std::unordered_map<std::string, lagrange_dist_t> &data,
-                 const config_options_t &config) {
+static void handle_tree(
+    std::shared_ptr<Tree> intree,
+    const std::unordered_map<std::string, lagrange_dist_t> &data,
+    const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
   attributes_json["periods"] =
@@ -300,7 +301,7 @@ void handle_tree(std::shared_ptr<Tree> intree,
   });
 }
 
-void setThreads(config_options_t &config) {
+static void setThreads(config_options_t &config) {
   if (!config.workers.has_value()) { config.workers = 1; }
   if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
 }

@@ -75,7 +75,7 @@ std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
 
     try {
       data[tokens[0]] = compute_index_from_dist(dist, max_areas);
-    } catch (std::lagrange_util_dist_index_conversion_exception &e) {
+    } catch (std::lagrange_util_dist_index_conversion_exception &) {
       throw std::runtime_error(
           std::string(
               "found invalid dist when parsing the dist for species: ") +

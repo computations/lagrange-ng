@@ -31,8 +31,8 @@ inline lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
   return d;
 }
 
-std::ostream &operator<<(std::ostream &os,
-                         std::tuple<double *, size_t> vector_tuple) {
+static std::ostream &operator<<(std::ostream &os,
+                                std::tuple<double *, size_t> vector_tuple) {
   double *v;
   size_t n;
   std::tie(v, n) = vector_tuple;
@@ -424,6 +424,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->update_prob_matrix(_prob_matrix_index, r1.get());
 
   _last_execution = ws->advance_clock();
+  _execution_count += 1;
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,

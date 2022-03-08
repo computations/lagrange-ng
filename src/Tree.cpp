@@ -52,7 +52,7 @@ std::shared_ptr<Node> Tree::getExternalNode(size_t num) {
  * could precompute this, check for run time differences
  */
 std::shared_ptr<Node> Tree::getExternalNode(const std::string &name) {
-  std::shared_ptr<Node> ret = NULL;
+  std::shared_ptr<Node> ret = nullptr;
   for (unsigned int i = 0; i < _external_nodes.size(); i++) {
     if (_external_nodes.at(i)->getName() == name) ret = _external_nodes.at(i);
   }
@@ -67,7 +67,7 @@ std::shared_ptr<Node> Tree::getInternalNode(size_t num) {
  * could precompute this, check for run time differences
  */
 std::shared_ptr<Node> Tree::getInternalNode(const std::string &name) {
-  std::shared_ptr<Node> ret = NULL;
+  std::shared_ptr<Node> ret = nullptr;
   for (unsigned int i = 0; i < _internal_nodes.size(); i++) {
     if (_internal_nodes.at(i)->getName() == name) ret = _internal_nodes.at(i);
   }

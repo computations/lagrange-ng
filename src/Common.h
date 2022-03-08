@@ -3,8 +3,8 @@
  * Created On: 27 Oct 2020
  * Author: Ben Bettisworth
  */
-#ifndef LAGRANGE_COMMON_H__
-#define LAGRANGE_COMMON_H__
+#ifndef LAGRANGE_COMMON_H
+#define LAGRANGE_COMMON_H
 
 #include <atomic>
 #include <cstddef>
@@ -95,4 +95,4 @@ constexpr double lagrange_scaling_factor_log =
     177.445678223345993274051579646766185760498046875;
 /* = std::log(lagrange_scaling_factor) */
 
-#endif  // LAGRANGE_COMMON_H__
+#endif  // LAGRANGE_COMMON_H

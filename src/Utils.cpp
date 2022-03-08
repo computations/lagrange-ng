@@ -88,13 +88,13 @@ size_t lagrange_compute_restricted_state_count(size_t regions,
   return sum;
 }
 
-size_t compute_skips_power_of_2(size_t k, size_t n) {
+static size_t compute_skips_power_of_2(size_t k, size_t n) {
   size_t skips = 0;
   for (size_t i = n + 1; i < k; ++i) { skips += combinations(k - 1, i); }
   return skips;
 }
 
-size_t compute_skips(size_t i, size_t n) {
+static size_t compute_skips(size_t i, size_t n) {
   size_t skips = 0;
   while (i != 0 && n != 0) {
     size_t first_index = sizeof(i) * 8 - __builtin_clzll(i | 1);
