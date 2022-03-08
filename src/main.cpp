@@ -134,46 +134,6 @@ config_options_t parse_config(const std::string &config_filename) {
     } else if (!strcmp(tokens[0].c_str(), "areanames")) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.areaNames = searchtokens;
-    } else if (!strcmp(tokens[0].c_str(), "fixnode")) {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      std::vector<int> dist;
-      for (unsigned int j = 0; j < searchtokens[1].size(); j++) {
-        char c = (searchtokens[1].c_str())[j];
-        dist.push_back(atoi(&c));
-      }
-      config.fixnodewithmrca[searchtokens[0]] =
-          convert_vector_to_lagrange_dist(dist);
-    } else if (!strcmp(tokens[0].c_str(), "excludedists")) {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      for (unsigned int j = 0; j < searchtokens.size(); j++) {
-        std::vector<int> dist;
-        for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
-          char c = (searchtokens[j].c_str())[k];
-          dist.push_back(atoi(&c));
-        }
-        config.excludedists.push_back(convert_vector_to_lagrange_dist(dist));
-      }
-    } else if (!strcmp(tokens[0].c_str(), "includedists")) {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      if (searchtokens[0].size() == 1) {
-        int temp = atoi(searchtokens[0].c_str());
-        if (temp < 0) {
-          throw std::invalid_argument{"include dists cannot be negative"};
-        }
-        config.maxareas = static_cast<size_t>(temp);
-      } else {
-        for (unsigned int j = 0; j < searchtokens.size(); j++) {
-          std::vector<int> dist;
-          for (unsigned int k = 0; k < searchtokens[j].size(); k++) {
-            char c = (searchtokens[j].c_str())[k];
-            dist.push_back(atoi(&c));
-          }
-          config.includedists.push_back(convert_vector_to_lagrange_dist(dist));
-        }
-      }
-    } else if (!strcmp(tokens[0].c_str(), "areacolors")) {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      config.areacolors = searchtokens;
     } else if (!strcmp(tokens[0].c_str(), "periods")) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       for (unsigned int j = 0; j < searchtokens.size(); j++) {
@@ -221,7 +181,7 @@ config_options_t parse_config(const std::string &config_filename) {
     } else if (!strcmp(tokens[0].c_str(), "workers")) {
       config.workers = lagrange_parse_size_t(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
-      config.threads_per_worker = static_cast<size_t>(std::stoi(tokens[1]));
+      config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
     } else if (!strcmp(tokens[0].c_str(), "maxareas")) {
       config.maxareas = lagrange_parse_size_t(tokens[1]);
     }
@@ -283,7 +243,7 @@ void writeResultTree(const config_options_t &config,
 }
 
 void handle_tree(std::shared_ptr<Tree> intree,
-                 const std::unordered_map<std::string, lagrange_dist_t> data,
+                 const std::unordered_map<std::string, lagrange_dist_t> &data,
                  const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;

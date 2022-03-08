@@ -23,7 +23,7 @@
 
 class MakeRateMatrixOperation {
  public:
-  MakeRateMatrixOperation(size_t index)
+  explicit MakeRateMatrixOperation(size_t index)
       : _rate_matrix_index{index},
         _period_index{0},
         _last_execution{0},
@@ -306,7 +306,7 @@ class ReverseSplitOperation {
         _eval_clvs{true},
         _branch_ops{{branch_op}} {}
 
-  ReverseSplitOperation(std::shared_ptr<DispersionOperation> branch_op)
+  explicit ReverseSplitOperation(std::shared_ptr<DispersionOperation> branch_op)
       : _bot_clv_index{std::numeric_limits<size_t>::max()},
         _ltop_clv_index{std::numeric_limits<size_t>::max()},
         _rtop_clv_index{std::numeric_limits<size_t>::max()},
@@ -390,7 +390,8 @@ class StateLHGoal {
       : _parent_clv_index{other._parent_clv_index},
         _lchild_clv_index{other._lchild_clv_index},
         _rchild_clv_index{other._rchild_clv_index},
-        _result{std::move(other._result)} {}
+        _result{std::move(other._result)},
+        _states{other._states} {}
   StateLHGoal& operator=(StateLHGoal&&) = delete;
 
   void eval(const std::shared_ptr<Workspace>&);
@@ -416,6 +417,12 @@ class StateLHGoal {
 
 class SplitLHGoal {
  public:
+  SplitLHGoal(size_t parent_clv, size_t lchild_clv, size_t rchild_clv)
+      : _parent_clv_index{parent_clv},
+        _lchild_clv_index{lchild_clv},
+        _rchild_clv_index{rchild_clv},
+        _result{} {}
+
   void eval(const std::shared_ptr<Workspace>&);
 
   inline lagrange_split_return_t result() const { return _result; }

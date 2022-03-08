@@ -23,6 +23,7 @@ Node::Node()
     : _branch_length(0.0),
       _height(0.0),
       _number(0),
+      _id(0),
       _period(0),
       _label(""),
       _comment(""),
@@ -32,6 +33,8 @@ Node::Node(double bl, size_t innumber, const std::string &inname)
     : _branch_length(bl),
       _height(0.0),
       _number(innumber),
+      _id(0),
+      _period(0),
       _label(inname),
       _comment(""),
       _children{} {}
@@ -224,8 +227,8 @@ std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
 std::pair<std::vector<std::shared_ptr<SplitOperation>>,
           std::shared_ptr<DispersionOperation>>
 Node::traverseAndGenerateForwardOperations(Workspace &ws,
-                                           PeriodRateMatrixMap &rm_map,
-                                           BranchProbMatrixMap &pm_map) const {
+                                           PeriodRateMatrixMap &pm_map,
+                                           BranchProbMatrixMap &bm_map) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -233,15 +236,15 @@ Node::traverseAndGenerateForwardOperations(Workspace &ws,
 
   if (_children.size() == 0) {
     ws.register_top_clv(_id);
-    return {{}, generateDispersionOperations(ws, rm_map, pm_map)};
+    return {{}, generateDispersionOperations(ws, pm_map, bm_map)};
   }
 
   std::vector<std::shared_ptr<SplitOperation>> split_ops;
 
   auto lchild =
-      _children[0]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
+      _children[0]->traverseAndGenerateForwardOperations(ws, pm_map, bm_map);
   auto rchild =
-      _children[1]->traverseAndGenerateForwardOperations(ws, rm_map, pm_map);
+      _children[1]->traverseAndGenerateForwardOperations(ws, pm_map, bm_map);
 
   split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
   split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
@@ -254,14 +257,14 @@ Node::traverseAndGenerateForwardOperations(Workspace &ws,
 
   split_ops.push_back(std::make_shared<SplitOperation>(
       ws.get_top_clv(_id), lchild.second, rchild.second));
-  return {split_ops, generateDispersionOperations(ws, rm_map, pm_map)};
+  return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
 std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
           std::shared_ptr<DispersionOperation>>
 Node::traverseAndGenerateBackwardOperations(Workspace &ws,
-                                            PeriodRateMatrixMap &rm_map,
-                                            BranchProbMatrixMap &pm_map) const {
+                                            PeriodRateMatrixMap &pm_map,
+                                            BranchProbMatrixMap &bm_map) const {
   if (_children.size() != 2 && _children.size() != 0) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -273,7 +276,7 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   ws.register_top_clv_reverse(_id);
 
-  auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
+  auto disp_ops = generateDispersionOperationsReverse(ws, pm_map, bm_map);
 
   ws.register_bot1_clv_reverse(_id);
   rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
@@ -285,7 +288,7 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   if (_children[0]->isInternal()) {
     auto child_trav =
-        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
+        _children[0]->traverseAndGenerateBackwardOperations(ws, pm_map, bm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
@@ -295,7 +298,7 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   if (_children[1]->isInternal()) {
     auto child_trav =
-        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
+        _children[1]->traverseAndGenerateBackwardOperations(ws, pm_map, bm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));

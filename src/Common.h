@@ -81,8 +81,10 @@ typedef double lagrange_float_t;
 typedef lagrange_float_t lagrange_matrix_base_t;
 
 typedef lagrange_matrix_base_t* lagrange_matrix_t;
+typedef lagrange_matrix_base_t const* const lagrange_const_matrix_t;
 typedef lagrange_matrix_base_t* lagrange_complex_matrix_t;
 typedef lagrange_matrix_base_t* lagrange_col_vector_t;
+typedef lagrange_matrix_base_t const* const lagrange_const_col_vector_t;
 typedef lagrange_matrix_base_t* lagrange_complex_col_vector_t;
 
 constexpr double lagrange_scaling_factor = 0x1p256;

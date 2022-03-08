@@ -45,7 +45,7 @@ class WorkerContext {
 
 class WorkerState {
  public:
-  WorkerState() : _tid{_total_threads++} {}
+  WorkerState() : _tid{_total_threads++}, _assigned_threads{0} {}
 
   WorkerState(const WorkerState&) = delete;
   WorkerState& operator=(const WorkerState&) = delete;
@@ -53,6 +53,7 @@ class WorkerState {
   WorkerState(WorkerState&& ts) { *this = std::move(ts); }
   WorkerState& operator=(WorkerState&& ts) {
     _tid = ts._tid;
+    _assigned_threads = ts._assigned_threads;
     ++_total_threads;
     return *this;
   }

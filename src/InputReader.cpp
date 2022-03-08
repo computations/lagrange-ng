@@ -37,7 +37,6 @@ void InputReader::readMultipleTreeFile(
 std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
     std::string filename, size_t max_areas) {
   std::ifstream ifs(filename.c_str());
-  std::string temp;
   nareas = 0;
   nspecies = 0;
   std::unordered_map<std::string, size_t> data;

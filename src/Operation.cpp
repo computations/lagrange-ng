@@ -68,11 +68,11 @@ inline void generate_splits(uint64_t state, size_t regions,
   }
 }
 
-inline void weighted_combine(const lagrange_col_vector_t &c1,
-                             const lagrange_col_vector_t &c2, size_t states,
-                             size_t max_areas, lagrange_col_vector_t dest,
-                             size_t c1_scale, size_t c2_scale,
-                             size_t &scale_count) {
+inline void weighted_combine(const lagrange_const_col_vector_t &c1,
+                             const lagrange_const_col_vector_t &c2,
+                             size_t states, size_t max_areas,
+                             lagrange_col_vector_t dest, size_t c1_scale,
+                             size_t c2_scale, size_t &scale_count) {
   size_t regions = lagrange_fast_log2(states);
 
   bool scale = true;
@@ -114,8 +114,8 @@ inline void weighted_combine(const lagrange_col_vector_t &c1,
   }
 }
 
-inline void reverse_weighted_combine(const lagrange_col_vector_t &c1,
-                                     const lagrange_col_vector_t &c2,
+inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
+                                     const lagrange_const_col_vector_t &c2,
                                      size_t states, size_t max_areas,
                                      lagrange_col_vector_t dest) {
   size_t regions = lagrange_fast_log2(states);
@@ -234,7 +234,7 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << " update: " << ws->last_update_rate_matrix(_rate_matrix_index)
      << "):\n";
 
-  auto &rm = ws->rate_matrix(_rate_matrix_index);
+  const auto &rm = ws->rate_matrix(_rate_matrix_index);
 
   for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     os << tabs << std::setprecision(10)
@@ -434,7 +434,7 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << " update: " << ws->last_update_prob_matrix(_prob_matrix_index)
      << "):\n";
 
-  auto &pm = ws->prob_matrix(_prob_matrix_index);
+  const auto &pm = ws->prob_matrix(_prob_matrix_index);
 
   for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
     os << tabs << std::setprecision(10)
@@ -541,9 +541,9 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
   }
 
-  auto &parent_clv = ws->clv(_parent_clv_index);
-  auto &lchild_clv = ws->clv(_lbranch_clv_index);
-  auto &rchild_clv = ws->clv(_rbranch_clv_index);
+  const auto &parent_clv = ws->clv(_parent_clv_index);
+  const auto &lchild_clv = ws->clv(_lbranch_clv_index);
+  const auto &rchild_clv = ws->clv(_rbranch_clv_index);
 
   weighted_combine(
       lchild_clv, rchild_clv, ws->restricted_state_count(), ws->max_areas(),
@@ -709,9 +709,9 @@ bool StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> ret;
 
-  auto &parent_clv = ws->clv(_parent_clv_index);
-  auto &lchild_clv = ws->clv(_lchild_clv_index);
-  auto &rchild_clv = ws->clv(_rchild_clv_index);
+  const auto &parent_clv = ws->clv(_parent_clv_index);
+  const auto &lchild_clv = ws->clv(_lchild_clv_index);
+  const auto &rchild_clv = ws->clv(_rchild_clv_index);
 
   std::vector<lagrange_region_split_t> splits;
 

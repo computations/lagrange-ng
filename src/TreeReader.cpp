@@ -27,7 +27,8 @@ enum lexeme_type_t {
 
 class lexer_t {
  public:
-  lexer_t(std::string input) : _input{std::move(input)}, _current_index{0} {};
+  explicit lexer_t(std::string input)
+      : _input{std::move(input)}, _current_index{0} {};
 
   lexeme_type_t consume();
   lexeme_type_t peak();
@@ -212,7 +213,7 @@ lexeme_type_t lexer_t::consume() {
 
 class parser_t {
  public:
-  parser_t(std::string input) : _lexer{std::move(input)} {};
+  explicit parser_t(std::string input) : _lexer{std::move(input)} {};
   std::shared_ptr<Tree> parse() { return parse_tree(); }
 
  private:

@@ -23,7 +23,6 @@ Tree::Tree(std::shared_ptr<Node> inroot)
       _external_nodes{},
       _internal_node_count(0),
       _external_node_count(0) {
-  _root = inroot;
   processRoot();
   _root->assignId();
   for (unsigned int i = 0; i < getNodeCount(); i++) {
@@ -52,7 +51,7 @@ std::shared_ptr<Node> Tree::getExternalNode(size_t num) {
 /*
  * could precompute this, check for run time differences
  */
-std::shared_ptr<Node> Tree::getExternalNode(std::string &name) {
+std::shared_ptr<Node> Tree::getExternalNode(const std::string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _external_nodes.size(); i++) {
     if (_external_nodes.at(i)->getName() == name) ret = _external_nodes.at(i);
@@ -67,7 +66,7 @@ std::shared_ptr<Node> Tree::getInternalNode(size_t num) {
 /*
  * could precompute this, check for run time differences
  */
-std::shared_ptr<Node> Tree::getInternalNode(std::string &name) {
+std::shared_ptr<Node> Tree::getInternalNode(const std::string &name) {
   std::shared_ptr<Node> ret = NULL;
   for (unsigned int i = 0; i < _internal_nodes.size(); i++) {
     if (_internal_nodes.at(i)->getName() == name) ret = _internal_nodes.at(i);
@@ -163,7 +162,7 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
   }
 }
 
-std::shared_ptr<Node> Tree::getMRCA(std::vector<std::string> outgroup) {
+std::shared_ptr<Node> Tree::getMRCA(const std::vector<std::string> &outgroup) {
   if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
   std::shared_ptr<Node> mcra;
   std::vector<std::shared_ptr<Node>> outgroup_nodes;
@@ -173,7 +172,7 @@ std::shared_ptr<Node> Tree::getMRCA(std::vector<std::string> outgroup) {
 }
 
 std::shared_ptr<Node> Tree::getMRCA(
-    std::vector<std::shared_ptr<Node>> outgroup) {
+    const std::vector<std::shared_ptr<Node>> &outgroup) {
   return getMRCAWithNode(_root, outgroup);
 }
 

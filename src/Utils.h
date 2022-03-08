@@ -54,7 +54,7 @@ constexpr inline size_t lagrange_fast_log2(size_t x) {
 }
 
 inline lagrange_dist_t lagrange_compute_best_dist(
-    const lagrange_col_vector_t &dist_lhs, size_t states) {
+    const lagrange_const_col_vector_t &dist_lhs, size_t states) {
   lagrange_dist_t best_dist = 0;
 
   double best_lh = dist_lhs[0];
@@ -84,7 +84,13 @@ template <typename T>
 class lagrange_option_t {
  public:
   lagrange_option_t() : _has_value{false} {}
-  lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
+  explicit lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
+
+  T &operator=(const T &v) {
+    _value = v;
+    _has_value = true;
+    return _value;
+  }
 
   T &get() {
     if (_has_value) { return _value; }

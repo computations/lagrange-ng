@@ -76,7 +76,8 @@ class Workspace {
     return _rate_matrix[i]._matrix;
   }
 
-  inline void update_rate_matrix(size_t index, const lagrange_matrix_t &A) {
+  inline void update_rate_matrix(size_t index,
+                                 const lagrange_const_matrix_t &A) {
     if (index >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range when updating"};
     }
@@ -113,8 +114,8 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
-                                                  const lagrange_matrix_t &A) {
+  inline lagrange_clock_tick_t update_prob_matrix(
+      size_t index, const lagrange_const_matrix_t &A) {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -159,7 +160,7 @@ class Workspace {
     return _clvs[i]._clv;
   }
 
-  inline void update_clv(const lagrange_col_vector_t &clv, size_t index) {
+  inline void update_clv(const lagrange_const_col_vector_t &clv, size_t index) {
     if (index >= clv_count()) {
       throw std::runtime_error{"CLV access out of range"};
     }

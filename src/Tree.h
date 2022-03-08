@@ -39,7 +39,7 @@ class Tree {
 
  public:
   Tree();
-  Tree(std::shared_ptr<Node> root);
+  explicit Tree(std::shared_ptr<Node> root);
 
   void addExternalNode(std::shared_ptr<Node> tn);
   void addInternalNode(std::shared_ptr<Node> tn);
@@ -67,9 +67,9 @@ class Tree {
       const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
 
   std::shared_ptr<Node> getExternalNode(size_t num);
-  std::shared_ptr<Node> getExternalNode(std::string &name);
+  std::shared_ptr<Node> getExternalNode(const std::string &name);
   std::shared_ptr<Node> getInternalNode(size_t num);
-  std::shared_ptr<Node> getInternalNode(std::string &name);
+  std::shared_ptr<Node> getInternalNode(const std::string &name);
   std::shared_ptr<Node> getNode(size_t num);
 
   unsigned int getNodeCount() const;
@@ -82,8 +82,9 @@ class Tree {
   void tritomyRoot(std::shared_ptr<Node> toberoot);
   void processRoot();
 
-  std::shared_ptr<Node> getMRCA(std::vector<std::string> innodes);
-  std::shared_ptr<Node> getMRCA(std::vector<std::shared_ptr<Node>> innodes);
+  std::shared_ptr<Node> getMRCA(const std::vector<std::string> &innodes);
+  std::shared_ptr<Node> getMRCA(
+      const std::vector<std::shared_ptr<Node>> &innodes);
 
   double getLongestPathRootToTip() const;
   std::shared_ptr<Node> getParent(std::shared_ptr<Node> n) const;

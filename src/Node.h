@@ -42,7 +42,7 @@ class Node {
   std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
 
   std::shared_ptr<MakeRateMatrixOperation> getRateMatrixOperation(
-      Workspace &ws, PeriodRateMatrixMap &rm_map) const {
+      const Workspace &ws, PeriodRateMatrixMap &rm_map) const {
     auto it = rm_map.find(_period);
     if (it == rm_map.end()) {
       auto rm = std::make_shared<MakeRateMatrixOperation>(
