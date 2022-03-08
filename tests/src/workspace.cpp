@@ -7,6 +7,7 @@
 
 TEST(Workspace, simple0) {
   constexpr size_t regions = 3;
+  constexpr size_t states = 1 << regions;
   Workspace ws(10, regions, regions);
 
   ws.reserve();
@@ -22,7 +23,6 @@ TEST(Workspace, simple0) {
 
 TEST(Workspace, simple1) {
   constexpr size_t regions = 3;
-  constexpr size_t states = 1 << regions;
   Workspace ws(10, regions, regions);
   size_t clv_index = ws.register_generic_clv();
   ws.reserve();
