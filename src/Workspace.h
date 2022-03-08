@@ -7,6 +7,7 @@
 #ifndef LAGRANGE_WORKSPACE_H
 #define LAGRANGE_WORKSPACE_H
 
+#include <cassert>
 #include <cstddef>
 #include <limits>
 #include <mutex>
@@ -67,9 +68,13 @@ class Workspace {
 
   ~Workspace();
 
-  inline size_t &clv_scalar(size_t i) { return _clv_scalars[i]; }
+  inline size_t &clv_scalar(size_t i) {
+    assert(_reserved);
+    return _clv_scalars[i];
+  }
 
   inline lagrange_matrix_t &rate_matrix(size_t i) {
+    assert(_reserved);
     if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range"};
     }
@@ -78,6 +83,7 @@ class Workspace {
 
   inline void update_rate_matrix(size_t index,
                                  const lagrange_const_matrix_t &A) {
+    assert(_reserved);
     if (index >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range when updating"};
     }
@@ -104,10 +110,12 @@ class Workspace {
   */
 
   inline void update_rate_matrix_clock(size_t i) {
+    assert(_reserved);
     _rate_matrix[i]._last_update = advance_clock();
   }
 
   inline lagrange_matrix_t &prob_matrix(size_t i) {
+    assert(_reserved);
     if (i >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range"};
     }
@@ -146,14 +154,17 @@ class Workspace {
   */
 
   inline lagrange_clock_tick_t last_update_prob_matrix(size_t i) {
+    assert(_reserved);
     return _prob_matrix[i]._last_update;
   }
 
   inline lagrange_clock_tick_t last_update_rate_matrix(size_t i) {
+    assert(_reserved);
     return _rate_matrix[i]._last_update;
   }
 
   inline const lagrange_col_vector_t &clv(size_t i) {
+    assert(_reserved);
     if (i >= clv_count()) {
       throw std::runtime_error{"CLV access out of range"};
     }
@@ -274,6 +285,7 @@ class Workspace {
   }
 
   inline void set_reverse_prior(size_t index) {
+    assert(_reserved);
     if (index >= _clvs.size()) {
       throw std::runtime_error{
           "Attempting to access a clv that doesn't exist when setting a "

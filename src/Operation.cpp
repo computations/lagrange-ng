@@ -4,7 +4,9 @@
  * 2020-10-27
  */
 
+#undef NDEBUG
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <iomanip>
@@ -45,6 +47,7 @@ std::ostream &operator<<(std::ostream &os,
 
 inline void generate_splits(uint64_t state, size_t regions,
                             std::vector<lagrange_region_split_t> &results) {
+  assert(regions > 0);
   results.clear();
   uint64_t valid_region_mask = (1ull << regions) - 1;
   if (state == 0) { return; }
@@ -89,6 +92,7 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
                              size_t states, size_t max_areas,
                              lagrange_col_vector_t dest, size_t c1_scale,
                              size_t c2_scale, size_t &scale_count) {
+  assert(states != 0);
   size_t regions = lagrange_fast_log2(states);
 
   bool scale = true;
@@ -130,6 +134,7 @@ inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
                                      const lagrange_const_col_vector_t &c2,
                                      size_t states, size_t max_areas,
                                      lagrange_col_vector_t dest) {
+  assert(states != 0);
   size_t regions = lagrange_fast_log2(states);
 
   std::vector<lagrange_region_split_t> splits;
@@ -221,6 +226,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
     for (size_t j = 0; j < ws->restricted_state_count(); j++) {
       sum += rm[ws->compute_matrix_index(i, j)];
     }
+    assert(sum >= 0);
     rm[ws->compute_matrix_index(i, i)] = -sum;
   }
 
@@ -273,6 +279,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
         new lagrange_matrix_base_t[ws->restricted_state_count()]);
   }
 
+  int ret = 0;
   int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
@@ -289,10 +296,12 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   double inf_norm = LAPACK_dlange("I", &rows, &rows, _A.get(), &leading_dim,
                                   _lapack_work_buffer.get());
 #endif
+  assert(inf_norm > 0.0);
   int At_norm = static_cast<int>(inf_norm * _t);
   int scale_exp = std::min(30, std::max(0, 1 + At_norm));
 
   double Ascal = _t / std::pow(2.0, scale_exp);
+  assert(Ascal > 0.0);
   cblas_dscal(ws->matrix_size(), Ascal, _A.get(), 1);
 
   // q is a magic parameter that controls the number of iterations of the loop
@@ -349,13 +358,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_daxpy(ws->matrix_size(), c, _X_2.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrix_size(), sign * c, _X_2.get(), 1, _D.get(), 1);
 
-    /*
-    bli_gemm_ex(&BLIS_ONE, &_A, &_X_1, &BLIS_ZERO, &_X_2, blis_context,
-                blis_runtime);
-    bli_axpym_ex(&c_obj, &_X_2, &_N, blis_context, blis_runtime);
-    bli_axpym_ex(&signed_c_obj, &_X_2, &_D, blis_context, blis_runtime);
-    */
-
     i += 1;
 
     if (i > q) { break; }
@@ -369,26 +371,22 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_daxpy(ws->matrix_size(), c, _X_1.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrix_size(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
-    /*
-    bli_gemm_ex(&BLIS_ONE, &_A, &_X_2, &BLIS_ZERO, &_X_1, blis_context,
-                blis_runtime);
-    bli_axpym_ex(&c_obj, &_X_1, &_N, blis_context, blis_runtime);
-    bli_axpym_ex(&signed_c_obj, &_X_1, &_D, blis_context, blis_runtime);
-    */
-
     i += 1;
   }
 
   {
     int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
+    assert(ipiv != nullptr);
 
 #ifdef MKL_ENABLED
-    LAPACKE_dgesv(CblasRowMajor, rows, rows, _D.get(), leading_dim, ipiv,
-                  _N.get(), leading_dim);
+    ret = LAPACKE_dgesv(CblasRowMajor, rows, rows, _D.get(), leading_dim, ipiv,
+                        _N.get(), leading_dim);
+    assert(ret == 0);
 #else
     int info = 0;
     LAPACK_dgesv(&rows, &rows, _D.get(), &leading_dim, ipiv, _N.get(),
                  &leading_dim, &info);
+    assert(info == 0);
 #endif
 
     free(ipiv);
@@ -412,8 +410,9 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
     r1.get()[0] = 1.0;
 #else
-    cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
-                    leading_dim, r2.get(), leading_dim);
+    ret = cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
+                          leading_dim, r2.get(), leading_dim);
+    assert(ret == 0);
     for (int i = 0; i < rows; i++) {
       r2.get()[ws->compute_matrix_index(i, 0)] = 0.0;
     }
@@ -670,6 +669,7 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   double rho =
       cblas_ddot(ws->restricted_state_count(), ws->clv(_root_clv_index), 1,
                  ws->get_base_frequencies(_prior_index), 1);
+  assert(rho > 0.0);
   _result = std::log(rho) -
             lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
 
