@@ -173,12 +173,6 @@ void Tree::postOrderProcessRoot(std::shared_ptr<Node> node) {
   }
 }
 
-void Tree::pruneExternalNode(std::shared_ptr<Node> node) {
-  if (node->isInternal()) { return; }
-  _root->pruneNode(node);
-  processRoot();
-}
-
 /*
  * end private
  */

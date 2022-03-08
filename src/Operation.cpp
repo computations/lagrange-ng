@@ -158,24 +158,23 @@ inline std::string make_tabs(size_t tabLevel) {
   return tabs.str();
 }
 
-inline std::string opening_line(const std::string &tabs) {
+inline std::string boarder_line(const std::string &tabs,
+                                const std::string &corner_char) {
   std::ostringstream line;
 
-  line << tabs.substr(0, tabs.size() - 2) << "┌";
+  line << tabs.substr(0, tabs.size() - 2) << corner_char;
   size_t cur_len = line.str().size();
   for (size_t i = 0; i < (80 - cur_len); ++i) { line << "─"; }
 
   return line.str();
 }
 
+inline std::string opening_line(const std::string &tabs) {
+  return boarder_line(tabs, "┌");
+}
+
 inline std::string closing_line(const std::string &tabs) {
-  std::ostringstream line;
-
-  line << tabs.substr(0, tabs.size() - 2) << "└";
-  size_t cur_len = line.str().size();
-  for (size_t i = 0; i < (80 - cur_len); ++i) { line << "─"; }
-
-  return line.str();
+  return boarder_line(tabs, "└");
 }
 
 void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
@@ -527,23 +526,22 @@ std::string DispersionOperation::printStatus(
   return os.str();
 }
 
+static inline void eval_branch_ops(
+    const std::vector<std::shared_ptr<DispersionOperation>> &branch_ops,
+    const std::shared_ptr<Workspace> &ws) {
+  for (auto &op : branch_ops) {
+    if (op.use_count() > 1) {
+      std::lock_guard<std::mutex> lock(op->getLock());
+      op->eval(ws);
+    } else {
+      op->eval(ws);
+    }
+  }
+}
+
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  for (auto &op : _lbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
-  for (auto &op : _rbranch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
+  eval_branch_ops(_lbranch_ops, ws);
+  eval_branch_ops(_rbranch_ops, ws);
 
   const auto &parent_clv = ws->clv(_parent_clv_index);
   const auto &lchild_clv = ws->clv(_lbranch_clv_index);
@@ -601,14 +599,7 @@ std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  for (auto &op : _branch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
-  }
+  eval_branch_ops(_branch_ops, ws);
 
   if (_eval_clvs) {
     auto &ltop_clv = ws->clv(_ltop_clv_index);

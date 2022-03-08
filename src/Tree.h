@@ -7,8 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef TREE_H_
-#define TREE_H_
+#ifndef TREE_H
+#define TREE_H
 
 #include <cstddef>
 #include <string>

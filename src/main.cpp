@@ -221,6 +221,7 @@ static void writeJsonToFile(const config_options_t &config,
   outfile << root_json.dump();
 }
 
+#if 0
 static void writeResultTree(const config_options_t &config,
                             const std::shared_ptr<Tree> &tree) {
   std::string result_tree_filename = config.treefile + ".results.tree";
@@ -241,6 +242,7 @@ static void writeResultTree(const config_options_t &config,
     return n.getName();
   });
 }
+#endif
 
 static void handle_tree(
     std::shared_ptr<Tree> intree,
@@ -292,7 +294,6 @@ static void handle_tree(
         states, context.stateCount(), stateGoalIndexToIdMap);
   }
   if (config.splits) { auto splits = context.getSplitResults(); }
-  // std::cout << context.treeCLVStatus() << std::endl;
   writeJsonToFile(config, root_json);
   std::ofstream node_tree(config.treefile + ".nodes.tre");
 

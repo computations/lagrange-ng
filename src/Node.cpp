@@ -159,23 +159,6 @@ void Node::setHeightRecursive() {
   for (auto &c : _children) { c->setHeightRecursive(); }
 }
 
-void Node::pruneNode(std::shared_ptr<Node> n) {
-  for (auto it = _children.begin(); it != _children.end(); ++it) {
-    if (*it == n) {
-      _children.erase(it);
-      if (_children.size() == 1) {
-        auto child = _children[0];
-        double tmp_branch_length = _branch_length + child->_branch_length;
-        (*this) = *child;
-        _branch_length = tmp_branch_length;
-        setHeightRecursive();
-      }
-      return;
-    }
-  }
-  for (auto &c : _children) { c->pruneNode(n); }
-}
-
 std::shared_ptr<Node> getMRCAWithNode(
     const std::shared_ptr<Node> &current,
     const std::vector<std::shared_ptr<Node>> &leaves) {

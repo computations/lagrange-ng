@@ -7,8 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef INPUTREADER_COPPER_H_
-#define INPUTREADER_COPPER_H_
+#ifndef INPUTREADER_COPPER_H
+#define INPUTREADER_COPPER_H
 
 #include <string>
 #include <unordered_map>

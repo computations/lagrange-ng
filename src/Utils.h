@@ -7,8 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <stdexcept>
 #include <string>

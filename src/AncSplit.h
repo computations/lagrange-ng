@@ -16,8 +16,8 @@
   calculating the likeklihood.
  */
 
-#ifndef ANCSPLIT_H_
-#define ANCSPLIT_H_
+#ifndef ANCSPLIT_H
+#define ANCSPLIT_H
 
 #include <unordered_map>
 #include <vector>

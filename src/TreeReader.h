@@ -7,8 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef TREE_READER_H_
-#define TREE_READER_H_
+#ifndef TREE_READER_H
+#define TREE_READER_H
 
 #include <string>
 #include <vector>

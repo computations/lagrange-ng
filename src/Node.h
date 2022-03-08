@@ -7,8 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef NODE_H
+#define NODE_H
 
 #include <functional>
 #include <map>
@@ -136,7 +136,6 @@ class Node {
   double getMaxHeight() const;
   void setHeightRecursive(double height);
   void setHeightRecursive();
-  void pruneNode(std::shared_ptr<Node> n);
 
   friend std::shared_ptr<Node> getParentWithNode(
       const std::shared_ptr<Node> &current, const std::shared_ptr<Node> &n);
