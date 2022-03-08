@@ -39,8 +39,6 @@ Node::Node(double bl, size_t innumber, const std::string &inname)
       _comment(""),
       _children{} {}
 
-std::vector<std::shared_ptr<Node>> Node::getChildren() { return _children; }
-
 bool Node::isExternal() const { return _children.size() == 0; }
 
 bool Node::isInternal() const { return _children.size() != 0; }
@@ -90,8 +88,6 @@ std::string Node::getName() const { return _label; }
 
 void Node::setName(const std::string &s) { _label = s; }
 
-std::string Node::getComment() const { return _comment; }
-
 void Node::setComment(const std::string &s) { _comment = s; }
 
 std::string Node::getNewick() const {
@@ -140,10 +136,6 @@ std::string Node::getStochString() const { return _stoch_string; }
 
 void Node::initExclDistVector() {
   _excluded_dists = std::make_shared<std::vector<lagrange_dist_t>>();
-}
-
-std::shared_ptr<std::vector<lagrange_dist_t>> &Node::getExclDistVector() {
-  return _excluded_dists;
 }
 
 double Node::getMaxHeightRecursive() const {
@@ -321,13 +313,6 @@ std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
   return std::make_shared<DispersionOperation>(
       ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
       getProbMatrixOperation(ws, rm_map, pm_map, true));
-}
-
-void Node::traverseAndGenerateBackwardNodeIds(std::vector<size_t> &ret) const {
-  ret.push_back(_id);
-  for (auto &c : _children) {
-    c->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
-  }
 }
 
 void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(

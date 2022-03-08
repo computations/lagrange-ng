@@ -72,10 +72,6 @@ void Context::registerTipClvs(
   _tree->assignTipData(*_workspace, dist_data);
 }
 
-void Context::computeForwardOperations(WorkerState& ts, WorkerContext& tc) {
-  ts.work(WorkerMode::ComputeForward, tc, _workspace);
-}
-
 void Context::computeBackwardOperations(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeReverse, tc, _workspace);
 }

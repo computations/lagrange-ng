@@ -161,7 +161,6 @@ class WorkerState {
         w->eval(workspace);
       }
     }
-    // end_work();
   }
 
   void barrier() {
@@ -246,14 +245,6 @@ class WorkerState {
 
   inline size_t active_threads() const {
     return _total_threads - _finished_threads;
-  }
-
-  void end_work() {
-    _finished_threads++;
-    if (_finished_threads == _total_threads) {
-      _start_index = 0;
-      _finished_threads = 0;
-    }
   }
 
   size_t _tid;

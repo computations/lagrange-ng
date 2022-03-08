@@ -83,7 +83,6 @@ class Node {
     for (auto &c : _children) { c.reset(); }
   }
 
-  std::vector<std::shared_ptr<Node>> getChildren();
   bool isExternal() const;
   bool isInternal() const;
 
@@ -104,7 +103,6 @@ class Node {
   std::shared_ptr<Node> getChild(size_t c) const;
 
   std::string getName() const;
-  std::string getComment() const;
   void setName(const std::string &s);
   void setComment(const std::string &s);
 
@@ -131,7 +129,6 @@ class Node {
   std::string getStochString() const;
 
   void initExclDistVector();
-  std::shared_ptr<std::vector<lagrange_dist_t>> &getExclDistVector();
 
   bool findNode(std::shared_ptr<Node> n);
 
@@ -174,7 +171,6 @@ class Node {
       Workspace &ws,
       const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
 
-  void traverseAndGenerateBackwardNodeIds(std::vector<size_t> &) const;
   void traverseAndGenerateBackwardNodeIdsInternalOnly(
       std::vector<size_t> &) const;
 

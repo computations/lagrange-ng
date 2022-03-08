@@ -84,8 +84,6 @@ unsigned int Tree::getNodeCount() const { return _nodes.size(); }
 
 std::shared_ptr<Node> Tree::getRoot() { return _root; }
 
-void Tree::setRoot(std::shared_ptr<Node> inroot) { _root = inroot; }
-
 std::shared_ptr<Node> Tree::getMRCA(const std::vector<std::string> &outgroup) {
   if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
   std::shared_ptr<Node> mcra;
@@ -115,10 +113,6 @@ void Tree::setHeightFromRootToNode(std::shared_ptr<Node> inNode,
   for (size_t i = 0; i < inNode->getChildCount(); i++) {
     setHeightFromRootToNode(inNode->getChild(i), newHeight);
   }
-}
-
-double Tree::getLongestPathRootToTip() const {
-  return _root->getMaxHeightRecursive();
 }
 
 /*
@@ -256,18 +250,4 @@ std::string Tree::getNewick() const { return _root->getNewick() + ";"; }
 std::string Tree::getNewickLambda(
     const std::function<std::string(const Node &)> &newick_lambda) const {
   return _root->getNewickLambda(newick_lambda) + ";";
-}
-
-void Tree::setStateStrings(const std::vector<size_t> &id_map,
-                           const std::vector<lagrange_col_vector_t> &dist_lhs,
-                           size_t states,
-                           const std::vector<std::string> &names) {
-  _root->setStateStringRecursive(id_map, dist_lhs, states, names);
-}
-
-void Tree::setSplitStrings(const std::vector<size_t> &id_map,
-                           const std::vector<lagrange_col_vector_t> &dist_lhs,
-                           size_t states,
-                           const std::vector<std::string> &names) {
-  _root->setSplitStringRecursive(id_map, dist_lhs, states, names);
 }

@@ -77,16 +77,12 @@ class Tree {
   unsigned int getInternalNodeCount() const;
 
   std::shared_ptr<Node> getRoot();
-  void setRoot(std::shared_ptr<Node> inroot);
-  void reRoot(std::shared_ptr<Node> inroot);
-  void tritomyRoot(std::shared_ptr<Node> toberoot);
   void processRoot();
 
   std::shared_ptr<Node> getMRCA(const std::vector<std::string> &innodes);
   std::shared_ptr<Node> getMRCA(
       const std::vector<std::shared_ptr<Node>> &innodes);
 
-  double getLongestPathRootToTip() const;
   std::shared_ptr<Node> getParent(std::shared_ptr<Node> n) const;
 
   void setHeightFromRootToNodes();
@@ -95,15 +91,6 @@ class Tree {
   std::string getNewick() const;
   std::string getNewickLambda(
       const std::function<std::string(const Node &)> &newick_lambda) const;
-
-  void setStateStrings(const std::vector<size_t> &id_map,
-                       const std::vector<lagrange_col_vector_t> &dist_lhs,
-                       size_t states,
-
-                       const std::vector<std::string> &names);
-  void setSplitStrings(const std::vector<size_t> &id_map,
-                       const std::vector<lagrange_col_vector_t> &dist_lhs,
-                       size_t states, const std::vector<std::string> &names);
 
   ~Tree();
 };
