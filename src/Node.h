@@ -87,8 +87,8 @@ class Node {
   bool isExternal() const;
   bool isInternal() const;
 
-  int getNumber() const;
-  void setNumber(int n);
+  size_t getNumber() const;
+  void setNumber(size_t n);
 
   size_t getId() const;
 
@@ -112,7 +112,7 @@ class Node {
   std::string getNewickLambda(
       const std::function<std::string(const Node &)> &) const;
 
-  int getChildCount() const;
+  size_t getChildCount() const;
 
   void setSplitStringRecursive(
       const std::vector<size_t> &id_map,

@@ -70,7 +70,7 @@ constexpr std::array<size_t, factorial_table_size> factorial_table = {
 
 constexpr inline size_t factorial(uint64_t i) {
   if (i < factorial_table_size) { return factorial_table.at(i); }
-  double f = factorial_table[factorial_table_size - 1];
+  size_t f = factorial_table[factorial_table_size - 1];
   for (size_t k = factorial_table_size; k <= i; ++k) {
     f *= static_cast<double>(k);
   }
@@ -113,4 +113,12 @@ size_t compute_index_from_dist(lagrange_dist_t i, size_t max_areas) {
   size_t skips = compute_skips(i, max_areas);
 
   return i - skips;
+}
+
+size_t lagrange_parse_size_t(const std::string &str) {
+  int temp = stoi(str);
+  if (temp < 0) {
+    throw std::invalid_argument{"This arguement should be postitive"};
+  }
+  return static_cast<size_t>(temp);
 }

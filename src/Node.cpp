@@ -42,9 +42,9 @@ bool Node::isExternal() const { return _children.size() == 0; }
 
 bool Node::isInternal() const { return _children.size() != 0; }
 
-int Node::getNumber() const { return _number; }
+size_t Node::getNumber() const { return _number; }
 
-void Node::setNumber(int n) { _number = n; }
+void Node::setNumber(size_t n) { _number = n; }
 
 double Node::getBL() { return _branch_length; }
 
@@ -55,7 +55,7 @@ double Node::getHeight() { return _height; }
 void Node::setHeight(double he) { _height = he; }
 
 bool Node::hasChild(std::shared_ptr<Node> test) {
-  for (unsigned int i = 0; i < _children.size(); i++) {
+  for (size_t i = 0; i < _children.size(); i++) {
     if (_children.at(i) == test) { return true; }
   }
   return false;
@@ -100,7 +100,7 @@ std::string Node::getNewick() const {
 std::string Node::getNewickLambda(
     const std::function<std::string(const Node &)> &newick_lambda) const {
   std::ostringstream newick_oss;
-  for (int i = 0; i < getChildCount(); i++) {
+  for (size_t i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
 
     newick_oss << getChild(i)->getNewickLambda(newick_lambda);
@@ -115,7 +115,7 @@ std::string Node::getNewickLambda(
   return newick_oss.str();
 }
 
-int Node::getChildCount() const { return _children.size(); }
+size_t Node::getChildCount() const { return _children.size(); }
 
 void Node::setSplitString(const std::string &splitstring) {
   _split_string = splitstring;

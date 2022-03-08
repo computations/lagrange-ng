@@ -78,7 +78,6 @@ class Tree {
 
   std::shared_ptr<Node> getRoot();
   void setRoot(std::shared_ptr<Node> inroot);
-  void unRoot(std::shared_ptr<Node> inroot);
   void reRoot(std::shared_ptr<Node> inroot);
   void tritomyRoot(std::shared_ptr<Node> toberoot);
   void processRoot();

@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 
 #include "InputReader.h"
 #include "TreeReader.h"
@@ -48,8 +49,9 @@ std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
 
   Tokenize(line, tokens, del);
   for (unsigned int j = 0; j < tokens.size(); j++) { TrimSpaces(tokens[j]); }
-  nspecies = atoi(tokens[0].c_str());
-  nareas = atoi(tokens[1].c_str());
+
+  nspecies = lagrange_parse_size_t(tokens[0]);
+  nareas = lagrange_parse_size_t(tokens[1]);
 
   if (max_areas == 0) { max_areas = nareas; }
 

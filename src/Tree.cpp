@@ -87,12 +87,6 @@ std::shared_ptr<Node> Tree::getRoot() { return _root; }
 
 void Tree::setRoot(std::shared_ptr<Node> inroot) { _root = inroot; }
 
-void Tree::unRoot(std::shared_ptr<Node> inroot) {
-  processRoot();
-  if (getRoot()->getChildCount() < 3) { tritomyRoot(inroot); }
-  processRoot();
-}
-
 /*
  * seems to be working but check for leaks
  */
@@ -130,13 +124,13 @@ void Tree::reRoot(std::shared_ptr<Node> outgroup) {
  */
 void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
   std::shared_ptr<Node> curroot = getRoot();
-  if (toberoot == NULL) {
+  if (toberoot == nullptr) {
     if (curroot->getChild(0)->isInternal()) {
       std::shared_ptr<Node> currootCH = curroot->getChild(0);
       double nbl = currootCH->getBL();
       curroot->getChild(1)->setBL(curroot->getChild(1)->getBL() + nbl);
       curroot->removeChild(currootCH);
-      for (int i = 0; i < currootCH->getChildCount(); i++) {
+      for (size_t i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     } else {
@@ -144,7 +138,7 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
       double nbl = currootCH->getBL();
       curroot->getChild(0)->setBL(curroot->getChild(0)->getBL() + nbl);
       curroot->removeChild(currootCH);
-      for (int i = 0; i < currootCH->getChildCount(); i++) {
+      for (size_t i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     }
@@ -154,7 +148,7 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
       double nbl = currootCH->getBL();
       curroot->getChild(1)->setBL(curroot->getChild(1)->getBL() + nbl);
       curroot->removeChild(currootCH);
-      for (int i = 0; i < currootCH->getChildCount(); i++) {
+      for (size_t i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     } else {
@@ -162,7 +156,7 @@ void Tree::tritomyRoot(std::shared_ptr<Node> toberoot) {
       double nbl = currootCH->getBL();
       curroot->getChild(0)->setBL(curroot->getChild(0)->getBL() + nbl);
       curroot->removeChild(currootCH);
-      for (int i = 0; i < currootCH->getChildCount(); i++) {
+      for (size_t i = 0; i < currootCH->getChildCount(); i++) {
         curroot->addChild(currootCH->getChild(i));
       }
     }
@@ -195,7 +189,7 @@ void Tree::setHeightFromRootToNode(std::shared_ptr<Node> inNode,
   } else {
     inNode->setHeight(newHeight);
   }
-  for (int i = 0; i < inNode->getChildCount(); i++) {
+  for (size_t i = 0; i < inNode->getChildCount(); i++) {
     setHeightFromRootToNode(inNode->getChild(i), newHeight);
   }
 }
@@ -249,7 +243,7 @@ void Tree::exchangeInfo(std::shared_ptr<Node> node1,
 void Tree::postOrderProcessRoot(std::shared_ptr<Node> node) {
   if (node == nullptr) return;
   if (node->getChildCount() > 0) {
-    for (int i = 0; i < node->getChildCount(); i++) {
+    for (size_t i = 0; i < node->getChildCount(); i++) {
       postOrderProcessRoot(node->getChild(i));
     }
   }
