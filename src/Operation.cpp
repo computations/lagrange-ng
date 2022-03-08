@@ -68,6 +68,22 @@ inline void generate_splits(uint64_t state, size_t regions,
   }
 }
 
+inline void join_splits(lagrange_dist_t i, size_t regions,
+                        std::vector<lagrange_region_split_t> &splits,
+                        const lagrange_const_col_vector_t &c1,
+                        const lagrange_const_col_vector_t &c2,
+                        lagrange_col_vector_t dest, bool &scale) {
+  generate_splits(i, regions, splits);
+  double sum = 0.0;
+  for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
+
+  if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
+
+  scale &= sum < lagrange_scale_threshold;
+
+  dest[i] = sum;
+}
+
 inline void weighted_combine(const lagrange_const_col_vector_t &c1,
                              const lagrange_const_col_vector_t &c2,
                              size_t states, size_t max_areas,
@@ -81,27 +97,11 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
 
   if (max_areas == states) {
     for (size_t i = 0; i < states; i++) {
-      generate_splits(i, regions, splits);
-      double sum = 0.0;
-      for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
-
-      if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
-
-      scale &= sum < lagrange_scale_threshold;
-
-      dest[i] = sum;
+      join_splits(i, regions, splits, c1, c2, dest, scale);
     }
   } else {
     for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
-      generate_splits(i, regions, splits);
-      double sum = 0.0;
-      for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
-
-      if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
-
-      scale &= sum < lagrange_scale_threshold;
-
-      dest[i] = sum;
+      join_splits(i, regions, splits, c1, c2, dest, scale);
     }
   }
 
@@ -114,6 +114,18 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
   }
 }
 
+inline void reverse_join_splits(lagrange_dist_t i, size_t regions,
+                                std::vector<lagrange_region_split_t> &splits,
+                                const lagrange_const_col_vector_t &c1,
+                                const lagrange_const_col_vector_t &c2,
+                                lagrange_col_vector_t dest) {
+  generate_splits(i, regions, splits);
+  if (splits.size() == 0) { return; }
+
+  double weight = 1.0 / static_cast<double>(splits.size());
+  for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+}
+
 inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
                                      const lagrange_const_col_vector_t &c2,
                                      size_t states, size_t max_areas,
@@ -124,19 +136,11 @@ inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
 
   if (max_areas == regions) {
     for (size_t i = 0; i < states; i++) {
-      generate_splits(i, regions, splits);
-      if (splits.size() == 0) { continue; }
-
-      double weight = 1.0 / static_cast<double>(splits.size());
-      for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+      reverse_join_splits(i, regions, splits, c1, c2, dest);
     }
   } else {
     for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
-      generate_splits(i, regions, splits);
-      if (splits.size() == 0) { continue; }
-
-      double weight = 1.0 / static_cast<double>(splits.size());
-      for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+      reverse_join_splits(i, regions, splits, c1, c2, dest);
     }
   }
 }
