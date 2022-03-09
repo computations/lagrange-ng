@@ -26,7 +26,7 @@ void Tokenize(const std::string &str, std::vector<std::string> &tokens,
 void TrimSpaces(std::string &str);
 
 inline uint64_t lagrange_bextr(lagrange_dist_t a, size_t i) {
-  return (a >> i) & 1ull;
+  return (a >> i) & 1ULL;
 }
 
 inline size_t lagrange_popcount(lagrange_dist_t a) {
@@ -50,7 +50,8 @@ inline lagrange_dist_t convert_vector_to_lagrange_dist(
 }
 
 constexpr inline size_t lagrange_fast_log2(size_t x) {
-  return sizeof(x) * 8 - lagrange_clz(x | 1);
+  constexpr size_t BITS_IN_BYTE = 8;
+  return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
 }
 
 inline lagrange_dist_t lagrange_compute_best_dist(
@@ -86,10 +87,10 @@ class lagrange_option_t {
   lagrange_option_t() : _has_value{false} {}
   explicit lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
 
-  T &operator=(const T &v) {
+  lagrange_option_t<T> &operator=(const T &v) {
     _value = v;
     _has_value = true;
-    return _value;
+    return *this;
   }
 
   T &get() {
@@ -108,7 +109,7 @@ class lagrange_option_t {
 
  private:
   T _value;
-  bool _has_value;
+  bool _has_value{false};
 };
 
 namespace std {

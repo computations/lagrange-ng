@@ -275,12 +275,12 @@ class Workspace {
   void set_period_params(size_t period_index, double d, double e);
 
   inline bool reserved() const {
-    return !(_base_frequencies == nullptr || _clvs.size() == 0);
+    return !(_base_frequencies == nullptr || _clvs.empty());
   }
 
   std::string report_node_vecs(size_t node_id) const;
 
-  inline size_t compute_matrix_index(size_t i, size_t j) {
+  inline size_t compute_matrix_index(size_t i, size_t j) const {
     return i * leading_dimension() + j;
   }
 

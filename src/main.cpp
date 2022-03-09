@@ -117,7 +117,7 @@ static config_options_t parse_config(const std::string &config_filename) {
 
   std::string line;
   while (getline(ifs, line)) {
-    if (line.size() == 0 || line[0] == '#') { continue; }
+    if (line.empty() || line[0] == '#') { continue; }
     /* Make the token */
     std::vector<std::string> tokens = grab_token(line, "=");
 
@@ -161,9 +161,7 @@ static config_options_t parse_config(const std::string &config_filename) {
       }
     } else if (!strcmp(tokens[0].c_str(), "calctype")) {
       std::string calctype = tokens[1];
-      if (calctype.compare("m") != 0 && calctype.compare("M") != 0) {
-        config.marginal = false;
-      }
+      if (calctype != "m" && calctype != "M") { config.marginal = false; }
     } else if (!strcmp(tokens[0].c_str(), "report")) {
       if (tokens[1].compare("split") != 0) { config.splits = false; }
     } else if (!strcmp(tokens[0].c_str(), "splits")) {
@@ -245,13 +243,13 @@ static void writeResultTree(const config_options_t &config,
 #endif
 
 static void handle_tree(
-    std::shared_ptr<Tree> intree,
+    const std::shared_ptr<Tree> &intree,
     const std::unordered_map<std::string, lagrange_dist_t> &data,
     const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
   attributes_json["periods"] =
-      config.periods.size() ? config.periods.size() != 0 : 1;
+      config.periods.size() ? !config.periods.empty() : 1;
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
@@ -331,8 +329,8 @@ int main(int argc, char *argv[]) {
      */
     InputReader ir;
     std::cout << "reading tree..." << std::endl;
-    std::vector<std::shared_ptr<Tree>> intrees;
-    ir.readMultipleTreeFile(config.treefile, intrees);
+    std::vector<std::shared_ptr<Tree>> intrees =
+        ir.readMultipleTreeFile(config.treefile);
     std::cout << "reading data..." << std::endl;
     std::unordered_map<std::string, size_t> data =
         ir.readStandardInputData(config.datafile, config.maxareas);
@@ -343,9 +341,7 @@ int main(int argc, char *argv[]) {
     if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
     std::cout << "running analysis..." << std::endl;
-    for (unsigned int i = 0; i < intrees.size(); i++) {
-      handle_tree(intrees[i], data, config);
-    }
+    for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end_time - start_time;

@@ -24,7 +24,7 @@ enum class WorkerMode {
   Halt
 };
 
-class WorkerContext {
+struct WorkerContext {
  public:
   WorkerContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
                 std::vector<std::shared_ptr<ReverseSplitOperation>>& rwb,
@@ -50,8 +50,8 @@ class WorkerState {
   WorkerState(const WorkerState&) = delete;
   WorkerState& operator=(const WorkerState&) = delete;
 
-  WorkerState(WorkerState&& ts) { *this = std::move(ts); }
-  WorkerState& operator=(WorkerState&& ts) {
+  WorkerState(WorkerState&& ts) noexcept { *this = std::move(ts); }
+  WorkerState& operator=(WorkerState&& ts) noexcept {
     _tid = ts._tid;
     _assigned_threads = ts._assigned_threads;
     ++_total_threads;
@@ -62,7 +62,7 @@ class WorkerState {
     if (_total_threads > 0) { _total_threads--; }
   }
 
-  void set_mode(WorkerMode tm) {
+  void set_mode(WorkerMode tm) const {
     if (master_thread()) { _mode = tm; }
   }
 
@@ -105,6 +105,7 @@ class WorkerState {
         default:
           throw std::runtime_error{"Found a mode that doesn't exist"};
       }
+      _finished_threads += 1;
       if (master_thread()) { return; }
     }
   }
@@ -163,7 +164,7 @@ class WorkerState {
     }
   }
 
-  void barrier() {
+  void barrier() const {
     static thread_local volatile int local_wait_flag = 0;
     static volatile int wait_flag = 0;
     // static std::atomic<size_t> barrier_threads{0};
@@ -177,10 +178,10 @@ class WorkerState {
     if (master_thread()) {
       while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
-      wait_flag = !wait_flag;
+      wait_flag = 1 ? wait_flag == 0 : 0;
     } else {
       while (local_wait_flag == wait_flag) {}
-      local_wait_flag = !local_wait_flag;
+      local_wait_flag = 1 ? local_wait_flag == 0 : 0;
     }
   }
 
@@ -202,7 +203,7 @@ class WorkerState {
   template <typename T>
   std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
                                const std::shared_ptr<Workspace>& workspace) {
-    assert(work_buffer.size() != 0);
+    assert(!work_buffer.empty());
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     /*

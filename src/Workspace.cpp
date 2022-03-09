@@ -66,8 +66,15 @@ void Workspace::reserve() {
 
   _clvs.resize(clv_count());
 
+  for (auto &c : _clvs) {
+    delete[] c._clv;
+
+    c._clv = new lagrange_matrix_base_t[clv_size()];
+
+    for (size_t j = 0; j < restricted_state_count(); j++) { c._clv[j] = 0.0; }
+  }
   for (size_t i = 0; i < _clvs.size(); ++i) {
-    if (_clvs[i]._clv != nullptr) { delete[] _clvs[i]._clv; }
+    delete[] _clvs[i]._clv;
 
     _clvs[i]._clv = new lagrange_matrix_base_t[clv_size()];
 
@@ -76,23 +83,19 @@ void Workspace::reserve() {
     }
   }
 
-  if (_clv_scalars != nullptr) { delete[] _clv_scalars; }
+  delete[] _clv_scalars;
 
   _clv_scalars = new size_t[clv_count()];
 
   for (size_t i = 0; i < clv_count(); i++) { _clv_scalars[i] = 0; }
 
   for (size_t i = 0; i < _rate_matrix.size(); i++) {
-    if (_rate_matrix[i]._matrix != nullptr) {
-      delete[] _rate_matrix[i]._matrix;
-    }
+    delete[] _rate_matrix[i]._matrix;
     _rate_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 
   for (size_t i = 0; i < _prob_matrix.size(); i++) {
-    if (_prob_matrix[i]._matrix != nullptr) {
-      delete[] _prob_matrix[i]._matrix;
-    }
+    delete[] _prob_matrix[i]._matrix;
     _prob_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 

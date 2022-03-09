@@ -95,9 +95,10 @@ static size_t compute_skips_power_of_2(size_t k, size_t n) {
 }
 
 static size_t compute_skips(size_t i, size_t n) {
+  constexpr size_t BITS_IN_BYTE = 8;
   size_t skips = 0;
   while (i != 0 && n != 0) {
-    size_t first_index = sizeof(i) * 8 - __builtin_clzll(i | 1);
+    size_t first_index = sizeof(i) * BITS_IN_BYTE - __builtin_clzll(i | 1);
     skips += compute_skips_power_of_2(first_index, n);
     n -= 1;
     i -= 1 << (first_index - 1);

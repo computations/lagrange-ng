@@ -282,6 +282,9 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
+  assert(rows > 0);
+  assert(leading_dim > 0);
+
   for (size_t i = 0; i < ws->matrix_size(); i++) {
     _A.get()[i] = ws->rate_matrix(_rate_matrix_index)[i];
   }

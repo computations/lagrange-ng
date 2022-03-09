@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 #include "InputReader.h"
@@ -17,8 +18,9 @@
 
 InputReader::InputReader() : nareas(0), nspecies(0) {}
 
-void InputReader::readMultipleTreeFile(
-    std::string filename, std::vector<std::shared_ptr<Tree>> &ret) {
+std::vector<std::shared_ptr<Tree>> InputReader::readMultipleTreeFile(
+    const std::string &filename) {
+  std::vector<std::shared_ptr<Tree>> ret;
   TreeReader tr;
   std::ifstream ifs(filename.c_str());
   std::string temp;
@@ -32,6 +34,7 @@ void InputReader::readMultipleTreeFile(
       count++;
     }
   }
+  return ret;
 }
 
 std::unordered_map<std::string, size_t> InputReader::readStandardInputData(
