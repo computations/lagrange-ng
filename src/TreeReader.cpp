@@ -30,16 +30,16 @@ class lexer_t {
   explicit lexer_t(std::string input)
       : _input{std::move(input)}, _current_index{0} {};
 
-  lexeme_type_t consume();
-  lexeme_type_t peak();
+  auto consume() -> lexeme_type_t;
+  auto peak() -> lexeme_type_t;
 
-  std::string consume_value_as_string() {
+  auto consume_value_as_string() -> std::string {
     std::string tmp;
     std::swap(tmp, _value);
     return tmp;
   }
 
-  double consume_value_as_float() {
+  auto consume_value_as_float() -> double {
     auto f_str = consume_value_as_string();
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
@@ -50,7 +50,7 @@ class lexer_t {
     return val;
   }
 
-  std::string describe_position() const {
+  auto describe_position() const -> std::string {
     std::stringstream builder;
     builder << "position " << _current_index;
     return builder.str();
@@ -70,21 +70,21 @@ class lexer_t {
     while (token_type != consume()) {}
   }
 
-  bool at_end() { return _input.size() == _current_index; }
+  auto at_end() -> bool { return _input.size() == _current_index; }
 
  private:
-  bool is_punct(char c) {
+  static auto is_punct(char c) -> bool {
     return c == '[' || c == ']' || c == '(' || c == ')' || c == ':' ||
            c == ';' || c == ',' || c == 0 || c == EOF;
   }
 
-  std::pair<lexeme_type_t, size_t> consume_token_pos() {
+  auto consume_token_pos() -> std::pair<lexeme_type_t, size_t> {
     auto start_index = _current_index;
     auto token = consume();
     return {token, start_index};
   }
 
-  std::string describe_token(lexeme_type_t token_type) {
+  static auto describe_token(lexeme_type_t token_type) -> std::string {
     switch (token_type) {
       case OPENING_SQUARE_BRACKET:
         return {"opening square bracket"};
@@ -113,7 +113,7 @@ class lexer_t {
     // while (char c = _input[_current_index]) {
     while (_current_index < _input.size()) {
       char c = _input[_current_index];
-      if (!std::isspace(c)) { break; }
+      if (std::isspace(c) == 0) { break; }
       _current_index++;
     }
   }
@@ -123,7 +123,7 @@ class lexer_t {
   size_t _current_index;
 };
 
-lexeme_type_t lexer_t::peak() {
+auto lexer_t::peak() -> lexeme_type_t {
   size_t tmp_index = _current_index;
   char current_char = _input[tmp_index++];
   if (is_punct(current_char)) {
@@ -153,7 +153,7 @@ lexeme_type_t lexer_t::peak() {
   }
 }
 
-lexeme_type_t lexer_t::consume() {
+auto lexer_t::consume() -> lexeme_type_t {
   auto token = peak();
   if (token == VALUE) {
     // we have a value, so we need to scan until we have found punctuation, or
@@ -166,15 +166,14 @@ lexeme_type_t lexer_t::consume() {
     }
 
     _value = builder.str();
-    while (std::isspace(*(_value.end() - 1))) {
+    while (std::isspace(*(_value.end() - 1)) != 0) {
       _value.resize(_value.size() - 1);
     }
     return token;
-  } else {
-    _current_index++;
-    skip_whitespace();
-    return token;
   }
+  _current_index++;
+  skip_whitespace();
+  return token;
 }
 
 /* Using the following grammar:
@@ -214,26 +213,26 @@ lexeme_type_t lexer_t::consume() {
 class parser_t {
  public:
   explicit parser_t(std::string input) : _lexer{std::move(input)} {};
-  std::shared_ptr<Tree> parse() { return parse_tree(); }
+  auto parse() -> std::shared_ptr<Tree> { return parse_tree(); }
 
  private:
-  std::shared_ptr<Tree> parse_tree();
-  std::shared_ptr<Node> parse_subtree();
-  std::shared_ptr<Node> parse_internal();  // creates node
-  void parse_node_set(std::shared_ptr<Node> current_node);
-  void parse_node_attrs(std::shared_ptr<Node> current_node);
-  std::shared_ptr<Node> parse_leaf();  // creates node
-  void parse_length(std::shared_ptr<Node> current_node);
-  void parse_name(std::shared_ptr<Node> current_node);
-  std::string parse_string();
-  double parse_number();
+  auto parse_tree() -> std::shared_ptr<Tree>;
+  auto parse_subtree() -> std::shared_ptr<Node>;
+  auto parse_internal() -> std::shared_ptr<Node>;  // creates node
+  void parse_node_set(const std::shared_ptr<Node>& current_node);
+  void parse_node_attrs(const std::shared_ptr<Node>& current_node);
+  auto parse_leaf() -> std::shared_ptr<Node>;  // creates node
+  void parse_length(const std::shared_ptr<Node>& current_node);
+  void parse_name(const std::shared_ptr<Node>& current_node);
+  auto parse_string() -> std::string;
+  auto parse_number() -> double;
   void parse_comment();
 
   /* member variables */
   lexer_t _lexer;
 };
 
-std::shared_ptr<Tree> parser_t::parse_tree() {
+auto parser_t::parse_tree() -> std::shared_ptr<Tree> {
   auto root_node = parse_subtree();
   _lexer.expect(SEMICOLON);
   if (!_lexer.at_end()) {
@@ -243,7 +242,7 @@ std::shared_ptr<Tree> parser_t::parse_tree() {
   return std::make_shared<Tree>(root_node);
 }
 
-std::shared_ptr<Node> parser_t::parse_subtree() {
+auto parser_t::parse_subtree() -> std::shared_ptr<Node> {
   auto token = _lexer.peak();
   if (token == OPENING_PAREN) {
     auto tmp = parse_internal();
@@ -253,17 +252,16 @@ std::shared_ptr<Node> parser_t::parse_subtree() {
           _lexer.describe_position()};
     }
     return tmp;
-  } else {
-    auto tmp = parse_leaf();
-    if (tmp->getChildCount() != 0) {
-      throw std::runtime_error{std::string("Got a leaf with children around ") +
-                               _lexer.describe_position()};
-    }
-    return tmp;
   }
+  auto tmp = parse_leaf();
+  if (tmp->getChildCount() != 0) {
+    throw std::runtime_error{std::string("Got a leaf with children around ") +
+                             _lexer.describe_position()};
+  }
+  return tmp;
 }
 
-std::shared_ptr<Node> parser_t::parse_internal() {
+auto parser_t::parse_internal() -> std::shared_ptr<Node> {
   _lexer.expect(OPENING_PAREN);
   auto current_node = std::make_shared<Node>();
   parse_node_set(current_node);
@@ -272,7 +270,7 @@ std::shared_ptr<Node> parser_t::parse_internal() {
   return current_node;
 }
 
-void parser_t::parse_node_set(std::shared_ptr<Node> current_node) {
+void parser_t::parse_node_set(const std::shared_ptr<Node>& current_node) {
   current_node->addChild(parse_subtree());
   auto token = _lexer.peak();
   if (token == COMMA) {
@@ -281,17 +279,17 @@ void parser_t::parse_node_set(std::shared_ptr<Node> current_node) {
   }
 }
 
-void parser_t::parse_node_attrs(std::shared_ptr<Node> current_node) {
+void parser_t::parse_node_attrs(const std::shared_ptr<Node>& current_node) {
   parse_name(current_node);
   parse_comment();
   parse_length(current_node);
   parse_comment();
 }
 
-std::shared_ptr<Node> parser_t::parse_leaf() {
+auto parser_t::parse_leaf() -> std::shared_ptr<Node> {
   auto current_node = std::make_shared<Node>();
   parse_node_attrs(current_node);
-  if (current_node->getName().size() == 0) {
+  if (current_node->getName().empty()) {
     throw std::runtime_error{
         std::string("Got a leaf with an empty name around ") +
         std::string(_lexer.describe_position())};
@@ -299,7 +297,7 @@ std::shared_ptr<Node> parser_t::parse_leaf() {
   return current_node;
 }
 
-void parser_t::parse_length(std::shared_ptr<Node> current_node) {
+void parser_t::parse_length(const std::shared_ptr<Node>& current_node) {
   auto token = _lexer.peak();
   if (token == COLON) {
     _lexer.consume();
@@ -308,7 +306,7 @@ void parser_t::parse_length(std::shared_ptr<Node> current_node) {
   }
 }
 
-void parser_t::parse_name(std::shared_ptr<Node> current_node) {
+void parser_t::parse_name(const std::shared_ptr<Node>& current_node) {
   auto token = _lexer.peak();
   if (token == VALUE) {
     _lexer.consume();
@@ -316,11 +314,13 @@ void parser_t::parse_name(std::shared_ptr<Node> current_node) {
   }
 }
 
-std::string parser_t::parse_string() {
+auto parser_t::parse_string() -> std::string {
   return _lexer.consume_value_as_string();
 }
 
-double parser_t::parse_number() { return _lexer.consume_value_as_float(); }
+auto parser_t::parse_number() -> double {
+  return _lexer.consume_value_as_float();
+}
 
 void parser_t::parse_comment() {
   auto token = _lexer.peak();
@@ -330,7 +330,7 @@ void parser_t::parse_comment() {
   }
 }
 
-std::shared_ptr<Tree> TreeReader::readTree(const std::string &tree) {
+auto TreeReader::readTree(const std::string& tree) -> std::shared_ptr<Tree> {
   parser_t parser(tree);
   return parser.parse();
 }

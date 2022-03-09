@@ -29,68 +29,75 @@ class Tree {
   size_t _internal_node_count;
   size_t _external_node_count;
 
-  void processReRoot(std::shared_ptr<Node> node);
-  void exchangeInfo(std::shared_ptr<Node> node1, std::shared_ptr<Node> node2);
-  void postOrderProcessRoot(std::shared_ptr<Node> node);
-  void setHeightFromRootToNode(std::shared_ptr<Node> inNode, double newHeight);
-  double getGreatestDistance(std::shared_ptr<Node> inNode);
+  void processReRoot(const std::shared_ptr<Node> &node);
+  static void exchangeInfo(const std::shared_ptr<Node> &node1,
+                           const std::shared_ptr<Node> &node2);
+  void postOrderProcessRoot(const std::shared_ptr<Node> &node);
+  void setHeightFromRootToNode(const std::shared_ptr<Node> &inNode,
+                               double newHeight);
+  auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
 
-  bool findNode(std::shared_ptr<Node> n);
+  auto findNode(std::shared_ptr<Node> n) -> bool;
 
  public:
   Tree();
   explicit Tree(std::shared_ptr<Node> root);
 
-  void addExternalNode(std::shared_ptr<Node> tn);
-  void addInternalNode(std::shared_ptr<Node> tn);
+  void addExternalNode(const std::shared_ptr<Node> &tn);
+  void addInternalNode(const std::shared_ptr<Node> &tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
-  std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
+  auto generateForwardOperations(
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+      -> std::vector<std::shared_ptr<SplitOperation>>;
 
-  std::vector<std::shared_ptr<ReverseSplitOperation>>
-  generateBackwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm);
+  auto generateBackwardOperations(
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+      -> std::vector<std::shared_ptr<ReverseSplitOperation>>;
 
-  std::vector<std::shared_ptr<SplitOperation>> generateForwardOperations(
-      Workspace &ws, PeriodRateMatrixMap &period_rm_map,
-      BranchProbMatrixMap &period_pm_map);
-  std::vector<std::shared_ptr<ReverseSplitOperation>>
-  generateBackwardOperations(Workspace &ws, PeriodRateMatrixMap &period_rm_map,
-                             BranchProbMatrixMap &period_pm_map);
+  auto generateForwardOperations(Workspace &ws,
+                                 PeriodRateMatrixMap &period_rm_map,
+                                 BranchProbMatrixMap &period_pm_map)
+      -> std::vector<std::shared_ptr<SplitOperation>>;
+  auto generateBackwardOperations(Workspace &ws,
+                                  PeriodRateMatrixMap &period_rm_map,
+                                  BranchProbMatrixMap &period_pm_map)
+      -> std::vector<std::shared_ptr<ReverseSplitOperation>>;
 
-  std::vector<size_t> traversePreorderInternalNodesOnly() const;
-  std::vector<size_t> traversePreorderInternalNodesOnlyNumbers() const;
+  auto traversePreorderInternalNodesOnly() const -> std::vector<size_t>;
+  auto traversePreorderInternalNodesOnlyNumbers() const -> std::vector<size_t>;
 
   void assignTipData(
       Workspace &ws,
       const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
 
-  std::shared_ptr<Node> getExternalNode(size_t num);
-  std::shared_ptr<Node> getExternalNode(const std::string &name);
-  std::shared_ptr<Node> getInternalNode(size_t num);
-  std::shared_ptr<Node> getInternalNode(const std::string &name);
-  std::shared_ptr<Node> getNode(size_t num);
+  auto getExternalNode(size_t num) -> std::shared_ptr<Node>;
+  auto getExternalNode(const std::string &name) -> std::shared_ptr<Node>;
+  auto getInternalNode(size_t num) -> std::shared_ptr<Node>;
+  auto getInternalNode(const std::string &name) -> std::shared_ptr<Node>;
+  auto getNode(size_t num) -> std::shared_ptr<Node>;
 
-  unsigned int getNodeCount() const;
-  unsigned int getExternalNodeCount() const;
-  unsigned int getInternalNodeCount() const;
+  auto getNodeCount() const -> unsigned int;
+  auto getExternalNodeCount() const -> unsigned int;
+  auto getInternalNodeCount() const -> unsigned int;
 
-  std::shared_ptr<Node> getRoot();
+  auto getRoot() -> std::shared_ptr<Node>;
   void processRoot();
 
-  std::shared_ptr<Node> getMRCA(const std::vector<std::string> &innodes);
-  std::shared_ptr<Node> getMRCA(
-      const std::vector<std::shared_ptr<Node>> &innodes);
+  auto getMRCA(const std::vector<std::string> &innodes)
+      -> std::shared_ptr<Node>;
+  auto getMRCA(const std::vector<std::shared_ptr<Node>> &innodes)
+      -> std::shared_ptr<Node>;
 
-  std::shared_ptr<Node> getParent(std::shared_ptr<Node> n) const;
+  auto getParent(const std::shared_ptr<Node> &n) const -> std::shared_ptr<Node>;
 
   void setHeightFromRootToNodes();
   void setHeightFromTipToNodes();
 
-  std::string getNewick() const;
-  std::string getNewickLambda(
-      const std::function<std::string(const Node &)> &newick_lambda) const;
+  auto getNewick() const -> std::string;
+  auto getNewickLambda(
+      const std::function<std::string(const Node &)> &newick_lambda) const
+      -> std::string;
 
   ~Tree();
 };

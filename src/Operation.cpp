@@ -25,16 +25,17 @@
 #include "Utils.h"
 #include "Workspace.h"
 
-inline lagrange_dist_t next_dist(lagrange_dist_t d, uint32_t n) {
+inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
   return d;
 }
 
-static std::ostream &operator<<(std::ostream &os,
-                                std::tuple<double *, size_t> vector_tuple) {
-  double *v;
-  size_t n;
+static auto operator<<(std::ostream &os,
+                       std::tuple<double *, size_t> vector_tuple)
+    -> std::ostream & {
+  double *v = nullptr;
+  size_t n = 0;
   std::tie(v, n) = vector_tuple;
   os << "(";
   for (size_t i = 0; i < n; i++) {
@@ -49,7 +50,7 @@ inline void generate_splits(uint64_t state, size_t regions,
                             std::vector<lagrange_region_split_t> &results) {
   assert(regions > 0);
   results.clear();
-  uint64_t valid_region_mask = (1ull << regions) - 1;
+  uint64_t valid_region_mask = (1ULL << regions) - 1;
   if (state == 0) { return; }
 
   if (lagrange_popcount(state) == 1) {
@@ -59,7 +60,7 @@ inline void generate_splits(uint64_t state, size_t regions,
 
   // results.reserve(regions);
   for (size_t i = 0; i < regions; i++) {
-    uint64_t x = 1ull << i;
+    uint64_t x = 1ULL << i;
     if ((state & x) == 0) { continue; }
 
     results.push_back({x, state});
@@ -80,7 +81,7 @@ inline void join_splits(lagrange_dist_t i, size_t regions,
   double sum = 0.0;
   for (auto &p : splits) { sum += c1[p.left] * c2[p.right]; }
 
-  if (splits.size() != 0) { sum /= static_cast<double>(splits.size()); }
+  if (!splits.empty()) { sum /= static_cast<double>(splits.size()); }
 
   scale &= sum < lagrange_scale_threshold;
 
@@ -124,7 +125,7 @@ inline void reverse_join_splits(lagrange_dist_t i, size_t regions,
                                 const lagrange_const_col_vector_t &c2,
                                 lagrange_col_vector_t dest) {
   generate_splits(i, regions, splits);
-  if (splits.size() == 0) { return; }
+  if (splits.empty()) { return; }
 
   double weight = 1.0 / static_cast<double>(splits.size());
   for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
@@ -150,7 +151,7 @@ inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
   }
 }
 
-inline std::string make_tabs(size_t tabLevel) {
+inline auto make_tabs(size_t tabLevel) -> std::string {
   std::ostringstream tabs;
   tabs << "|";
   for (size_t i = 0; i < tabLevel; ++i) { tabs << " |"; }
@@ -158,8 +159,8 @@ inline std::string make_tabs(size_t tabLevel) {
   return tabs.str();
 }
 
-inline std::string boarder_line(const std::string &tabs,
-                                const std::string &corner_char) {
+inline auto boarder_line(const std::string &tabs,
+                         const std::string &corner_char) -> std::string {
   std::ostringstream line;
 
   line << tabs.substr(0, tabs.size() - 2) << corner_char;
@@ -169,11 +170,11 @@ inline std::string boarder_line(const std::string &tabs,
   return line.str();
 }
 
-inline std::string opening_line(const std::string &tabs) {
+inline auto opening_line(const std::string &tabs) -> std::string {
   return boarder_line(tabs, "┌");
 }
 
-inline std::string closing_line(const std::string &tabs) {
+inline auto closing_line(const std::string &tabs) -> std::string {
   return boarder_line(tabs, "└");
 }
 
@@ -182,7 +183,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   for (size_t i = 0; i < ws->matrix_size(); i++) { rm[i] = 0.0; }
 
-  auto &period = ws->get_period_params(_period_index);
+  const auto &period = ws->get_period_params(_period_index);
 
   size_t source_index = 0;
   lagrange_dist_t source_dist = 0;
@@ -259,8 +260,9 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string MakeRateMatrixOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+auto MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                          size_t tabLevel) const
+    -> std::string {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
@@ -465,8 +467,8 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                       size_t tabLevel) const {
+auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                size_t tabLevel) const -> std::string {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
@@ -522,8 +524,8 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << closing_line(tabs);
 }
 
-std::string DispersionOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                      size_t tabLevel) const -> std::string {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
@@ -532,7 +534,7 @@ std::string DispersionOperation::printStatus(
 static inline void eval_branch_ops(
     const std::vector<std::shared_ptr<DispersionOperation>> &branch_ops,
     const std::shared_ptr<Workspace> &ws) {
-  for (auto &op : branch_ops) {
+  for (const auto &op : branch_ops) {
     if (op.use_count() > 1) {
       std::lock_guard<std::mutex> lock(op->getLock());
       op->eval(ws);
@@ -583,19 +585,23 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Last Executed: " << _last_execution << "\n";
 
   os << tabs << "Left Branch ops:\n";
-  if (_lbranch_ops.size() != 0) {
-    for (auto &op : _lbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
+  if (!_lbranch_ops.empty()) {
+    for (const auto &op : _lbranch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
   }
   os << "\n" << tabs << "Right Branch ops:\n";
-  if (_rbranch_ops.size() != 0) {
-    for (auto &op : _rbranch_ops) { os << op->printStatus(ws, tabLevel + 1); }
+  if (!_rbranch_ops.empty()) {
+    for (const auto &op : _rbranch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
   }
   os << "\n";
   os << closing_line(tabs);
 }
 
-std::string SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                        size_t tabLevel) const {
+auto SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                 size_t tabLevel) const -> std::string {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
@@ -605,8 +611,8 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   eval_branch_ops(_branch_ops, ws);
 
   if (_eval_clvs) {
-    auto &ltop_clv = ws->clv(_ltop_clv_index);
-    auto &rtop_clv = ws->clv(_rtop_clv_index);
+    const auto &ltop_clv = ws->clv(_ltop_clv_index);
+    const auto &rtop_clv = ws->clv(_rtop_clv_index);
 
     reverse_weighted_combine(ltop_clv, rtop_clv, ws->restricted_state_count(),
                              ws->max_areas(), ws->clv(_bot_clv_index));
@@ -636,25 +642,27 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << "): " << std::setprecision(10) << ws->clv_size_tuple(_rtop_clv_index)
      << "\n";
 
-  if (_excl_dists.size() != 0) {
+  if (!_excl_dists.empty()) {
     os << tabs << "Excluded dists:\n";
-    for (size_t i = 0; i < _excl_dists.size(); ++i) {
-      os << tabs << _excl_dists[i] << "\n";
+    for (unsigned long _excl_dist : _excl_dists) {
+      os << tabs << _excl_dist << "\n";
     }
   }
 
   os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
 
-  if (_branch_ops.size() != 0) {
+  if (!_branch_ops.empty()) {
     os << tabs << "Branch ops:\n";
-    for (auto &op : _branch_ops) { os << op->printStatus(ws, tabLevel + 1); }
+    for (const auto &op : _branch_ops) {
+      os << op->printStatus(ws, tabLevel + 1);
+    }
     os << "\n";
   }
   os << closing_line(tabs);
 }
 
-std::string ReverseSplitOperation::printStatus(
-    const std::shared_ptr<Workspace> &ws, size_t tabLevel) const {
+auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
+                                        size_t tabLevel) const -> std::string {
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
@@ -671,7 +679,7 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _last_execution = ws->advance_clock();
 }
 
-bool LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+auto LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
   return ws->last_update_clv(_root_clv_index) > _last_execution;
 }
 
@@ -699,7 +707,7 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _last_execution = ws->advance_clock();
 }
 
-bool StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
   return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
          ws->last_update_clv(_rchild_clv_index) > _last_execution &&
          ws->last_update_clv(_parent_clv_index) > _last_execution;
@@ -730,7 +738,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _result = ret;
 }
 
-bool SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const {
+auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
   return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
          ws->last_update_clv(_rchild_clv_index) > _last_execution &&
          ws->last_update_clv(_parent_clv_index) > _last_execution;

@@ -20,12 +20,13 @@
 class InputReader {
  public:
   InputReader();
-  std::vector<std::shared_ptr<Tree>> readMultipleTreeFile(
-      const std::string &filename);
-  std::unordered_map<std::string, lagrange_dist_t> readStandardInputData(
-      std::string filename, size_t max_areas);
-  void checkData(const std::unordered_map<std::string, lagrange_dist_t> &,
-                 const std::vector<std::shared_ptr<Tree>> &);
+  static auto readMultipleTreeFile(const std::string &filename)
+      -> std::vector<std::shared_ptr<Tree>>;
+  auto readStandardInputData(const std::string &filename, size_t max_areas)
+      -> std::unordered_map<std::string, lagrange_dist_t>;
+  static void checkData(
+      const std::unordered_map<std::string, lagrange_dist_t> &,
+      const std::vector<std::shared_ptr<Tree>> &);
   size_t nareas;
   size_t nspecies;
 };

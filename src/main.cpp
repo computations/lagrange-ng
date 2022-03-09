@@ -58,14 +58,14 @@ struct config_options_t {
   double extinction = 0.01;
   bool estimate = true;
 
-  size_t region_count;
+  size_t region_count{};
   lagrange_option_t<size_t> workers;
   lagrange_option_t<size_t> threads_per_worker;
 };
 
-static std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &states,
-    size_t states_len) {
+static auto normalizeStateDistrubtionByLWR(
+    const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
+    -> std::unique_ptr<lagrange_matrix_base_t[]> {
   std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
       new lagrange_matrix_base_t[states_len]};
 
@@ -97,17 +97,17 @@ static std::unique_ptr<lagrange_matrix_base_t[]> normalizeStateDistrubtionByLWR(
   return normalized_states;
 }
 
-static std::vector<std::string> grab_token(const std::string &token,
-                                           const std::string &deliminators) {
+static auto grab_token(const std::string &token,
+                       const std::string &deliminators)
+    -> std::vector<std::string> {
   std::vector<std::string> searchtokens;
   Tokenize(token, searchtokens, deliminators);
-  for (unsigned int j = 0; j < searchtokens.size(); j++) {
-    TrimSpaces(searchtokens[j]);
-  }
+  for (auto &searchtoken : searchtokens) { TrimSpaces(searchtoken); }
   return searchtokens;
 }
 
-static config_options_t parse_config(const std::string &config_filename) {
+static auto parse_config(const std::string &config_filename)
+    -> config_options_t {
   config_options_t config;
 
   std::ifstream ifs(config_filename);
@@ -122,34 +122,34 @@ static config_options_t parse_config(const std::string &config_filename) {
     std::vector<std::string> tokens = grab_token(line, "=");
 
     /* Parse the option in the token */
-    if (!strcmp(tokens[0].c_str(), "treefile")) {
+    if (strcmp(tokens[0].c_str(), "treefile") == 0) {
       config.treefile = tokens[1];
-    } else if (!strcmp(tokens[0].c_str(), "datafile")) {
+    } else if (strcmp(tokens[0].c_str(), "datafile") == 0) {
       config.datafile = tokens[1];
-    } else if (!strcmp(tokens[0].c_str(), "ratematrix")) {
+    } else if (strcmp(tokens[0].c_str(), "ratematrix") == 0) {
       config.ratematrixfile = tokens[1];
       if (config.ratematrixfile == "d" || config.ratematrixfile == "D") {
         config.ratematrixfile = "";
       }
-    } else if (!strcmp(tokens[0].c_str(), "areanames")) {
+    } else if (strcmp(tokens[0].c_str(), "areanames") == 0) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.areaNames = searchtokens;
-    } else if (!strcmp(tokens[0].c_str(), "periods")) {
+    } else if (strcmp(tokens[0].c_str(), "periods") == 0) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      for (unsigned int j = 0; j < searchtokens.size(); j++) {
-        config.periods.push_back(atof(searchtokens[j].c_str()));
+      for (auto &searchtoken : searchtokens) {
+        config.periods.push_back(atof(searchtoken.c_str()));
       }
-    } else if (!strcmp(tokens[0].c_str(), "mrca")) {
+    } else if (strcmp(tokens[0].c_str(), "mrca") == 0) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       std::vector<std::string> mrc;
       for (unsigned int j = 1; j < searchtokens.size(); j++) {
         mrc.push_back(searchtokens[j]);
       }
       config.mrcas[searchtokens[0]] = mrc;
-    } else if (!strcmp(tokens[0].c_str(), "ancstate")) {
+    } else if (strcmp(tokens[0].c_str(), "ancstate") == 0) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.ancstates.push_back(searchtokens[0]);
-    } else if (!strcmp(tokens[0].c_str(), "fossil")) {
+    } else if (strcmp(tokens[0].c_str(), "fossil") == 0) {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.fossiltype.push_back(searchtokens[0]);
       config.fossilmrca.push_back(searchtokens[1]);
@@ -159,28 +159,28 @@ static config_options_t parse_config(const std::string &config_filename) {
       } else {
         config.fossilage.push_back(0.0);
       }
-    } else if (!strcmp(tokens[0].c_str(), "calctype")) {
+    } else if (strcmp(tokens[0].c_str(), "calctype") == 0) {
       std::string calctype = tokens[1];
       if (calctype != "m" && calctype != "M") { config.marginal = false; }
-    } else if (!strcmp(tokens[0].c_str(), "report")) {
-      if (tokens[1].compare("split") != 0) { config.splits = false; }
-    } else if (!strcmp(tokens[0].c_str(), "splits")) {
+    } else if (strcmp(tokens[0].c_str(), "report") == 0) {
+      if (tokens[1] != "split") { config.splits = false; }
+    } else if (strcmp(tokens[0].c_str(), "splits") == 0) {
       config.splits = true;
-    } else if (!strcmp(tokens[0].c_str(), "states")) {
+    } else if (strcmp(tokens[0].c_str(), "states") == 0) {
       config.states = true;
-    } else if (!strcmp(tokens[0].c_str(), "dispersal")) {
+    } else if (strcmp(tokens[0].c_str(), "dispersal") == 0) {
       config.dispersal = atof(tokens[1].c_str());
       std::cout << "setting dispersal: " << config.dispersal << std::endl;
       config.estimate = false;
-    } else if (!strcmp(tokens[0].c_str(), "extinction")) {
+    } else if (strcmp(tokens[0].c_str(), "extinction") == 0) {
       config.extinction = atof(tokens[1].c_str());
       std::cout << "setting extinction: " << config.extinction << std::endl;
       config.estimate = false;
-    } else if (!strcmp(tokens[0].c_str(), "workers")) {
+    } else if (strcmp(tokens[0].c_str(), "workers") == 0) {
       config.workers = lagrange_parse_size_t(tokens[1]);
-    } else if (!strcmp(tokens[0].c_str(), "threads-per-worker")) {
+    } else if (strcmp(tokens[0].c_str(), "threads-per-worker") == 0) {
       config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
-    } else if (!strcmp(tokens[0].c_str(), "maxareas")) {
+    } else if (strcmp(tokens[0].c_str(), "maxareas") == 0) {
       config.maxareas = lagrange_parse_size_t(tokens[1]);
     }
   }
@@ -188,14 +188,15 @@ static config_options_t parse_config(const std::string &config_filename) {
   return config;
 }
 
-static nlohmann::json makeStateJsonOutput(
+static auto makeStateJsonOutput(
     const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
-    size_t states_len, const std::vector<size_t> &stateToIdMap) {
+    size_t states_len, const std::vector<size_t> &stateToIdMap)
+    -> nlohmann::json {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
     nlohmann::json node_json;
     node_json["number"] = stateToIdMap[i];
-    auto &state_distribution = states[i];
+    const auto &state_distribution = states[i];
     auto lwr_distribution =
         normalizeStateDistrubtionByLWR(state_distribution, states_len);
     for (size_t dist = 0; dist < states_len; ++dist) {
@@ -248,8 +249,9 @@ static void handle_tree(
     const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
-  attributes_json["periods"] =
-      config.periods.size() ? !config.periods.empty() : 1;
+  attributes_json["periods"] = !config.periods.empty() != 0u
+                                   ? static_cast<int>(!config.periods.empty())
+                                   : 1;
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
@@ -305,7 +307,7 @@ static void setThreads(config_options_t &config) {
   if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
 }
 
-int main(int argc, char *argv[]) {
+auto main(int argc, char *argv[]) -> int {
 #if MKL_ENABLED
   mkl_set_num_threads(1);
 #else

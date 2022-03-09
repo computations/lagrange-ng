@@ -13,6 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "Common.h"
@@ -20,58 +21,49 @@
 #include "Operation.h"
 
 Node::Node()
-    : _branch_length(0.0),
-      _height(0.0),
-      _number(0),
-      _id(0),
-      _period(0),
-      _label(""),
-      _comment(""),
-      _children{} {}
+    : _branch_length(0.0), _height(0.0), _number(0), _id(0), _period(0) {}
 
-Node::Node(double bl, size_t innumber, const std::string &inname)
+Node::Node(double bl, size_t innumber, std::string inname)
     : _branch_length(bl),
       _height(0.0),
       _number(innumber),
       _id(0),
       _period(0),
-      _label(inname),
-      _comment(""),
-      _children{} {}
+      _label(std::move(inname)) {}
 
-bool Node::isExternal() const { return _children.size() == 0; }
+auto Node::isExternal() const -> bool { return _children.empty(); }
 
-bool Node::isInternal() const { return _children.size() != 0; }
+auto Node::isInternal() const -> bool { return !_children.empty(); }
 
-size_t Node::getNumber() const { return _number; }
+auto Node::getNumber() const -> size_t { return _number; }
 
 void Node::setNumber(size_t n) { _number = n; }
 
-double Node::getBL() { return _branch_length; }
+auto Node::getBL() const -> double { return _branch_length; }
 
 void Node::setBL(double bl) { _branch_length = bl; }
 
-double Node::getHeight() { return _height; }
+auto Node::getHeight() const -> double { return _height; }
 
 void Node::setHeight(double he) { _height = he; }
 
-bool Node::hasChild(std::shared_ptr<Node> test) {
-  for (size_t i = 0; i < _children.size(); i++) {
-    if (_children.at(i) == test) { return true; }
+auto Node::hasChild(const std::shared_ptr<Node> &test) -> bool {
+  for (auto &i : _children) {
+    if (i == test) { return true; }
   }
   return false;
 }
 
-bool Node::addChild(std::shared_ptr<Node> c) {
-  if (hasChild(c) == false) {
+auto Node::addChild(const std::shared_ptr<Node> &c) -> bool {
+  if (!hasChild(c)) {
     _children.push_back(c);
     return true;
   }
   return false;
 }
 
-bool Node::removeChild(std::shared_ptr<Node> c) {
-  if (hasChild(c) == true) {
+auto Node::removeChild(const std::shared_ptr<Node> &c) -> bool {
+  if (hasChild(c)) {
     for (auto it = _children.begin(); it != _children.end(); it++) {
       if (*it == c) {
         _children.erase(it);
@@ -82,22 +74,25 @@ bool Node::removeChild(std::shared_ptr<Node> c) {
   return false;
 }
 
-std::shared_ptr<Node> Node::getChild(size_t c) const { return _children.at(c); }
+auto Node::getChild(size_t c) const -> std::shared_ptr<Node> {
+  return _children.at(c);
+}
 
-std::string Node::getName() const { return _label; }
+auto Node::getName() const -> std::string { return _label; }
 
 void Node::setName(const std::string &s) { _label = s; }
 
 void Node::setComment(const std::string &s) { _comment = s; }
 
-std::string Node::getNewick() const {
+auto Node::getNewick() const -> std::string {
   static auto newick_lambda = [](const Node &n) { return n.getName(); };
 
   return getNewickLambda(newick_lambda);
 }
 
-std::string Node::getNewickLambda(
-    const std::function<std::string(const Node &)> &newick_lambda) const {
+auto Node::getNewickLambda(
+    const std::function<std::string(const Node &)> &newick_lambda) const
+    -> std::string {
   std::ostringstream newick_oss;
   for (size_t i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
@@ -114,7 +109,7 @@ std::string Node::getNewickLambda(
   return newick_oss.str();
 }
 
-size_t Node::getChildCount() const { return _children.size(); }
+auto Node::getChildCount() const -> size_t { return _children.size(); }
 
 void Node::setSplitString(const std::string &splitstring) {
   _split_string = splitstring;
@@ -128,27 +123,27 @@ void Node::setStochString(const std::string &stochstring) {
   _stoch_string = stochstring;
 }
 
-std::string Node::getStateString() const { return _state_string; }
+auto Node::getStateString() const -> std::string { return _state_string; }
 
-std::string Node::getSplitString() const { return _split_string; }
+auto Node::getSplitString() const -> std::string { return _split_string; }
 
-std::string Node::getStochString() const { return _stoch_string; }
+auto Node::getStochString() const -> std::string { return _stoch_string; }
 
 void Node::initExclDistVector() {
   _excluded_dists = std::make_shared<std::vector<lagrange_dist_t>>();
 }
 
-double Node::getMaxHeightRecursive() const {
+auto Node::getMaxHeightRecursive() const -> double {
   double max_height = 0.0;
-  for (auto &c : _children) {
+  for (const auto &c : _children) {
     max_height = std::max(max_height, c->getMaxHeightRecursive());
   }
   return max_height + _branch_length;
 }
 
-double Node::getMaxHeight() const {
+auto Node::getMaxHeight() const -> double {
   double max_height = 0.0;
-  for (auto &c : _children) {
+  for (const auto &c : _children) {
     max_height = std::max(max_height, c->getMaxHeightRecursive());
   }
   return max_height;
@@ -159,39 +154,39 @@ void Node::setHeightRecursive() {
   for (auto &c : _children) { c->setHeightRecursive(); }
 }
 
-std::shared_ptr<Node> getMRCAWithNode(
-    const std::shared_ptr<Node> &current,
-    const std::vector<std::shared_ptr<Node>> &leaves) {
-  if (current->_children.size() == 0) {
-    for (auto &n : leaves) {
+auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+                     const std::vector<std::shared_ptr<Node>> &leaves)
+    -> std::shared_ptr<Node> {
+  if (current->_children.empty()) {
+    for (const auto &n : leaves) {
       if (n == current) { return current; }
     }
     return {nullptr};
-  } else {
-    std::shared_ptr<Node> mrca = nullptr;
-    for (auto &c : current->_children) {
-      auto tmp_mrca = getMRCAWithNode(c, leaves);
-      if (tmp_mrca != nullptr) {
-        // if this is our second match, then we can return with this pointer.
-        if (mrca != nullptr) { return current; }
-        mrca = tmp_mrca;
-      }
-    }
-    return mrca;
   }
+  std::shared_ptr<Node> mrca = nullptr;
+  for (auto &c : current->_children) {
+    auto tmp_mrca = getMRCAWithNode(c, leaves);
+    if (tmp_mrca != nullptr) {
+      // if this is our second match, then we can return with this pointer.
+      if (mrca != nullptr) { return current; }
+      mrca = tmp_mrca;
+    }
+  }
+  return mrca;
 }
 
-bool Node::findNode(std::shared_ptr<Node> n) {
+auto Node::findNode(const std::shared_ptr<Node> &n) -> bool {
   if (this == n.get()) { return true; }
-  for (auto c : _children) {
+  for (const auto &c : _children) {
     if (c->findNode(n)) { return true; }
   }
   return false;
 }
 
-std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
-                                        const std::shared_ptr<Node> &n) {
-  for (auto c : current->_children) {
+auto getParentWithNode(const std::shared_ptr<Node> &current,
+                       const std::shared_ptr<Node> &n)
+    -> std::shared_ptr<Node> {
+  for (const auto &c : current->_children) {
     if (n == c) { return current; }
     auto ret = getParentWithNode(c, n);
     if (ret != nullptr) { return ret; }
@@ -199,17 +194,17 @@ std::shared_ptr<Node> getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateForwardOperations(Workspace &ws,
-                                           PeriodRateMatrixMap &pm_map,
-                                           BranchProbMatrixMap &bm_map) const {
-  if (_children.size() != 2 && _children.size() != 0) {
+auto Node::traverseAndGenerateForwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &pm_map,
+    BranchProbMatrixMap &bm_map) const
+    -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
+                 std::shared_ptr<DispersionOperation>> {
+  if (_children.size() != 2 && !_children.empty()) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
   }
 
-  if (_children.size() == 0) {
+  if (_children.empty()) {
     ws.register_top_clv(_id);
     return {{}, generateDispersionOperations(ws, pm_map, bm_map)};
   }
@@ -235,17 +230,17 @@ Node::traverseAndGenerateForwardOperations(Workspace &ws,
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
-std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-          std::shared_ptr<DispersionOperation>>
-Node::traverseAndGenerateBackwardOperations(Workspace &ws,
-                                            PeriodRateMatrixMap &pm_map,
-                                            BranchProbMatrixMap &bm_map) const {
-  if (_children.size() != 2 && _children.size() != 0) {
+auto Node::traverseAndGenerateBackwardOperations(
+    Workspace &ws, PeriodRateMatrixMap &pm_map,
+    BranchProbMatrixMap &bm_map) const
+    -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
+                 std::shared_ptr<DispersionOperation>> {
+  if (_children.size() != 2 && !_children.empty()) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
   }
 
-  if (_children.size() == 0) { return {{}, {}}; }
+  if (_children.empty()) { return {{}, {}}; }
 
   std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
 
@@ -283,16 +278,17 @@ Node::traverseAndGenerateBackwardOperations(Workspace &ws,
   return {rsplit_ops, disp_ops};
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperations(
-    Workspace &ws, PeriodRateMatrixMap &rm_map,
-    BranchProbMatrixMap &pm_map) const {
+auto Node::generateDispersionOperations(Workspace &ws,
+                                        PeriodRateMatrixMap &rm_map,
+                                        BranchProbMatrixMap &pm_map) const
+    -> std::shared_ptr<DispersionOperation> {
   return std::make_shared<DispersionOperation>(
       ws.get_top_clv(_id), getProbMatrixOperation(ws, rm_map, pm_map));
 }
 
-std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
+auto Node::generateDispersionOperationsReverse(
     Workspace &ws, PeriodRateMatrixMap &rm_map,
-    BranchProbMatrixMap &pm_map) const {
+    BranchProbMatrixMap &pm_map) const -> std::shared_ptr<DispersionOperation> {
   return std::make_shared<DispersionOperation>(
       ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
       getProbMatrixOperation(ws, rm_map, pm_map, true));
@@ -301,7 +297,7 @@ std::shared_ptr<DispersionOperation> Node::generateDispersionOperationsReverse(
 void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(
     std::vector<size_t> &ret) const {
   ret.push_back(_id);
-  for (auto &c : _children) {
+  for (const auto &c : _children) {
     if (c->isInternal()) {
       c->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
     }
@@ -310,7 +306,7 @@ void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(
 
 void Node::traverseAndGeneratePostorderNodeIdsInternalOnly(
     std::vector<size_t> &ret) const {
-  for (auto &c : _children) {
+  for (const auto &c : _children) {
     if (c->isInternal()) {
       c->traverseAndGeneratePostorderNodeIdsInternalOnly(ret);
     }
@@ -321,7 +317,7 @@ void Node::traverseAndGeneratePostorderNodeIdsInternalOnly(
 void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
     std::vector<size_t> &ret) const {
   ret.push_back(_number);
-  for (auto &c : _children) {
+  for (const auto &c : _children) {
     if (c->isInternal()) {
       c->traverseAndGenerateBackwardNodeNumbersInternalOnly(ret);
     }
@@ -331,10 +327,10 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
 void Node::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, size_t> &distrib_data) const {
-  if (_children.size() == 0) {
+  if (_children.empty()) {
     ws.set_tip_clv(ws.get_top_clv(_id), distrib_data.at(_label));
   } else {
-    for (auto &c : _children) { c->assignTipData(ws, distrib_data); }
+    for (const auto &c : _children) { c->assignTipData(ws, distrib_data); }
   }
 }
 
@@ -348,7 +344,7 @@ void Node::assignId() {
   assignIdRecursive(id);
 }
 
-size_t Node::getId() const { return _id; }
+auto Node::getId() const -> size_t { return _id; }
 
 void Node::setSplitStringRecursive(
     const std::vector<size_t> &id_map,

@@ -45,13 +45,13 @@ struct WorkerContext {
 
 class WorkerState {
  public:
-  WorkerState() : _tid{_total_threads++}, _assigned_threads{0} {}
+  WorkerState() : _tid{_total_threads++} {}
 
   WorkerState(const WorkerState&) = delete;
-  WorkerState& operator=(const WorkerState&) = delete;
+  auto operator=(const WorkerState&) -> WorkerState& = delete;
 
   WorkerState(WorkerState&& ts) noexcept { *this = std::move(ts); }
-  WorkerState& operator=(WorkerState&& ts) noexcept {
+  auto operator=(WorkerState&& ts) noexcept -> WorkerState& {
     _tid = ts._tid;
     _assigned_threads = ts._assigned_threads;
     ++_total_threads;
@@ -116,8 +116,8 @@ class WorkerState {
     work(tc, ws);
   }
 
-  bool master_thread() const { return _tid == 0; }
-  size_t thread_id() const { return _tid; }
+  auto master_thread() const -> bool { return _tid == 0; }
+  auto thread_id() const -> size_t { return _tid; }
 
   void halt_threads() {
     set_mode(WorkerMode::Halt);
@@ -178,17 +178,17 @@ class WorkerState {
     if (master_thread()) {
       while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
-      wait_flag = 1 ? wait_flag == 0 : 0;
+      wait_flag = wait_flag == 0 ? 1 : 0;
     } else {
       while (local_wait_flag == wait_flag) {}
-      local_wait_flag = 1 ? local_wait_flag == 0 : 0;
+      local_wait_flag = local_wait_flag == 0 ? 1 : 0;
     }
   }
 
   template <typename T>
-  typename std::vector<T>::iterator find_work_goal(
-      std::vector<T>& work_buffer,
-      const std::shared_ptr<Workspace>& workspace) {
+  auto find_work_goal(std::vector<T>& work_buffer,
+                      const std::shared_ptr<Workspace>& workspace) ->
+      typename std::vector<T>::iterator {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {
@@ -201,8 +201,9 @@ class WorkerState {
   }
 
   template <typename T>
-  std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
-                               const std::shared_ptr<Workspace>& workspace) {
+  auto find_work(std::vector<std::shared_ptr<T>>& work_buffer,
+                 const std::shared_ptr<Workspace>& workspace)
+      -> std::shared_ptr<T> {
     assert(!work_buffer.empty());
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
@@ -245,13 +246,13 @@ class WorkerState {
     return {};
   }
 
-  inline size_t active_threads() const {
+  static inline size_t active_threads() {
     return _total_threads - _finished_threads;
   }
 
-  size_t _tid;
+  size_t _tid{};
 
-  size_t _assigned_threads;
+  size_t _assigned_threads{0};
 
   static std::shared_ptr<SplitOperation> _forward_work_buffer;
   static std::shared_ptr<ReverseSplitOperation> _backwards_work_buffer;

@@ -41,25 +41,26 @@ class Node {
   std::vector<std::shared_ptr<Node>> _children;
   std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
 
-  std::shared_ptr<MakeRateMatrixOperation> getRateMatrixOperation(
-      const Workspace &ws, PeriodRateMatrixMap &rm_map) const {
+  auto getRateMatrixOperation(const Workspace &ws,
+                              PeriodRateMatrixMap &rm_map) const
+      -> std::shared_ptr<MakeRateMatrixOperation> {
     auto it = rm_map.find(_period);
     if (it == rm_map.end()) {
       auto rm = std::make_shared<MakeRateMatrixOperation>(
           ws.suggest_rate_matrix_index());
       rm_map.emplace(_period, rm);
       return rm;
-    } else {
-      if (it->second == nullptr) {
-        throw std::runtime_error{"We got an empty expm"};
-      }
-      return it->second;
     }
+    if (it->second == nullptr) {
+      throw std::runtime_error{"We got an empty expm"};
+    }
+    return it->second;
   }
 
-  std::shared_ptr<ExpmOperation> getProbMatrixOperation(
-      Workspace &ws, PeriodRateMatrixMap &rm_map, BranchProbMatrixMap &pm_map,
-      bool transpose = false) const {
+  auto getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                              BranchProbMatrixMap &pm_map,
+                              bool transpose = false) const
+      -> std::shared_ptr<ExpmOperation> {
     auto key = std::make_pair(_period, _branch_length);
     auto it = pm_map.find(key);
     if (it == pm_map.end()) {
@@ -68,49 +69,48 @@ class Node {
                                                 _branch_length, rm, transpose);
       pm_map.emplace(key, pm);
       return pm;
-    } else {
-      if (it->second == nullptr) {
-        throw std::runtime_error{"We got an empty expm"};
-      }
-      return it->second;
     }
+    if (it->second == nullptr) {
+      throw std::runtime_error{"We got an empty expm"};
+    }
+    return it->second;
   }
 
  public:
   Node();
-  Node(double bl, size_t number, const std::string &name);
+  Node(double bl, size_t number, std::string name);
   ~Node() {
     for (auto &c : _children) { c.reset(); }
   }
 
-  bool isExternal() const;
-  bool isInternal() const;
+  auto isExternal() const -> bool;
+  auto isInternal() const -> bool;
 
-  size_t getNumber() const;
+  auto getNumber() const -> size_t;
   void setNumber(size_t n);
 
-  size_t getId() const;
+  auto getId() const -> size_t;
 
-  double getBL();
+  auto getBL() const -> double;
   void setBL(double bl);
 
-  double getHeight();
+  auto getHeight() const -> double;
   void setHeight(double he);
 
-  bool hasChild(std::shared_ptr<Node> test);
-  bool addChild(std::shared_ptr<Node> c);
-  bool removeChild(std::shared_ptr<Node> c);
-  std::shared_ptr<Node> getChild(size_t c) const;
+  auto hasChild(const std::shared_ptr<Node> &test) -> bool;
+  auto addChild(const std::shared_ptr<Node> &c) -> bool;
+  auto removeChild(const std::shared_ptr<Node> &c) -> bool;
+  auto getChild(size_t c) const -> std::shared_ptr<Node>;
 
-  std::string getName() const;
+  auto getName() const -> std::string;
   void setName(const std::string &s);
   void setComment(const std::string &s);
 
-  std::string getNewick() const;
-  std::string getNewickLambda(
-      const std::function<std::string(const Node &)> &) const;
+  auto getNewick() const -> std::string;
+  auto getNewickLambda(const std::function<std::string(const Node &)> &) const
+      -> std::string;
 
-  size_t getChildCount() const;
+  auto getChildCount() const -> size_t;
 
   void setSplitStringRecursive(
       const std::vector<size_t> &id_map,
@@ -124,51 +124,53 @@ class Node {
   void setSplitString(const std::string &splitstring);
   void setStateString(const std::string &splitstring);
   void setStochString(const std::string &stochstring);
-  std::string getSplitString() const;
-  std::string getStateString() const;
-  std::string getStochString() const;
+  auto getSplitString() const -> std::string;
+  auto getStateString() const -> std::string;
+  auto getStochString() const -> std::string;
 
   void initExclDistVector();
 
-  bool findNode(std::shared_ptr<Node> n);
+  auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
-  double getMaxHeightRecursive() const;
-  double getMaxHeight() const;
+  auto getMaxHeightRecursive() const -> double;
+  auto getMaxHeight() const -> double;
   void setHeightRecursive(double height);
   void setHeightRecursive();
 
-  friend std::shared_ptr<Node> getParentWithNode(
-      const std::shared_ptr<Node> &current, const std::shared_ptr<Node> &n);
+  friend auto getParentWithNode(const std::shared_ptr<Node> &current,
+                                const std::shared_ptr<Node> &n)
+      -> std::shared_ptr<Node>;
 
-  friend std::shared_ptr<Node> getMRCAWithNode(
-      const std::shared_ptr<Node> &current,
-      const std::vector<std::shared_ptr<Node>> &nodes);
+  friend auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+                              const std::vector<std::shared_ptr<Node>> &nodes)
+      -> std::shared_ptr<Node>;
 
-  std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-            std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateForwardOperations(Workspace &ws,
-                                       PeriodRateMatrixMap &pm_map,
-                                       BranchProbMatrixMap &bm_map) const;
+  auto traverseAndGenerateForwardOperations(Workspace &ws,
+                                            PeriodRateMatrixMap &pm_map,
+                                            BranchProbMatrixMap &bm_map) const
+      -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
+                   std::shared_ptr<DispersionOperation>>;
 
-  std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-            std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateBackwardOperations(Workspace &ws,
-                                        PeriodRateMatrixMap &rm_map,
-                                        BranchProbMatrixMap &pm_map) const;
+  auto traverseAndGenerateBackwardOperations(Workspace &ws,
+                                             PeriodRateMatrixMap &rm_map,
+                                             BranchProbMatrixMap &pm_map) const
+      -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
+                   std::shared_ptr<DispersionOperation>>;
 
-  std::shared_ptr<DispersionOperation> generateDispersionOperations(
-      Workspace &ws, PeriodRateMatrixMap &rm_map,
-      BranchProbMatrixMap &pm_map) const;
+  auto generateDispersionOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                                    BranchProbMatrixMap &pm_map) const
+      -> std::shared_ptr<DispersionOperation>;
 
-  std::shared_ptr<DispersionOperation> generateDispersionOperationsReverse(
-      Workspace &ws, PeriodRateMatrixMap &rm_map,
-      BranchProbMatrixMap &pm_map) const;
+  auto generateDispersionOperationsReverse(Workspace &ws,
+                                           PeriodRateMatrixMap &rm_map,
+                                           BranchProbMatrixMap &pm_map) const
+      -> std::shared_ptr<DispersionOperation>;
 
-  std::pair<std::vector<ReverseSplitOperation>,
-            std::shared_ptr<DispersionOperation>>
-  traverseAndGenerateBackwardOperations(
+  auto traverseAndGenerateBackwardOperations(
       Workspace &ws,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const;
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const
+      -> std::pair<std::vector<ReverseSplitOperation>,
+                   std::shared_ptr<DispersionOperation>>;
 
   void traverseAndGenerateBackwardNodeIdsInternalOnly(
       std::vector<size_t> &) const;
@@ -186,8 +188,8 @@ class Node {
   void assignId();
 };
 
-std::shared_ptr<Node> getMRCAWithNode(
-    const std::shared_ptr<Node> &current,
-    const std::vector<std::shared_ptr<Node>> &nodes);
+auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+                     const std::vector<std::shared_ptr<Node>> &nodes)
+    -> std::shared_ptr<Node>;
 
 #endif /* NODE_H_ */

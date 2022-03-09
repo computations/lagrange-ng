@@ -31,7 +31,9 @@ class MakeRateMatrixOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  inline lagrange_clock_tick_t last_update() const { return _last_execution; }
+  inline auto last_update() const -> lagrange_clock_tick_t {
+    return _last_execution;
+  }
 
   inline void update_rates(const std::shared_ptr<Workspace>& ws, double disp,
                            double ext) {
@@ -39,17 +41,18 @@ class MakeRateMatrixOperation {
     _last_update = ws->advance_clock();
   }
 
-  inline void update_rates(const std::shared_ptr<Workspace>& ws, period_t p) {
+  inline void update_rates(const std::shared_ptr<Workspace>& ws,
+                           const period_t& p) {
     update_rates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
-  inline size_t rate_matrix_index() const { return _rate_matrix_index; }
+  inline auto rate_matrix_index() const -> size_t { return _rate_matrix_index; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  std::string printStatus(const std::shared_ptr<Workspace>& ws,
-                          size_t tabLevel = 0) const;
+  auto printStatus(const std::shared_ptr<Workspace>& ws,
+                   size_t tabLevel = 0) const -> std::string;
 
  private:
   size_t _rate_matrix_index;
@@ -77,21 +80,23 @@ class ExpmOperation {
       : ExpmOperation(prob_matrix, t, rm_op, false) {}
 
   ExpmOperation(const ExpmOperation&) = delete;
-  ExpmOperation& operator=(const ExpmOperation&) = delete;
+  auto operator=(const ExpmOperation&) -> ExpmOperation& = delete;
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  size_t prob_matrix() const { return _prob_matrix_index; }
+  auto prob_matrix() const -> size_t { return _prob_matrix_index; }
 
-  lagrange_clock_tick_t last_execution() const { return _last_execution; }
+  auto last_execution() const -> lagrange_clock_tick_t {
+    return _last_execution;
+  }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  std::string printStatus(const std::shared_ptr<Workspace>& ws,
-                          size_t tabLevel = 0) const;
+  auto printStatus(const std::shared_ptr<Workspace>& ws,
+                   size_t tabLevel = 0) const -> std::string;
 
-  std::mutex& getLock() { return *_lock; }
+  auto getLock() -> std::mutex& { return *_lock; }
 
  private:
   size_t _prob_matrix_index;
@@ -184,21 +189,21 @@ class DispersionOperation {
     _bot_clv = clv_index;
   }
 
-  size_t top_clv_index() const { return _top_clv; }
-  size_t bot_clv_index() const { return _bot_clv; }
+  auto top_clv_index() const -> size_t { return _top_clv; }
+  auto bot_clv_index() const -> size_t { return _bot_clv; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  std::string printStatus(const std::shared_ptr<Workspace>& ws,
-                          size_t tabLevel = 0) const;
+  auto printStatus(const std::shared_ptr<Workspace>& ws,
+                   size_t tabLevel = 0) const -> std::string;
 
-  bool ready(const std::shared_ptr<Workspace>& ws,
-             lagrange_clock_tick_t deadline) const {
+  auto ready(const std::shared_ptr<Workspace>& ws,
+             lagrange_clock_tick_t deadline) const -> bool {
     return ws->last_update_clv(_bot_clv) > deadline;
   }
 
-  std::mutex& getLock() { return *_lock; }
+  auto getLock() -> std::mutex& { return *_lock; }
 
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
@@ -223,8 +228,8 @@ class SplitOperation {
   SplitOperation(size_t lchild_clv_top, size_t rchild_clv_top,
                  size_t lchild_clv_bot, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t lprob_mat, size_t rprob_mat,
-                 std::shared_ptr<MakeRateMatrixOperation> lrate_matrix,
-                 std::shared_ptr<MakeRateMatrixOperation> rrate_matrix,
+                 const std::shared_ptr<MakeRateMatrixOperation>& lrate_matrix,
+                 const std::shared_ptr<MakeRateMatrixOperation>& rrate_matrix,
                  size_t parent_clv)
       : _lbranch_clv_index{lchild_clv_top},
         _rbranch_clv_index{rchild_clv_top},
@@ -238,7 +243,7 @@ class SplitOperation {
   SplitOperation(size_t lchild_clv_top, size_t lchild_clv_bot,
                  size_t rchild_clv_top, size_t rchild_clv_bot, double lbrlen,
                  double rbrlen, size_t prob_mat,
-                 std::shared_ptr<MakeRateMatrixOperation> rate_matrix,
+                 const std::shared_ptr<MakeRateMatrixOperation>& rate_matrix,
                  size_t parent_clv)
       : SplitOperation(lchild_clv_top, rchild_clv_top, lchild_clv_bot,
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
@@ -255,20 +260,20 @@ class SplitOperation {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  size_t get_parent_clv() const { return _parent_clv_index; }
+  auto get_parent_clv() const -> size_t { return _parent_clv_index; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  std::string printStatus(const std::shared_ptr<Workspace>& ws,
-                          size_t tabLevel = 0) const;
+  auto printStatus(const std::shared_ptr<Workspace>& ws,
+                   size_t tabLevel = 0) const -> std::string;
 
-  bool ready(const std::shared_ptr<Workspace>& ws) const {
+  auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
            _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
   }
 
-  std::mutex& getLock() { return *_lock; }
+  auto getLock() -> std::mutex& { return *_lock; }
 
  private:
   size_t _lbranch_clv_index;
@@ -288,7 +293,7 @@ class ReverseSplitOperation {
       size_t bot_clv,  /* Where the result is stored*/
       size_t ltop_clv, /* Where the result of the dispop is stored */
       size_t rtop_clv, /* Should be a _non_ reverse CLV */
-      std::shared_ptr<MakeRateMatrixOperation> rate_matrix_op,
+      const std::shared_ptr<MakeRateMatrixOperation>& rate_matrix_op,
       size_t prob_matrix_index, size_t disp_clv_index, double brlen)
       : _bot_clv_index{bot_clv},
         _ltop_clv_index{ltop_clv},
@@ -318,8 +323,8 @@ class ReverseSplitOperation {
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  std::string printStatus(const std::shared_ptr<Workspace>& ws,
-                          size_t tabLevel = 0) const;
+  auto printStatus(const std::shared_ptr<Workspace>& ws,
+                   size_t tabLevel = 0) const -> std::string;
 
   void makeRootOperation(size_t clv_index) {
     _branch_ops.clear();
@@ -331,11 +336,11 @@ class ReverseSplitOperation {
     }
   }
 
-  size_t getStableCLV() const { return _ltop_clv_index; }
+  auto getStableCLV() const -> size_t { return _ltop_clv_index; }
 
-  bool ready(const std::shared_ptr<Workspace>& ws) const {
+  auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     bool branch_ops_ready = true;
-    for (auto& op : _branch_ops) {
+    for (const auto& op : _branch_ops) {
       branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
     }
 
@@ -343,7 +348,7 @@ class ReverseSplitOperation {
            (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
   }
 
-  std::mutex& getLock() { return *_lock; }
+  auto getLock() -> std::mutex& { return *_lock; }
 
  private:
   size_t _bot_clv_index;
@@ -364,13 +369,13 @@ class LLHGoal {
       : _root_clv_index{root_clv}, _prior_index{prior_index} {}
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline double result() const { return _result; }
+  inline auto result() const -> double { return _result; }
 
   size_t _root_clv_index;
   size_t _prior_index;
   double _result = -std::numeric_limits<double>::infinity();
 
-  bool ready(const std::shared_ptr<Workspace>&) const;
+  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
  private:
   lagrange_clock_tick_t _last_execution = 0;
@@ -385,14 +390,14 @@ class StateLHGoal {
         _result{nullptr},
         _states{0} {}
   StateLHGoal(const StateLHGoal&) = delete;
-  StateLHGoal& operator=(const StateLHGoal&) = delete;
-  StateLHGoal(StateLHGoal&& other)
+  auto operator=(const StateLHGoal&) -> StateLHGoal& = delete;
+  StateLHGoal(StateLHGoal&& other) noexcept
       : _parent_clv_index{other._parent_clv_index},
         _lchild_clv_index{other._lchild_clv_index},
         _rchild_clv_index{other._rchild_clv_index},
         _result{std::move(other._result)},
         _states{other._states} {}
-  StateLHGoal& operator=(StateLHGoal&&) = delete;
+  auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -402,7 +407,7 @@ class StateLHGoal {
     return ret;
   }
 
-  bool ready(const std::shared_ptr<Workspace>&) const;
+  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
  private:
   size_t _parent_clv_index;
@@ -420,14 +425,13 @@ class SplitLHGoal {
   SplitLHGoal(size_t parent_clv, size_t lchild_clv, size_t rchild_clv)
       : _parent_clv_index{parent_clv},
         _lchild_clv_index{lchild_clv},
-        _rchild_clv_index{rchild_clv},
-        _result{} {}
+        _rchild_clv_index{rchild_clv} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline lagrange_split_return_t result() const { return _result; }
+  inline auto result() const -> lagrange_split_return_t { return _result; }
 
-  bool ready(const std::shared_ptr<Workspace>&) const;
+  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
  private:
   size_t _parent_clv_index;
@@ -439,11 +443,10 @@ class SplitLHGoal {
   lagrange_split_return_t _result;
 };
 
-typedef std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>
-    PeriodRateMatrixMap;
+using PeriodRateMatrixMap =
+    std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>;
 
-typedef std::unordered_map<std::pair<size_t, double>,
-                           std::shared_ptr<ExpmOperation>>
-    BranchProbMatrixMap;
+using BranchProbMatrixMap = std::unordered_map<std::pair<size_t, double>,
+                                               std::shared_ptr<ExpmOperation>>;
 
 #endif

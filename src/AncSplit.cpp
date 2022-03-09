@@ -27,8 +27,8 @@ AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
       ldescdistint(ldesc),
       rdescdistint(rdesc) {}
 
-double AncSplit::getWeight() const { return _weight; }
+auto AncSplit::getWeight() const -> double { return _weight; }
 
 void AncSplit::setLikelihood(double li) { _likelihood = li; }
 
-double AncSplit::getLikelihood() const { return _likelihood; }
+auto AncSplit::getLikelihood() const -> double { return _likelihood; }

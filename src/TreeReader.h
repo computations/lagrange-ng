@@ -18,8 +18,8 @@
 
 class TreeReader {
  public:
-  TreeReader() {}
-  std::shared_ptr<Tree> readTree(const std::string &tree);
+  TreeReader() = default;
+  static auto readTree(const std::string &tree) -> std::shared_ptr<Tree>;
 };
 
 #endif /* TREE_READER_H_ */
