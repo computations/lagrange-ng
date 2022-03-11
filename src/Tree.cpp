@@ -7,8 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
-#include <math.h>
-
+#include <cmath>
 #include <exception>
 #include <limits>
 #include <unordered_map>
@@ -93,7 +92,6 @@ auto Tree::getRoot() -> std::shared_ptr<Node> { return _root; }
 auto Tree::getMRCA(const std::vector<std::string> &outgroup)
     -> std::shared_ptr<Node> {
   if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
-  std::shared_ptr<Node> mcra;
   std::vector<std::shared_ptr<Node>> outgroup_nodes;
   outgroup_nodes.reserve(outgroup.size());
   for (const auto &o : outgroup) {
@@ -188,8 +186,8 @@ void Tree::postOrderProcessRoot(const std::shared_ptr<Node> &node) {
 
 Tree::~Tree() { _root.reset(); }
 
-auto Tree::findNode(std::shared_ptr<Node> n) -> bool {
-  return _root->findNode(std::move(n));
+auto Tree::findNode(const std::shared_ptr<Node> &n) -> bool {
+  return _root->findNode(n);
 }
 
 auto Tree::getParent(const std::shared_ptr<Node> &n) const

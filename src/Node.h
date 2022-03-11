@@ -41,13 +41,12 @@ class Node {
   std::vector<std::shared_ptr<Node>> _children;
   std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
 
-  auto getRateMatrixOperation(const Workspace &ws,
-                              PeriodRateMatrixMap &rm_map) const
+  auto getRateMatrixOperation(PeriodRateMatrixMap &rm_map) const
       -> std::shared_ptr<MakeRateMatrixOperation> {
     auto it = rm_map.find(_period);
     if (it == rm_map.end()) {
       auto rm = std::make_shared<MakeRateMatrixOperation>(
-          ws.suggest_rate_matrix_index());
+          Workspace::suggest_rate_matrix_index());
       rm_map.emplace(_period, rm);
       return rm;
     }
@@ -64,7 +63,7 @@ class Node {
     auto key = std::make_pair(_period, _branch_length);
     auto it = pm_map.find(key);
     if (it == pm_map.end()) {
-      auto rm = getRateMatrixOperation(ws, rm_map);
+      auto rm = getRateMatrixOperation(rm_map);
       auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
                                                 _branch_length, rm, transpose);
       pm_map.emplace(key, pm);
@@ -94,7 +93,6 @@ class Node {
   auto getBL() const -> double;
   void setBL(double bl);
 
-  auto getHeight() const -> double;
   void setHeight(double he);
 
   auto hasChild(const std::shared_ptr<Node> &test) -> bool;

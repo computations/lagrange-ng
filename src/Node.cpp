@@ -5,6 +5,7 @@
  *      Author: smitty
  */
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -43,15 +44,11 @@ auto Node::getBL() const -> double { return _branch_length; }
 
 void Node::setBL(double bl) { _branch_length = bl; }
 
-auto Node::getHeight() const -> double { return _height; }
-
 void Node::setHeight(double he) { _height = he; }
 
 auto Node::hasChild(const std::shared_ptr<Node> &test) -> bool {
-  for (auto &i : _children) {
-    if (i == test) { return true; }
-  }
-  return false;
+  return std::any_of(_children.begin(), _children.end(),
+                     [&test](auto n) { return n == test; });
 }
 
 auto Node::addChild(const std::shared_ptr<Node> &c) -> bool {
@@ -158,8 +155,9 @@ auto getMRCAWithNode(const std::shared_ptr<Node> &current,
                      const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
   if (current->_children.empty()) {
-    for (const auto &n : leaves) {
-      if (n == current) { return current; }
+    if (std::any_of(current->_children.begin(), current->_children.end(),
+                    [&current](auto &n) { return n == current; })) {
+      return current;
     }
     return {nullptr};
   }
@@ -177,10 +175,8 @@ auto getMRCAWithNode(const std::shared_ptr<Node> &current,
 
 auto Node::findNode(const std::shared_ptr<Node> &n) -> bool {
   if (this == n.get()) { return true; }
-  for (const auto &c : _children) {
-    if (c->findNode(n)) { return true; }
-  }
-  return false;
+  return std::any_of(_children.begin(), _children.end(),
+                     [&n](auto &c) { return c->findNode(n); });
 }
 
 auto getParentWithNode(const std::shared_ptr<Node> &current,
@@ -231,8 +227,8 @@ auto Node::traverseAndGenerateForwardOperations(
 }
 
 auto Node::traverseAndGenerateBackwardOperations(
-    Workspace &ws, PeriodRateMatrixMap &pm_map,
-    BranchProbMatrixMap &bm_map) const
+    Workspace &ws, PeriodRateMatrixMap &rm_map,
+    BranchProbMatrixMap &pm_map) const
     -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
                  std::shared_ptr<DispersionOperation>> {
   if (_children.size() != 2 && !_children.empty()) {
@@ -246,7 +242,7 @@ auto Node::traverseAndGenerateBackwardOperations(
 
   ws.register_top_clv_reverse(_id);
 
-  auto disp_ops = generateDispersionOperationsReverse(ws, pm_map, bm_map);
+  auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
   ws.register_bot1_clv_reverse(_id);
   rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
@@ -258,7 +254,7 @@ auto Node::traverseAndGenerateBackwardOperations(
 
   if (_children[0]->isInternal()) {
     auto child_trav =
-        _children[0]->traverseAndGenerateBackwardOperations(ws, pm_map, bm_map);
+        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
@@ -268,7 +264,7 @@ auto Node::traverseAndGenerateBackwardOperations(
 
   if (_children[1]->isInternal()) {
     auto child_trav =
-        _children[1]->traverseAndGenerateBackwardOperations(ws, pm_map, bm_map);
+        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));

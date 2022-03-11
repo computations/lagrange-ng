@@ -37,7 +37,7 @@ class Tree {
                                double newHeight);
   auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
 
-  auto findNode(std::shared_ptr<Node> n) -> bool;
+  auto findNode(const std::shared_ptr<Node>& n) -> bool;
 
  public:
   Tree();

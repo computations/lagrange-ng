@@ -165,7 +165,6 @@ class WorkerState {
   }
 
   void barrier() const {
-    static thread_local volatile int local_wait_flag = 0;
     static volatile int wait_flag = 0;
     // static std::atomic<size_t> barrier_threads{0};
     static size_t barrier_threads = 0;
@@ -180,6 +179,7 @@ class WorkerState {
       barrier_threads = 0;
       wait_flag = wait_flag == 0 ? 1 : 0;
     } else {
+      static thread_local volatile int local_wait_flag = 0;
       while (local_wait_flag == wait_flag) {}
       local_wait_flag = local_wait_flag == 0 ? 1 : 0;
     }
@@ -246,7 +246,7 @@ class WorkerState {
     return {};
   }
 
-  static inline size_t active_threads() {
+  static inline auto active_threads() -> size_t {
     return _total_threads - _finished_threads;
   }
 

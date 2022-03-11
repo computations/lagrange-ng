@@ -21,13 +21,12 @@ InputReader::InputReader() : nareas(0), nspecies(0) {}
 auto InputReader::readMultipleTreeFile(const std::string &filename)
     -> std::vector<std::shared_ptr<Tree>> {
   std::vector<std::shared_ptr<Tree>> ret;
-  TreeReader tr;
   std::ifstream ifs(filename.c_str());
   std::string temp;
   int count = 1;
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
-      auto intree = tr.readTree(temp);
+      auto intree = TreeReader::readTree(temp);
       std::cout << "Tree " << count << " has " << intree->getExternalNodeCount()
                 << " leaves." << std::endl;
       ret.push_back(intree);
@@ -94,6 +93,7 @@ void InputReader::checkData(
     const std::unordered_map<std::string, lagrange_dist_t> &data,
     const std::vector<std::shared_ptr<Tree>> &trees) {
   std::vector<std::string> dataspecies;
+  dataspecies.reserve(data.size());
   for (const auto &itr : data) { dataspecies.push_back(itr.first); }
   std::vector<std::string> treespecies;
   for (unsigned int j = 0; j < trees[0]->getExternalNodeCount(); j++) {

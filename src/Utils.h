@@ -86,7 +86,7 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t;
 template <typename T>
 class lagrange_option_t {
  public:
-  lagrange_option_t() {}
+  lagrange_option_t() = default;
   explicit lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
 
   auto operator=(const T &v) -> lagrange_option_t<T> & {

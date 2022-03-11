@@ -249,9 +249,8 @@ static void handle_tree(
     const config_options_t &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
-  attributes_json["periods"] = !config.periods.empty() != 0u
-                                   ? static_cast<int>(!config.periods.empty())
-                                   : 1;
+  attributes_json["periods"] =
+      !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
   root_json["attributes"] = attributes_json;
@@ -332,12 +331,12 @@ auto main(int argc, char *argv[]) -> int {
     InputReader ir;
     std::cout << "reading tree..." << std::endl;
     std::vector<std::shared_ptr<Tree>> intrees =
-        ir.readMultipleTreeFile(config.treefile);
+        InputReader::readMultipleTreeFile(config.treefile);
     std::cout << "reading data..." << std::endl;
     std::unordered_map<std::string, size_t> data =
         ir.readStandardInputData(config.datafile, config.maxareas);
     std::cout << "checking data..." << std::endl;
-    ir.checkData(data, intrees);
+    InputReader::checkData(data, intrees);
 
     config.region_count = ir.nareas;
     if (config.maxareas == 0) { config.maxareas = config.region_count; }

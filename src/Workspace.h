@@ -218,8 +218,8 @@ class Workspace {
     return suggested_index;
   }
 
-  static inline size_t suggest_rate_matrix_index() { return 0; }
-  static inline size_t suggest_freq_vector_index() { return 0; }
+  static inline auto suggest_rate_matrix_index() -> size_t { return 0; }
+  static inline auto suggest_freq_vector_index() -> size_t { return 0; }
 
   inline auto register_generic_clv() -> size_t { return register_clv(); }
 
