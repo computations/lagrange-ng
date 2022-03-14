@@ -75,7 +75,7 @@ static auto normalizeStateDistrubtionByLWR(
 
   double max_llh = -std::numeric_limits<double>::infinity();
 
-  if (states_len == 1) { throw std::runtime_error{"YOU FUCKED UP BEN"}; }
+  assert(states_len != 1);
 
   for (size_t i = 0; i < states_len; ++i) {
     double tmp = normalized_states.get()[i];
@@ -84,7 +84,7 @@ static auto normalizeStateDistrubtionByLWR(
   }
 
   double total_llh = 0.0;
-  for (size_t i = 0; i < states_len; i++) {
+  for (size_t i = 1; i < states_len; i++) {
     total_llh += std::exp(normalized_states.get()[i] - max_llh);
   }
 
@@ -190,7 +190,8 @@ static auto parse_config(const std::string &config_filename)
 
 static auto makeStateJsonOutput(
     const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
-    size_t states_len, const std::vector<size_t> &stateToIdMap)
+    size_t states_len, const std::vector<size_t> &stateToIdMap,
+    const std::vector<std::string> &areanames, size_t maxareas)
     -> nlohmann::json {
   nlohmann::json states_json;
   for (size_t i = 0; i < states.size(); ++i) {
@@ -199,12 +200,15 @@ static auto makeStateJsonOutput(
     const auto &state_distribution = states[i];
     auto lwr_distribution =
         normalizeStateDistrubtionByLWR(state_distribution, states_len);
-    for (size_t dist = 0; dist < states_len; ++dist) {
+    for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+         ++dist_index, dist = next_dist(dist, maxareas)) {
       nlohmann::json tmp;
       tmp["distribution"] = dist;
-      double llh = state_distribution.get()[dist];
+      double llh = state_distribution.get()[dist_index];
+      tmp["distribution-string"] =
+          lagrange_convert_dist_string(dist, areanames);
       tmp["llh"] = llh;
-      double ratio = lwr_distribution.get()[dist];
+      double ratio = lwr_distribution.get()[dist_index];
       tmp["ratio"] = ratio;
       node_json["states"].push_back(tmp);
     }
@@ -289,8 +293,9 @@ static void handle_tree(
   // invert the map
   if (config.states) {
     auto states = context.getStateResults();
-    root_json["node-results"] = makeStateJsonOutput(
-        states, context.stateCount(), stateGoalIndexToIdMap);
+    root_json["node-results"] =
+        makeStateJsonOutput(states, context.stateCount(), stateGoalIndexToIdMap,
+                            config.areaNames, config.maxareas);
   }
   if (config.splits) { auto splits = context.getSplitResults(); }
   writeJsonToFile(config, root_json);

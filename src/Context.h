@@ -54,7 +54,9 @@ class Context {
   void updateRates(const period_t& p);
   void init();
 
-  auto stateCount() const -> size_t { return _workspace->states(); }
+  auto stateCount() const -> size_t {
+    return _workspace->restricted_state_count();
+  }
 
   auto currentParams() const -> period_t;
 

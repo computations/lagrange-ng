@@ -83,6 +83,12 @@ auto lagrange_convert_dist_string(lagrange_dist_t dist,
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
+inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
+  d += 1;
+  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
+  return d;
+}
+
 template <typename T>
 class lagrange_option_t {
  public:
