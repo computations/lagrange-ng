@@ -117,18 +117,22 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
   std::vector<lagrange_region_split_t> splits;
 
   if (max_areas == states) {
+    const auto identity_func = [](lagrange_dist_t d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       join_splits(i, i, regions, states, splits, c1, c2, dest, scale,
-                  [](lagrange_dist_t d) { return d; });
+                  identity_func);
     }
   } else {
     lagrange_dist_t dist = 0;
     size_t index = 0;
+    const auto dist_map = invert_dist_map(regions, max_areas);
+    const auto dist_map_func = [&dist_map](lagrange_dist_t d) -> size_t {
+      return dist_map.at(d);
+    };
     for (dist = 0, index = 0; dist < states;
          dist = next_dist(dist, max_areas), index++) {
-      auto dist_map = invert_dist_map(regions, max_areas);
       join_splits(dist, index, max_areas, regions, splits, c1, c2, dest, scale,
-                  [&dist_map](lagrange_dist_t d) { return dist_map.at(d); });
+                  dist_map_func);
     }
   }
 
@@ -176,16 +180,19 @@ inline void reverse_weighted_combine(const lagrange_const_col_vector_t &c1,
   std::vector<lagrange_region_split_t> splits;
 
   if (max_areas == regions) {
+    const auto identity_func = [](lagrange_dist_t d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
-                          [](size_t index) -> size_t { return index; });
+                          identity_func);
     }
   } else {
-    auto dist_map = invert_dist_map(regions, max_areas);
+    const auto dist_map = invert_dist_map(regions, max_areas);
+    const auto dist_map_func = [&dist_map](lagrange_dist_t d) -> size_t {
+      return dist_map.at(d);
+    };
     for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
-      reverse_join_splits(
-          i, regions, max_areas, splits, c1, c2, dest,
-          [&dist_map](size_t index) { return dist_map.at(index); });
+      reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
+                          dist_map_func);
     }
   }
 }
