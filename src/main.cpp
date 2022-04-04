@@ -124,34 +124,34 @@ static auto parse_config(const std::string &config_filename)
     std::vector<std::string> tokens = grab_token(line, "=");
 
     /* Parse the option in the token */
-    if (strcmp(tokens[0].c_str(), "treefile") == 0) {
+    if (tokens[0] == "treefile") {
       config.treefile = tokens[1];
-    } else if (strcmp(tokens[0].c_str(), "datafile") == 0) {
+    } else if (tokens[0] == "datafile") {
       config.datafile = tokens[1];
-    } else if (strcmp(tokens[0].c_str(), "ratematrix") == 0) {
+    } else if (tokens[0] == "ratematrix") {
       config.ratematrixfile = tokens[1];
       if (config.ratematrixfile == "d" || config.ratematrixfile == "D") {
         config.ratematrixfile = "";
       }
-    } else if (strcmp(tokens[0].c_str(), "areanames") == 0) {
+    } else if (tokens[0] == "areanames") {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.areaNames = searchtokens;
-    } else if (strcmp(tokens[0].c_str(), "periods") == 0) {
+    } else if (tokens[0] == "periods") {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       for (auto &searchtoken : searchtokens) {
         config.periods.push_back(atof(searchtoken.c_str()));
       }
-    } else if (strcmp(tokens[0].c_str(), "mrca") == 0) {
+    } else if (tokens[0] == "mrca") {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       std::vector<std::string> mrc;
       for (unsigned int j = 1; j < searchtokens.size(); j++) {
         mrc.push_back(searchtokens[j]);
       }
       config.mrcas[searchtokens[0]] = mrc;
-    } else if (strcmp(tokens[0].c_str(), "ancstate") == 0) {
+    } else if (tokens[0] == "ancstate") {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.ancstates.push_back(searchtokens[0]);
-    } else if (strcmp(tokens[0].c_str(), "fossil") == 0) {
+    } else if (tokens[0] == "fossil") {
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.fossiltype.push_back(searchtokens[0]);
       config.fossilmrca.push_back(searchtokens[1]);
@@ -161,29 +161,35 @@ static auto parse_config(const std::string &config_filename)
       } else {
         config.fossilage.push_back(0.0);
       }
-    } else if (strcmp(tokens[0].c_str(), "calctype") == 0) {
+    } else if (tokens[0] == "calctype") {
       std::string calctype = tokens[1];
       if (calctype != "m" && calctype != "M") { config.marginal = false; }
-    } else if (strcmp(tokens[0].c_str(), "report") == 0) {
+    } else if (tokens[0] == "report") {
       if (tokens[1] != "split") { config.splits = false; }
-    } else if (strcmp(tokens[0].c_str(), "splits") == 0) {
+    } else if (tokens[0] == "splits") {
       config.splits = true;
-    } else if (strcmp(tokens[0].c_str(), "states") == 0) {
+    } else if (tokens[0] == "states") {
       config.states = true;
-    } else if (strcmp(tokens[0].c_str(), "dispersal") == 0) {
+    } else if (tokens[0] == "dispersal") {
       config.dispersal = atof(tokens[1].c_str());
       std::cout << "setting dispersal: " << config.dispersal << std::endl;
       config.estimate = false;
-    } else if (strcmp(tokens[0].c_str(), "extinction") == 0) {
+    } else if (tokens[0] == "extinction") {
       config.extinction = atof(tokens[1].c_str());
       std::cout << "setting extinction: " << config.extinction << std::endl;
       config.estimate = false;
-    } else if (strcmp(tokens[0].c_str(), "workers") == 0) {
+    } else if (tokens[0] == "workers") {
       config.workers = lagrange_parse_size_t(tokens[1]);
-    } else if (strcmp(tokens[0].c_str(), "threads-per-worker") == 0) {
+    } else if (tokens[0] == "threads-per-worker") {
       config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
-    } else if (strcmp(tokens[0].c_str(), "maxareas") == 0) {
+    } else if (tokens[0] == "maxareas") {
       config.maxareas = lagrange_parse_size_t(tokens[1]);
+    } else if (tokens[0] == "mode") {
+      if (tokens[1] == "optimize") {
+        config.mode = lagrange_mode::OPTIMIZE;
+      } else if (tokens[1] == "evaluate") {
+        config.mode = lagrange_mode::EVALUATE;
+      }
     }
   }
   ifs.close();
