@@ -42,7 +42,8 @@ class Context {
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
-                                bool output);
+                                bool output, const lagrange_mode& mode);
+
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
   auto computeStateGoal(WorkerState& ts)
@@ -57,6 +58,8 @@ class Context {
   auto stateCount() const -> size_t {
     return _workspace->restricted_state_count();
   }
+
+  void setParams(double e, double d) { _workspace->set_period_params(0, e, d); }
 
   auto currentParams() const -> period_t;
 

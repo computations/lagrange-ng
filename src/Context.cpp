@@ -88,11 +88,12 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
 }
 
 void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
-                                       bool splits, bool output) {
+                                       bool splits, bool output,
+                                       const lagrange_mode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
-   * is set, which means that
+   * is set, which means that all further code is only executed by one thread
    */
   if (!ts.master_thread()) {
     ts.work(tc, _workspace);
@@ -101,11 +102,22 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   double initial_lh = computeLLH(ts, tc);
 
-  if (output) { std::cout << "Initial LH: " << initial_lh << std::endl; }
+  if (mode == lagrange_mode::EVALUATE) {
+    if (output) {
+      std::cout << "LLH: " << initial_lh << std::endl;
+      auto p = currentParams();
+      std::cout << "Dispersion: " << p.dispersion_rate
+                << " Extinction: " << p.extinction_rate << std::endl;
+    }
+  }
 
-  double final_lh = optimize(ts, tc);
+  if (mode == lagrange_mode::OPTIMIZE) {
+    if (output) { std::cout << "Initial LLH: " << initial_lh << std::endl; }
 
-  if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
+    double final_lh = optimize(ts, tc);
+
+    if (output) { std::cout << "Final LLH: " << final_lh << std::endl; }
+  }
 
   if (states || splits) {
     std::cout << "Computing reverse operations" << std::endl;

@@ -95,4 +95,6 @@ constexpr double lagrange_scaling_factor_log =
     177.445678223345993274051579646766185760498046875;
 /* = std::log(lagrange_scaling_factor) */
 
+enum class lagrange_mode { OPTIMIZE, EVALUATE };
+
 #endif  // LAGRANGE_COMMON_H

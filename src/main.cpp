@@ -61,6 +61,8 @@ struct config_options_t {
   size_t region_count{};
   lagrange_option_t<size_t> workers;
   lagrange_option_t<size_t> threads_per_worker;
+  lagrange_option_t<lagrange_mode> mode{lagrange_mode::OPTIMIZE};
+  lagrange_option_t<std::pair<double, double>> params;
 };
 
 static auto normalizeStateDistrubtionByLWR(
@@ -275,7 +277,7 @@ static void handle_tree(
     worker_states.back().set_assigned_threads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(worker_states[i]), config.states,
-                         config.splits, true);
+                         config.splits, true, std::cref(config.mode.get()));
   }
 
   std::cout << "Waiting for workers to finish" << std::endl;
