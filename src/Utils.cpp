@@ -121,7 +121,7 @@ auto compute_index_from_dist(lagrange_dist_t i, size_t max_areas) -> size_t {
 auto lagrange_parse_size_t(const std::string &str) -> size_t {
   int temp = stoi(str);
   if (temp < 0) {
-    throw std::invalid_argument{"This arguement should be postitive"};
+    throw std::invalid_argument{"This argument should be positive"};
   }
   return static_cast<size_t>(temp);
 }
