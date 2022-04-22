@@ -68,7 +68,7 @@ class TreeTest : public ::testing::Test {
   std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
 };
 
-TEST_F(TreeTest, simple0) { auto t = parse_tree(_basic_tree_newick); }
+TEST_F(TreeTest, simple0) { parse_tree(_basic_tree_newick); }
 
 TEST_F(TreeTest, generate) {
   auto t = parse_tree(_basic_tree_newick);

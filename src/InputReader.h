@@ -7,9 +7,10 @@
  *      Author: Ben Bettisworth
  */
 
-#ifndef INPUTREADER_COPPER_H_
-#define INPUTREADER_COPPER_H_
+#ifndef INPUTREADER_COPPER_H
+#define INPUTREADER_COPPER_H
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,14 +20,15 @@
 class InputReader {
  public:
   InputReader();
-  void readMultipleTreeFile(std::string filename,
-                            std::vector<std::shared_ptr<Tree>> &);
-  std::unordered_map<std::string, lagrange_dist_t> readStandardInputData(
-      std::string filename, size_t max_areas);
-  void checkData(const std::unordered_map<std::string, lagrange_dist_t> &,
-                 const std::vector<std::shared_ptr<Tree>> &);
-  int nareas;
-  int nspecies;
+  static auto readMultipleTreeFile(const std::string &filename)
+      -> std::vector<std::shared_ptr<Tree>>;
+  auto readStandardInputData(const std::string &filename, size_t max_areas)
+      -> std::unordered_map<std::string, lagrange_dist_t>;
+  static void checkData(
+      const std::unordered_map<std::string, lagrange_dist_t> &,
+      const std::vector<std::shared_ptr<Tree>> &);
+  size_t nareas;
+  size_t nspecies;
 };
 
 #endif /* INPUTREADER_H_ */

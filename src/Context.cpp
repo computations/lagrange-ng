@@ -29,7 +29,7 @@ void Context::registerBackwardOperations() {
 }
 
 void Context::registerLHGoal() {
-  if (_forward_operations.size() == 0) { registerForwardOperations(); }
+  if (_forward_operations.empty()) { registerForwardOperations(); }
 
   auto root_clv = (*(_forward_operations.end() - 1))->get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
@@ -37,7 +37,7 @@ void Context::registerLHGoal() {
 }
 
 void Context::registerStateLHGoal() {
-  if (_reverse_operations.size() == 0) { registerBackwardOperations(); }
+  if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
   auto node_ids = _tree->traversePreorderInternalNodesOnly();
   for (auto nid : node_ids) {
@@ -56,7 +56,7 @@ void Context::init() {
   _workspace->reserve();
   updateRates({0.01, 0.01});
 
-  if (_reverse_operations.size() != 0) {
+  if (!_reverse_operations.empty()) {
     size_t prior_index = _reverse_operations.front()->getStableCLV();
     _workspace->set_reverse_prior(prior_index);
   }
@@ -64,7 +64,7 @@ void Context::init() {
 
 void Context::registerTipClvs(
     const std::unordered_map<std::string, lagrange_dist_t>& dist_data) {
-  if (_forward_operations.size() == 0) {
+  if (_forward_operations.empty()) {
     throw std::runtime_error{
         "The forward operations need to be generated first"};
   }
@@ -72,31 +72,28 @@ void Context::registerTipClvs(
   _tree->assignTipData(*_workspace, dist_data);
 }
 
-void Context::computeForwardOperations(WorkerState& ts, WorkerContext& tc) {
-  ts.work(WorkerMode::ComputeForward, tc, _workspace);
-}
-
 void Context::computeBackwardOperations(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeReverse, tc, _workspace);
 }
 
-double Context::computeLLH(WorkerState& ts) {
+auto Context::computeLLH(WorkerState& ts) -> double {
   auto tc = makeThreadContext();
   return computeLLH(ts, tc);
 }
 
-double Context::computeLLH(WorkerState& ts, WorkerContext& tc) {
+auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
   ts.work(WorkerMode::ComputeForward, tc, _workspace);
   ts.work(WorkerMode::ComputeLH, tc, _workspace);
   return _llh_goal.begin()->result();
 }
 
 void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
-                                       bool splits, bool output) {
+                                       bool splits, bool output,
+                                       const lagrange_mode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
-   * is set, which means that
+   * is set, which means that all further code is only executed by one thread
    */
   if (!ts.master_thread()) {
     ts.work(tc, _workspace);
@@ -105,11 +102,22 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   double initial_lh = computeLLH(ts, tc);
 
-  if (output) { std::cout << "Initial LH: " << initial_lh << std::endl; }
+  if (mode == lagrange_mode::EVALUATE) {
+    if (output) {
+      std::cout << "LLH: " << initial_lh << std::endl;
+      auto p = currentParams();
+      std::cout << "Dispersion: " << p.dispersion_rate
+                << " Extinction: " << p.extinction_rate << std::endl;
+    }
+  }
 
-  double final_lh = optimize(ts, tc);
+  if (mode == lagrange_mode::OPTIMIZE) {
+    if (output) { std::cout << "Initial LLH: " << initial_lh << std::endl; }
 
-  if (output) { std::cout << "Final LH: " << final_lh << std::endl; }
+    double final_lh = optimize(ts, tc);
+
+    if (output) { std::cout << "Final LLH: " << final_lh << std::endl; }
+  }
 
   if (states || splits) {
     std::cout << "Computing reverse operations" << std::endl;
@@ -127,7 +135,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
   ts.halt_threads();
 }
 
-double Context::optimize(WorkerState& ts, WorkerContext& tc) {
+auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
   struct OptContext {
     Context& context;
     WorkerContext& tc;
@@ -139,7 +147,7 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
-    auto obj = static_cast<OptContext*>(f_data);
+    auto* obj = static_cast<OptContext*>(f_data);
     period_t p{x[0], x[1]};
     obj->context.updateRates(p);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
@@ -173,8 +181,8 @@ double Context::optimize(WorkerState& ts, WorkerContext& tc) {
  * vector indexed by lagrange_dist_t, where each entry contains the likelihood
  * of that particular distribution at that node.
  */
-std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>
-Context::getStateResults() {
+auto Context::getStateResults()
+    -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> {
   std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> states;
   states.reserve(_state_lh_goal.size());
 
@@ -183,7 +191,7 @@ Context::getStateResults() {
   return states;
 }
 
-lagrange_split_list_t Context::getSplitResults() {
+auto Context::getSplitResults() -> lagrange_split_list_t {
   lagrange_split_list_t splits;
   splits.reserve(_split_lh_goal.size());
 
@@ -199,7 +207,7 @@ void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
 }
 
-period_t Context::currentParams() const {
+auto Context::currentParams() const -> period_t {
   return _workspace->get_period_params(0);
 }
 
@@ -215,15 +223,15 @@ std::string Context::treeCLVStatus() const {
 }
 #endif
 
-std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>
-Context::computeStateGoal(WorkerState& ts) {
+auto Context::computeStateGoal(WorkerState& ts)
+    -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> {
   auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeStateGoal(ts, tc);
   return getStateResults();
 }
 
-lagrange_split_list_t Context::computeSplitGoal(WorkerState& ts) {
+auto Context::computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t {
   auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeSplitGoal(ts, tc);

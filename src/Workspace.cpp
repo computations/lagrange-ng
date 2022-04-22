@@ -22,11 +22,11 @@ Workspace::~Workspace() {
     delete[] _base_frequencies;
   }
 
-  for (size_t i = 0; i < _clvs.size(); ++i) {
-    if (_clvs[i]._clv == nullptr) { continue; }
-    delete[] _clvs[i]._clv;
+  for (auto &_clv : _clvs) {
+    if (_clv._clv == nullptr) { continue; }
+    delete[] _clv._clv;
   }
-  if (_clv_scalars != nullptr) delete[] _clv_scalars;
+  delete[] _clv_scalars;
 }
 
 void Workspace::register_top_clv(size_t node_id) {
@@ -66,34 +66,37 @@ void Workspace::reserve() {
 
   _clvs.resize(clv_count());
 
-  for (size_t i = 0; i < _clvs.size(); ++i) {
-    if (_clvs[i]._clv != nullptr) { delete[] _clvs[i]._clv; }
+  for (auto &c : _clvs) {
+    delete[] c._clv;
 
-    _clvs[i]._clv = new lagrange_matrix_base_t[clv_size()];
+    c._clv = new lagrange_matrix_base_t[clv_size()];
+
+    for (size_t j = 0; j < restricted_state_count(); j++) { c._clv[j] = 0.0; }
+  }
+  for (auto &_clv : _clvs) {
+    delete[] _clv._clv;
+
+    _clv._clv = new lagrange_matrix_base_t[clv_size()];
 
     for (size_t j = 0; j < restricted_state_count(); j++) {
-      _clvs[i]._clv[j] = 0.0;
+      _clv._clv[j] = 0.0;
     }
   }
 
-  if (_clv_scalars != nullptr) { delete[] _clv_scalars; }
+  delete[] _clv_scalars;
 
   _clv_scalars = new size_t[clv_count()];
 
   for (size_t i = 0; i < clv_count(); i++) { _clv_scalars[i] = 0; }
 
-  for (size_t i = 0; i < _rate_matrix.size(); i++) {
-    if (_rate_matrix[i]._matrix != nullptr) {
-      delete[] _rate_matrix[i]._matrix;
-    }
-    _rate_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
+  for (auto &rm : _rate_matrix) {
+    delete[] rm._matrix;
+    rm._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 
-  for (size_t i = 0; i < _prob_matrix.size(); i++) {
-    if (_prob_matrix[i]._matrix != nullptr) {
-      delete[] _prob_matrix[i]._matrix;
-    }
-    _prob_matrix[i]._matrix = new lagrange_matrix_base_t[matrix_size()];
+  for (auto &pm : _prob_matrix) {
+    delete[] pm._matrix;
+    pm._matrix = new lagrange_matrix_base_t[matrix_size()];
   }
 
   _reserved = true;

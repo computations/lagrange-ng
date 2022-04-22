@@ -11,6 +11,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "AncSplit.h"
@@ -23,7 +24,7 @@
 class Context {
  public:
   Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas)
-      : _tree{tree},
+      : _tree{std::move(tree)},
         _workspace{std::make_shared<Workspace>(_tree->getExternalNodeCount(),
                                                regions, max_areas)},
         _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(
@@ -33,30 +34,36 @@ class Context {
   void registerStateLHGoal();
   void registerSplitLHGoal();
 
-  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> getStateResults();
-  lagrange_split_list_t getSplitResults();
+  auto getStateResults()
+      -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>;
+  auto getSplitResults() -> lagrange_split_list_t;
 
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
-                                bool output);
-  double computeLLH(WorkerState& ts);
-  double computeLLH(WorkerState& ts, WorkerContext& tc);
-  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> computeStateGoal(
-      WorkerState& ts);
-  lagrange_split_list_t computeSplitGoal(WorkerState& ts);
+                                bool output, const lagrange_mode& mode);
 
-  std::string toString() const;
+  auto computeLLH(WorkerState& ts) -> double;
+  auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
+  auto computeStateGoal(WorkerState& ts)
+      -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>;
+  auto computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t;
+
+  auto toString() const -> std::string;
 
   void updateRates(const period_t& p);
   void init();
 
-  size_t stateCount() const { return _workspace->states(); }
+  auto stateCount() const -> size_t {
+    return _workspace->restricted_state_count();
+  }
 
-  period_t currentParams() const;
+  void setParams(double e, double d) { _workspace->set_period_params(0, e, d); }
 
-  WorkerContext makeThreadContext() {
+  auto currentParams() const -> period_t;
+
+  auto makeThreadContext() -> WorkerContext {
     WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,
                      _state_lh_goal, _split_lh_goal};
     return tc;
@@ -72,7 +79,7 @@ class Context {
   void computeStateGoal(WorkerState& ts, WorkerContext& tc);
   void computeSplitGoal(WorkerState& ts, WorkerContext& tc);
 
-  double optimize(WorkerState& ts, WorkerContext& tc);
+  auto optimize(WorkerState& ts, WorkerContext& tc) -> double;
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;

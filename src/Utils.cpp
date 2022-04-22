@@ -38,19 +38,21 @@ void TrimSpaces(std::string &str) {
   // if all spaces or empty return an empty std::string
   if ((std::string::npos == startpos) || (std::string::npos == endpos)) {
     str = "";
-  } else
+  } else {
     str = str.substr(startpos, endpos - startpos + 1);
+  }
 }
 
-std::string lagrange_convert_dist_string(
-    lagrange_dist_t dist, const std::vector<std::string> &names) {
+auto lagrange_convert_dist_string(lagrange_dist_t dist,
+                                  const std::vector<std::string> &names)
+    -> std::string {
   if (dist == 0) { return {}; }
   std::ostringstream oss;
 
   size_t states = lagrange_clz(dist);
   bool first = true;
   for (size_t i = 0; i < states; ++i) {
-    if (lagrange_bextr(dist, i)) {
+    if (lagrange_bextr(dist, i) != 0U) {
       if (!first) { oss << "_"; }
       oss << names[i];
       first = false;
@@ -75,40 +77,41 @@ std::vector<std::string> lagrange_convert_dist_to_list(
 
 constexpr size_t factorial_table_size = 11;
 
-constexpr std::array<double, factorial_table_size> factorial_table = {
+constexpr std::array<size_t, factorial_table_size> factorial_table = {
     1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
 };
 
-constexpr inline double factorial(uint64_t i) {
+constexpr inline auto factorial(uint64_t i) -> size_t {
   if (i < factorial_table_size) { return factorial_table.at(i); }
-  double f = factorial_table[factorial_table_size - 1];
+  size_t f = factorial_table[factorial_table_size - 1];
   for (size_t k = factorial_table_size; k <= i; ++k) {
     f *= static_cast<double>(k);
   }
   return f;
 }
 
-constexpr inline double combinations(uint64_t n, uint64_t i) {
+constexpr inline auto combinations(uint64_t n, uint64_t i) -> size_t {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
-size_t lagrange_compute_restricted_state_count(size_t regions,
-                                               size_t max_areas) {
+auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
+    -> size_t {
   size_t sum = 0;
   for (size_t i = 0; i <= max_areas; i++) { sum += combinations(regions, i); }
   return sum;
 }
 
-size_t compute_skips_power_of_2(size_t k, size_t n) {
+static auto compute_skips_power_of_2(size_t k, size_t n) -> size_t {
   size_t skips = 0;
   for (size_t i = n + 1; i < k; ++i) { skips += combinations(k - 1, i); }
   return skips;
 }
 
-size_t compute_skips(size_t i, size_t n) {
+static auto compute_skips(size_t i, size_t n) -> size_t {
+  constexpr size_t BITS_IN_BYTE = 8;
   size_t skips = 0;
   while (i != 0 && n != 0) {
-    size_t first_index = sizeof(i) * 8 - __builtin_clzll(i | 1);
+    size_t first_index = sizeof(i) * BITS_IN_BYTE - __builtin_clzll(i | 1);
     skips += compute_skips_power_of_2(first_index, n);
     n -= 1;
     i -= 1 << (first_index - 1);
@@ -117,11 +120,19 @@ size_t compute_skips(size_t i, size_t n) {
   return skips;
 }
 
-size_t compute_index_from_dist(lagrange_dist_t i, size_t max_areas) {
+auto compute_index_from_dist(lagrange_dist_t i, size_t max_areas) -> size_t {
   if (lagrange_popcount(i) > max_areas) {
     throw std::lagrange_util_dist_index_conversion_exception{};
   }
   size_t skips = compute_skips(i, max_areas);
 
   return i - skips;
+}
+
+auto lagrange_parse_size_t(const std::string &str) -> size_t {
+  int temp = stoi(str);
+  if (temp < 0) {
+    throw std::invalid_argument{"This argument should be positive"};
+  }
+  return static_cast<size_t>(temp);
 }

@@ -1,5 +1,5 @@
-#ifndef LAGRANGE_WORKER_STATE_H_
-#define LAGRANGE_WORKER_STATE_H_
+#ifndef LAGRANGE_WORKER_STATE_H
+#define LAGRANGE_WORKER_STATE_H
 
 #include <atomic>
 #include <cctype>
@@ -11,9 +11,9 @@
 
 #include "Common.h"
 #include "Operation.h"
+#include "Quarantine.h"
 #include "Utils.h"
 #include "Workspace.h"
-#include "cblas.h"
 
 enum class WorkerMode {
   ComputeForward,
@@ -24,7 +24,7 @@ enum class WorkerMode {
   Halt
 };
 
-class WorkerContext {
+struct WorkerContext {
  public:
   WorkerContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
                 std::vector<std::shared_ptr<ReverseSplitOperation>>& rwb,
@@ -48,11 +48,12 @@ class WorkerState {
   WorkerState() : _tid{_total_threads++} {}
 
   WorkerState(const WorkerState&) = delete;
-  WorkerState& operator=(const WorkerState&) = delete;
+  auto operator=(const WorkerState&) -> WorkerState& = delete;
 
-  WorkerState(WorkerState&& ts) { *this = std::move(ts); }
-  WorkerState& operator=(WorkerState&& ts) {
+  WorkerState(WorkerState&& ts) noexcept { *this = std::move(ts); }
+  auto operator=(WorkerState&& ts) noexcept -> WorkerState& {
     _tid = ts._tid;
+    _assigned_threads = ts._assigned_threads;
     ++_total_threads;
     return *this;
   }
@@ -61,12 +62,16 @@ class WorkerState {
     if (_total_threads > 0) { _total_threads--; }
   }
 
-  void set_mode(WorkerMode tm) {
+  void set_mode(WorkerMode tm) const {
     if (master_thread()) { _mode = tm; }
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
+#ifdef MKL_ENABLED
+    mkl_set_num_threads(_assigned_threads);
+#else
     openblas_set_num_threads(_assigned_threads);
+#endif
     while (true) {
       barrier();
       if (master_thread()) {
@@ -100,6 +105,7 @@ class WorkerState {
         default:
           throw std::runtime_error{"Found a mode that doesn't exist"};
       }
+      _finished_threads += 1;
       if (master_thread()) { return; }
     }
   }
@@ -110,8 +116,8 @@ class WorkerState {
     work(tc, ws);
   }
 
-  bool master_thread() const { return _tid == 0; }
-  size_t thread_id() const { return _tid; }
+  auto master_thread() const -> bool { return _tid == 0; }
+  auto thread_id() const -> size_t { return _tid; }
 
   void halt_threads() {
     set_mode(WorkerMode::Halt);
@@ -120,7 +126,13 @@ class WorkerState {
 
   void set_assigned_threads(size_t at) { _assigned_threads = at; }
 
-  void assign_threads() const { openblas_set_num_threads(_assigned_threads); }
+  void assign_threads() const {
+#ifdef MKL_ENABLED
+    mkl_set_num_threads(_assigned_threads);
+#else
+    openblas_set_num_threads(_assigned_threads);
+#endif
+  }
 
  private:
   template <typename T>
@@ -150,11 +162,9 @@ class WorkerState {
         w->eval(workspace);
       }
     }
-    // end_work();
   }
 
-  void barrier() {
-    static thread_local volatile int local_wait_flag = 0;
+  void barrier() const {
     static volatile int wait_flag = 0;
     // static std::atomic<size_t> barrier_threads{0};
     static size_t barrier_threads = 0;
@@ -167,17 +177,18 @@ class WorkerState {
     if (master_thread()) {
       while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
-      wait_flag = !wait_flag;
+      wait_flag = wait_flag == 0 ? 1 : 0;
     } else {
+      static thread_local volatile int local_wait_flag = 0;
       while (local_wait_flag == wait_flag) {}
-      local_wait_flag = !local_wait_flag;
+      local_wait_flag = local_wait_flag == 0 ? 1 : 0;
     }
   }
 
   template <typename T>
-  typename std::vector<T>::iterator find_work_goal(
-      std::vector<T>& work_buffer,
-      const std::shared_ptr<Workspace>& workspace) {
+  auto find_work_goal(std::vector<T>& work_buffer,
+                      const std::shared_ptr<Workspace>& workspace) ->
+      typename std::vector<T>::iterator {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     if (work_buffer.size() - _start_index == 0 ||
         active_threads() > work_buffer.size()) {
@@ -190,8 +201,10 @@ class WorkerState {
   }
 
   template <typename T>
-  std::shared_ptr<T> find_work(std::vector<std::shared_ptr<T>>& work_buffer,
-                               const std::shared_ptr<Workspace>& workspace) {
+  auto find_work(std::vector<std::shared_ptr<T>>& work_buffer,
+                 const std::shared_ptr<Workspace>& workspace)
+      -> std::shared_ptr<T> {
+    assert(!work_buffer.empty());
     // auto t1 = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     /*
@@ -233,21 +246,13 @@ class WorkerState {
     return {};
   }
 
-  inline size_t active_threads() const {
+  static inline auto active_threads() -> size_t {
     return _total_threads - _finished_threads;
   }
 
-  void end_work() {
-    _finished_threads++;
-    if (_finished_threads == _total_threads) {
-      _start_index = 0;
-      _finished_threads = 0;
-    }
-  }
+  size_t _tid{};
 
-  size_t _tid;
-
-  size_t _assigned_threads;
+  size_t _assigned_threads{0};
 
   static std::shared_ptr<SplitOperation> _forward_work_buffer;
   static std::shared_ptr<ReverseSplitOperation> _backwards_work_buffer;
