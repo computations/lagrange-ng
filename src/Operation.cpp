@@ -460,9 +460,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
     r1.get()[0] = 1.0;
 #else
-    ret = cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
-                          leading_dim, r2.get(), leading_dim);
-    assert(ret == 0);
+    cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
+                    leading_dim, r2.get(), leading_dim);
     for (int i = 0; i < rows; i++) {
       r2.get()[ws->compute_matrix_index(i, 0)] = 0.0;
     }
