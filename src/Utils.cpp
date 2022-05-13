@@ -7,6 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
+#include <array>
+
 #include "Common.h"
 #include "Utils.h"
 
