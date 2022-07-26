@@ -163,6 +163,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   opt.set_max_objective(objective, &oc);
   opt.set_lower_bounds({1e-7, 1e-7});
+  opt.set_ftol_rel(_lh_epsilon);
 
   std::vector<double> results(2, 0.01);
   double obj_val = 0;

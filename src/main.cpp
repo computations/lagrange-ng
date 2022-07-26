@@ -58,6 +58,8 @@ struct config_options_t {
   double extinction = 0.01;
   bool estimate = true;
 
+  double lh_epsilon = 1e-8;
+
   size_t region_count{};
   lagrange_option_t<size_t> workers;
   lagrange_option_t<size_t> threads_per_worker;
@@ -174,6 +176,8 @@ static auto parse_config(const std::string &config_filename)
       config.dispersal = atof(tokens[1].c_str());
       std::cout << "setting dispersal: " << config.dispersal << std::endl;
       config.estimate = false;
+    } else if (tokens[0] == "lh-epsilon") {
+      config.lh_epsilon = stof(tokens[1]);
     } else if (tokens[0] == "extinction") {
       config.extinction = atof(tokens[1].c_str());
       std::cout << "setting extinction: " << config.extinction << std::endl;
@@ -273,6 +277,7 @@ static void handle_tree(
   context.init();
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
+  context.set_lh_epsilon(config.lh_epsilon);
 
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers.get());

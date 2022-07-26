@@ -69,6 +69,8 @@ class Context {
     return tc;
   }
 
+  void set_lh_epsilon(double lhe) { _lh_epsilon = lhe; }
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();
@@ -80,6 +82,8 @@ class Context {
   void computeSplitGoal(WorkerState& ts, WorkerContext& tc);
 
   auto optimize(WorkerState& ts, WorkerContext& tc) -> double;
+
+  double _lh_epsilon;
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;
