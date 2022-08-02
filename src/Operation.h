@@ -85,6 +85,9 @@ class ExpmOperation {
   void eval(const std::shared_ptr<Workspace>& ws);
 
   auto prob_matrix() const -> size_t { return _prob_matrix_index; }
+  auto rate_matrix() const -> size_t { return _rate_matrix_index; }
+  bool transposed() const { return _transposed; }
+  auto get_t() const { return _t; }
 
   auto last_execution() const -> lagrange_clock_tick_t {
     return _last_execution;

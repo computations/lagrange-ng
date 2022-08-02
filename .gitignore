@@ -6,3 +6,5 @@ compile_commands.json
 .clangd/*
 .cache/*
 deps/blas/*
+cmake-build-*
+.idea
