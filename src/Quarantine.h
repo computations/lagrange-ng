@@ -5,7 +5,7 @@
 #include <mkl.h>
 #else
 #include "cblas.h"
-#include "lapack.h"
+#include "lapacke.h"
 #endif
 
 #endif

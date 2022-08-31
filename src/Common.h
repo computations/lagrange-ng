@@ -7,6 +7,7 @@
 #define LAGRANGE_COMMON_H
 
 #include <atomic>
+#include <complex>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -14,6 +15,10 @@
 #include <sstream>
 #include <vector>
 
+#define lapack_complex_double std::complex<double>
+#define lapack_complex_double_real(z) (std::real(z))
+#define lapack_complex_double_imag(z) (std::imag(z))
+#define MKL_Complex16 std::complex<double>
 #include "Quarantine.h"
 
 using lagrange_dist_t = uint64_t;
@@ -77,6 +82,7 @@ struct period_t {
 };
 
 using lagrange_float_t = double;
+using lagrange_complex_t = lapack_complex_double;
 
 using lagrange_matrix_base_t = lagrange_float_t;
 

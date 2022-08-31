@@ -85,6 +85,9 @@ class ExpmOperation {
   void eval(const std::shared_ptr<Workspace>& ws);
 
   auto prob_matrix() const -> size_t { return _prob_matrix_index; }
+  auto rate_matrix() const -> size_t { return _rate_matrix_index; }
+  bool transposed() const { return _transposed; }
+  auto get_t() const { return _t; }
 
   auto last_execution() const -> lagrange_clock_tick_t {
     return _last_execution;
@@ -97,6 +100,9 @@ class ExpmOperation {
                    size_t tabLevel = 0) const -> std::string;
 
   auto getLock() -> std::mutex& { return *_lock; }
+
+  void setArnoldiMode(bool d) { _arnoldi_mode = d; }
+  auto isArnoldiMode() const -> bool { return _arnoldi_mode; }
 
  private:
   size_t _prob_matrix_index;
@@ -117,6 +123,7 @@ class ExpmOperation {
   std::unique_ptr<std::mutex> _lock{new std::mutex};
 
   bool _transposed;
+  bool _arnoldi_mode = false;
   size_t _execution_count = 0;
 };
 
@@ -205,6 +212,10 @@ class DispersionOperation {
 
   auto getLock() -> std::mutex& { return *_lock; }
 
+  auto getExpmOperation() const -> std::shared_ptr<ExpmOperation> {
+    return _expm_op;
+  }
+
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
@@ -216,7 +227,7 @@ class DispersionOperation {
   size_t _bot_clv;
   size_t _prob_matrix_index;
 
-  /* _expm_op is an owning pointer, and can be null */
+  /* _expm_op is an non-owning pointer, and can be null */
   std::shared_ptr<ExpmOperation> _expm_op;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -274,6 +285,15 @@ class SplitOperation {
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
+
+  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
+    std::vector<std::shared_ptr<ExpmOperation>> ret;
+    ret.reserve(_lbranch_ops.size() + _rbranch_ops.size());
+    for (auto op : _lbranch_ops) { ret.push_back(op->getExpmOperation()); }
+    for (auto op : _rbranch_ops) { ret.push_back(op->getExpmOperation()); }
+
+    return ret;
+  }
 
  private:
   size_t _lbranch_clv_index;
@@ -349,6 +369,14 @@ class ReverseSplitOperation {
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
+
+  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
+    std::vector<std::shared_ptr<ExpmOperation>> ret;
+    ret.reserve(_branch_ops.size());
+    for (auto op : _branch_ops) { ret.push_back(op->getExpmOperation()); }
+
+    return ret;
+  }
 
  private:
   size_t _bot_clv_index;

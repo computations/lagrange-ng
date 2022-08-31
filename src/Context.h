@@ -71,6 +71,8 @@ class Context {
 
   void set_lh_epsilon(double lhe) { _lh_epsilon = lhe; }
 
+  void useArnoldi() const;
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();

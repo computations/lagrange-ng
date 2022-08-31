@@ -60,6 +60,8 @@ struct config_options_t {
 
   double lh_epsilon = 1e-8;
 
+  bool expm_approximate = false;
+
   size_t region_count{};
   lagrange_option_t<size_t> workers;
   lagrange_option_t<size_t> threads_per_worker;
@@ -188,6 +190,8 @@ static auto parse_config(const std::string &config_filename)
       config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
     } else if (tokens[0] == "maxareas") {
       config.maxareas = lagrange_parse_size_t(tokens[1]);
+    } else if (tokens[0] == "approximate") {
+      config.expm_approximate = true;
     } else if (tokens[0] == "mode") {
       if (tokens[1] == "optimize") {
         config.mode = lagrange_mode::OPTIMIZE;
@@ -278,6 +282,7 @@ static void handle_tree(
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
   context.set_lh_epsilon(config.lh_epsilon);
+  if (config.expm_approximate) { context.useArnoldi(); }
 
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers.get());

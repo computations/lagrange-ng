@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "AncSplit.h"
+#include "Arnoldi.h"
 #include "Common.h"
 #include "Operation.h"
 #include "Utils.h"
@@ -520,25 +521,32 @@ auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (_expm_op != nullptr) {
-    if (_expm_op.use_count() > 1) {
-      std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
-      _expm_op->eval(ws);
-    } else {
-      _expm_op->eval(ws);
-    }
-  }
-
   if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
     /* we have already computed this operation, return */
     return;
   }
 
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restricted_state_count(),
-              ws->restricted_state_count(), 1.0,
-              ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
-              ws->clv(_bot_clv), 1, 0.0, ws->clv(_top_clv), 1);
+  if (_expm_op != nullptr) {
+    if (_expm_op->isArnoldiMode()) {
+      expm::multiply_arnoldi_chebyshev(ws, _expm_op->rate_matrix(), _bot_clv,
+                                       _top_clv, _expm_op->transposed(),
+                                       _expm_op->get_t());
+    } else {
+      if (_expm_op.use_count() > 1) {
+        std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
+        _expm_op->eval(ws);
+      } else {
+        _expm_op->eval(ws);
+      }
+    }
+  }
 
+  if (_expm_op != nullptr && !_expm_op->isArnoldiMode()) {
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restricted_state_count(),
+                ws->restricted_state_count(), 1.0,
+                ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
+                ws->clv(_bot_clv), 1, 0.0, ws->clv(_top_clv), 1);
+  }
   _last_execution = ws->advance_clock();
 
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
