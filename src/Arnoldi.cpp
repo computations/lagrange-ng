@@ -92,12 +92,25 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 
   // so transpose before and after the expm operation is the same thing...
   if (transposed) {
+#ifdef MKL_ENABLED
+    mkl_dimatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, A.get(),
+                  leading_dim, leading_dim);
+#else
     cblas_dimatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, A.get(),
                     leading_dim, leading_dim);
+#endif
   }
 
+#ifdef MKL_ENABLED
+  for (size_t i = 0; i < m; ++i) {
+    e1_c[i].real = 0.0;
+    e1_c[i].imag = 0.0;
+  }
+#else
   std::fill(e1_c.get(), e1_c.get() + m, 0.0);
-  e1_c[0] = 1.0;
+#endif
+
+  lapack_complex_double_real(e1_c[0]) = 1.0;
 
   std::fill(e1.get(), e1.get() + m, 0.0);
   e1[0] = 1.0;
@@ -145,19 +158,25 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   */
   for (int i = 0; i < N_ROOT; i++) {
     // note that Hm_minus_theta_I_c contains a separate buffer for each thread
-    for (size_t j = 0; j < m_sqrd; j++)
-      Hm_minus_theta_I_c[m_sqrd * i + j] = -H[j];
 
-    lagrange_complex_t theta(ROOT_RE[i], ROOT_IM[i]);
+    for (size_t j = 0; j < m_sqrd; j++) {
+      lapack_complex_double_real(Hm_minus_theta_I_c[m_sqrd * i + j]) = -H[j];
+      lapack_complex_double_imag(Hm_minus_theta_I_c[m_sqrd * i + j]) = 0.0;
+    }
+
+    lagrange_complex_t theta{ROOT_RE[i], ROOT_IM[i]};
     for (size_t j = 0; j < m; j++) {
-      Hm_minus_theta_I_c[m_sqrd * i + j * m + j] -= theta;
+      lapack_complex_double_real(Hm_minus_theta_I_c[m_sqrd * i + j * m + j]) -=
+          lapack_complex_double_real(theta);
+      lapack_complex_double_imag(Hm_minus_theta_I_c[m_sqrd * i + j * m + j]) -=
+          lapack_complex_double_imag(theta);
     }
 
     cblas_zcopy(m, e1_c.get(), 1, y_c.get() + m * i, 1);
     LAPACKE_zgesv(CblasRowMajor, m, 1, Hm_minus_theta_I_c.get() + m_sqrd * i, m,
                   ipiv_m.get(), y_c.get() + m * i, 1);
 
-    lagrange_complex_t alpha(COEF_RE[i + 1], COEF_IM[i + 1]);
+    lagrange_complex_t alpha{COEF_RE[i + 1], COEF_IM[i + 1]};
     cblas_zscal(m, &alpha, y_c.get() + m * i, 1);
 
     // #pragma omp critical

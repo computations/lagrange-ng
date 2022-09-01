@@ -7,7 +7,6 @@
 #define LAGRANGE_COMMON_H
 
 #include <atomic>
-#include <complex>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -15,10 +14,20 @@
 #include <sstream>
 #include <vector>
 
-#define lapack_complex_double std::complex<double>
-#define lapack_complex_double_real(z) (std::real(z))
-#define lapack_complex_double_imag(z) (std::imag(z))
-#define MKL_Complex16 std::complex<double>
+#ifndef MKL_ENABLED
+#include <complex>
+
+#define COMPLEX_DATA_TYPE double
+#define lapack_complex_double std::complex<COMPLEX_DATA_TYPE>
+#define lapack_complex_double_real(z) \
+  (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[0])
+#define lapack_complex_double_imag(z) \
+  (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[1])
+#else
+#define lapack_complex_double_real(z) (z.real)
+#define lapack_complex_double_imag(z) (z.imag)
+#endif
+
 #include "Quarantine.h"
 
 using lagrange_dist_t = uint64_t;
