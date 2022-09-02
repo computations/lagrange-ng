@@ -282,7 +282,10 @@ static void handle_tree(
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
   context.set_lh_epsilon(config.lh_epsilon);
-  if (config.expm_approximate) { context.useArnoldi(); }
+  if (config.expm_approximate) {
+    context.useArnoldi();
+    std::cout << "Enabling Expm Approximation" << std::endl;
+  }
 
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers.get());
