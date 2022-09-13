@@ -28,7 +28,7 @@ Tree::Tree(std::shared_ptr<Node> inroot)
     getNode(i)->initExclDistVector();
   }
 
-  setHeightFromTipToNodes();
+  // setHeightFromTipToNodes();
 }
 
 void Tree::addExternalNode(const std::shared_ptr<Node> &tn) {

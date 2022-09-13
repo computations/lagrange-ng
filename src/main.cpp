@@ -178,12 +178,12 @@ static auto parse_config(const std::string &config_filename)
       config.dispersal = atof(tokens[1].c_str());
       std::cout << "setting dispersal: " << config.dispersal << std::endl;
       config.estimate = false;
-    } else if (tokens[0] == "lh-epsilon") {
-      config.lh_epsilon = stof(tokens[1]);
     } else if (tokens[0] == "extinction") {
       config.extinction = atof(tokens[1].c_str());
       std::cout << "setting extinction: " << config.extinction << std::endl;
       config.estimate = false;
+    } else if (tokens[0] == "lh-epsilon") {
+      config.lh_epsilon = stof(tokens[1]);
     } else if (tokens[0] == "workers") {
       config.workers = lagrange_parse_size_t(tokens[1]);
     } else if (tokens[0] == "threads-per-worker") {
@@ -324,8 +324,12 @@ static void handle_tree(
   std::ofstream node_tree(config.treefile + ".nodes.tre");
 
   node_tree << intree->getNewickLambda([](const Node &n) -> std::string {
-    return std::to_string(n.getNumber());
+    return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
   });
+  std::ofstream anal_tree(config.treefile + ".scaled.tre");
+  anal_tree << intree->getNewickLambda([](const Node &n) -> std::string {
+    return n.getName() + ":" + std::to_string(n.getBL());
+  }) << std::endl;
 }
 
 static void setThreads(config_options_t &config) {

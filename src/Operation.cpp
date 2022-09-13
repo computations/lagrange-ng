@@ -91,9 +91,8 @@ inline void join_splits(
 
 /* Produces a dist -> index map */
 static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
-  std::vector<size_t> ret;
   size_t states = 1ULL << regions;
-  ret.resize(states);
+  std::vector<size_t> ret(states, std::numeric_limits<size_t>::max());
 
   size_t index = 0;
   lagrange_dist_t dist = 0;
@@ -120,7 +119,7 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
   if (max_areas == states) {
     const auto identity_func = [](lagrange_dist_t d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
-      join_splits(i, i, regions, states, splits, c1, c2, dest, scale,
+      join_splits(i, i, regions, max_areas, splits, c1, c2, dest, scale,
                   identity_func);
     }
   } else {
@@ -130,9 +129,9 @@ inline void weighted_combine(const lagrange_const_col_vector_t &c1,
     const auto dist_map_func = [&dist_map](lagrange_dist_t d) -> size_t {
       return dist_map.at(d);
     };
-    for (dist = 0, index = 0; dist < states;
+    for (dist = 0, index = 0; index < states;
          dist = next_dist(dist, max_areas), index++) {
-      join_splits(dist, index, max_areas, regions, splits, c1, c2, dest, scale,
+      join_splits(dist, index, regions, max_areas, splits, c1, c2, dest, scale,
                   dist_map_func);
     }
   }
@@ -479,6 +478,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
                                 std::ostream &os, size_t tabLevel) const {
+  if (_arnoldi_mode) { return; }
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
   os << tabs << "ExpmOperation:\n"
@@ -671,6 +671,10 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
                              ws->regions(), ws->max_areas(),
                              ws->clv(_bot_clv_index));
 
+    for (size_t i = 0; i < ws->clv_size(); ++i) {
+      assert(!std::isnan(ws->clv(_bot_clv_index)[i]));
+    }
+
     _last_execution = ws->advance_clock();
     ws->update_clv_clock(_bot_clv_index);
   }
@@ -741,13 +745,14 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   if (_last_execution == 0) {
     _result.reset(new lagrange_matrix_base_t[ws->restricted_state_count()]);
     _states = ws->restricted_state_count();
+    for (lagrange_dist_t i = 0; i < _states; ++i) { _result[i] = NAN; }
   }
 
   size_t tmp_scalar = 0;
 
   weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
-                   ws->restricted_state_count(), ws->regions(), ws->max_areas(),
-                   _result.get(), ws->clv_scalar(_lchild_clv_index),
+                   _states, ws->regions(), ws->max_areas(), _result.get(),
+                   ws->clv_scalar(_lchild_clv_index),
                    ws->clv_scalar(_rchild_clv_index), tmp_scalar);
 
   tmp_scalar += ws->clv_scalar(_parent_clv_index);
