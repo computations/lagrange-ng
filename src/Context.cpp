@@ -89,7 +89,7 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
 
 void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
                                        bool splits, bool output,
-                                       const lagrange_mode& mode) {
+                                       const lagrange_operation_mode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
@@ -102,7 +102,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
 
   double initial_lh = computeLLH(ts, tc);
 
-  if (mode == lagrange_mode::EVALUATE) {
+  if (mode == lagrange_operation_mode::EVALUATE) {
     if (output) {
       std::cout << "LLH: " << initial_lh << std::endl;
       auto p = currentParams();
@@ -111,7 +111,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
     }
   }
 
-  if (mode == lagrange_mode::OPTIMIZE) {
+  if (mode == lagrange_operation_mode::OPTIMIZE) {
     if (output) { std::cout << "Initial LLH: " << initial_lh << std::endl; }
 
     double final_lh = optimize(ts, tc);

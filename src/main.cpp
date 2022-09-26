@@ -28,6 +28,8 @@
 #include "WorkerState.h"
 #include "nlohmann/json.hpp"
 
+constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
+
 struct config_options_t {
   std::string treefile;
   std::string datafile;
@@ -58,14 +60,15 @@ struct config_options_t {
   double extinction = 0.01;
   bool estimate = true;
 
-  double lh_epsilon = 1e-8;
+  double lh_epsilon = 1e-9;
 
-  bool expm_approximate = false;
+  lagrange_option_t<lagrange_expm_computation_mode> expm_mode;
 
   size_t region_count{};
   lagrange_option_t<size_t> workers;
   lagrange_option_t<size_t> threads_per_worker;
-  lagrange_option_t<lagrange_mode> mode{lagrange_mode::OPTIMIZE};
+  lagrange_option_t<lagrange_operation_mode> mode{
+      lagrange_operation_mode::OPTIMIZE};
   lagrange_option_t<std::pair<double, double>> params;
 };
 
@@ -190,16 +193,21 @@ static auto parse_config(const std::string &config_filename)
       config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
     } else if (tokens[0] == "maxareas") {
       config.maxareas = lagrange_parse_size_t(tokens[1]);
-    } else if (tokens[0] == "approximate") {
-      config.expm_approximate = true;
+    } else if (tokens[0] == "expm-mode") {
+      if (tokens[1] == "krylov") {
+        config.expm_mode = lagrange_expm_computation_mode::KRYLOV;
+      } else if (tokens[1] == "pade") {
+        config.expm_mode = lagrange_expm_computation_mode::PADE;
+      }
     } else if (tokens[0] == "mode") {
       if (tokens[1] == "optimize") {
-        config.mode = lagrange_mode::OPTIMIZE;
+        config.mode = lagrange_operation_mode::OPTIMIZE;
       } else if (tokens[1] == "evaluate") {
-        config.mode = lagrange_mode::EVALUATE;
+        config.mode = lagrange_operation_mode::EVALUATE;
       }
     }
   }
+
   ifs.close();
   return config;
 }
@@ -282,9 +290,13 @@ static void handle_tree(
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
   context.set_lh_epsilon(config.lh_epsilon);
-  if (config.expm_approximate) {
+  if ((config.expm_mode.has_value() &&
+       config.expm_mode.get() == lagrange_expm_computation_mode::KRYLOV) ||
+      (!config.expm_mode.has_value() &&
+       config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD)) {
     context.useArnoldi();
-    std::cout << "Enabling Expm Approximation" << std::endl;
+    std::cout << "Enabling Arnoldi approximation for expm computation"
+              << std::endl;
   }
 
   std::vector<WorkerState> worker_states;

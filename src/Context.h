@@ -42,7 +42,8 @@ class Context {
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
-                                bool output, const lagrange_mode& mode);
+                                bool output,
+                                const lagrange_operation_mode& mode);
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
