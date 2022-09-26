@@ -295,7 +295,7 @@ static void handle_tree(
       (!config.expm_mode.has_value() &&
        config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD)) {
     context.useArnoldi();
-    std::cout << "Enabling Arnoldi approximation for expm computation"
+    std::cout << "Enabling Krylov subspace based method for expm computation"
               << std::endl;
   }
 
