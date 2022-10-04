@@ -547,6 +547,16 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
                 ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
                 ws->clv(_bot_clv), 1, 0.0, ws->clv(_top_clv), 1);
   }
+
+  if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
+    for (size_t i = 0; i < ws->clv_size(); ++i) {
+      if ((ws->clv(_top_clv)[i] > 1.0) != (ws->clv(_top_clv)[i] < 0.0)) {
+        fallback();
+        eval(ws);
+      }
+    }
+  }
+
   _last_execution = ws->advance_clock();
 
   ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
@@ -727,9 +737,8 @@ auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  double rho =
-      cblas_ddot(ws->restricted_state_count(), ws->clv(_root_clv_index), 1,
-                 ws->get_base_frequencies(_prior_index), 1);
+  double rho = cblas_ddot(ws->clv_size(), ws->clv(_root_clv_index), 1,
+                          ws->get_base_frequencies(_prior_index), 1);
   assert(rho > 0.0);
   _result = std::log(rho) -
             lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);

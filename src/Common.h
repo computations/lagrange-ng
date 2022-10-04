@@ -112,6 +112,6 @@ constexpr double lagrange_scaling_factor_log =
 
 enum class lagrange_operation_mode { OPTIMIZE, EVALUATE };
 
-enum class lagrange_expm_computation_mode { PADE, KRYLOV };
+enum class lagrange_expm_computation_mode { PADE, KRYLOV, ADAPTIVE };
 
 #endif  // LAGRANGE_COMMON_H

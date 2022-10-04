@@ -72,7 +72,7 @@ class Context {
 
   void set_lh_epsilon(double lhe) { _lh_epsilon = lhe; }
 
-  void useArnoldi() const;
+  void useArnoldi(bool mode_set = true, bool adaptive = true) const;
 
  private:
   void registerForwardOperations();

@@ -198,6 +198,8 @@ static auto parse_config(const std::string &config_filename)
         config.expm_mode = lagrange_expm_computation_mode::KRYLOV;
       } else if (tokens[1] == "pade") {
         config.expm_mode = lagrange_expm_computation_mode::PADE;
+      } else if (tokens[1] == "adaptive") {
+        config.expm_mode = lagrange_expm_computation_mode::ADAPTIVE;
       }
     } else if (tokens[0] == "mode") {
       if (tokens[1] == "optimize") {
@@ -272,6 +274,31 @@ static void writeResultTree(const config_options_t &config,
 }
 #endif
 
+static void set_expm_mode(Context &context, const config_options_t &config) {
+  auto &expm_mode = config.expm_mode;
+  if (expm_mode.has_value()) {
+    switch (expm_mode.get()) {
+      case lagrange_expm_computation_mode::ADAPTIVE:
+        std::cout << "Enabling adaptive expm computation" << std::endl;
+        context.useArnoldi();
+        break;
+      case lagrange_expm_computation_mode::KRYLOV:
+        std::cout << "Using Krylov subspace based method for expm computation"
+                  << std::endl;
+        context.useArnoldi(true, false);
+        break;
+      case lagrange_expm_computation_mode::PADE:
+        std::cout << "Using Pade's method expm computation" << std::endl;
+        context.useArnoldi(false, false);
+        break;
+      default:
+        throw std::runtime_error{"Unknown Expm Mode"};
+    }
+  } else {
+    context.useArnoldi();
+  }
+}
+
 static void handle_tree(
     const std::shared_ptr<Tree> &intree,
     const std::unordered_map<std::string, lagrange_dist_t> &data,
@@ -290,14 +317,7 @@ static void handle_tree(
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
   context.set_lh_epsilon(config.lh_epsilon);
-  if ((config.expm_mode.has_value() &&
-       config.expm_mode.get() == lagrange_expm_computation_mode::KRYLOV) ||
-      (!config.expm_mode.has_value() &&
-       config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD)) {
-    context.useArnoldi();
-    std::cout << "Enabling Krylov subspace based method for expm computation"
-              << std::endl;
-  }
+  set_expm_mode(context, config);
 
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers.get());

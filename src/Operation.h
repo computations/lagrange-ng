@@ -104,6 +104,9 @@ class ExpmOperation {
   void setArnoldiMode(bool d) { _arnoldi_mode = d; }
   auto isArnoldiMode() const -> bool { return _arnoldi_mode; }
 
+  void setAdaptive(bool m) { _adaptive_mode = m; }
+  auto isAdaptive() const -> bool { return _adaptive_mode; }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
@@ -124,6 +127,7 @@ class ExpmOperation {
 
   bool _transposed;
   bool _arnoldi_mode = false;
+  bool _adaptive_mode = false;
   size_t _execution_count = 0;
 };
 
@@ -215,6 +219,8 @@ class DispersionOperation {
   auto getExpmOperation() const -> std::shared_ptr<ExpmOperation> {
     return _expm_op;
   }
+
+  void fallback() { _expm_op->setArnoldiMode(false); }
 
  private:
   /* Remember, the top and bottom clv indexes could be the same. This is to save

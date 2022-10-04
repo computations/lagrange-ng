@@ -239,13 +239,19 @@ auto Context::computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t {
   return getSplitResults();
 }
 
-void Context::useArnoldi() const {
+void Context::useArnoldi(bool mode_set, bool adaptive) const {
   for (auto& op : _forward_operations) {
     auto expm_ops = op->getExpmOperations();
-    for (auto& eop : expm_ops) { eop->setArnoldiMode(true); }
+    for (auto& eop : expm_ops) {
+      eop->setArnoldiMode(mode_set);
+      eop->setAdaptive(adaptive);
+    }
   }
   for (auto& op : _reverse_operations) {
     auto expm_ops = op->getExpmOperations();
-    for (auto& eop : expm_ops) { eop->setArnoldiMode(true); }
+    for (auto& eop : expm_ops) {
+      eop->setArnoldiMode(mode_set);
+      eop->setAdaptive(adaptive);
+    }
   }
 }
