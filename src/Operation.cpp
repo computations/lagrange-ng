@@ -549,8 +549,10 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
+    auto &top_clv = ws->clv(_top_clv);
     for (size_t i = 0; i < ws->clv_size(); ++i) {
-      if ((ws->clv(_top_clv)[i] > 1.0) != (ws->clv(_top_clv)[i] < 0.0)) {
+      if (std::isnan(top_clv[i]) ||
+          ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
         fallback();
         eval(ws);
       }
