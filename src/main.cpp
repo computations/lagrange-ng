@@ -279,23 +279,33 @@ static void set_expm_mode(Context &context, const config_options_t &config) {
   if (expm_mode.has_value()) {
     switch (expm_mode.get()) {
       case lagrange_expm_computation_mode::ADAPTIVE:
-        std::cout << "Enabling adaptive expm computation" << std::endl;
-        context.useArnoldi();
+        if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
+          std::cout << "Enabling adaptive expm computation" << std::endl;
+          context.useArnoldi();
+        } else {
+          std::cout << "Using Pade's method expm computation" << std::endl;
+          context.useArnoldi(false, false);
+        }
+        break;
+      case lagrange_expm_computation_mode::PADE:
+        std::cout << "Using Pade's method expm computation" << std::endl;
+        context.useArnoldi(false, false);
         break;
       case lagrange_expm_computation_mode::KRYLOV:
         std::cout << "Using Krylov subspace based method for expm computation"
                   << std::endl;
         context.useArnoldi(true, false);
         break;
-      case lagrange_expm_computation_mode::PADE:
-        std::cout << "Using Pade's method expm computation" << std::endl;
-        context.useArnoldi(false, false);
-        break;
       default:
         throw std::runtime_error{"Unknown Expm Mode"};
     }
   } else {
-    context.useArnoldi();
+    if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
+      std::cout << "Enabling adaptive expm computation" << std::endl;
+      context.useArnoldi();
+    } else {
+      std::cout << "Using Pade's method expm computation" << std::endl;
+    }
   }
 }
 
