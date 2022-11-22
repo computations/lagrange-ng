@@ -802,7 +802,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
       AncSplit anc_split(dist, sp.left, sp.right, weight);
       double lh = parent_clv[dist] * lchild_clv[sp.left] *
                   rchild_clv[sp.right] * weight;
-      anc_split.setLikelihood(lh);
+      anc_split.setLikelihood(std::log(lh));
       anc_split_vec.push_back(anc_split);
     }
     ret[dist] = anc_split_vec;

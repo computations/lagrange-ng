@@ -72,6 +72,29 @@ struct config_options_t {
   lagrange_option_t<std::pair<double, double>> params;
 };
 
+static auto normalizeSplitDistributionByLWR(lagrange_split_return_t &splits)
+    -> void {
+  double max_llh = -std::numeric_limits<double>::infinity();
+  for (const auto &kv : splits) {
+    for (const auto &sp : kv.second) {
+      max_llh = std::max(max_llh, sp.getLikelihood());
+    }
+  }
+
+  double total_llh = 0.0;
+  for (const auto &kv : splits) {
+    for (const auto &sp : kv.second) {
+      total_llh += std::exp(sp.getLikelihood() - max_llh);
+    }
+  }
+
+  for (auto &kv : splits) {
+    for (auto &sp : kv.second) {
+      sp.setLWR(std::exp(sp.getLikelihood() - max_llh) / total_llh);
+    }
+  }
+}
+
 static auto normalizeStateDistrubtionByLWR(
     const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
     -> std::unique_ptr<lagrange_matrix_base_t[]> {
@@ -214,6 +237,101 @@ static auto parse_config(const std::string &config_filename)
   return config;
 }
 
+static auto makeStateResultNode(
+    const std::unique_ptr<lagrange_matrix_base_t[]> &state_distribution,
+    const std::vector<std::string> &region_names, size_t states_len,
+    size_t max_areas) -> nlohmann::json {
+  nlohmann::json node_json;
+  auto lwr_distribution =
+      normalizeStateDistrubtionByLWR(state_distribution, states_len);
+  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+       ++dist_index, dist = next_dist(dist, max_areas)) {
+    nlohmann::json tmp;
+    tmp["distribution"] = dist;
+    double llh = state_distribution.get()[dist_index];
+    tmp["distribution-string"] =
+        lagrange_convert_dist_string(dist, region_names);
+    tmp["llh"] = llh;
+    double ratio = lwr_distribution.get()[dist_index];
+    tmp["ratio"] = ratio;
+    tmp["regions"] = lagrange_convert_dist_to_list(dist, region_names);
+    node_json.push_back(tmp);
+  }
+  return node_json;
+}
+
+static auto makeSplitResultNode(lagrange_split_return_t &splits,
+                                const std::vector<std::string> &region_names,
+                                size_t states_len, size_t max_areas)
+    -> nlohmann::json {
+  nlohmann::json node_json;
+  normalizeSplitDistributionByLWR(splits);
+  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+       ++dist_index, dist = next_dist(dist, max_areas)) {
+    for (const auto &sp : splits[dist]) {
+      nlohmann::json anc_json;
+      nlohmann::json left_json;
+      nlohmann::json right_json;
+
+      assert(dist == sp.anc_dist);
+      anc_json["distribution"] = dist;
+      anc_json["distribution-string"] =
+          lagrange_convert_dist_string(dist, region_names);
+      anc_json["regions"] = lagrange_convert_dist_to_list(dist, region_names);
+
+      left_json["distribution"] = sp.l_dist;
+      left_json["distribution-string"] =
+          lagrange_convert_dist_string(sp.l_dist, region_names);
+      left_json["regions"] =
+          lagrange_convert_dist_to_list(sp.l_dist, region_names);
+
+      right_json["distribution"] = sp.r_dist;
+      right_json["distribution-string"] =
+          lagrange_convert_dist_string(sp.r_dist, region_names);
+      right_json["regions"] =
+          lagrange_convert_dist_to_list(sp.r_dist, region_names);
+
+      nlohmann::json tmp;
+      tmp["anc-dist"] = anc_json;
+      tmp["left-dist"] = left_json;
+      tmp["right-dist"] = right_json;
+      tmp["llh"] = sp.getLikelihood();
+      tmp["ratio"] = sp.getLWR();
+      node_json.push_back(tmp);
+    }
+  }
+
+  return node_json;
+}
+
+static auto makeNodeReultsJSONOutput(
+    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
+    lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
+    const std::vector<std::string> &region_names, size_t states_len,
+    size_t max_areas) -> nlohmann::json {
+  nlohmann::json root_json;
+
+  size_t node_count = std::max(states.size(), splits.size());
+
+  for (size_t i = 0; i < node_count; ++i) {
+    nlohmann::json node_json;
+
+    if (i < states.size()) {
+      node_json["states"] =
+          makeStateResultNode(states[i], region_names, states_len, max_areas);
+    }
+    if (i < splits.size()) {
+      node_json["splits"] =
+          makeSplitResultNode(splits[i], region_names, states_len, max_areas);
+    }
+
+    node_json["number"] = state_id_map[i];
+    root_json.push_back(node_json);
+  }
+
+  return root_json;
+}
+
 static auto makeStateJsonOutput(
     const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
     size_t states_len, const std::vector<size_t> &stateToIdMap,
@@ -242,6 +360,57 @@ static auto makeStateJsonOutput(
     states_json.push_back(node_json);
   }
   return states_json;
+}
+
+static auto makeSplitJsonOutput(lagrange_split_list_t &splits,
+                                size_t states_len,
+                                const std::vector<size_t> &stateToIdMap,
+                                const std::vector<std::string> &regionNames,
+                                size_t maxareas) -> nlohmann::json {
+  nlohmann::json splits_json;
+
+  for (size_t i = 0; i < splits.size(); i++) {
+    nlohmann::json node_json;
+    node_json["number"] = stateToIdMap[i];
+
+    normalizeSplitDistributionByLWR(splits[i]);
+    for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+         ++dist_index, dist = next_dist(dist, maxareas)) {
+      for (const auto &sp : splits[i][dist]) {
+        nlohmann::json anc_json;
+        nlohmann::json left_json;
+        nlohmann::json right_json;
+
+        assert(dist == sp.anc_dist);
+        anc_json["distribution"] = dist;
+        anc_json["distribution-string"] =
+            lagrange_convert_dist_string(dist, regionNames);
+        anc_json["regions"] = lagrange_convert_dist_to_list(dist, regionNames);
+
+        left_json["distribution"] = sp.l_dist;
+        left_json["distribution-string"] =
+            lagrange_convert_dist_string(sp.l_dist, regionNames);
+        left_json["regions"] =
+            lagrange_convert_dist_to_list(sp.l_dist, regionNames);
+
+        right_json["distribution"] = sp.r_dist;
+        right_json["distribution-string"] =
+            lagrange_convert_dist_string(sp.r_dist, regionNames);
+        right_json["regions"] =
+            lagrange_convert_dist_to_list(sp.r_dist, regionNames);
+
+        nlohmann::json tmp;
+        tmp["anc-dist"] = anc_json;
+        tmp["left-dist"] = left_json;
+        tmp["right-dist"] = right_json;
+        tmp["llh"] = sp.getLikelihood();
+        tmp["ratio"] = sp.getLWR();
+        node_json["splits"].push_back(tmp);
+      }
+    }
+    splits_json.push_back(node_json);
+  }
+  return splits_json;
 }
 
 static void writeJsonToFile(const config_options_t &config,
@@ -323,6 +492,7 @@ static void handle_tree(
   Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
   if (config.states) { context.registerStateLHGoal(); }
+  if (config.splits) { context.registerSplitLHGoal(); }
   context.init();
   context.updateRates({config.dispersal, config.extinction});
   context.registerTipClvs(data);
@@ -355,13 +525,12 @@ static void handle_tree(
       intree->traversePreorderInternalNodesOnlyNumbers();
 
   // invert the map
-  if (config.states) {
-    auto states = context.getStateResults();
-    root_json["node-results"] =
-        makeStateJsonOutput(states, context.stateCount(), stateGoalIndexToIdMap,
-                            config.areaNames, config.maxareas);
-  }
-  if (config.splits) { auto splits = context.getSplitResults(); }
+
+  auto states = context.getStateResults();
+  auto splits = context.getSplitResults();
+  root_json["node-results"] = makeNodeReultsJSONOutput(
+      states, splits, stateGoalIndexToIdMap, config.areaNames,
+      context.stateCount(), config.maxareas);
   writeJsonToFile(config, root_json);
   std::ofstream node_tree(config.treefile + ".nodes.tre");
 

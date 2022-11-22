@@ -47,6 +47,17 @@ void Context::registerStateLHGoal() {
   }
 }
 
+void Context::registerSplitLHGoal() {
+  if (_reverse_operations.empty()) { registerBackwardOperations(); }
+
+  auto node_ids = _tree->traversePreorderInternalNodesOnly();
+  for (auto nid : node_ids) {
+    _split_lh_goal.emplace_back(_workspace->get_top_clv_reverse(nid),
+                                _workspace->get_lchild_clv(nid),
+                                _workspace->get_rchild_clv(nid));
+  }
+}
+
 void Context::updateRates(const period_t& params) {
   _rate_matrix_op->update_rates(_workspace, params);
   _rate_matrix_op->eval(_workspace);

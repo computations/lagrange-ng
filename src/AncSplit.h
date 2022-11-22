@@ -28,15 +28,20 @@ class AncSplit {
  private:
   double _weight;
   double _likelihood;
+  double _lwr;
 
  public:
   AncSplit(lagrange_dist_t, lagrange_dist_t, lagrange_dist_t, double);
   auto getWeight() const -> double;
   auto getLikelihood() const -> double;
   void setLikelihood(double li);
-  lagrange_dist_t ancdistint;
-  lagrange_dist_t ldescdistint;
-  lagrange_dist_t rdescdistint;
+
+  void setLWR(double lwr);
+  auto getLWR() const -> double;
+
+  lagrange_dist_t anc_dist;
+  lagrange_dist_t l_dist;
+  lagrange_dist_t r_dist;
 };
 
 using lagrange_split_return_t =
