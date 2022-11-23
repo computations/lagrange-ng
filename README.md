@@ -6,6 +6,13 @@ explanation of the please see our publication in Systematic Biology.
 # Building 
 
 There is a helpful makefile which will generate and build the cmake directory. So, you can just run `make` to build.
+Lagrange-NG uses CMake to configure the build, and so options for building (including options such as `Debug` or
+`Release` builds) can be configured using tools which interact with cmake configurations, such as `ccmake`. There are
+two important build options for the purposes of building Lagrange-NG:
+
+- `ENABLE_MKL`: if set to `ON`, will attempt to find an Intel Math Kernel Library install and use that for linear
+  algebra computation. If it is set to `OFF`, OpenBLAS will be used instead.
+- `MKL_PREFIX_DIR`: Implies `ENABLE_MKL=ON`, and can be used to point to the MKL install directory.
 
 # Running
 
@@ -65,17 +72,17 @@ the tree. The `<treefile>.results.json` file contains the
 
 ## Expm Modes
 
-Lagrange-ng implements 2 methods of computing the matrix exponential, which can have fairly significant implications for
+Lagrange-NG implements 2 methods of computing the matrix exponential, which can have fairly significant implications for
 results. The first mode is `pade`, which is the much slower but (in my experience) more accurate method of computing the
 exponential. The second method is `krylov`, which uses Krylov subspaces, and is often 2 orders of magnitude faster than
 the `pade` mode. However, it can be numerically unstable for this particular application.
 
-Lagrange-ng implements a third mode, `adaptive`, which attempts to combine the strengths of the `krylov` and `pade`
+Lagrange-NG also implements a third mode, `adaptive`, which attempts to combine the strengths of the `krylov` and `pade`
 modes. By default, `adpative` uses `krylov` mode for matrix exponential computation, but watches for easily detectable
-errors. If such an error is found, then the computation for that particular matrix is reverted to the `pade` mode.
-In my experience, this mode fixes all the numerical errors that I could generate. I would recommend to use `adaptive` 
-in all cases, except when the results seem very suspect. In this case, the `pade` mode should be used. Please note that
-the `pade` mode is very slow compared to `adaptive` or `krylov`, so only use this when a genuine numerical error is
+errors. If such an error is found, then the computation for that particular matrix is reverted to the `pade` mode. In my
+experience, this mode fixes all the numerical errors that I could generate. I would recommend to use `adaptive` in all
+cases, except when the results seem very suspect. In this case, the `pade` mode should be used. Please note that the
+`pade` mode is very slow compared to `adaptive` or `krylov`, so only use this when a genuine numerical error is
 suspected.
 
 ## Results JSON file
