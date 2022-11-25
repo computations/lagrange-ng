@@ -44,6 +44,90 @@ After computation, there will be 3 results files: `<treefile>.nodes.tre`, `<tree
 `<treefile.results.json` indices. This is so that the entries in the results file can be matched to the inner nodes of
 the tree. The `<treefile>.results.json` file contains the
 
+## Example
+
+Some example files have been provided in the `example` dir. Specifically, there is an example configuration file
+`example/example.conf` with the contents
+
+```
+treefile = example/example.nwk
+datafile = example/example.phy
+areanames = RA RB RC RD RE
+states
+workers
+```
+
+As well as the example tree and the example alignment in `example/example.nwk` and `example/example.phy`:
+
+```
+# example/example.nwk
+((g:2.33641,f:2.33641):0.128694,((e:0.507286,d:0.507286):1.75297,((c:1.93387,(b:1.03499,a:1.03499):0.898877):0.13294,(j:0.210444,(i:0.203881,h:0.203881):0.0065634):1.85637):0.193449):0.20484);
+
+# example/example.phy
+10 5
+g 00110
+f 11100
+e 01110
+d 10010
+c 01011
+b 10110
+a 10101
+j 11011
+i 00100
+h 10100
+```
+
+To run an analysis with these files, simply run in the terminal the command
+
+```
+./bin/lagrange example/example.conf
+```
+
+If Lagrange-NG has been built correctly, we should see the following output (or something similar):
+
+```
+reading tree...
+Tree 1 has 10 leaves.
+reading data...
+Reading species: g 00110
+Reading species: f 11100
+Reading species: e 01110
+Reading species: d 10010
+Reading species: c 01011
+Reading species: b 10110
+Reading species: a 10101
+Reading species: j 11011
+Reading species: i 00100
+Reading species: h 10100
+checking data...
+running analysis...
+Using Pade's method expm computation
+Starting Workers
+Making Worker #1
+Waiting for workers to finish
+Initial LLH: -66.1632
+(disp: 0.01, ext: 0.01): -66.1632
+(disp: 0.105624, ext: 0.0198437): -37.5714
+(disp: 0.189061, ext: 0.0505465): -33.9578
+(disp: 0.363317, ext: 0.130848): -33.6551
+(disp: 0.21367, ext: 0.113534): -33.7848
+(disp: 0.257849, ext: 0.135184): -33.3235
+(disp: 0.305354, ext: 0.157489): -33.2058
+(disp: 0.298923, ext: 0.151987): -33.2045
+(disp: 0.299635, ext: 0.153142): -33.2045
+Final LLH: -33.2045
+Computing reverse operations
+Computing state goals
+Analysis took: 0.163195s
+```
+
+After Lagrange-NG is finished, there should be 3 new files in `example`:
+
+- `example.nwk.nodes.tre` the tree with internal node labels as node ids for identification with nodes in the results
+  file;
+- `example.nwk.results.json`, which is the file containing all the results; and
+- `example.nwk.scaled.tre`, which contains the scaled tree that Lagrange-NG used to infer model parameters.
+
 ## Control File Options
 
 - `treefile`: Path to the newick file containing the phylogeny. Required.
