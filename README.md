@@ -54,7 +54,7 @@ treefile = example/example.nwk
 datafile = example/example.phy
 areanames = RA RB RC RD RE
 states
-workers
+workers = 1
 ```
 
 As well as the example tree and the example alignment in `example/example.nwk` and `example/example.phy`:
