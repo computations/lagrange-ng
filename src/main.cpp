@@ -407,6 +407,15 @@ static void handle_tree(
       !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
   attributes_json["regions"] = config.region_count;
   attributes_json["taxa"] = intree->getExternalNodeCount();
+  attributes_json["nodes-tree"] =
+      intree->getNewickLambda([](const Node &n) -> std::string {
+        if (n.isInternal()) {
+          return std::to_string(n.getNumber()) + ":" +
+                 std::to_string(n.getBL());
+        } else {
+          return n.getName() + ":" + std::to_string(n.getBL());
+        }
+      });
   root_json["attributes"] = attributes_json;
   Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
