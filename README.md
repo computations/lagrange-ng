@@ -175,6 +175,7 @@ The results file (`<treefile>.results.json`) contains the results from the optim
 computation. There are 3 top level keys to the file:
 
 - `attributes`: This contains an object with information about the dataset, such as the number of regions and taxa.
+  Additionally, it contains the node tree  in `node-tree`.
 - `node-results`: Contains a list of the results for each node. Discussed in detail later.
 - `params`: Contains the inferred values for `dispersion` and `extinction`.
 
