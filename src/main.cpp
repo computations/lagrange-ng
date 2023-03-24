@@ -337,6 +337,7 @@ static void writeJsonToFile(const config_options_t &config,
   std::string json_filename = config.treefile + ".results.json";
   std::ofstream outfile(json_filename);
   outfile << root_json.dump();
+  // nlohmann::json::to_cbor(root_json, outfile);
 }
 
 #if 0
@@ -416,6 +417,9 @@ static void handle_tree(
           return n.getName() + ":" + std::to_string(n.getBL());
         }
       });
+  attributes_json["max-areas"] = config.maxareas;
+  attributes_json["state-count"] = lagrange_compute_restricted_state_count(
+      config.region_count, config.maxareas);
   root_json["attributes"] = attributes_json;
   Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
