@@ -63,7 +63,7 @@ TEST_F(ContextTest, optimizeSimple0) {
 
   double initial_llh = context.computeLLH(_worker_state);
   context.optimizeAndComputeValues(_worker_state, false, false, false,
-                                   lagrange_mode::OPTIMIZE);
+                                   lagrange_operation_mode::OPTIMIZE);
   double llh = context.computeLLH(_worker_state);
 
   EXPECT_GT(llh, initial_llh);
