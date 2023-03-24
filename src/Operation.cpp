@@ -385,7 +385,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   cblas_daxpy(ws->matrix_size(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
   // Using fortran indexing, and we started an iteration ahead to skip some
-  // setup. Furhthermore, we are going to unroll the loop to allow us to skip
+  // setup. Furthermore, we are going to unroll the loop to allow us to skip
   // some assignments.
 #if 0
   for (int i = 2; i <= q; i++) {
