@@ -286,8 +286,7 @@ class SplitOperation {
                    size_t tabLevel = 0) const -> std::string;
 
   auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
-    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
-           _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
+    return left_ready(ws) && right_ready(ws);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
@@ -302,6 +301,16 @@ class SplitOperation {
   }
 
  private:
+  auto left_ready(const std::shared_ptr<Workspace>& ws) const -> bool {
+    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution);
+  }
+
+  auto right_ready(const std::shared_ptr<Workspace>& ws) const -> bool {
+    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution);
+  }
+
+  void check_and_eval_branch_ops(const std::shared_ptr<Workspace>& ws);
+
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
   size_t _parent_clv_index;

@@ -609,9 +609,17 @@ static inline void eval_branch_ops(
   }
 }
 
+void SplitOperation::check_and_eval_branch_ops(
+    const std::shared_ptr<Workspace> &ws) {
+  auto &first = _lbranch_ops;
+  auto &second = _rbranch_ops;
+  if (!left_ready(ws) && right_ready(ws)) { std::swap(first, second); }
+  eval_branch_ops(first, ws);
+  eval_branch_ops(second, ws);
+}
+
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  eval_branch_ops(_lbranch_ops, ws);
-  eval_branch_ops(_rbranch_ops, ws);
+  check_and_eval_branch_ops(ws);
 
   const auto &parent_clv = ws->clv(_parent_clv_index);
   const auto &lchild_clv = ws->clv(_lbranch_clv_index);
