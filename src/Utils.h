@@ -49,6 +49,7 @@ inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
   return ret;
 }
 
+/* Computes floor(log2) + 1 actually */
 constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
   constexpr size_t BITS_IN_BYTE = 8;
   return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
