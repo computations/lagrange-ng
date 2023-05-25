@@ -30,16 +30,18 @@ class Node {
 
   double _branch_length;  // branch lengths
   double _height;         // could be from tip or from root
+
   size_t _number;
   size_t _id;
   size_t _period;
+
   std::string _label;
   std::string _comment;
   std::string _split_string;
   std::string _state_string;
   std::string _stoch_string;
   std::vector<std::shared_ptr<Node>> _children;
-  std::shared_ptr<std::vector<lagrange_dist_t>> _excluded_dists;
+  std::vector<lagrange_dist_t> _excluded_dists;
 
   auto getRateMatrixOperation(PeriodRateMatrixMap &rm_map) const
       -> std::shared_ptr<MakeRateMatrixOperation> {
@@ -118,15 +120,6 @@ class Node {
       const std::vector<size_t> &id_map,
       const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
       const std::vector<std::string> &names);
-
-  void setSplitString(const std::string &splitstring);
-  void setStateString(const std::string &splitstring);
-  void setStochString(const std::string &stochstring);
-  auto getSplitString() const -> std::string;
-  auto getStateString() const -> std::string;
-  auto getStochString() const -> std::string;
-
-  void initExclDistVector();
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 

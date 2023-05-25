@@ -24,11 +24,6 @@ Tree::Tree(std::shared_ptr<Node> inroot)
       _external_node_count(0) {
   processRoot();
   _root->assignId();
-  for (unsigned int i = 0; i < getNodeCount(); i++) {
-    getNode(i)->initExclDistVector();
-  }
-
-  // setHeightFromTipToNodes();
 }
 
 void Tree::addExternalNode(const std::shared_ptr<Node> &tn) {

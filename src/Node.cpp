@@ -108,28 +108,6 @@ auto Node::getNewickLambda(
 
 auto Node::getChildCount() const -> size_t { return _children.size(); }
 
-void Node::setSplitString(const std::string &splitstring) {
-  _split_string = splitstring;
-}
-
-void Node::setStateString(const std::string &statestring) {
-  _state_string = statestring;
-}
-
-void Node::setStochString(const std::string &stochstring) {
-  _stoch_string = stochstring;
-}
-
-auto Node::getStateString() const -> std::string { return _state_string; }
-
-auto Node::getSplitString() const -> std::string { return _split_string; }
-
-auto Node::getStochString() const -> std::string { return _stoch_string; }
-
-void Node::initExclDistVector() {
-  _excluded_dists = std::make_shared<std::vector<lagrange_dist_t>>();
-}
-
 auto Node::getMaxHeightRecursive() const -> double {
   double max_height = 0.0;
   for (const auto &c : _children) {

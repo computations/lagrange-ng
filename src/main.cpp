@@ -47,6 +47,7 @@ struct config_options_t {
   std::unordered_map<std::string, lagrange_dist_t> areaNameToDistMap;
   std::vector<std::string> ancstates;
   std::vector<std::string> areacolors;
+
   std::vector<std::string> fossilmrca;
   std::vector<std::string> fossiltype;
   std::vector<std::string> fossilarea;
@@ -496,12 +497,6 @@ auto main(int argc, char *argv[]) -> int {
     auto config = parse_config(config_filename);
     setThreads(config);
 
-    /*****************
-     * finish reading the configuration file
-     *****************/
-    /*
-     * after reading the input file
-     */
     InputReader ir;
     std::cout << "reading tree..." << std::endl;
     std::vector<std::shared_ptr<Tree>> intrees =
