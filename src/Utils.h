@@ -81,6 +81,10 @@ auto lagrange_convert_dist_string(lagrange_dist_t dist,
                                   const std::vector<std::string> &names)
     -> std::string;
 
+auto lagrange_convert_dist_string_to_dist(const std::string &dist,
+                                          const std::vector<std::string> &names)
+    -> lagrange_dist_t;
+
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
 inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {

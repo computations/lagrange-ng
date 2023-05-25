@@ -7,10 +7,11 @@
  *      Author: Ben Bettisworth
  */
 
+#include "Utils.h"
+
 #include <array>
 
 #include "Common.h"
-#include "Utils.h"
 
 void Tokenize(const std::string &str, std::vector<std::string> &tokens,
               const std::string &delimiters) {
@@ -137,4 +138,26 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
     throw std::invalid_argument{"This argument should be positive"};
   }
   return static_cast<size_t>(temp);
+}
+
+auto lagrange_convert_dist_string_to_dist(const std::string &dist,
+                                          const std::vector<std::string> &names)
+    -> lagrange_dist_t {
+  lagrange_dist_t ret = 0;
+  auto start = dist.begin();
+  auto end = dist.begin();
+  for (start = dist.begin(), end = dist.begin(); end != dist.end(); end++) {
+    if (*end != '_') { continue; }
+
+    std::string region_name(start, end - 1);
+    end++;
+    start = end;
+    for (size_t i = 0; i < names.size(); ++i) {
+      if (region_name == names[i]) {
+        ret |= 1ull << i;
+        break;
+      }
+    }
+  }
+  return ret;
 }
