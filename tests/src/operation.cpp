@@ -206,7 +206,10 @@ TEST_F(OperationTest, ExpmSimple1) {
 }
 
 TEST_F(OperationTest, DispersionSimple0) {
-  DispersionOperation disp_op(_rtop_clv, _rbot_clv, _prob_matrix);
+  auto expm_op =
+      std::make_shared<ExpmOperation>(_prob_matrix, _t, _rate_matrix_op);
+  DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
+  disp_op.fallback();
   disp_op.eval(_ws);
 }
 
