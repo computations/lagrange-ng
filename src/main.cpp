@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Alignment.h"
 #include "Common.h"
 #include "ConfigFile.h"
 #include "Context.h"
@@ -336,6 +337,16 @@ static ConfigFile read_config_file(const std::string &filename) {
   return parse_config_file(infile);
 }
 
+static Alignment read_phylip_file(const std::string &filename) {
+  std::ifstream infile(filename);
+  return read_phylip(infile);
+}
+
+static Alignment read_fasta_file(const std::string &filename) {
+  std::ifstream infile(filename);
+  return read_fasta(infile);
+}
+
 auto main(int argc, char *argv[]) -> int {
 #if MKL_ENABLED
   mkl_set_num_threads(1);
@@ -356,14 +367,11 @@ auto main(int argc, char *argv[]) -> int {
     std::cout << "reading tree..." << std::endl;
     std::vector<std::shared_ptr<Tree>> intrees =
         InputReader::readMultipleTreeFile(config.treefile);
+
     std::cout << "reading data..." << std::endl;
-
-    /*
     std::unordered_map<std::string, size_t> data =
-        ir.readStandardInputData(config.datafile, config.maxareas);
-        */
+        read_phylip_file(config.datafile);
 
-    std::unordered_map<std::string, size_t> data;
     std::cout << "checking data..." << std::endl;
     InputReader::checkData(data, intrees);
 

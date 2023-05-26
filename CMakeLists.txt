@@ -18,6 +18,7 @@ set(LAGRANGE_SOURCES
         src/Arnoldi.cpp
         src/Fossil.cpp
         src/ConfigFile.cpp
+        src/Alignment.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})

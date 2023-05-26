@@ -30,6 +30,7 @@ class config_lexer_t {
     skip_whitespace();
     return token;
   }
+
   auto peak() -> config_lexeme_type_t {
     size_t tmp_index = _current_index;
     char current_char = _input[tmp_index++];
@@ -178,7 +179,7 @@ Fossil parse_fossil(config_lexer_t &lexer) {
 ConfigFile parse_config_file(std::istream &instream) {
   ConfigFile config;
   std::string line;
-  size_t line_number = 0;
+  size_t line_number = 1;
   while (getline(instream, line)) {
     config_lexer_t lexer(line);
     try {
