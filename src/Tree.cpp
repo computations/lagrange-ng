@@ -7,14 +7,16 @@
  *      Author: Ben Bettisworth
  */
 
+#include "Tree.h"
+
 #include <cmath>
 #include <exception>
 #include <limits>
+#include <sstream>
 #include <unordered_map>
 #include <utility>
 
 #include "Operation.h"
-#include "Tree.h"
 
 Tree::Tree() : Tree(nullptr) {}
 
@@ -254,4 +256,14 @@ auto Tree::getNewickLambda(
     const std::function<std::string(const Node &)> &newick_lambda) const
     -> std::string {
   return _root->getNewickLambda(newick_lambda) + ";";
+}
+
+bool Tree::checkAlignmentConsistency(const Alignment &align) const {
+  auto count = _root->checkAlignmentConsistency(align, 0);
+  if (count != align.taxa_count) {
+    std::ostringstream oss;
+    oss << "Taxa present in alignment that are not presesnt on the tree";
+    throw std::runtime_error{oss.str()};
+  }
+  return true;
 }

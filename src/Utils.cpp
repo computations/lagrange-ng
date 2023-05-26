@@ -13,39 +13,6 @@
 
 #include "Common.h"
 
-void Tokenize(const std::string &str, std::vector<std::string> &tokens,
-              const std::string &delimiters) {
-  // Skip delimiters at beginning.
-  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  // Find first "non-delimiter".
-  std::string::size_type pos = str.find_first_of(delimiters, lastPos);
-
-  while (std::string::npos != pos || std::string::npos != lastPos) {
-    // Found a token, add it to the vector.
-    tokens.push_back(str.substr(lastPos, pos - lastPos));
-    // Skip delimiters.  Note the "not_of"
-    lastPos = str.find_first_not_of(delimiters, pos);
-    // Find next "non-delimiter"
-    pos = str.find_first_of(delimiters, lastPos);
-  }
-}
-
-void TrimSpaces(std::string &str) {
-  // Trim Both leading and trailing spaces
-  size_t startpos =
-      str.find_first_not_of(" \t\r\n");  // Find the first character position
-                                         // after excluding leading blank spaces
-  size_t endpos = str.find_last_not_of(
-      " \t\r\n");  // Find the first character position from reverse af
-
-  // if all spaces or empty return an empty std::string
-  if ((std::string::npos == startpos) || (std::string::npos == endpos)) {
-    str = "";
-  } else {
-    str = str.substr(startpos, endpos - startpos + 1);
-  }
-}
-
 auto lagrange_convert_dist_string(lagrange_dist_t dist,
                                   const std::vector<std::string> &names)
     -> std::string {
@@ -160,4 +127,19 @@ auto lagrange_convert_dist_string_to_dist(const std::string &dist,
     }
   }
   return ret;
+}
+
+auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
+    -> lagrange_dist_t {
+  lagrange_dist_t d = 0;
+  for (size_t i = 0; i < dist.size(); i++) {
+    if (dist[i] == '1') { d |= 1ull << (dist.size() - i - 1); }
+  }
+  return d;
+}
+
+std::string get_file_extension(const std::string &filename) {
+  auto itr = filename.end() - 1;
+  while (*itr != '.') { itr--; }
+  return {itr + 1, filename.end()};
 }

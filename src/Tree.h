@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "Alignment.h"
 #include "Common.h"
 #include "Node.h"
 #include "Operation.h"
@@ -98,6 +99,8 @@ class Tree {
   auto getNewickLambda(
       const std::function<std::string(const Node &)> &newick_lambda) const
       -> std::string;
+
+  bool checkAlignmentConsistency(const Alignment& align) const;
 
   ~Tree();
 };

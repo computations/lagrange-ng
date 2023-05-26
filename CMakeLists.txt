@@ -7,7 +7,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(LAGRANGE_SOURCES
         src/AncSplit.cpp
         src/Context.cpp
-        src/InputReader.cpp
         src/Node.cpp
         src/Tree.cpp
         src/TreeReader.cpp
@@ -17,6 +16,8 @@ set(LAGRANGE_SOURCES
         src/WorkerState.cpp
         src/Arnoldi.cpp
         src/Fossil.cpp
+        src/ConfigFile.cpp
+        src/Alignment.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})

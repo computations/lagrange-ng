@@ -21,10 +21,6 @@ struct lagrange_region_split_t {
   lagrange_dist_t right;
 };
 
-void Tokenize(const std::string &str, std::vector<std::string> &tokens,
-              const std::string &delimiters = " ");
-void TrimSpaces(std::string &str);
-
 inline auto lagrange_bextr(lagrange_dist_t a, size_t i) -> uint64_t {
   return (a >> i) & 1ULL;
 }
@@ -85,6 +81,9 @@ auto lagrange_convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
     -> lagrange_dist_t;
 
+auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
+    -> lagrange_dist_t;
+
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
 inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
@@ -95,6 +94,9 @@ inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
 
 std::vector<std::string> lagrange_convert_dist_to_list(
     lagrange_dist_t dist, const std::vector<std::string> &names);
+
+
+std::string get_file_extension(const std::string& filename);
 
 template <typename T>
 class lagrange_option_t {

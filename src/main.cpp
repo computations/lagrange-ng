@@ -7,6 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <fstream>
@@ -21,57 +22,15 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Alignment.h"
 #include "Common.h"
+#include "ConfigFile.h"
 #include "Context.h"
-#include "InputReader.h"
+#include "Fossil.h"
+#include "TreeReader.h"
 #include "Utils.h"
 #include "WorkerState.h"
 #include "nlohmann/json.hpp"
-
-constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
-
-struct config_options_t {
-  std::string treefile;
-  std::string datafile;
-  std::string ratematrixfile;
-  std::string logfile;
-
-  size_t maxareas = 0;
-
-  std::vector<double> periods;
-  std::unordered_map<std::string, std::vector<std::string>> mrcas;
-  std::unordered_map<std::string, lagrange_dist_t> fixnodewithmrca;
-  std::vector<lagrange_dist_t> excludedists;
-  std::vector<lagrange_dist_t> includedists;
-  std::vector<std::string> areaNames;
-  std::unordered_map<std::string, lagrange_dist_t> areaNameToDistMap;
-  std::vector<std::string> ancstates;
-  std::vector<std::string> areacolors;
-
-  std::vector<std::string> fossilmrca;
-  std::vector<std::string> fossiltype;
-  std::vector<std::string> fossilarea;
-  std::vector<double> fossilage;
-
-  bool marginal = true;  // false means joint
-  bool splits = false;
-  bool states = false;
-
-  double dispersal = 0.01;
-  double extinction = 0.01;
-  bool estimate = true;
-
-  double lh_epsilon = 1e-9;
-
-  lagrange_option_t<lagrange_expm_computation_mode> expm_mode;
-
-  size_t region_count{};
-  lagrange_option_t<size_t> workers;
-  lagrange_option_t<size_t> threads_per_worker;
-  lagrange_option_t<lagrange_operation_mode> mode{
-      lagrange_operation_mode::OPTIMIZE};
-  lagrange_option_t<std::pair<double, double>> params;
-};
 
 static auto normalizeSplitDistributionByLWR(lagrange_split_return_t &splits)
     -> void {
@@ -128,114 +87,6 @@ static auto normalizeStateDistrubtionByLWR(
   }
 
   return normalized_states;
-}
-
-static auto grab_token(const std::string &token,
-                       const std::string &deliminators)
-    -> std::vector<std::string> {
-  std::vector<std::string> searchtokens;
-  Tokenize(token, searchtokens, deliminators);
-  for (auto &searchtoken : searchtokens) { TrimSpaces(searchtoken); }
-  return searchtokens;
-}
-
-static auto parse_config(const std::string &config_filename)
-    -> config_options_t {
-  config_options_t config;
-
-  std::ifstream ifs(config_filename);
-  if (!ifs) {
-    throw std::runtime_error{"Could not open the config file for parsing"};
-  }
-
-  std::string line;
-  while (getline(ifs, line)) {
-    if (line.empty() || line[0] == '#') { continue; }
-    /* Make the token */
-    std::vector<std::string> tokens = grab_token(line, "=");
-
-    /* Parse the option in the token */
-    if (tokens[0] == "treefile") {
-      config.treefile = tokens[1];
-    } else if (tokens[0] == "datafile") {
-      config.datafile = tokens[1];
-    } else if (tokens[0] == "ratematrix") {
-      config.ratematrixfile = tokens[1];
-      if (config.ratematrixfile == "d" || config.ratematrixfile == "D") {
-        config.ratematrixfile = "";
-      }
-    } else if (tokens[0] == "areanames") {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      config.areaNames = searchtokens;
-    } else if (tokens[0] == "periods") {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      for (auto &searchtoken : searchtokens) {
-        config.periods.push_back(atof(searchtoken.c_str()));
-      }
-    } else if (tokens[0] == "mrca") {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      std::vector<std::string> mrc;
-      for (unsigned int j = 1; j < searchtokens.size(); j++) {
-        mrc.push_back(searchtokens[j]);
-      }
-      config.mrcas[searchtokens[0]] = mrc;
-    } else if (tokens[0] == "ancstate") {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      config.ancstates.push_back(searchtokens[0]);
-    } else if (tokens[0] == "fossil") {
-      std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
-      config.fossiltype.push_back(searchtokens[0]);
-      config.fossilmrca.push_back(searchtokens[1]);
-      config.fossilarea.push_back(searchtokens[2]);
-      if (searchtokens.size() > 3) {
-        config.fossilage.push_back(atof(searchtokens[3].c_str()));
-      } else {
-        config.fossilage.push_back(0.0);
-      }
-    } else if (tokens[0] == "calctype") {
-      std::string calctype = tokens[1];
-      if (calctype != "m" && calctype != "M") { config.marginal = false; }
-    } else if (tokens[0] == "report") {
-      if (tokens[1] != "split") { config.splits = false; }
-    } else if (tokens[0] == "splits") {
-      config.splits = true;
-    } else if (tokens[0] == "states") {
-      config.states = true;
-    } else if (tokens[0] == "dispersal") {
-      config.dispersal = atof(tokens[1].c_str());
-      std::cout << "setting dispersal: " << config.dispersal << std::endl;
-      config.estimate = false;
-    } else if (tokens[0] == "extinction") {
-      config.extinction = atof(tokens[1].c_str());
-      std::cout << "setting extinction: " << config.extinction << std::endl;
-      config.estimate = false;
-    } else if (tokens[0] == "lh-epsilon") {
-      config.lh_epsilon = stof(tokens[1]);
-    } else if (tokens[0] == "workers") {
-      config.workers = lagrange_parse_size_t(tokens[1]);
-    } else if (tokens[0] == "threads-per-worker") {
-      config.threads_per_worker = lagrange_parse_size_t(tokens[1]);
-    } else if (tokens[0] == "maxareas") {
-      config.maxareas = lagrange_parse_size_t(tokens[1]);
-    } else if (tokens[0] == "expm-mode") {
-      if (tokens[1] == "krylov") {
-        config.expm_mode = lagrange_expm_computation_mode::KRYLOV;
-      } else if (tokens[1] == "pade") {
-        config.expm_mode = lagrange_expm_computation_mode::PADE;
-      } else if (tokens[1] == "adaptive") {
-        config.expm_mode = lagrange_expm_computation_mode::ADAPTIVE;
-      }
-    } else if (tokens[0] == "mode") {
-      if (tokens[1] == "optimize") {
-        config.mode = lagrange_operation_mode::OPTIMIZE;
-      } else if (tokens[1] == "evaluate") {
-        config.mode = lagrange_operation_mode::EVALUATE;
-      }
-    }
-  }
-
-  ifs.close();
-  return config;
 }
 
 static auto makeStateResultNode(
@@ -333,7 +184,7 @@ static auto makeNodeReultsJSONOutput(
   return root_json;
 }
 
-static void writeJsonToFile(const config_options_t &config,
+static void writeJsonToFile(const ConfigFile &config,
                             const nlohmann ::json &root_json) {
   std::string json_filename = config.treefile + ".results.json";
   std::ofstream outfile(json_filename);
@@ -364,7 +215,7 @@ static void writeResultTree(const config_options_t &config,
 }
 #endif
 
-static void set_expm_mode(Context &context, const config_options_t &config) {
+static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;
   if (expm_mode.has_value()) {
     switch (expm_mode.get()) {
@@ -399,10 +250,8 @@ static void set_expm_mode(Context &context, const config_options_t &config) {
   }
 }
 
-static void handle_tree(
-    const std::shared_ptr<Tree> &intree,
-    const std::unordered_map<std::string, lagrange_dist_t> &data,
-    const config_options_t &config) {
+static void handle_tree(const std::shared_ptr<Tree> &intree,
+                        const Alignment &data, const ConfigFile &config) {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
   attributes_json["periods"] =
@@ -428,7 +277,7 @@ static void handle_tree(
   if (config.splits) { context.registerSplitLHGoal(); }
   context.init();
   context.updateRates({config.dispersal, config.extinction});
-  context.registerTipClvs(data);
+  context.registerTipClvs(data.data);
   context.set_lh_epsilon(config.lh_epsilon);
   set_expm_mode(context, config);
 
@@ -476,9 +325,39 @@ static void handle_tree(
   }) << std::endl;
 }
 
-static void setThreads(config_options_t &config) {
+static void setThreads(ConfigFile &config) {
   if (!config.workers.has_value()) { config.workers = 1; }
   if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
+}
+
+static ConfigFile read_config_file(const std::string &filename) {
+  std::ifstream infile(filename);
+  return parse_config_file(infile);
+}
+
+static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
+    const std::string &filename) {
+  std::vector<std::shared_ptr<Tree>> ret;
+  std::ifstream ifs(filename);
+  std::string temp;
+  int count = 1;
+  while (getline(ifs, temp)) {
+    if (temp.size() > 1) {
+      auto intree = TreeReader::readTree(temp);
+      std::cout << "Tree " << count << " has " << intree->getExternalNodeCount()
+                << " leaves." << std::endl;
+      ret.push_back(intree);
+      count++;
+    }
+  }
+  return ret;
+}
+
+bool check_alignment_against_trees(
+    const Alignment &align, const std::vector<std::shared_ptr<Tree>> &trees) {
+  bool ok = true;
+  for (const auto &t : trees) { ok &= t->checkAlignmentConsistency(align); }
+  return ok;
 }
 
 auto main(int argc, char *argv[]) -> int {
@@ -494,22 +373,28 @@ auto main(int argc, char *argv[]) -> int {
     exit(0);
   } else {
     std::string config_filename(argv[1]);
-    auto config = parse_config(config_filename);
+    auto config = read_config_file(config_filename);
     setThreads(config);
 
-    InputReader ir;
     std::cout << "reading tree..." << std::endl;
     std::vector<std::shared_ptr<Tree>> intrees =
-        InputReader::readMultipleTreeFile(config.treefile);
-    std::cout << "reading data..." << std::endl;
-    std::unordered_map<std::string, size_t> data =
-        ir.readStandardInputData(config.datafile, config.maxareas);
-    std::cout << "checking data..." << std::endl;
-    InputReader::checkData(data, intrees);
+        read_tree_file_line_by_line(config.treefile);
 
-    config.region_count = ir.nareas;
+    std::cout << "reading data..." << std::endl;
+    Alignment data =
+        read_alignment(config.datafile, config.alignment_file_type);
+
+    std::cout << "checking data..." << std::endl;
+    check_alignment_against_trees(data, intrees);
+
+    if (data.region_count == 0) {
+      throw std::runtime_error{"Region count cannot be zero"};
+    }
+
+    config.region_count = data.region_count;
     if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
+    std::cout << "Region Count is " << config.region_count << std::endl;
     std::cout << "running analysis..." << std::endl;
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }

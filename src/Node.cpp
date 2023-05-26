@@ -5,6 +5,8 @@
  *      Author: smitty
  */
 
+#include "Node.h"
+
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -18,7 +20,6 @@
 #include <vector>
 
 #include "Common.h"
-#include "Node.h"
 #include "Operation.h"
 
 Node::Node()
@@ -346,4 +347,20 @@ void Node::setStateStringRecursive(
   for (auto &c : _children) {
     c->setStateStringRecursive(id_map, dist_lhs, states, names);
   }
+}
+
+size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
+  if (isExternal()) {
+    if (align.data.count(_label) == 0) {
+      std::ostringstream oss;
+      oss << "Could not find taxa '" << _label
+          << "' in alignment file, but taxa is present on the tree";
+      throw std::runtime_error{oss.str()};
+    }
+    return count + 1;
+  }
+  for (const auto &c : _children) {
+    count = c->checkAlignmentConsistency(align, count);
+  }
+  return count;
 }

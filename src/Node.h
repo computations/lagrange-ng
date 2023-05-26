@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "Alignment.h"
 #include "Common.h"
 #include "Operation.h"
 #include "Utils.h"
@@ -175,6 +176,8 @@ class Node {
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, lagrange_dist_t>
                          &distrib_data) const;
+
+  size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
   void assignId();
 };
