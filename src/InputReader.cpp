@@ -7,12 +7,13 @@
  *      Author: Ben Bettisworth
  */
 
+#include "InputReader.h"
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 
-#include "InputReader.h"
 #include "TreeReader.h"
 #include "Utils.h"
 
@@ -34,59 +35,6 @@ auto InputReader::readMultipleTreeFile(const std::string &filename)
     }
   }
   return ret;
-}
-
-auto InputReader::readStandardInputData(const std::string &filename,
-                                        size_t max_areas)
-    -> std::unordered_map<std::string, size_t> {
-  std::ifstream ifs(filename.c_str());
-  nareas = 0;
-  nspecies = 0;
-  std::unordered_map<std::string, size_t> data;
-  std::string line;
-  std::vector<std::string> tokens;
-  std::string del("\t ");
-
-  getline(ifs, line);
-
-  Tokenize(line, tokens, del);
-  for (auto &token : tokens) { TrimSpaces(token); }
-
-  nspecies = lagrange_parse_size_t(tokens[0]);
-  nareas = lagrange_parse_size_t(tokens[1]);
-
-  if (max_areas == 0) { max_areas = nareas; }
-
-  while (getline(ifs, line)) {
-    tokens.clear();
-
-    Tokenize(line, tokens, del);
-
-    for (auto &token : tokens) { TrimSpaces(token); }
-    std::cout << "Reading species: " << tokens[0] << " ";
-
-    std::vector<int> speciesdata(nareas, 0);
-
-    for (size_t i = 0; i < nareas; i++) {
-      char spot = tokens[1][i];
-      if (spot == '1') { speciesdata[i] = 1; }
-      std::cout << spot - '0';
-    }
-    std::cout << std::endl;
-
-    lagrange_dist_t dist = convert_vector_to_lagrange_dist(speciesdata);
-
-    try {
-      data[tokens[0]] = compute_index_from_dist(dist, max_areas);
-    } catch (std::lagrange_util_dist_index_conversion_exception &) {
-      throw std::runtime_error(
-          std::string(
-              "found invalid dist when parsing the dist for species: ") +
-          tokens[0]);
-    }
-  }
-  ifs.close();
-  return data;
 }
 
 void InputReader::checkData(
