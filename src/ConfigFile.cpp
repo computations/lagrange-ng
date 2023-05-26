@@ -113,7 +113,7 @@ class config_lexer_t {
       case config_lexeme_type_t::EQUALS_SIGN:
         return {"equals sign"};
       case config_lexeme_type_t::END:
-        return {"end of input"};
+        return {"end of line"};
       default:
         return {"unknown token"};
     }
@@ -182,6 +182,8 @@ ConfigFile parse_config_file(std::istream &instream) {
   while (getline(instream, line)) {
     config_lexer_t lexer(line);
     try {
+      if (lexer.peak() == config_lexeme_type_t::END) { continue; }
+
       lexer.expect(config_lexeme_type_t::VALUE);
       auto config_value = lexer.consume_value_as_string();
 
@@ -280,7 +282,14 @@ ConfigFile parse_config_file(std::istream &instream) {
         } else if (mode_type == "evaluate") {
           config.mode = lagrange_operation_mode::EVALUATE;
         }
+      } else {
+        std::stringstream oss;
+        oss << "Option '" << config_value << "' on line " << line_number
+            << " was not recognized";
+        throw std::runtime_error{oss.str()};
       }
+
+      lexer.expect(config_lexeme_type_t::END);
     } catch (const std::exception &e) {
       std::ostringstream oss;
       oss << "There was a problem parsing line " << line_number
