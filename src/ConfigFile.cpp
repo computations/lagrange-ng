@@ -17,14 +17,13 @@ class config_lexer_t {
     if (token == config_lexeme_type_t::VALUE) {
       std::stringstream builder;
       while (char tmp = _input[_current_index]) {
+        if (is_punct(tmp) || std::isspace(tmp)) { break; }
         builder << tmp;
         _current_index++;
       }
 
       _value = builder.str();
-      while (std::isspace(*(_value.end() - 1)) != 0) {
-        _value.resize(_value.size() - 1);
-      }
+      skip_whitespace();
       return token;
     }
     _current_index++;
@@ -91,6 +90,8 @@ class config_lexer_t {
   auto at_end() -> bool { return _input.size() == _current_index; }
 
  private:
+  bool is_punct(char c) { return c == '='; }
+
   auto consume_token_pos() -> std::pair<config_lexeme_type_t, size_t> {
     auto start_index = _current_index;
     auto token = consume();
@@ -100,7 +101,7 @@ class config_lexer_t {
   void skip_whitespace() {
     while (_current_index < _input.size()) {
       char c = _input[_current_index];
-      if (std::isspace(c) == 0 || c == '\n') { break; }
+      if (std::isspace(c) == 0) { break; }
       _current_index++;
     }
   }
@@ -121,7 +122,6 @@ class config_lexer_t {
   std::string _input;
   std::string _value;
   size_t _current_index;
-  size_t _current_line;
 };
 
 std::string parse_filename(config_lexer_t &lexer) {

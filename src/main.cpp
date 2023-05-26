@@ -357,8 +357,13 @@ auto main(int argc, char *argv[]) -> int {
     std::vector<std::shared_ptr<Tree>> intrees =
         InputReader::readMultipleTreeFile(config.treefile);
     std::cout << "reading data..." << std::endl;
+
+    /*
     std::unordered_map<std::string, size_t> data =
         ir.readStandardInputData(config.datafile, config.maxareas);
+        */
+
+    std::unordered_map<std::string, size_t> data;
     std::cout << "checking data..." << std::endl;
     InputReader::checkData(data, intrees);
 
