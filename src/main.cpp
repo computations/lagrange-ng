@@ -7,6 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <fstream>
@@ -23,6 +24,7 @@
 
 #include "Common.h"
 #include "Context.h"
+#include "Fossil.h"
 #include "InputReader.h"
 #include "Utils.h"
 #include "WorkerState.h"
@@ -183,7 +185,9 @@ static auto parse_config(const std::string &config_filename)
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
       config.ancstates.push_back(searchtokens[0]);
     } else if (tokens[0] == "fossil") {
+      fossil_type ft;
       std::vector<std::string> searchtokens = grab_token(tokens[1], ",     ");
+      if (std::tolower(searchtokens[0][0]) == 'n') { ft = fossil_type::n; }
       config.fossiltype.push_back(searchtokens[0]);
       config.fossilmrca.push_back(searchtokens[1]);
       config.fossilarea.push_back(searchtokens[2]);

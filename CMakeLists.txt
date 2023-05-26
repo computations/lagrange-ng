@@ -17,6 +17,7 @@ set(LAGRANGE_SOURCES
         src/WorkerState.cpp
         src/Arnoldi.cpp
         src/Fossil.cpp
+        src/ConfigFile.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})

@@ -16,14 +16,4 @@ struct Fossil {
   double age;
 };
 
-class FossilList {
- public:
-  void add_fossil(const std::string &mrca, const std::string &type,
-                  const std::string &area, const std::string age) {
-    _fossils.emplace_back(Fossil{.mrca = mrca, .area = area});
-  }
-
- private:
-  std::vector<Fossil> _fossils;
-};
 #endif  // !FOSSIL_H

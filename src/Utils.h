@@ -21,10 +21,6 @@ struct lagrange_region_split_t {
   lagrange_dist_t right;
 };
 
-void Tokenize(const std::string &str, std::vector<std::string> &tokens,
-              const std::string &delimiters = " ");
-void TrimSpaces(std::string &str);
-
 inline auto lagrange_bextr(lagrange_dist_t a, size_t i) -> uint64_t {
   return (a >> i) & 1ULL;
 }
@@ -83,6 +79,9 @@ auto lagrange_convert_dist_string(lagrange_dist_t dist,
 
 auto lagrange_convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
+    -> lagrange_dist_t;
+
+auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
     -> lagrange_dist_t;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
