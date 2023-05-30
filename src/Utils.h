@@ -95,6 +95,9 @@ inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
 std::vector<std::string> lagrange_convert_dist_to_list(
     lagrange_dist_t dist, const std::vector<std::string> &names);
 
+
+std::string get_file_extension(const std::string& filename);
+
 template <typename T>
 class lagrange_option_t {
  public:

@@ -1,5 +1,6 @@
 #include "Alignment.h"
 
+#include <fstream>
 #include <sstream>
 #include <string>
 
@@ -63,4 +64,26 @@ Alignment read_phylip(std::istream& instream) {
   }
 
   return alignment;
+}
+
+Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
+  if (type == AlignmentFileType::fasta) {
+    return read_fasta(infile);
+  } else {
+    return read_phylip(infile);
+  }
+}
+
+Alignment read_alignment(const std::string& infile,
+                         lagrange_option_t<AlignmentFileType> type) {
+  std::ifstream alignment_file(infile);
+  if (type.has_value()) { return read_alignment(alignment_file, type.get()); }
+
+  auto extension = get_file_extension(infile);
+  if (extension == "fasta") {
+    return read_alignment(alignment_file, AlignmentFileType::fasta);
+  } else if (extension == "phylip" || extension == "phy") {
+    return read_alignment(alignment_file, AlignmentFileType::phylip);
+  }
+  throw std::runtime_error{"Failed to recognize alignment file type"};
 }

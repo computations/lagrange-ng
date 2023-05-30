@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Alignment.h"
 #include "Common.h"
 #include "Fossil.h"
 #include "Utils.h"
@@ -49,6 +50,8 @@ struct ConfigFile {
   double lh_epsilon = 1e-9;
 
   lagrange_option_t<lagrange_expm_computation_mode> expm_mode;
+
+  lagrange_option_t<AlignmentFileType> alignment_file_type;
 
   size_t region_count{};
   lagrange_option_t<size_t> workers;

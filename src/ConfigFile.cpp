@@ -283,6 +283,17 @@ ConfigFile parse_config_file(std::istream &instream) {
         } else if (mode_type == "evaluate") {
           config.mode = lagrange_operation_mode::EVALUATE;
         }
+      } else if (config_value == "alignment-type") {
+        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(config_lexeme_type_t::VALUE);
+
+        auto align_type_str = lexer.consume_value_as_string();
+        if (align_type_str == "fasta") {
+          config.alignment_file_type = AlignmentFileType::fasta;
+        }
+        if (align_type_str == "phylip") {
+          config.alignment_file_type = AlignmentFileType::phylip;
+        }
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number

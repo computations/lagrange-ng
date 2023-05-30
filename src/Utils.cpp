@@ -137,3 +137,9 @@ auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
   }
   return d;
 }
+
+std::string get_file_extension(const std::string &filename) {
+  auto itr = filename.end() - 1;
+  while (*itr != '.') { itr--; }
+  return {itr + 1, filename.end()};
+}
