@@ -159,14 +159,7 @@ double parse_size_t(config_lexer_t &lexer) {
   return lexer.consume_value_as_size_t();
 }
 
-Fossil parse_fossil(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto fossil_type_string = lexer.consume_value_as_string();
-
-  fossil_type ft = fossil_type_string == "n" || fossil_type_string == "N"
-                       ? fossil_type::n
-                       : fossil_type::b;
-
+Fossil parse_node_fossil(config_lexer_t &lexer) {
   lexer.expect(config_lexeme_type_t::VALUE);
   auto fossile_mrca = lexer.consume_value_as_string();
 
@@ -174,16 +167,41 @@ Fossil parse_fossil(config_lexer_t &lexer) {
   auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
       lexer.consume_value_as_string());
 
-  double fossil_age = 0.0;
-  if (lexer.peak() == config_lexeme_type_t::VALUE) {
-    lexer.consume();
-    fossil_age = lexer.consume_value_as_float();
+  return {.mrca_name = fossile_mrca,
+          .clade = {},
+          .age = 0.0,
+          .area = fossil_area,
+          .type = fossil_type::node};
+}
+
+Fossil parse_branch_fossil(config_lexer_t &lexer) {
+  lexer.expect(config_lexeme_type_t::VALUE);
+  auto fossile_mrca = lexer.consume_value_as_string();
+
+  lexer.expect(config_lexeme_type_t::VALUE);
+  auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
+      lexer.consume_value_as_string());
+
+  lexer.expect(config_lexeme_type_t::VALUE);
+  double fossil_age = lexer.consume_value_as_float();
+
+  return {.mrca_name = fossile_mrca,
+          .clade = {},
+          .age = fossil_age,
+          .area = fossil_area,
+          .type = fossil_type::branch};
+};
+
+Fossil parse_fossil(config_lexer_t &lexer) {
+  lexer.expect(config_lexeme_type_t::VALUE);
+  auto fossil_type_string = lexer.consume_value_as_string();
+
+  if (fossil_type_string == "n" || fossil_type_string == "N") {
+    return {parse_node_fossil(lexer)};
+  } else if (fossil_type_string == "b" || fossil_type_string == "B") {
+    return {parse_branch_fossil(lexer)};
   }
-  return Fossil{.mrca_name = fossile_mrca,
-                .clade = {},
-                .area = fossil_area,
-                .type = ft,
-                .age = fossil_age};
+  throw std::runtime_error{"Unknown fossile type"};
 }
 
 ConfigFile parse_config_file(std::istream &instream) {
