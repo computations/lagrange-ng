@@ -23,8 +23,7 @@ struct ConfigFile {
   size_t maxareas = 0;
 
   std::vector<double> periods;
-  std::unordered_map<std::string, std::vector<std::string>> mrcas;
-  std::unordered_map<std::string, lagrange_dist_t> fixnodewithmrca;
+  std::unordered_map<std::string, std::shared_ptr<MRCAEntry>> mrcas;
   std::vector<lagrange_dist_t> excludedists;
   std::vector<lagrange_dist_t> includedists;
   std::vector<std::string> areaNames;
@@ -33,11 +32,7 @@ struct ConfigFile {
   std::vector<std::string> areacolors;
 
   std::vector<Fossil> fossils;
-
-  std::vector<std::string> fossilmrca;
-  std::vector<std::string> fossiltype;
-  std::vector<std::string> fossilarea;
-  std::vector<double> fossilage;
+  std::unordered_map<std::string, lagrange_dist_t> fixNodeWithMrca;
 
   bool marginal = true;  // false means joint
   bool splits = false;

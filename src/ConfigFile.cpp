@@ -1,11 +1,18 @@
 #include "ConfigFile.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 
 #include "Fossil.h"
 
 enum class config_lexeme_type_t { VALUE, EQUALS_SIGN, END };
+
+void set_mrcas_for_fossils(ConfigFile &config) {
+  for (auto &f : config.fossils) { f.clade = config.mrcas[f.mrca_name]; }
+}
+
+void finalize(ConfigFile &config) { set_mrcas_for_fossils(config); }
 
 class config_lexer_t {
  public:
@@ -172,8 +179,11 @@ Fossil parse_fossil(config_lexer_t &lexer) {
     lexer.consume();
     fossil_age = lexer.consume_value_as_float();
   }
-  return Fossil{
-      .mrca = fossile_mrca, .area = fossil_area, .type = ft, .age = fossil_age};
+  return Fossil{.mrca_name = fossile_mrca,
+                .clade = {},
+                .area = fossil_area,
+                .type = ft,
+                .age = fossil_age};
 }
 
 ConfigFile parse_config_file(std::istream &instream) {
@@ -211,7 +221,9 @@ ConfigFile parse_config_file(std::istream &instream) {
         lexer.expect(config_lexeme_type_t::VALUE);
         auto mrca_name = lexer.consume_value_as_string();
 
-        config.mrcas[mrca_name] = parse_list(lexer);
+        auto mrca_entries = parse_list(lexer);
+        config.mrcas[mrca_name] = std::shared_ptr<MRCAEntry>(
+            new MRCAEntry{.clade = std::move(mrca_entries)});
       } else if (config_value == "ancstate") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
         config.ancstates = parse_list(lexer);
@@ -312,5 +324,8 @@ ConfigFile parse_config_file(std::istream &instream) {
 
     line_number++;
   }
+
+  finalize(config);
+
   return config;
 }

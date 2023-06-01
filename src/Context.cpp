@@ -1,3 +1,5 @@
+#include "Context.h"
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -13,8 +15,8 @@
 
 #include "AncSplit.h"
 #include "Common.h"
-#include "Context.h"
 #include "Operation.h"
+#include "Utils.h"
 #include "WorkerState.h"
 #include "Workspace.h"
 
@@ -31,7 +33,7 @@ void Context::registerBackwardOperations() {
 void Context::registerLHGoal() {
   if (_forward_operations.empty()) { registerForwardOperations(); }
 
-  auto root_clv = (*(_forward_operations.end() - 1))->get_parent_clv();
+  auto root_clv = _forward_operations.back()->get_parent_clv();
   size_t frequency_index = _workspace->suggest_freq_vector_index();
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
@@ -39,23 +41,31 @@ void Context::registerLHGoal() {
 void Context::registerStateLHGoal() {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
-  auto node_ids = _tree->traversePreorderInternalNodesOnly();
-  for (auto nid : node_ids) {
-    _state_lh_goal.emplace_back(_workspace->get_top_clv_reverse(nid),
-                                _workspace->get_lchild_clv(nid),
-                                _workspace->get_rchild_clv(nid));
-  }
+  auto cb = [&](Node& n) {
+    _state_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
+                                _workspace->get_lchild_clv(n.getId()),
+                                _workspace->get_rchild_clv(n.getId()));
+    if (n.getFixedDist().has_value()) {
+      _state_lh_goal.back().fixDist(n.getFixedDist().get());
+    }
+  };
+
+  _tree->applyPreorderInternalOnly(cb);
 }
 
 void Context::registerSplitLHGoal() {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
-  auto node_ids = _tree->traversePreorderInternalNodesOnly();
-  for (auto nid : node_ids) {
-    _split_lh_goal.emplace_back(_workspace->get_top_clv_reverse(nid),
-                                _workspace->get_lchild_clv(nid),
-                                _workspace->get_rchild_clv(nid));
-  }
+  auto cb = [&](Node& n) {
+    _split_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
+                                _workspace->get_lchild_clv(n.getId()),
+                                _workspace->get_rchild_clv(n.getId()));
+    if (n.getFixedDist().has_value()) {
+      _split_lh_goal.back().fixDist(n.getFixedDist().get());
+    }
+  };
+
+  _tree->applyPreorderInternalOnly(cb);
 }
 
 void Context::updateRates(const period_t& params) {
@@ -70,6 +80,12 @@ void Context::init() {
   if (!_reverse_operations.empty()) {
     size_t prior_index = _reverse_operations.front()->getStableCLV();
     _workspace->set_reverse_prior(prior_index);
+  }
+
+  auto fixed_dist = _forward_operations.back()->getFixedDist();
+
+  if (fixed_dist.has_value()) {
+    _workspace->set_base_frequencies_by_dist(0, fixed_dist.get());
   }
 }
 

@@ -19,6 +19,7 @@
 
 #include "AncSplit.h"
 #include "Common.h"
+#include "Utils.h"
 #include "Workspace.h"
 
 class MakeRateMatrixOperation {
@@ -301,6 +302,12 @@ class SplitOperation {
     return ret;
   }
 
+  void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
+
+  auto getFixedDist() -> lagrange_option_t<lagrange_dist_t> const {
+    return _fixed_dist;
+  }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -308,6 +315,8 @@ class SplitOperation {
 
   std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
   std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
+
+  lagrange_option_t<lagrange_dist_t> _fixed_dist;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -384,6 +393,12 @@ class ReverseSplitOperation {
     return ret;
   }
 
+  void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
+
+  auto getFixedDist() -> lagrange_option_t<lagrange_dist_t> const {
+    return _fixed_dist;
+  }
+
  private:
   size_t _bot_clv_index;
   size_t _ltop_clv_index;
@@ -391,7 +406,8 @@ class ReverseSplitOperation {
   bool _eval_clvs;
 
   std::vector<std::shared_ptr<DispersionOperation>> _branch_ops;
-  std::vector<lagrange_dist_t> _excl_dists;
+
+  lagrange_option_t<lagrange_dist_t> _fixed_dist;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -429,6 +445,7 @@ class StateLHGoal {
       : _parent_clv_index{other._parent_clv_index},
         _lchild_clv_index{other._lchild_clv_index},
         _rchild_clv_index{other._rchild_clv_index},
+        _fixed_dist{other._fixed_dist},
         _result{std::move(other._result)},
         _states{other._states} {}
   auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
@@ -443,10 +460,15 @@ class StateLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
+  void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
+  lagrange_option_t<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_option_t<lagrange_dist_t> _fixed_dist;
 
   lagrange_clock_tick_t _last_execution = 0;
 
@@ -467,10 +489,14 @@ class SplitLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
+  void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  lagrange_option_t<lagrange_dist_t> _fixed_dist;
 
   lagrange_clock_tick_t _last_execution = 0;
 

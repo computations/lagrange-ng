@@ -11,6 +11,7 @@
 #define TREE_H
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -18,6 +19,7 @@
 
 #include "Alignment.h"
 #include "Common.h"
+#include "Fossil.h"
 #include "Node.h"
 #include "Operation.h"
 
@@ -27,6 +29,7 @@ class Tree {
   std::vector<std::shared_ptr<Node>> _nodes;
   std::vector<std::shared_ptr<Node>> _internal_nodes;
   std::vector<std::shared_ptr<Node>> _external_nodes;
+  std::unordered_map<std::string, std::shared_ptr<Node>> _mrcas;
   size_t _internal_node_count;
   size_t _external_node_count;
 
@@ -38,7 +41,7 @@ class Tree {
                                double newHeight);
   auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
 
-  auto findNode(const std::shared_ptr<Node>& n) -> bool;
+  auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
  public:
   Tree();
@@ -68,6 +71,8 @@ class Tree {
   auto traversePreorderInternalNodesOnly() const -> std::vector<size_t>;
   auto traversePreorderInternalNodesOnlyNumbers() const -> std::vector<size_t>;
 
+  void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
+
   void assignTipData(
       Workspace &ws,
       const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
@@ -85,10 +90,7 @@ class Tree {
   auto getRoot() -> std::shared_ptr<Node>;
   void processRoot();
 
-  auto getMRCA(const std::vector<std::string> &innodes)
-      -> std::shared_ptr<Node>;
-  auto getMRCA(const std::vector<std::shared_ptr<Node>> &innodes)
-      -> std::shared_ptr<Node>;
+  auto getMRCA(const std::shared_ptr<MRCAEntry> &mrca) -> std::shared_ptr<Node>;
 
   auto getParent(const std::shared_ptr<Node> &n) const -> std::shared_ptr<Node>;
 
@@ -100,7 +102,9 @@ class Tree {
       const std::function<std::string(const Node &)> &newick_lambda) const
       -> std::string;
 
-  bool checkAlignmentConsistency(const Alignment& align) const;
+  bool checkAlignmentConsistency(const Alignment &align) const;
+
+  void assignFossils(const std::vector<Fossil> &fossils);
 
   ~Tree();
 };

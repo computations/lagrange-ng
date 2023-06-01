@@ -86,20 +86,11 @@ auto Tree::getNodeCount() const -> unsigned int { return _nodes.size(); }
 
 auto Tree::getRoot() -> std::shared_ptr<Node> { return _root; }
 
-auto Tree::getMRCA(const std::vector<std::string> &outgroup)
+auto Tree::getMRCA(const std::shared_ptr<MRCAEntry> &mrca)
     -> std::shared_ptr<Node> {
-  if (outgroup.size() == 1) { return getExternalNode(outgroup[0]); }
-  std::vector<std::shared_ptr<Node>> outgroup_nodes;
-  outgroup_nodes.reserve(outgroup.size());
-  for (const auto &o : outgroup) {
-    outgroup_nodes.push_back(getExternalNode(o));
-  }
-  return getMRCA(outgroup_nodes);
-}
-
-auto Tree::getMRCA(const std::vector<std::shared_ptr<Node>> &outgroup)
-    -> std::shared_ptr<Node> {
-  return getMRCAWithNode(_root, outgroup);
+  std::vector<std::shared_ptr<Node>> members;
+  for (auto &&e : mrca->clade) { members.push_back(getExternalNode(e)); }
+  return getMRCAWithNode(_root, members);
 }
 
 void Tree::setHeightFromRootToNodes() {
@@ -266,4 +257,14 @@ bool Tree::checkAlignmentConsistency(const Alignment &align) const {
     throw std::runtime_error{oss.str()};
   }
   return true;
+}
+
+void Tree::assignFossils(const std::vector<Fossil> &fossils) {
+  for (const auto &f : fossils) {
+    getMRCA(f.clade.get())->assignFossilData(f.area);
+  }
+}
+
+void Tree::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
+  _root->applyPreorderInternalOnly(func);
 }

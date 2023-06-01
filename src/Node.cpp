@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "Operation.h"
+#include "Utils.h"
 
 Node::Node()
     : _branch_length(0.0), _height(0.0), _number(0), _id(0), _period(0) {}
@@ -134,7 +135,7 @@ auto getMRCAWithNode(const std::shared_ptr<Node> &current,
                      const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
   if (current->_children.empty()) {
-    if (std::any_of(current->_children.begin(), current->_children.end(),
+    if (std::any_of(leaves.begin(), leaves.end(),
                     [&current](auto &n) { return n == current; })) {
       return current;
     }
@@ -202,6 +203,7 @@ auto Node::traverseAndGenerateForwardOperations(
 
   split_ops.push_back(std::make_shared<SplitOperation>(
       ws.get_top_clv(_id), lchild.second, rchild.second));
+  if (_fixed_dist.has_value()) { split_ops.back()->fixDist(_fixed_dist.get()); }
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
@@ -230,6 +232,9 @@ auto Node::traverseAndGenerateBackwardOperations(
   ws.register_bot2_clv_reverse(_id);
   rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
       ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
+  if (_fixed_dist.has_value()) {
+    rsplit_ops.back()->fixDist(_fixed_dist.get());
+  }
 
   if (_children[0]->isInternal()) {
     auto child_trav =
@@ -363,4 +368,19 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
     count = c->checkAlignmentConsistency(align, count);
   }
   return count;
+}
+
+void Node::assignFossilData(lagrange_dist_t fixed_dist) {
+  _fixed_dist = fixed_dist;
+}
+
+void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
+  func(*this);
+  for (auto &c : _children) {
+    if (c->isInternal()) { c->applyPreorderInternalOnly(func); }
+  }
+}
+
+lagrange_option_t<lagrange_dist_t> Node::getFixedDist() const {
+  return _fixed_dist;
 }

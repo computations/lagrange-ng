@@ -92,17 +92,38 @@ inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
   return d;
 }
 
+/* Computes the next dist and index given excluded ranges given by the vector.
+ *
+ * The dist is the next _valid_ dist given the size limit `n` and the excluded
+ * dists contained between `start` and `end`. The index is the index computed
+ * as if the excluded dists don't exist. This means the index is valid for
+ * arrays which are indexed by the "normal" `next_dist`.
+ */
+inline auto next_dist(lagrange_dist_t d, uint32_t n, size_t index,
+                      std::vector<lagrange_dist_t>::const_iterator &start,
+                      const std::vector<lagrange_dist_t>::const_iterator &end)
+    -> std::pair<lagrange_dist_t, size_t> {
+  auto next = next_dist(d, n);
+  index += 1;
+  while (start != end && *start < next) { start++; }
+  if (start != end && next == *start) {
+    return next_dist(next, n, index, start, end);
+  }
+  return {next, index};
+}
+
 std::vector<std::string> lagrange_convert_dist_to_list(
     lagrange_dist_t dist, const std::vector<std::string> &names);
 
-
-std::string get_file_extension(const std::string& filename);
+std::string get_file_extension(const std::string &filename);
 
 template <typename T>
 class lagrange_option_t {
  public:
   lagrange_option_t() = default;
   explicit lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
+
+  lagrange_option_t(const lagrange_option_t<T> &o) = default;
 
   auto operator=(const T &v) -> lagrange_option_t<T> & {
     _value = v;

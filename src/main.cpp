@@ -250,16 +250,16 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
   }
 }
 
-static void handle_tree(const std::shared_ptr<Tree> &intree,
-                        const Alignment &data, const ConfigFile &config) {
+static auto init_json(const std::shared_ptr<Tree> &tree,
+                      const ConfigFile &config) -> nlohmann::json {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
   attributes_json["periods"] =
       !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
   attributes_json["regions"] = config.region_count;
-  attributes_json["taxa"] = intree->getExternalNodeCount();
+  attributes_json["taxa"] = tree->getExternalNodeCount();
   attributes_json["nodes-tree"] =
-      intree->getNewickLambda([](const Node &n) -> std::string {
+      tree->getNewickLambda([](const Node &n) -> std::string {
         if (n.isInternal()) {
           return std::to_string(n.getNumber()) + ":" +
                  std::to_string(n.getBL());
@@ -271,6 +271,21 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
   attributes_json["state-count"] = lagrange_compute_restricted_state_count(
       config.region_count, config.maxareas);
   root_json["attributes"] = attributes_json;
+
+  return root_json;
+}
+
+static void setup_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config) {
+  tree->assignFossils(config.fossils);
+}
+
+static void handle_tree(const std::shared_ptr<Tree> &intree,
+                        const Alignment &data, const ConfigFile &config) {
+  auto root_json = init_json(intree, config);
+
+  setup_tree(intree, config);
+
   Context context(intree, config.region_count, config.maxareas);
   context.registerLHGoal();
   if (config.states) { context.registerStateLHGoal(); }
@@ -394,7 +409,6 @@ auto main(int argc, char *argv[]) -> int {
     config.region_count = data.region_count;
     if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
-    std::cout << "Region Count is " << config.region_count << std::endl;
     std::cout << "running analysis..." << std::endl;
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }

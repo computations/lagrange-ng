@@ -42,7 +42,8 @@ class Node {
   std::string _state_string;
   std::string _stoch_string;
   std::vector<std::shared_ptr<Node>> _children;
-  std::vector<lagrange_dist_t> _excluded_dists;
+
+  lagrange_option_t<lagrange_dist_t> _fixed_dist;
 
   auto getRateMatrixOperation(PeriodRateMatrixMap &rm_map) const
       -> std::shared_ptr<MakeRateMatrixOperation> {
@@ -173,6 +174,8 @@ class Node {
   void traverseAndGeneratePostorderNodeIdsInternalOnly(
       std::vector<size_t> &ret) const;
 
+  void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
+
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, lagrange_dist_t>
                          &distrib_data) const;
@@ -180,6 +183,10 @@ class Node {
   size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
   void assignId();
+
+  void assignFossilData(lagrange_dist_t fixed_dist);
+
+  lagrange_option_t<lagrange_dist_t> getFixedDist() const;
 };
 
 auto getMRCAWithNode(const std::shared_ptr<Node> &current,

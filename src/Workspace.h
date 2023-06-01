@@ -44,6 +44,7 @@ class Workspace {
         _leading_dim{_states},
         _rate_matrix{1},
         _prob_matrix{1},
+
         _base_frequencies_count{1},
         _base_frequencies{nullptr},
 
@@ -267,6 +268,22 @@ class Workspace {
 
   inline auto get_base_frequencies(size_t index) -> lagrange_col_vector_t & {
     return _base_frequencies[index];
+  }
+
+  inline void set_base_frequencies_by_dist(size_t index, lagrange_dist_t dist) {
+    for (size_t i = 0; i < clv_size(); ++i) {
+      _base_frequencies[index][i] = 0.0;
+    }
+
+    size_t tmp_index = 0;
+    lagrange_dist_t tmp_dist = 0;
+    while (true) {
+      tmp_dist = next_dist(tmp_dist, max_areas());
+      tmp_index += 1;
+      if (dist == tmp_dist) { break; }
+    }
+
+    _base_frequencies[index][tmp_index] = 1.0;
   }
 
   void reserve();

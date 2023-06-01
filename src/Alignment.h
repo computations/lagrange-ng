@@ -16,8 +16,6 @@ struct Alignment {
 
 enum class AlignmentFileType { fasta, phylip };
 
-enum class AlignmentFileType { fasta, phylip };
-
 Alignment read_fasta(std::istream& instream);
 Alignment read_phylip(std::istream& instream);
 
