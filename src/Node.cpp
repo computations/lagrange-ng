@@ -346,8 +346,12 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   return count;
 }
 
-void Node::assignFossilData(lagrange_dist_t fixed_dist) {
-  _incl_area_mask = fixed_dist;
+void Node::assignInclAreas(lagrange_dist_t incl_area_mask) {
+  _incl_area_mask = incl_area_mask;
+}
+
+void Node::assignFixedDist(lagrange_dist_t fixed_dist) {
+  _fixed_dist = fixed_dist;
 }
 
 void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {

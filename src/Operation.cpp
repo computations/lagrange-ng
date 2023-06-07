@@ -152,6 +152,7 @@ inline void weighted_combine(
       if (index >= states) { break; }
 
       if (fixed_dist.has_value() && fixed_dist.get() != dist) { continue; }
+
       join_splits(dist, index, regions, max_areas, splits, c1, c2, dest, scale,
                   dist_map_func);
     }
@@ -222,7 +223,7 @@ inline void reverse_weighted_combine(
       dist = next_dist_index.first;
       index = next_dist_index.second;
 
-      if (index < states) { break; }
+      if (index >= states) { break; }
 
       if (fixed_dist.has_value() && fixed_dist.get() != dist) { continue; }
 

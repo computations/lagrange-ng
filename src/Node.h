@@ -183,7 +183,8 @@ class Node {
 
   void assignId();
 
-  void assignFossilData(lagrange_dist_t fixed_dist);
+  void assignInclAreas(lagrange_dist_t fixed_dist);
+  void assignFixedDist(lagrange_dist_t fixed_dist);
 
   lagrange_option_t<lagrange_dist_t> getFixedDist() const;
 

@@ -10,7 +10,7 @@
 #include "MRCA.h"
 #include "Utils.h"
 
-enum class fossil_type { node, branch };
+enum class fossil_type { node, branch, fixed };
 
 struct Fossil {
   std::string mrca_name;

@@ -48,6 +48,9 @@ void Context::registerStateLHGoal() {
     if (n.getInclAreas().has_value()) {
       _state_lh_goal.back().setInclAreas(n.getInclAreas().get());
     }
+    if (n.getFixedDist().has_value()) {
+      _state_lh_goal.back().fixDist(n.getFixedDist().get());
+    }
   };
 
   _tree->applyPreorderInternalOnly(cb);
@@ -62,6 +65,9 @@ void Context::registerSplitLHGoal() {
                                 _workspace->get_rchild_clv(n.getId()));
     if (n.getInclAreas().has_value()) {
       _split_lh_goal.back().setInclAreas(n.getInclAreas().get());
+    }
+    if (n.getFixedDist().has_value()) {
+      _split_lh_goal.back().fixDist(n.getFixedDist().get());
     }
   };
 
