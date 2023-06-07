@@ -3,20 +3,21 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "Common.h"
 #include "MRCA.h"
 #include "Utils.h"
 
-enum class fossil_type { n, b };
+enum class fossil_type { node, branch };
 
 struct Fossil {
   std::string mrca_name;
   lagrange_option_t<std::shared_ptr<MRCAEntry>> clade;
+  double age;
   lagrange_dist_t area;
   fossil_type type;
-  double age;
 };
 
 #endif  // !FOSSIL_H
