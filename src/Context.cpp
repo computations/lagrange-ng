@@ -45,8 +45,8 @@ void Context::registerStateLHGoal() {
     _state_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
                                 _workspace->get_lchild_clv(n.getId()),
                                 _workspace->get_rchild_clv(n.getId()));
-    if (n.getFixedDist().has_value()) {
-      _state_lh_goal.back().fixDist(n.getFixedDist().get());
+    if (n.getInclAreas().has_value()) {
+      _state_lh_goal.back().setInclAreas(n.getInclAreas().get());
     }
   };
 
@@ -60,8 +60,8 @@ void Context::registerSplitLHGoal() {
     _split_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
                                 _workspace->get_lchild_clv(n.getId()),
                                 _workspace->get_rchild_clv(n.getId()));
-    if (n.getFixedDist().has_value()) {
-      _split_lh_goal.back().fixDist(n.getFixedDist().get());
+    if (n.getInclAreas().has_value()) {
+      _split_lh_goal.back().setInclAreas(n.getInclAreas().get());
     }
   };
 

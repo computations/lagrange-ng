@@ -297,14 +297,13 @@ class SplitOperation {
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
                        rate_matrix, rate_matrix, parent_clv) {}
 
-  // TODO: Fix this for periods
   SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
                  std::shared_ptr<DispersionOperation> r_ops)
       : _lbranch_clv_index{l_ops->top_clv_index()},
         _rbranch_clv_index{r_ops->top_clv_index()},
         _parent_clv_index{parent_clv},
-        _lbranch_op{{l_ops}},
-        _rbranch_op{{r_ops}} {}
+        _lbranch_op{l_ops},
+        _rbranch_op{r_ops} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -339,6 +338,10 @@ class SplitOperation {
     return _fixed_dist;
   }
 
+  void setExclAreas(lagrange_dist_t e) { _excl_area_mask = e; }
+
+  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -348,6 +351,8 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
+  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -424,6 +429,8 @@ class ReverseSplitOperation {
     return _fixed_dist;
   }
 
+  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+
  private:
   size_t _bot_clv_index;
   size_t _ltop_clv_index;
@@ -433,6 +440,8 @@ class ReverseSplitOperation {
   std::shared_ptr<DispersionOperation> _branch_op;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
+  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -471,6 +480,8 @@ class StateLHGoal {
         _lchild_clv_index{other._lchild_clv_index},
         _rchild_clv_index{other._rchild_clv_index},
         _fixed_dist{other._fixed_dist},
+        _excl_area_mask{other._excl_area_mask},
+        _incl_area_mask{other._incl_area_mask},
         _result{std::move(other._result)},
         _states{other._states} {}
   auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
@@ -488,12 +499,17 @@ class StateLHGoal {
   void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
   lagrange_option_t<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
 
+  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_dist_t _excl_area_mask = 0;
+  lagrange_dist_t _incl_area_mask = 0;
 
   lagrange_clock_tick_t _last_execution = 0;
 
@@ -516,12 +532,16 @@ class SplitLHGoal {
 
   void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
 
+  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_dist_t _excl_area_mask = 0;
+  lagrange_dist_t _incl_area_mask = 0;
 
   lagrange_clock_tick_t _last_execution = 0;
 

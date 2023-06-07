@@ -41,6 +41,8 @@ class Node {
   std::vector<std::shared_ptr<Node>> _children;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
+  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
 
   auto getRateMatrixOperation(PeriodRateMatrixMap &rm_map) const
       -> std::shared_ptr<MakeRateMatrixOperation> {
@@ -184,6 +186,8 @@ class Node {
   void assignFossilData(lagrange_dist_t fixed_dist);
 
   lagrange_option_t<lagrange_dist_t> getFixedDist() const;
+
+  lagrange_option_t<lagrange_dist_t> getInclAreas() const;
 };
 
 auto getMRCAWithNode(const std::shared_ptr<Node> &current,
