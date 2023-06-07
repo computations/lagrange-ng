@@ -86,30 +86,36 @@ auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-inline auto next_dist(lagrange_dist_t d, uint32_t n) -> lagrange_dist_t {
+constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n)
+    -> lagrange_dist_t {
   d += 1;
-  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d++; }
+  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
 }
 
-/* Computes the next dist and index given excluded ranges given by the vector.
- *
- * The dist is the next _valid_ dist given the size limit `n` and the excluded
- * dists contained between `start` and `end`. The index is the index computed
- * as if the excluded dists don't exist. This means the index is valid for
- * arrays which are indexed by the "normal" `next_dist`.
- */
-inline auto next_dist(lagrange_dist_t d, uint32_t n, size_t index,
-                      std::vector<lagrange_dist_t>::const_iterator &start,
-                      const std::vector<lagrange_dist_t>::const_iterator &end)
+/* Returns true if the dist "passes" the check. That is, if there are no common
+ * bits set */
+constexpr inline auto check_excl_dist(lagrange_dist_t dist,
+                                      lagrange_dist_t excl_dist) -> bool {
+  return !(dist & excl_dist);
+}
+
+constexpr inline auto check_incl_dist(lagrange_dist_t dist,
+                                      lagrange_dist_t incl_dist) -> bool {
+  return (dist & incl_dist) == incl_dist;
+}
+
+constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n, size_t index,
+                                lagrange_dist_t excl_area_mask = 0,
+                                lagrange_dist_t incl_area_mask = 0)
     -> std::pair<lagrange_dist_t, size_t> {
   auto next = next_dist(d, n);
   index += 1;
-  while (start != end && *start < next) { start++; }
-  if (start != end && next == *start) {
-    return next_dist(next, n, index, start, end);
+  if (check_excl_dist(next, excl_area_mask) &&
+      check_incl_dist(next, incl_area_mask)) {
+    return {next, index};
   }
-  return {next, index};
+  return next_dist(next, n, index, excl_area_mask, incl_area_mask);
 }
 
 std::vector<std::string> lagrange_convert_dist_to_list(
@@ -139,6 +145,11 @@ class lagrange_option_t {
   auto get() const -> const T & {
     if (_has_value) { return _value; }
     throw std::runtime_error{"lagrange_option_t has no value when used"};
+  }
+
+  auto get(const T &def) const -> T {
+    if (_has_value) { return _value; }
+    return def;
   }
 
   auto has_value() const -> bool { return _has_value; }

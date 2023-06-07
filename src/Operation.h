@@ -212,7 +212,10 @@ class DispersionOperation {
 
   auto ready(const std::shared_ptr<Workspace>& ws,
              lagrange_clock_tick_t deadline) const -> bool {
-    return ws->last_update_clv(_bot_clv) > deadline;
+    bool child_ready =
+        (_child_op != nullptr && _child_op->ready(ws, deadline)) ||
+        (_child_op == nullptr);
+    return child_ready && ws->last_update_clv(_bot_clv) > deadline;
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
@@ -223,7 +226,33 @@ class DispersionOperation {
 
   void fallback() { _expm_op->setArnoldiMode(false); }
 
+  void setChildOp(const std::shared_ptr<DispersionOperation>& op) {
+    if (_child_op != nullptr) {
+      throw std::runtime_error{"Child is already set"};
+    }
+    _child_op = op;
+  }
+
+  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() {
+    size_t op_count = countChildOps();
+    std::vector<std::shared_ptr<ExpmOperation>> expm_ops;
+    expm_ops.reserve(op_count);
+    insertExpmOpRecursive(expm_ops);
+    return expm_ops;
+  }
+
+  size_t countChildOps() {
+    if (!_child_op) { return 1; }
+    return _child_op->countChildOps() + 1;
+  }
+
  private:
+  void insertExpmOpRecursive(
+      std::vector<std::shared_ptr<ExpmOperation>>& expm_ops) const {
+    if (_child_op != nullptr) { _child_op->insertExpmOpRecursive(expm_ops); }
+    expm_ops.push_back(_expm_op);
+  }
+
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
    * is that we just apply the matrix multiplication over and over again to the
@@ -236,6 +265,7 @@ class DispersionOperation {
 
   /* _expm_op is an non-owning pointer, and can be null */
   std::shared_ptr<ExpmOperation> _expm_op;
+  std::shared_ptr<DispersionOperation> _child_op;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -252,9 +282,9 @@ class SplitOperation {
       : _lbranch_clv_index{lchild_clv_top},
         _rbranch_clv_index{rchild_clv_top},
         _parent_clv_index{parent_clv},
-        _lbranch_ops{{std::make_shared<DispersionOperation>(
+        _lbranch_op{{std::make_shared<DispersionOperation>(
             lchild_clv_top, lchild_clv_bot, lbrlen, lprob_mat, lrate_matrix)}},
-        _rbranch_ops{{std::make_shared<DispersionOperation>(
+        _rbranch_op{{std::make_shared<DispersionOperation>(
             rchild_clv_top, rchild_clv_bot, rbrlen, rprob_mat, rrate_matrix)}} {
   }
 
@@ -267,14 +297,13 @@ class SplitOperation {
                        rchild_clv_bot, lbrlen, rbrlen, prob_mat, prob_mat,
                        rate_matrix, rate_matrix, parent_clv) {}
 
-  // TODO: Fix this for periods
   SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
                  std::shared_ptr<DispersionOperation> r_ops)
       : _lbranch_clv_index{l_ops->top_clv_index()},
         _rbranch_clv_index{r_ops->top_clv_index()},
         _parent_clv_index{parent_clv},
-        _lbranch_ops{{l_ops}},
-        _rbranch_ops{{r_ops}} {}
+        _lbranch_op{l_ops},
+        _rbranch_op{r_ops} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -287,17 +316,18 @@ class SplitOperation {
                    size_t tabLevel = 0) const -> std::string;
 
   auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
-    return _lbranch_ops[_lbranch_ops.size() - 1]->ready(ws, _last_execution) &&
-           _rbranch_ops[_rbranch_ops.size() - 1]->ready(ws, _last_execution);
+    return _lbranch_op->ready(ws, _last_execution) &&
+           _rbranch_op->ready(ws, _last_execution);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
 
   std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
-    std::vector<std::shared_ptr<ExpmOperation>> ret;
-    ret.reserve(_lbranch_ops.size() + _rbranch_ops.size());
-    for (auto op : _lbranch_ops) { ret.push_back(op->getExpmOperation()); }
-    for (auto op : _rbranch_ops) { ret.push_back(op->getExpmOperation()); }
+    auto ret = _lbranch_op->getExpmOperations();
+    auto tmp = _rbranch_op->getExpmOperations();
+
+    ret.reserve(ret.size() + tmp.size());
+    for (auto& op : tmp) { ret.push_back(op); }
 
     return ret;
   }
@@ -308,15 +338,21 @@ class SplitOperation {
     return _fixed_dist;
   }
 
+  void setExclAreas(lagrange_dist_t e) { _excl_area_mask = e; }
+
+  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
   size_t _parent_clv_index;
 
-  std::vector<std::shared_ptr<DispersionOperation>> _lbranch_ops;
-  std::vector<std::shared_ptr<DispersionOperation>> _rbranch_ops;
+  std::shared_ptr<DispersionOperation> _lbranch_op;
+  std::shared_ptr<DispersionOperation> _rbranch_op;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
+  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -334,7 +370,7 @@ class ReverseSplitOperation {
         _ltop_clv_index{ltop_clv},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
-        _branch_ops{{std::make_shared<DispersionOperation>(
+        _branch_op{{std::make_shared<DispersionOperation>(
             ltop_clv, disp_clv_index, brlen, prob_matrix_index,
             rate_matrix_op)}} {}
 
@@ -344,14 +380,14 @@ class ReverseSplitOperation {
         _ltop_clv_index{branch_op->top_clv_index()},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
-        _branch_ops{{branch_op}} {}
+        _branch_op{{branch_op}} {}
 
   explicit ReverseSplitOperation(std::shared_ptr<DispersionOperation> branch_op)
       : _bot_clv_index{std::numeric_limits<size_t>::max()},
         _ltop_clv_index{std::numeric_limits<size_t>::max()},
         _rtop_clv_index{std::numeric_limits<size_t>::max()},
         _eval_clvs{false},
-        _branch_ops{{branch_op}} {}
+        _branch_op{{branch_op}} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -362,7 +398,7 @@ class ReverseSplitOperation {
                    size_t tabLevel = 0) const -> std::string;
 
   void makeRootOperation(size_t clv_index) {
-    _branch_ops.clear();
+    _branch_op = nullptr;
     if (_ltop_clv_index == std::numeric_limits<size_t>::max()) {
       _ltop_clv_index = clv_index;
     }
@@ -374,23 +410,17 @@ class ReverseSplitOperation {
   auto getStableCLV() const -> size_t { return _ltop_clv_index; }
 
   auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
-    bool branch_ops_ready = true;
-    for (const auto& op : _branch_ops) {
-      branch_ops_ready = branch_ops_ready && op->ready(ws, _last_execution);
-    }
-
-    return branch_ops_ready &&
+    bool branch_op_ready =
+        (_branch_op && _branch_op->ready(ws, _last_execution)) || (!_branch_op);
+    return branch_op_ready &&
            (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
 
   std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
-    std::vector<std::shared_ptr<ExpmOperation>> ret;
-    ret.reserve(_branch_ops.size());
-    for (auto op : _branch_ops) { ret.push_back(op->getExpmOperation()); }
-
-    return ret;
+    if (_branch_op) { return _branch_op->getExpmOperations(); }
+    return {};
   }
 
   void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
@@ -399,15 +429,19 @@ class ReverseSplitOperation {
     return _fixed_dist;
   }
 
+  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+
  private:
   size_t _bot_clv_index;
   size_t _ltop_clv_index;
   size_t _rtop_clv_index;
   bool _eval_clvs;
 
-  std::vector<std::shared_ptr<DispersionOperation>> _branch_ops;
+  std::shared_ptr<DispersionOperation> _branch_op;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
+  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -446,6 +480,8 @@ class StateLHGoal {
         _lchild_clv_index{other._lchild_clv_index},
         _rchild_clv_index{other._rchild_clv_index},
         _fixed_dist{other._fixed_dist},
+        _excl_area_mask{other._excl_area_mask},
+        _incl_area_mask{other._incl_area_mask},
         _result{std::move(other._result)},
         _states{other._states} {}
   auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
@@ -463,12 +499,17 @@ class StateLHGoal {
   void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
   lagrange_option_t<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
 
+  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_dist_t _excl_area_mask = 0;
+  lagrange_dist_t _incl_area_mask = 0;
 
   lagrange_clock_tick_t _last_execution = 0;
 
@@ -491,12 +532,16 @@ class SplitLHGoal {
 
   void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
 
+  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
   lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  lagrange_dist_t _excl_area_mask = 0;
+  lagrange_dist_t _incl_area_mask = 0;
 
   lagrange_clock_tick_t _last_execution = 0;
 

@@ -70,10 +70,13 @@ endif()
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-if(${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} EQUAL "Release")
-  set(LAGRANGE_BUILD_FLAGS "-O3 -mtune=native -march=native -fno-omit-frame-pointer")
-elseif(${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} EQUAL "Debug")
-  set(LAGRANGE_BUILD_FLAGS "-O0 -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address")
+message(${CMAKE_BUILD_TYPE})
+
+if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
+  set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native -fno-omit-frame-pointer)
+elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+  set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address)
+  set(LAGRANGE_LINK_FLAGS -fsanitize=address)
 endif()
 
 set(OPT_LIBS nlopt)
@@ -88,6 +91,7 @@ target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread
 target_compile_definitions(lagrange-release-libs PUBLIC
   ${LAGRANGE_LINALG_COMPILE_DEFS})
 target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LINALG_LINK_DIRS})
+target_link_options(lagrange-release-libs PUBLIC ${LAGRANGE_LINK_FLAGS})
 
 target_compile_options(lagrange PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange PRIVATE ${LAGRANGE_LINALG_INCLUDE_DIRS})
@@ -95,5 +99,6 @@ target_link_libraries(lagrange PRIVATE lagrange-release-libs pthread
   nlohmann_json::nlohmann_json ${LAGRANGE_LINALG_LDFLAGS})
 target_compile_definitions(lagrange PRIVATE ${LAGRANGE_LINALG_COMPILE_DEFS})
 target_link_directories(lagrange PRIVATE ${LAGRANGE_LINALG_LINK_DIRS})
+target_link_options(lagrange PRIVATE ${LAGRANGE_LINK_FLAGS})
 
 add_subdirectory(tests)

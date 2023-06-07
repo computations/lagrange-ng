@@ -153,6 +153,14 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
   compute the ancestral states/splits. The `evaluate` mode will _not_ optimize the model parameters before computing
   ancestral state/splits. The `dispersal`/`extinction` options should be set if a particular set of parameter values
   should be used.
+- `mrca`: Specify an interior node by a list of tips. The node specified is the MRCA of those tips. For example, when
+  using the tree `(a,(b, c)1)2`, `mrca = foo b c` will refer to node `1`, and `mrca = bar a c` will refer to node `2`.
+  Use this option to specify interior nodes for other options.
+- `fossil`: Specify constraints on inner nodes. There are currently two different modes supported:
+  - `node`: Constrain a node to contain at least the areas specified. For example, `fossil = node foo 011` will constrain
+    the node `foo` (specified with `mrca`) to the distributions `111` and `011`.
+  - `fixed`: Constrain a node to be exactly the distribution specified. For example, `fossil = fixed foo 011` will
+    constrain the node `foo` to the distribution `011`.
 
 ## Expm Modes
 

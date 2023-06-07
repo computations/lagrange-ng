@@ -261,7 +261,12 @@ bool Tree::checkAlignmentConsistency(const Alignment &align) const {
 
 void Tree::assignFossils(const std::vector<Fossil> &fossils) {
   for (const auto &f : fossils) {
-    getMRCA(f.clade.get())->assignFossilData(f.area);
+    if (f.type == fossil_type::node) {
+      getMRCA(f.clade.get())->assignInclAreas(f.area);
+    }
+    if (f.type == fossil_type::fixed){
+      getMRCA(f.clade.get())->assignFixedDist(f.area);
+    }
   }
 }
 

@@ -203,7 +203,11 @@ auto Node::traverseAndGenerateForwardOperations(
 
   split_ops.push_back(std::make_shared<SplitOperation>(
       ws.get_top_clv(_id), lchild.second, rchild.second));
-  if (_fixed_dist.has_value()) { split_ops.back()->fixDist(_fixed_dist.get()); }
+
+  if (_incl_area_mask.has_value()) {
+    split_ops.back()->setInclAreas(_incl_area_mask.get());
+  }
+
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
@@ -232,8 +236,8 @@ auto Node::traverseAndGenerateBackwardOperations(
   ws.register_bot2_clv_reverse(_id);
   rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
       ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
-  if (_fixed_dist.has_value()) {
-    rsplit_ops.back()->fixDist(_fixed_dist.get());
+  if (_incl_area_mask.has_value()) {
+    rsplit_ops.back()->setInclAreas(_incl_area_mask.get());
   }
 
   if (_children[0]->isInternal()) {
@@ -326,34 +330,6 @@ void Node::assignId() {
 
 auto Node::getId() const -> size_t { return _id; }
 
-void Node::setSplitStringRecursive(
-    const std::vector<size_t> &id_map,
-    const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
-    const std::vector<std::string> &names) {
-  if (isExternal()) { return; }
-
-  lagrange_dist_t best_dist =
-      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]], states);
-  _split_string = lagrange_convert_dist_string(best_dist, names);
-  for (auto &c : _children) {
-    c->setSplitStringRecursive(id_map, dist_lhs, states, names);
-  }
-}
-
-void Node::setStateStringRecursive(
-    const std::vector<size_t> &id_map,
-    const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
-    const std::vector<std::string> &names) {
-  if (isExternal()) { return; }
-
-  lagrange_dist_t best_dist =
-      lagrange_compute_best_dist(dist_lhs[id_map[getNumber()]], states);
-  _state_string = lagrange_convert_dist_string(best_dist, names);
-  for (auto &c : _children) {
-    c->setStateStringRecursive(id_map, dist_lhs, states, names);
-  }
-}
-
 size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   if (isExternal()) {
     if (align.data.count(_label) == 0) {
@@ -370,7 +346,11 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   return count;
 }
 
-void Node::assignFossilData(lagrange_dist_t fixed_dist) {
+void Node::assignInclAreas(lagrange_dist_t incl_area_mask) {
+  _incl_area_mask = incl_area_mask;
+}
+
+void Node::assignFixedDist(lagrange_dist_t fixed_dist) {
   _fixed_dist = fixed_dist;
 }
 
@@ -383,4 +363,8 @@ void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
 
 lagrange_option_t<lagrange_dist_t> Node::getFixedDist() const {
   return _fixed_dist;
+}
+
+lagrange_option_t<lagrange_dist_t> Node::getInclAreas() const {
+  return _incl_area_mask;
 }
