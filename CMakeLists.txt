@@ -75,7 +75,7 @@ message(${CMAKE_BUILD_TYPE})
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native -fno-omit-frame-pointer)
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-  set(LAGRANGE_BUILD_FLAGS -Og -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address)
+  set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address)
   set(LAGRANGE_LINK_FLAGS -fsanitize=address)
 endif()
 
