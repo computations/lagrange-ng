@@ -335,7 +335,9 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
         new lagrange_matrix_base_t[ws->restricted_state_count()]);
   }
 
+#ifdef MKL_ENABLED
   int ret = 0;
+#endif  // MKL_ENABLED
   int rows = static_cast<int>(ws->matrix_rows());
   int leading_dim = static_cast<int>(ws->leading_dimension());
 
@@ -535,6 +537,10 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
     return;
   }
 
+  if (_child_op != nullptr && _child_op->ready(ws, _last_execution)) {
+    _child_op->eval(ws);
+  }
+
   if (_expm_op != nullptr) {
     if (_expm_op->isArnoldiMode()) {
       expm::multiply_arnoldi_chebyshev(ws, _expm_op->rate_matrix(), _bot_clv,
@@ -605,22 +611,20 @@ auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
-static inline void eval_branch_ops(
-    const std::vector<std::shared_ptr<DispersionOperation>> &branch_ops,
-    const std::shared_ptr<Workspace> &ws) {
-  for (const auto &op : branch_ops) {
-    if (op.use_count() > 1) {
-      std::lock_guard<std::mutex> lock(op->getLock());
-      op->eval(ws);
-    } else {
-      op->eval(ws);
-    }
+static inline void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
+                                  const std::shared_ptr<Workspace> &ws) {
+  if (!op) { return; }
+  if (op.use_count() > 1) {
+    std::lock_guard<std::mutex> lock(op->getLock());
+    op->eval(ws);
+  } else {
+    op->eval(ws);
   }
 }
 
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  eval_branch_ops(_lbranch_ops, ws);
-  eval_branch_ops(_rbranch_ops, ws);
+  eval_branch_op(_lbranch_op, ws);
+  eval_branch_op(_rbranch_op, ws);
 
   const auto &parent_clv = ws->clv(_parent_clv_index);
   const auto &lchild_clv = ws->clv(_lbranch_clv_index);
@@ -660,16 +664,12 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Last Executed: " << _last_execution << "\n";
 
   os << tabs << "Left Branch ops:\n";
-  if (!_lbranch_ops.empty()) {
-    for (const auto &op : _lbranch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+  if (_lbranch_op != nullptr) {
+    os << _lbranch_op->printStatus(ws, tabLevel + 1);
   }
   os << "\n" << tabs << "Right Branch ops:\n";
-  if (!_rbranch_ops.empty()) {
-    for (const auto &op : _rbranch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+  if (_rbranch_op != nullptr) {
+    os << _rbranch_op->printStatus(ws, tabLevel + 1);
   }
   os << "\n";
   os << closing_line(tabs);
@@ -683,7 +683,7 @@ auto SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  eval_branch_ops(_branch_ops, ws);
+  eval_branch_op(_branch_op, ws);
 
   if (_eval_clvs) {
     const auto &ltop_clv = ws->clv(_ltop_clv_index);
@@ -733,11 +733,9 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
   os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
 
-  if (!_branch_ops.empty()) {
+  if (_branch_op != nullptr) {
     os << tabs << "Branch ops:\n";
-    for (const auto &op : _branch_ops) {
-      os << op->printStatus(ws, tabLevel + 1);
-    }
+    if (_branch_op) { os << _branch_op->printStatus(ws, tabLevel + 1); }
     os << "\n";
   }
   os << closing_line(tabs);
