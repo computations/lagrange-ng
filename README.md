@@ -5,6 +5,13 @@ explanation of the please see our publication in Systematic Biology.
 
 # Building 
 
+First, this project relies on submodule to track its depenancies. This means that in order to clone the repository, the
+following command should be used
+
+```
+git clone https://github.com/computations/lagrange-ng --recursive --depth=1
+```
+
 There is a helpful makefile which will generate and build the cmake directory. So, you can just run `make` to build.
 Lagrange-NG uses CMake to configure the build, and so options for building (including options such as `Debug` or
 `Release` builds) can be configured using tools which interact with cmake configurations, such as `ccmake`. There are
