@@ -23,9 +23,14 @@ set(LAGRANGE_SOURCES
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 add_executable(lagrange src/main.cpp)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(PkgConfig)
-pkg_search_module(MKL mkl-dynamic-lp64-iomp)
+include(FindMKL)
+
+find_package(MKL)
+
+# find_package(PkgConfig)
+# pkg_search_module(MKL mkl-dynamic-lp64-iomp)
 
 option(ENABLE_MKL "Enable MKL for linalg computations" ON)
 
@@ -70,7 +75,7 @@ endif()
 
 set(WARNING_FLAGS -Wall -Wextra -Wshadow)
 
-message(${CMAKE_BUILD_TYPE})
+# message(${CMAKE_BUILD_TYPE})
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native -fno-omit-frame-pointer)
