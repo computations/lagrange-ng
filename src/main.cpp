@@ -385,7 +385,7 @@ auto main(int argc, char *argv[]) -> int {
   if (argc != 2) {
     std::cout << "you need more arguments." << std::endl;
     std::cout << "usage: lagrange configfile" << std::endl;
-    exit(0);
+    return 0;
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
