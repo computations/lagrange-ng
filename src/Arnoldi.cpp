@@ -83,7 +83,11 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   thread_local auto Q = std::make_unique<lagrange_matrix_base_t[]>(n * (m + 1));
   thread_local auto e1 = std::make_unique<lagrange_matrix_base_t[]>(m);
 
+#if MKL_ENABLED
+  thread_local auto ipiv_m = std::make_unique<long long int[]>(m);
+#else
   thread_local auto ipiv_m = std::make_unique<int[]>(m);
+#endif
 
   // initialization
   for (size_t i = 0; i < ws->matrix_size(); i++) {

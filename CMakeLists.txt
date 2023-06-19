@@ -29,22 +29,19 @@ include(FindMKL)
 
 find_package(MKL)
 
-# find_package(PkgConfig)
-# pkg_search_module(MKL mkl-dynamic-lp64-iomp)
-
 option(ENABLE_MKL "Enable MKL for linalg computations" ON)
 
 set(MKL_PREFIX_DIR CACHE STRING "")
 
 if((${ENABLE_MKL} AND ${MKL_FOUND}) OR (NOT "${MKL_PREFIX_DIR}" STREQUAL ""))
   if(${MKL_FOUND})
-    set(LAGRANGE_LINALG_LDFLAGS ${MKL_LDFLAGS})
+    set(LAGRANGE_LINALG_LDFLAGS ${MKL_LIBRARIES})
     set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
     set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
   else()
     set(LAGRANGE_LINALG_LDFLAGS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 m dl)
-    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_PREFIX_DIR}/include/)
-    set(LAGRANGE_LINALG_LINK_DIRS ${MKL_PREFIX_DIR}/lib/)
+    set(LAGRANGE_LINALG_INCLUDE_DIRS ${MKL_INCLUDE_DIRS})
+    set(LAGRANGE_LINALG_LINK_DIRS ${MKL_LIBRARIES})
     set(LAGRANGE_LINALG_COMPILE_DEFS MKL_ENABLED) 
   endif()
 else()
