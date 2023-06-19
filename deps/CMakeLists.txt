@@ -2,6 +2,7 @@ include(FetchContent)
 
 # nlopt first
 
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL ""  FORCE)
 add_subdirectory(nlopt EXCLUDE_FROM_ALL)
 
 # Jsonhpp second
