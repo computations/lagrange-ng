@@ -37,8 +37,6 @@ class Tree {
   static void exchangeInfo(const std::shared_ptr<Node> &node1,
                            const std::shared_ptr<Node> &node2);
   void postOrderProcessRoot(const std::shared_ptr<Node> &node);
-  void setHeightFromRootToNode(const std::shared_ptr<Node> &inNode,
-                               double newHeight);
   auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
@@ -51,12 +49,10 @@ class Tree {
   void addInternalNode(const std::shared_ptr<Node> &tn);
   void pruneExternalNode(std::shared_ptr<Node> node);
 
-  auto generateForwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+  auto generateForwardOperations(Workspace &ws)
       -> std::vector<std::shared_ptr<SplitOperation>>;
 
-  auto generateBackwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+  auto generateBackwardOperations(Workspace &ws)
       -> std::vector<std::shared_ptr<ReverseSplitOperation>>;
 
   auto generateForwardOperations(Workspace &ws,
@@ -94,8 +90,9 @@ class Tree {
 
   auto getParent(const std::shared_ptr<Node> &n) const -> std::shared_ptr<Node>;
 
-  void setHeightFromRootToNodes();
-  void setHeightFromTipToNodes();
+  void setHeightTopDown();
+  void setHeightBottomUp();
+  void setPeriods(const Periods &periods);
 
   auto getNewick() const -> std::string;
   auto getNewickLambda(

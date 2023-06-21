@@ -93,27 +93,12 @@ auto Tree::getMRCA(const std::shared_ptr<MRCAEntry> &mrca)
   return getMRCAWithNode(_root, members);
 }
 
-void Tree::setHeightFromRootToNodes() {
-  setHeightFromRootToNode(_root, _root->getBL());
-}
-
-void Tree::setHeightFromRootToNode(const std::shared_ptr<Node> &inNode,
-                                   double newHeight) {
-  if (inNode != _root) {
-    newHeight += inNode->getBL();
-    inNode->setHeight(newHeight);
-  } else {
-    inNode->setHeight(newHeight);
-  }
-  for (size_t i = 0; i < inNode->getChildCount(); i++) {
-    setHeightFromRootToNode(inNode->getChild(i), newHeight);
-  }
-}
+void Tree::setHeightTopDown() { _root->setHeightReverse(); }
 
 /*
  * only makes sense for ultrametric trees
  */
-void Tree::setHeightFromTipToNodes() { _root->setHeightRecursive(); }
+void Tree::setHeightBottomUp() { _root->setHeight(); }
 
 /*
  * private
@@ -183,12 +168,10 @@ auto Tree::getParent(const std::shared_ptr<Node> &n) const
   return getParentWithNode(_root, n);
 }
 
-auto Tree::generateForwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+auto Tree::generateForwardOperations(Workspace &ws)
     -> std::vector<std::shared_ptr<SplitOperation>> {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
-  rm_map[0] = rm;
   return generateForwardOperations(ws, rm_map, pm_map);
 }
 
@@ -198,12 +181,10 @@ auto Tree::generateForwardOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
   return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
 }
 
-auto Tree::generateBackwardOperations(
-    Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm)
+auto Tree::generateBackwardOperations(Workspace &ws)
     -> std::vector<std::shared_ptr<ReverseSplitOperation>> {
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
-  rm_map[0] = rm;
   return generateBackwardOperations(ws, rm_map, pm_map);
 }
 
@@ -211,11 +192,10 @@ auto Tree::generateBackwardOperations(Workspace &ws,
                                       PeriodRateMatrixMap &rm_map,
                                       BranchProbMatrixMap &pm_map)
     -> std::vector<std::shared_ptr<ReverseSplitOperation>> {
-  auto ret = _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-  (*ret.first.begin())
-      ->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
-  (*(ret.first.begin() + 1))
-      ->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
+  auto ret =
+      _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map, true);
+  (ret.first[0])->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
+  (ret.first[1])->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
 
   return ret.first;
 }
@@ -264,7 +244,7 @@ void Tree::assignFossils(const std::vector<Fossil> &fossils) {
     if (f.type == fossil_type::node) {
       getMRCA(f.clade.get())->assignInclAreas(f.area);
     }
-    if (f.type == fossil_type::fixed){
+    if (f.type == fossil_type::fixed) {
       getMRCA(f.clade.get())->assignFixedDist(f.area);
     }
   }
@@ -272,4 +252,9 @@ void Tree::assignFossils(const std::vector<Fossil> &fossils) {
 
 void Tree::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
   _root->applyPreorderInternalOnly(func);
+}
+
+void Tree::setPeriods(const Periods &periods) {
+  auto period_func = [&](Node &n) { n.setPeriodSegments(periods); };
+  _root->applyPreorder(period_func);
 }

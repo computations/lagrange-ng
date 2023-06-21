@@ -63,7 +63,7 @@ struct period_derivative_t {
   }
 };
 
-struct period_t {
+struct period_params_t {
   double dispersion_rate;
   double extinction_rate;
   std::shared_ptr<std::vector<std::vector<double>>> adjustment_matrix = nullptr;

@@ -1,3 +1,5 @@
+#include "Tree.h"
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -5,7 +7,7 @@
 
 #include "Common.h"
 #include "Node.h"
-#include "Tree.h"
+#include "Periods.hpp"
 #include "TreeReader.h"
 #include "Workspace.h"
 #include "environment.hpp"
@@ -66,12 +68,15 @@ class TreeTest : public ::testing::Test {
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
+
+  Periods _basic_periods;
 };
 
 TEST_F(TreeTest, simple0) { parse_tree(_basic_tree_newick); }
 
 TEST_F(TreeTest, generate) {
   auto t = parse_tree(_basic_tree_newick);
+  t->setPeriods(_basic_periods);
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   auto ops = t->generateForwardOperations(*_basic_ws, rm_map, pm_map);
@@ -81,6 +86,7 @@ TEST_F(TreeTest, generate) {
 
 TEST_F(TreeTest, generateOperationsSimple1) {
   auto t = parse_tree(_basic_tree_newick);
+  t->setPeriods(_basic_periods);
   PeriodRateMatrixMap rm_map;
   BranchProbMatrixMap pm_map;
   auto ops = t->generateBackwardOperations(*_basic_ws, rm_map, pm_map);

@@ -24,9 +24,9 @@
 
 class MakeRateMatrixOperation {
  public:
-  explicit MakeRateMatrixOperation(size_t index)
+  explicit MakeRateMatrixOperation(size_t index, size_t period_index)
       : _rate_matrix_index{index},
-        _period_index{0},
+        _period_index{period_index},
         _last_execution{0},
         _last_update{0} {}
 
@@ -43,7 +43,7 @@ class MakeRateMatrixOperation {
   }
 
   inline void update_rates(const std::shared_ptr<Workspace>& ws,
-                           const period_t& p) {
+                           const period_params_t& p) {
     update_rates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
@@ -107,6 +107,15 @@ class ExpmOperation {
 
   void setAdaptive(bool m) { _adaptive_mode = m; }
   auto isAdaptive() const -> bool { return _adaptive_mode; }
+
+  void emplaceRateMatrixOperations(
+      std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>&
+          vec) {
+    if (!_rate_matrix_op) { return; }
+
+    size_t period = _rate_matrix_op->rate_matrix_index();
+    if (vec.count(period) == 0) { vec[period] = _rate_matrix_op; }
+  }
 
  private:
   size_t _prob_matrix_index;
@@ -193,12 +202,26 @@ class DispersionOperation {
     _top_clv = clv_index;
   }
 
+  void unterminate_top() {
+    if (_top_clv == std::numeric_limits<size_t>::max()) {
+      throw std::runtime_error{"Tried to unterminate an unterminated top"};
+    }
+    _top_clv = std::numeric_limits<size_t>::max();
+  }
+
   void terminate_bot(size_t clv_index) {
     if (_bot_clv != std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{
           "Dispersion Operation already terminated at the bot"};
     }
     _bot_clv = clv_index;
+  }
+
+  void unterminate_bot() {
+    if (_bot_clv == std::numeric_limits<size_t>::max()) {
+      throw std::runtime_error{"Tried to unterminate an unterminated bot"};
+    }
+    _bot_clv = std::numeric_limits<size_t>::max();
   }
 
   auto top_clv_index() const -> size_t { return _top_clv; }
@@ -212,10 +235,8 @@ class DispersionOperation {
 
   auto ready(const std::shared_ptr<Workspace>& ws,
              lagrange_clock_tick_t deadline) const -> bool {
-    bool child_ready =
-        (_child_op != nullptr && _child_op->ready(ws, deadline)) ||
-        (_child_op == nullptr);
-    return child_ready && ws->last_update_clv(_bot_clv) > deadline;
+    if (ws->last_update_clv(_bot_clv) > deadline) { return true; }
+    return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
@@ -244,6 +265,13 @@ class DispersionOperation {
   size_t countChildOps() {
     if (!_child_op) { return 1; }
     return _child_op->countChildOps() + 1;
+  }
+
+  void emplaceRateMatrixOperations(
+      std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>&
+          vec) {
+    if (_child_op) { _child_op->emplaceRateMatrixOperations(vec); }
+    _expm_op->emplaceRateMatrixOperations(vec);
   }
 
  private:
@@ -332,6 +360,13 @@ class SplitOperation {
     return ret;
   }
 
+  void getRateMatrixOperations(
+      std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>&
+          ret) {
+    _lbranch_op->emplaceRateMatrixOperations(ret);
+    _rbranch_op->emplaceRateMatrixOperations(ret);
+  }
+
   void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
 
   auto getFixedDist() -> lagrange_option_t<lagrange_dist_t> const {
@@ -388,6 +423,14 @@ class ReverseSplitOperation {
         _rtop_clv_index{std::numeric_limits<size_t>::max()},
         _eval_clvs{false},
         _branch_op{{branch_op}} {}
+
+  explicit ReverseSplitOperation(size_t bot_clv, size_t ltop_clv,
+                                 size_t rtop_clv)
+      : _bot_clv_index{bot_clv},
+        _ltop_clv_index{ltop_clv},
+        _rtop_clv_index{rtop_clv},
+        _eval_clvs{true},
+        _branch_op{nullptr} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -500,7 +543,6 @@ class StateLHGoal {
   lagrange_option_t<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
 
   void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
-
 
  private:
   size_t _parent_clv_index;

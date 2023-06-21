@@ -27,8 +27,7 @@ class Context {
       : _tree{std::move(tree)},
         _workspace{std::make_shared<Workspace>(_tree->getExternalNodeCount(),
                                                regions, max_areas)},
-        _rate_matrix_op{std::make_shared<MakeRateMatrixOperation>(
-            _workspace->suggest_rate_matrix_index())} {}
+        _rate_matrix_ops{} {}
 
   void registerLHGoal();
   void registerStateLHGoal();
@@ -53,7 +52,7 @@ class Context {
 
   auto toString() const -> std::string;
 
-  void updateRates(const period_t& p);
+  void updateRates(const std::vector<period_params_t>& p);
   void init();
 
   auto stateCount() const -> size_t {
@@ -62,7 +61,7 @@ class Context {
 
   void setParams(double e, double d) { _workspace->set_period_params(0, e, d); }
 
-  auto currentParams() const -> period_t;
+  auto currentParams() const -> std::vector<period_params_t>;
 
   auto makeThreadContext() -> WorkerContext {
     WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,
@@ -73,6 +72,8 @@ class Context {
   void set_lh_epsilon(double lhe) { _lh_epsilon = lhe; }
 
   void useArnoldi(bool mode_set = true, bool adaptive = true) const;
+
+  size_t getPeriodCount() const;
 
  private:
   void registerForwardOperations();
@@ -86,6 +87,8 @@ class Context {
 
   auto optimize(WorkerState& ts, WorkerContext& tc) -> double;
 
+  void extractRateMatrixOperations();
+
   double _lh_epsilon;
 
   std::shared_ptr<Tree> _tree;
@@ -96,7 +99,7 @@ class Context {
 
   std::vector<std::shared_ptr<SplitOperation>> _forward_operations;
   std::vector<std::shared_ptr<ReverseSplitOperation>> _reverse_operations;
-  std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
+  std::vector<std::shared_ptr<MakeRateMatrixOperation>> _rate_matrix_ops;
 };
 
 #endif /* end of include guard */

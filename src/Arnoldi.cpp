@@ -58,7 +58,7 @@ constexpr double ROOT_IM[] = {
 namespace expm {
 void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                                 size_t rate_matrix_index, size_t clv_src_index,
-                                size_t clv_dst, bool transposed, double t) {
+                                size_t clv_dst_index, bool transposed, double t) {
   // allocate buffers
   constexpr int m = 20;
   const int rows = static_cast<int>(ws->matrix_rows());
@@ -192,7 +192,7 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 
   // update target clv directly
   cblas_dgemv(CblasRowMajor, CblasNoTrans, n, m, beta, Q.get(), m + 1,
-              eHme1.get(), 1, 0.0, ws->clv(clv_dst), 1);
+              eHme1.get(), 1, 0.0, ws->clv(clv_dst_index), 1);
 }
 
 };  // namespace expm

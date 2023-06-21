@@ -474,7 +474,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   {
 #ifdef MKL_ENABLED
-    long long int *ipiv = (long long int *)malloc(sizeof(long long int) * static_cast<size_t>(rows));
+    long long int *ipiv = (long long int *)malloc(sizeof(long long int) *
+                                                  static_cast<size_t>(rows));
 #else
     int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
 #endif
@@ -573,11 +574,6 @@ auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if (ws->last_update_clv(_bot_clv) < ws->last_update_clv(_top_clv)) {
-    /* we have already computed this operation, return */
-    return;
-  }
-
   if (_child_op != nullptr && _child_op->ready(ws, _last_execution)) {
     _child_op->eval(ws);
   }
@@ -611,6 +607,7 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
           ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
         fallback();
         eval(ws);
+        break;
       }
     }
   }

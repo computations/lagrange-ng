@@ -22,6 +22,7 @@
 #include "Alignment.h"
 #include "Common.h"
 #include "Operation.h"
+#include "Periods.hpp"
 #include "Utils.h"
 #include "Workspace.h"
 
@@ -29,12 +30,13 @@ class Node {
  private:
   void assignIdRecursive(size_t &id);
 
-  double _branch_length;  // branch lengths
+  double _branch_length;  // branch length
   double _height;         // could be from tip or from root
 
   size_t _number;
   size_t _id;
-  size_t _period;
+
+  PeriodSpan _periods;
 
   std::string _label;
   std::string _comment;
@@ -44,39 +46,14 @@ class Node {
   lagrange_option_t<lagrange_dist_t> _incl_area_mask;
   lagrange_option_t<lagrange_dist_t> _excl_area_mask;
 
-  auto getRateMatrixOperation(PeriodRateMatrixMap &rm_map) const
-      -> std::shared_ptr<MakeRateMatrixOperation> {
-    auto it = rm_map.find(_period);
-    if (it == rm_map.end()) {
-      auto rm = std::make_shared<MakeRateMatrixOperation>(
-          Workspace::suggest_rate_matrix_index());
-      rm_map.emplace(_period, rm);
-      return rm;
-    }
-    if (it->second == nullptr) {
-      throw std::runtime_error{"We got an empty expm"};
-    }
-    return it->second;
-  }
+  auto getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                              size_t period) const
+      -> std::shared_ptr<MakeRateMatrixOperation>;
 
   auto getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
-                              BranchProbMatrixMap &pm_map,
+                              BranchProbMatrixMap &pm_map, PeriodSegment period,
                               bool transpose = false) const
-      -> std::shared_ptr<ExpmOperation> {
-    auto key = std::make_pair(_period, _branch_length);
-    auto it = pm_map.find(key);
-    if (it == pm_map.end()) {
-      auto rm = getRateMatrixOperation(rm_map);
-      auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
-                                                _branch_length, rm, transpose);
-      pm_map.emplace(key, pm);
-      return pm;
-    }
-    if (it->second == nullptr) {
-      throw std::runtime_error{"We got an empty expm"};
-    }
-    return it->second;
-  }
+      -> std::shared_ptr<ExpmOperation>;
 
  public:
   Node();
@@ -95,8 +72,6 @@ class Node {
 
   auto getBL() const -> double;
   void setBL(double bl);
-
-  void setHeight(double he);
 
   auto hasChild(const std::shared_ptr<Node> &test) -> bool;
   auto addChild(const std::shared_ptr<Node> &c) -> bool;
@@ -124,10 +99,8 @@ class Node {
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
-  auto getMaxHeightRecursive() const -> double;
-  auto getMaxHeight() const -> double;
-  void setHeightRecursive(double height);
-  void setHeightRecursive();
+  auto setHeight() -> double;
+  void setHeightReverse(double height = 0.0);
 
   friend auto getParentWithNode(const std::shared_ptr<Node> &current,
                                 const std::shared_ptr<Node> &n)
@@ -145,7 +118,8 @@ class Node {
 
   auto traverseAndGenerateBackwardOperations(Workspace &ws,
                                              PeriodRateMatrixMap &rm_map,
-                                             BranchProbMatrixMap &pm_map) const
+                                             BranchProbMatrixMap &pm_map,
+                                             bool root = false) const
       -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
                    std::shared_ptr<DispersionOperation>>;
 
@@ -159,8 +133,8 @@ class Node {
       -> std::shared_ptr<DispersionOperation>;
 
   auto traverseAndGenerateBackwardOperations(
-      Workspace &ws,
-      const std::shared_ptr<MakeRateMatrixOperation> &rm_op) const
+      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op,
+      bool root = false) const
       -> std::pair<std::vector<ReverseSplitOperation>,
                    std::shared_ptr<DispersionOperation>>;
 
@@ -174,6 +148,7 @@ class Node {
       std::vector<size_t> &ret) const;
 
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
+  void applyPreorder(const std::function<void(Node &)> &func);
 
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, lagrange_dist_t>
@@ -189,6 +164,8 @@ class Node {
   lagrange_option_t<lagrange_dist_t> getFixedDist() const;
 
   lagrange_option_t<lagrange_dist_t> getInclAreas() const;
+
+  void setPeriodSegments(const Periods &periods);
 };
 
 auto getMRCAWithNode(const std::shared_ptr<Node> &current,

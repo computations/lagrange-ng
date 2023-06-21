@@ -10,6 +10,7 @@
 #include "Alignment.h"
 #include "Common.h"
 #include "Fossil.h"
+#include "Periods.hpp"
 #include "Utils.h"
 
 constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
@@ -22,7 +23,7 @@ struct ConfigFile {
 
   size_t maxareas = 0;
 
-  std::vector<double> periods;
+  Periods periods;
   std::unordered_map<std::string, std::shared_ptr<MRCAEntry>> mrcas;
   std::vector<lagrange_dist_t> excludedists;
   std::vector<lagrange_dist_t> includedists;

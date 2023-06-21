@@ -4,11 +4,12 @@
  * Author: Ben Bettisworth
  */
 
+#include "Workspace.h"
+
 #include <limits>
 
 #include "Common.h"
 #include "Utils.h"
-#include "Workspace.h"
 
 Workspace::~Workspace() {
   for (auto &res : _rate_matrix) { delete[] res._matrix; }

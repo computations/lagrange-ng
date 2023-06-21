@@ -253,9 +253,15 @@ ConfigFile parse_config_file(std::istream &instream) {
       } else if (config_value == "periods") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
         auto tmp_values = parse_list(lexer);
-        for (const auto &v : tmp_values) {
-          config.periods.push_back(std::stof(v));
-        }
+
+        std::vector<double> time_points;
+        time_points.resize(tmp_values.size());
+
+        std::transform(
+            tmp_values.begin(), tmp_values.end(), time_points.begin(),
+            [](const std::string &s) -> double { return std::stof(s); });
+
+        config.periods = Periods(time_points);
       } else if (config_value == "mrca") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
         lexer.expect(config_lexeme_type_t::VALUE);

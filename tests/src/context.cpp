@@ -1,8 +1,10 @@
+#include "Context.h"
+
 #include <iomanip>
 #include <memory>
 #include <unordered_map>
 
-#include "Context.h"
+#include "Periods.hpp"
 #include "TreeReader.h"
 #include "WorkerState.h"
 #include "environment.hpp"
@@ -11,8 +13,10 @@
 class ContextTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    _basic_tree_newick = "((a:1.0,b:1.0):1.0, c:2.0);";
+    _basic_tree_newick = "((a:1.0,b:1.0)n:1.0, c:2.0)r;";
     _basic_tree = parse_tree(_basic_tree_newick);
+    _basic_periods = Periods();
+    _basic_tree->setPeriods(_basic_periods);
     _basic_tree_data = {{"a", 0b01}, {"b", 0b01}, {"c", 0b11}};
   }
 
@@ -23,6 +27,7 @@ class ContextTest : public ::testing::Test {
   std::string _basic_tree_newick;
   std::shared_ptr<Tree> _basic_tree;
   std::unordered_map<std::string, lagrange_dist_t> _basic_tree_data;
+  Periods _basic_periods;
   size_t _basic_tree_data_region_count = 2;
   WorkerState _worker_state;
 };

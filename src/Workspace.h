@@ -219,7 +219,11 @@ class Workspace {
     return suggested_index;
   }
 
-  static inline auto suggest_rate_matrix_index() -> size_t { return 0; }
+  inline auto reserve_rate_matrix_index(size_t index) -> size_t {
+    if (_rate_matrix.size() <= index) { _rate_matrix.resize(index + 1); }
+    return index;
+  }
+
   static inline auto suggest_freq_vector_index() -> size_t { return 0; }
 
   inline auto register_generic_clv() -> size_t { return register_clv(); }
@@ -293,11 +297,17 @@ class Workspace {
   }
   inline auto read_clock() -> lagrange_clock_tick_t { return _current_clock; }
 
-  auto get_period_params(size_t period_index) const -> const period_t & {
+  auto get_period_params() const -> const std::vector<period_params_t> & {
+    return _periods;
+  }
+
+  auto get_period_params(size_t period_index) const -> const period_params_t & {
     return _periods[period_index];
   }
 
   void set_period_params(size_t period_index, double d, double e);
+
+  void set_period_params_count(size_t periods) { _periods.resize(periods); }
 
   inline auto reserved() const -> bool {
     return !(_base_frequencies == nullptr || _clvs.empty());
@@ -363,7 +373,7 @@ class Workspace {
 
   std::vector<node_reservation_t> _node_reservations;
 
-  std::vector<period_t> _periods;
+  std::vector<period_params_t> _periods;
 
   lagrange_clock_t _current_clock;
   bool _reserved;

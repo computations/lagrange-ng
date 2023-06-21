@@ -23,15 +23,13 @@
 #include "Operation.h"
 #include "Utils.h"
 
-Node::Node()
-    : _branch_length(0.0), _height(0.0), _number(0), _id(0), _period(0) {}
+Node::Node() : _branch_length(0.0), _height(0.0), _number(0), _id(0) {}
 
 Node::Node(double bl, size_t innumber, std::string inname)
     : _branch_length(bl),
       _height(0.0),
       _number(innumber),
       _id(0),
-      _period(0),
       _label(std::move(inname)) {}
 
 auto Node::isExternal() const -> bool { return _children.empty(); }
@@ -45,8 +43,6 @@ void Node::setNumber(size_t n) { _number = n; }
 auto Node::getBL() const -> double { return _branch_length; }
 
 void Node::setBL(double bl) { _branch_length = bl; }
-
-void Node::setHeight(double he) { _height = he; }
 
 auto Node::hasChild(const std::shared_ptr<Node> &test) -> bool {
   return std::any_of(_children.begin(), _children.end(),
@@ -110,25 +106,16 @@ auto Node::getNewickLambda(
 
 auto Node::getChildCount() const -> size_t { return _children.size(); }
 
-auto Node::getMaxHeightRecursive() const -> double {
-  double max_height = 0.0;
-  for (const auto &c : _children) {
-    max_height = std::max(max_height, c->getMaxHeightRecursive());
-  }
-  return max_height + _branch_length;
+double Node::setHeight() {
+  double height = 0.0;
+  for (const auto &c : _children) { height = std::max(height, c->setHeight()); }
+  _height = height;
+  return _height + _branch_length;
 }
 
-auto Node::getMaxHeight() const -> double {
-  double max_height = 0.0;
-  for (const auto &c : _children) {
-    max_height = std::max(max_height, c->getMaxHeightRecursive());
-  }
-  return max_height;
-}
-
-void Node::setHeightRecursive() {
-  _height = getMaxHeight();
-  for (auto &c : _children) { c->setHeightRecursive(); }
+void Node::setHeightReverse(double h) {
+  _height = h + _branch_length;
+  for (const auto &c : _children) { c->setHeightReverse(_height); }
 }
 
 auto getMRCAWithNode(const std::shared_ptr<Node> &current,
@@ -211,9 +198,10 @@ auto Node::traverseAndGenerateForwardOperations(
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
-auto Node::traverseAndGenerateBackwardOperations(
-    Workspace &ws, PeriodRateMatrixMap &rm_map,
-    BranchProbMatrixMap &pm_map) const
+auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
+                                                 PeriodRateMatrixMap &rm_map,
+                                                 BranchProbMatrixMap &pm_map,
+                                                 bool root) const
     -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
                  std::shared_ptr<DispersionOperation>> {
   if (_children.size() != 2 && !_children.empty()) {
@@ -229,15 +217,28 @@ auto Node::traverseAndGenerateBackwardOperations(
 
   auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
-  ws.register_bot1_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-      ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id), disp_ops));
+  if (root && disp_ops == nullptr) {
+    ws.register_bot1_clv_reverse(_id);
+    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+        ws.get_bot1_clv_reverse(_id), ws.get_top_clv_reverse(_id),
+        ws.get_rchild_clv(_id)));
 
-  ws.register_bot2_clv_reverse(_id);
-  rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-      ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
+    ws.register_bot2_clv_reverse(_id);
+    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+        ws.get_bot2_clv_reverse(_id), ws.get_top_clv_reverse(_id),
+        ws.get_lchild_clv(_id)));
+  } else {
+    ws.register_bot1_clv_reverse(_id);
+    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+        ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id), disp_ops));
+
+    ws.register_bot2_clv_reverse(_id);
+    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
+        ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
+  }
   if (_incl_area_mask.has_value()) {
-    rsplit_ops.back()->setInclAreas(_incl_area_mask.get());
+    rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(_incl_area_mask.get());
+    rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(_incl_area_mask.get());
   }
 
   if (_children[0]->isInternal()) {
@@ -266,16 +267,41 @@ auto Node::generateDispersionOperations(Workspace &ws,
                                         PeriodRateMatrixMap &rm_map,
                                         BranchProbMatrixMap &pm_map) const
     -> std::shared_ptr<DispersionOperation> {
-  return std::make_shared<DispersionOperation>(
-      ws.get_top_clv(_id), getProbMatrixOperation(ws, rm_map, pm_map));
+  std::shared_ptr<DispersionOperation> child_op = nullptr;
+  size_t top_clv = ws.get_top_clv(_id);
+
+  for (const auto period : _periods) {
+    auto tmp = std::make_shared<DispersionOperation>(
+        top_clv, getProbMatrixOperation(ws, rm_map, pm_map, period));
+    tmp->setChildOp(child_op);
+    tmp->terminate_top(ws.register_generic_clv());
+    top_clv = tmp->top_clv_index();
+    child_op = tmp;
+  }
+
+  if (child_op) { child_op->unterminate_top(); }
+  return child_op;
 }
 
 auto Node::generateDispersionOperationsReverse(
     Workspace &ws, PeriodRateMatrixMap &rm_map,
     BranchProbMatrixMap &pm_map) const -> std::shared_ptr<DispersionOperation> {
-  return std::make_shared<DispersionOperation>(
-      ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
-      getProbMatrixOperation(ws, rm_map, pm_map, true));
+  std::vector<PeriodSegment> reverse_periods;
+  for (auto p : _periods) { reverse_periods.push_back(p); }
+  std::reverse(reverse_periods.begin(), reverse_periods.end());
+
+  std::shared_ptr<DispersionOperation> child_op = nullptr;
+  for (const auto period : reverse_periods) {
+    auto tmp = std::make_shared<DispersionOperation>(
+        ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
+        getProbMatrixOperation(ws, rm_map, pm_map, period, true));
+    tmp->setChildOp(child_op);
+    tmp->terminate_bot(ws.get_top_clv_reverse(_id));
+    child_op = tmp;
+  };
+
+  if (child_op) { child_op->unterminate_bot(); }
+  return child_op;
 }
 
 void Node::traverseAndGenerateBackwardNodeIdsInternalOnly(
@@ -361,10 +387,54 @@ void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
   }
 }
 
+void Node::applyPreorder(const std::function<void(Node &)> &func) {
+  func(*this);
+  for (auto &c : _children) { c->applyPreorder(func); }
+}
+
 lagrange_option_t<lagrange_dist_t> Node::getFixedDist() const {
   return _fixed_dist;
 }
 
 lagrange_option_t<lagrange_dist_t> Node::getInclAreas() const {
   return _incl_area_mask;
+}
+
+void Node::setPeriodSegments(const Periods &periods) {
+  _periods = PeriodSpan(periods, _height, _branch_length);
+}
+
+auto Node::getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                                  size_t period) const
+    -> std::shared_ptr<MakeRateMatrixOperation> {
+  auto it = rm_map.find(period);
+  if (it == rm_map.end()) {
+    auto rm = std::make_shared<MakeRateMatrixOperation>(
+        ws.reserve_rate_matrix_index(period), period);
+    rm_map.emplace(period, rm);
+    return rm;
+  }
+  if (it->second == nullptr) {
+    throw std::runtime_error{"We got an empty expm"};
+  }
+  return it->second;
+}
+
+auto Node::getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                                  BranchProbMatrixMap &pm_map,
+                                  PeriodSegment period, bool transpose) const
+    -> std::shared_ptr<ExpmOperation> {
+  auto key = std::make_pair(period.index, period.duration);
+  auto it = pm_map.find(key);
+  if (it == pm_map.end()) {
+    auto rm = getRateMatrixOperation(ws, rm_map, period.index);
+    auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
+                                              _branch_length, rm, transpose);
+    pm_map.emplace(key, pm);
+    return pm;
+  }
+  if (it->second == nullptr) {
+    throw std::runtime_error{"We got an empty expm"};
+  }
+  return it->second;
 }

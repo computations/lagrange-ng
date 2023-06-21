@@ -250,7 +250,7 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
   }
 }
 
-static auto init_json(const std::shared_ptr<Tree> &tree,
+static auto init_json(const std::shared_ptr<const Tree> &tree,
                       const ConfigFile &config) -> nlohmann::json {
   nlohmann::json root_json;
   nlohmann::json attributes_json;
@@ -277,6 +277,8 @@ static auto init_json(const std::shared_ptr<Tree> &tree,
 
 static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
+  tree->setHeightBottomUp();
+  tree->setPeriods(config.periods);
   tree->assignFossils(config.fossils);
 }
 
@@ -291,7 +293,8 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
   if (config.states) { context.registerStateLHGoal(); }
   if (config.splits) { context.registerSplitLHGoal(); }
   context.init();
-  context.updateRates({config.dispersal, config.extinction});
+  context.updateRates(
+      {context.getPeriodCount(), {config.dispersal, config.extinction}});
   context.registerTipClvs(data.data);
   context.set_lh_epsilon(config.lh_epsilon);
   set_expm_mode(context, config);
@@ -314,8 +317,10 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
 
   nlohmann::json params_json;
   auto params = context.currentParams();
-  params_json["dispersion"] = params.dispersion_rate;
-  params_json["extinction"] = params.extinction_rate;
+  for (size_t i = 0; i < params.size(); ++i) {
+    params_json[i]["dispersion"] = params[i].dispersion_rate;
+    params_json[i]["extinction"] = params[i].extinction_rate;
+  }
   root_json["params"] = params_json;
 
   auto stateGoalIndexToIdMap =

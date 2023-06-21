@@ -21,13 +21,22 @@
 #include "Workspace.h"
 
 void Context::registerForwardOperations() {
-  _forward_operations =
-      _tree->generateForwardOperations(*_workspace, _rate_matrix_op);
+  _forward_operations = _tree->generateForwardOperations(*_workspace);
+  extractRateMatrixOperations();
+}
+
+void Context::extractRateMatrixOperations() {
+  std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>> tmp;
+  for (const auto& op : _forward_operations) {
+    op->getRateMatrixOperations(tmp);
+  }
+
+  _rate_matrix_ops.resize(tmp.size());
+  for (const auto& kv : tmp) { _rate_matrix_ops[kv.first] = kv.second; }
 }
 
 void Context::registerBackwardOperations() {
-  _reverse_operations =
-      _tree->generateBackwardOperations(*_workspace, _rate_matrix_op);
+  _reverse_operations = _tree->generateBackwardOperations(*_workspace);
 }
 
 void Context::registerLHGoal() {
@@ -74,14 +83,19 @@ void Context::registerSplitLHGoal() {
   _tree->applyPreorderInternalOnly(cb);
 }
 
-void Context::updateRates(const period_t& params) {
-  _rate_matrix_op->update_rates(_workspace, params);
-  _rate_matrix_op->eval(_workspace);
+void Context::updateRates(const std::vector<period_params_t>& params) {
+  for (size_t i = 0; i < _rate_matrix_ops.size(); ++i) {
+    _rate_matrix_ops[i]->update_rates(_workspace, params[i]);
+    _rate_matrix_ops[i]->eval(_workspace);
+  }
 }
 
 void Context::init() {
   _workspace->reserve();
-  updateRates({0.01, 0.01});
+  std::vector<period_params_t> initial_rates(_workspace->rate_matrix_count(),
+                                             {0.01, 0.01});
+  _workspace->set_period_params_count(_workspace->rate_matrix_count());
+  updateRates(initial_rates);
 
   if (!_reverse_operations.empty()) {
     size_t prior_index = _reverse_operations.front()->getStableCLV();
@@ -138,9 +152,11 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
   if (mode == lagrange_operation_mode::EVALUATE) {
     if (output) {
       std::cout << "LLH: " << initial_lh << std::endl;
-      auto p = currentParams();
-      std::cout << "Dispersion: " << p.dispersion_rate
-                << " Extinction: " << p.extinction_rate << std::endl;
+      auto params = currentParams();
+      for (const auto& p : params) {
+        std::cout << "Dispersion: " << p.dispersion_rate
+                  << " Extinction: " << p.extinction_rate << std::endl;
+      }
     }
   }
 
@@ -176,16 +192,22 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     size_t iter = 0;
   } oc{*this, tc, ts};
 
-  nlopt::opt opt(nlopt::LN_NELDERMEAD, 2);
+  const size_t dims = _workspace->rate_matrix_count() * 2;
+  nlopt::opt opt(nlopt::LN_NELDERMEAD, dims);
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
     auto* obj = static_cast<OptContext*>(f_data);
-    period_t p{x[0], x[1]};
-    obj->context.updateRates(p);
+    std::vector<period_params_t> period_paramters(
+        obj->context._workspace->rate_matrix_count());
+    for (size_t i = 0; i < period_paramters.size(); ++i) {
+      period_paramters[i] = {x[2 * i], x[2 * i + 1]};
+    }
+
+    obj->context.updateRates(period_paramters);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
     if (obj->iter % 10 == 0) {
-      std::cout << p.toString() << ": " << llh << std::endl;
+      std::cout << "Current LLH: " << llh << std::endl;
     }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
@@ -195,10 +217,13 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
   };
 
   opt.set_max_objective(objective, &oc);
-  opt.set_lower_bounds({1e-7, 1e-7});
+
+  std::vector<double> lower_bounds(dims, 1e-7);
+  opt.set_lower_bounds(lower_bounds);
+
   opt.set_ftol_rel(_lh_epsilon);
 
-  std::vector<double> results(2, 0.01);
+  std::vector<double> results(dims, 0.01);
   double obj_val = 0;
 
   opt.optimize(results, obj_val);
@@ -241,8 +266,8 @@ void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
 }
 
-auto Context::currentParams() const -> period_t {
-  return _workspace->get_period_params(0);
+auto Context::currentParams() const -> std::vector<period_params_t> {
+  return _workspace->get_period_params();
 }
 
 #if 0
@@ -288,3 +313,5 @@ void Context::useArnoldi(bool mode_set, bool adaptive) const {
     }
   }
 }
+
+size_t Context::getPeriodCount() const { return _rate_matrix_ops.size(); }
