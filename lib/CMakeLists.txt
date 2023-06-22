@@ -2,8 +2,10 @@ include(FetchContent)
 
 # nlopt first
 
-set(BUILD_SHARED_LIBS OFF CACHE INTERNAL ""  FORCE)
-add_subdirectory(nlopt EXCLUDE_FROM_ALL)
+#find_package(nlopt REQUIRED)
+
+#set(BUILD_SHARED_LIBS OFF CACHE INTERNAL ""  FORCE)
+#add_subdirectory(nlopt EXCLUDE_FROM_ALL)
 
 # Jsonhpp second
 
