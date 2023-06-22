@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-include(FindMKL)
 include(FetchContent)
 
 # Find NLopt, otherwise download it
@@ -27,15 +26,17 @@ FetchContent_Declare(nlohmann_json
 FetchContent_MakeAvailable(NLopt nlohmann_json)
 
 # Find MKL, fallback to OpenBLAS
-find_package(MKL)
+set(BLA_VENDOR Intel10_64_dyn)
+find_package(BLAS)
+find_package(LAPACK)
 
-if (${MKL_FOUND})
-  set(LAGRANGE_LIBS ${MKL_LIBRARIES})
-  set(LAGRANGE_INCLUDES ${MKL_INCLUDE_DIRS})
+if (${BLAS_FOUND} AND ${LAPACK_FOUND})
+  set(LAGRANGE_LIBS BLAS::BLAS LAPACK::LAPACK)
+  set(LAGRANGE_INCLUDES)
   set(LAGRANGE_DEFINES MKL_ENABLED)
 else()
     FetchContent_Declare(OpenBLAS
-      URL = https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
+      URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
       URL_HASH SHA256=5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
       FIND_PACKAGE_ARGS
     )
