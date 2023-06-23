@@ -336,7 +336,7 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
 
 void Node::assignTipData(
     Workspace &ws,
-    const std::unordered_map<std::string, size_t> &distrib_data) const {
+    const std::unordered_map<std::string, lagrange_dist_t> &distrib_data) const {
   if (_children.empty()) {
     ws.set_tip_clv(ws.get_top_clv(_id), distrib_data.at(_label));
   } else {
