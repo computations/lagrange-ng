@@ -26,14 +26,13 @@ FetchContent_Declare(nlohmann_json
 FetchContent_MakeAvailable(NLopt nlohmann_json)
 
 # Find MKL, fallback to OpenBLAS
-set(BLA_VENDOR Intel10_64_dyn)
-find_package(BLAS)
-find_package(LAPACK)
+include(FindMKL)
+find_package(MKL)
 
-if (${BLAS_FOUND} AND ${LAPACK_FOUND})
-  set(LAGRANGE_LIBS BLAS::BLAS LAPACK::LAPACK)
-  set(LAGRANGE_INCLUDES)
-  set(LAGRANGE_DEFINES MKL_ENABLED)
+if (${MKL_FOUND})
+  set(LAGRANGE_LIBS ${MKL_LIBRARIES})
+  set(LAGRANGE_INCLUDES ${MKL_INCLUDE_DIRS})
+  set(LAGRANGE_DEFINES MKL_ENABLED=1)
 else()
     FetchContent_Declare(OpenBLAS
       URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
