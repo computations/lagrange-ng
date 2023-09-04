@@ -63,7 +63,7 @@ TEST_F(ContextTest, optimizeSimple0) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.init();
-  context.updateRates({10.5, 1.5});
+  context.updateRates({{10.5, 1.5}});
   context.registerTipClvs(_basic_tree_data);
 
   double initial_llh = context.computeLLH(_worker_state);
@@ -79,7 +79,7 @@ TEST_F(ContextTest, StateGoal0) {
   context.registerLHGoal();
   context.registerStateLHGoal();
   context.init();
-  context.updateRates({10.5, 1.5});
+  context.updateRates({{10.5, 1.5}});
   context.registerTipClvs(_basic_tree_data);
 
   context.computeLLH(_worker_state);

@@ -1,3 +1,5 @@
+#include "Operation.h"
+
 #include <cmath>
 #include <iomanip>
 #include <memory>
@@ -5,7 +7,6 @@
 #include <unordered_map>
 
 #include "Common.h"
-#include "Operation.h"
 #include "Utils.h"
 #include "Workspace.h"
 #include "environment.hpp"
@@ -159,7 +160,8 @@ class OperationTest : public ::testing::Test {
     _ws->update_clv(_arbitrary_clv1.get(), _reverse_lbot_clv);
     _ws->set_period_params(0, .3123, 1.1231);
 
-    _rate_matrix_op = std::make_shared<MakeRateMatrixOperation>(_rate_matrix);
+    _rate_matrix_op =
+        std::make_shared<MakeRateMatrixOperation>(_rate_matrix, _period);
   }
 
   size_t _lbot_clv;
@@ -179,6 +181,7 @@ class OperationTest : public ::testing::Test {
   size_t _taxa = 2;
 
   double _t = 1.0;
+  size_t _period = 0;
 
   std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
   std::unique_ptr<lagrange_matrix_base_t[]> _correct_prob_matrix;
@@ -268,7 +271,7 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
-  MakeRateMatrixOperation make_op(_rate_matrix);
+  MakeRateMatrixOperation make_op(_rate_matrix, _period);
 
   make_op.eval(_ws);
 }
@@ -276,8 +279,8 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
   auto local_ws = std::make_shared<Workspace>(_taxa, 3, 3);
   local_ws->reserve();
-  local_ws->set_period_params(0, .3123, 1.1231);
-  MakeRateMatrixOperation make_op(_rate_matrix);
+  local_ws->set_period_params(_period, .3123, 1.1231);
+  MakeRateMatrixOperation make_op(_rate_matrix, _period);
 
   make_op.eval(local_ws);
 }

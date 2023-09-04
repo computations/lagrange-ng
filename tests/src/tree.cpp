@@ -49,8 +49,8 @@ class TreeTest : public ::testing::Test {
         -1.64188,
     });
 
-    _rate_matrix_op =
-        std::make_shared<MakeRateMatrixOperation>(_rate_matrix_index);
+    _rate_matrix_op = std::make_shared<MakeRateMatrixOperation>(
+        _rate_matrix_index, _basic_period_index);
   }
 
   std::shared_ptr<Tree> parse_tree(const std::string& newick) {
@@ -70,6 +70,7 @@ class TreeTest : public ::testing::Test {
   std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
 
   Periods _basic_periods;
+  const size_t _basic_period_index = 0;
 };
 
 TEST_F(TreeTest, simple0) { parse_tree(_basic_tree_newick); }

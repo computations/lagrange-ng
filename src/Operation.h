@@ -55,6 +55,8 @@ class MakeRateMatrixOperation {
   auto printStatus(const std::shared_ptr<Workspace>& ws,
                    size_t tabLevel = 0) const -> std::string;
 
+  size_t getPeriodIndex() const { return _period_index; }
+
  private:
   size_t _rate_matrix_index;
   size_t _period_index;
@@ -113,7 +115,7 @@ class ExpmOperation {
           vec) {
     if (!_rate_matrix_op) { return; }
 
-    size_t period = _rate_matrix_op->rate_matrix_index();
+    size_t period = _rate_matrix_op->getPeriodIndex();
     if (vec.count(period) == 0) { vec[period] = _rate_matrix_op; }
   }
 

@@ -88,6 +88,8 @@ class PeriodSpan {
     _begin = periods.begin();
     _end = periods.end();
 
+    _start_index = 0;
+
     while (*_begin <= _start_time) {
       _begin++;
       _start_index++;
