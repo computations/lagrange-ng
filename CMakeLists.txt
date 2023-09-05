@@ -16,7 +16,6 @@ FetchContent_Declare(NLopt
 )
 
 # Find json lib, otherwise download it
-
 FetchContent_Declare(nlohmann_json
   URL https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent/archive/refs/tags/v3.11.2.tar.gz
   URL_HASH SHA256=8221d9885db8af5c48b472fa2971318443a502c41d8ed6c9bce3a88d6834aa9c
