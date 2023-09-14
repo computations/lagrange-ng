@@ -39,7 +39,7 @@ else()
       FIND_PACKAGE_ARGS
     )
   FetchContent_MakeAvailable(OpenBLAS)
-    set(LAGRANGE_LIBS blas lapack)
+    set(LAGRANGE_LIBS cblas lapacke)
 endif()
 
 add_subdirectory(src)
