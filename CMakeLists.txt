@@ -25,8 +25,8 @@ FetchContent_Declare(nlohmann_json
 FetchContent_MakeAvailable(NLopt nlohmann_json)
 
 # Find MKL, fallback to OpenBLAS
-include(FindMKL)
-find_package(MKL)
+#include(FindMKL)
+#find_package(MKL)
 
 if (${MKL_FOUND})
   set(LAGRANGE_LIBS ${MKL_LIBRARIES})
@@ -36,10 +36,10 @@ else()
     FetchContent_Declare(OpenBLAS
       URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
       URL_HASH SHA256=5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
-      FIND_PACKAGE_ARGS NAMES cblas
+      FIND_PACKAGE_ARGS
     )
-  FetchContent_MakeAvailable(OpenBLAS)
-    set(LAGRANGE_LIBS cblas lapacke)
+    FetchContent_MakeAvailable(OpenBLAS)
+    set(LAGRANGE_LIBS openblas)
 endif()
 
 add_subdirectory(src)
