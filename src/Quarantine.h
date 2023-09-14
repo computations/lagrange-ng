@@ -4,8 +4,8 @@
 #ifdef MKL_ENABLED
 #include <mkl.h>
 #else
-#include "openblas/cblas.h"
-#include "openblas/lapacke.h"
+#include "cblas.h"
+#include "lapacke.h"
 #endif
 
 #endif

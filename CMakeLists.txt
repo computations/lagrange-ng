@@ -40,6 +40,7 @@ else()
     )
     FetchContent_MakeAvailable(OpenBLAS)
     set(LAGRANGE_LIBS openblas)
+    set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
 
 add_subdirectory(src)
