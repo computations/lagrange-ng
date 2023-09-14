@@ -36,7 +36,7 @@ else()
     FetchContent_Declare(OpenBLAS
       URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
       URL_HASH SHA256=5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
-      FIND_PACKAGE_ARGS
+      FIND_PACKAGE_ARGS NAMES cblas
     )
   FetchContent_MakeAvailable(OpenBLAS)
     set(LAGRANGE_LIBS cblas lapacke)
