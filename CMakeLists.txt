@@ -39,8 +39,8 @@ endif()
 
 
 # Find MKL, fallback to OpenBLAS
-#include(FindMKL)
-#find_package(MKL)
+include(FindMKL)
+find_package(MKL)
 
 if (${MKL_FOUND})
   set(LAGRANGE_LIBS ${MKL_LIBRARIES})
