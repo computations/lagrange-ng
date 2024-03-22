@@ -43,7 +43,7 @@ threads-per-worker = 1
 The options for the control file are detailed below. To run Lagrange-NG, the following command should be used
 
 ```
-lagrange <CONTROL FILE>
+lagrange-ng <CONTROL FILE>
 ```
 
 After computation, there will be 3 results files: `<treefile>.nodes.tre`, `<treefile>.results.json`, and
@@ -87,7 +87,7 @@ h 10100
 To run an analysis with these files, simply run in the terminal the command
 
 ```
-./bin/lagrange example/example.conf
+./bin/lagrange-ng example/example.conf
 ```
 
 If Lagrange-NG has been built correctly, we should see the following output (or something similar):
