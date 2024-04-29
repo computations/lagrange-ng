@@ -250,6 +250,9 @@ ConfigFile parse_config_file(std::istream &instream) {
       } else if (config_value == "areanames") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
         config.areaNames = parse_list(lexer);
+      } else if (config_value == "prefix") {
+        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        config.prefix = parse_filename(lexer);
       } else if (config_value == "periods") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
         auto tmp_values = parse_list(lexer);
@@ -301,7 +304,6 @@ ConfigFile parse_config_file(std::istream &instream) {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
 
         config.extinction = parse_double(lexer);
-
       } else if (config_value == "lh-epsilon") {
         lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
 

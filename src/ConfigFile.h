@@ -20,6 +20,7 @@ struct ConfigFile {
   std::string datafile;
   std::string ratematrixfile;
   std::string logfile;
+  std::string prefix;
 
   size_t maxareas = 0;
 

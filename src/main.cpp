@@ -7,26 +7,20 @@
  *      Author: Ben Bettisworth
  */
 
-#include <cctype>
-#include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <unordered_map>
 #include <vector>
 
 #include "Alignment.h"
 #include "Common.h"
 #include "ConfigFile.h"
 #include "Context.h"
-#include "Fossil.h"
 #include "TreeReader.h"
 #include "Utils.h"
 #include "WorkerState.h"
@@ -186,34 +180,11 @@ static auto makeNodeReultsJSONOutput(
 
 static void writeJsonToFile(const ConfigFile &config,
                             const nlohmann ::json &root_json) {
-  std::string json_filename = config.treefile + ".results.json";
+  std::string json_filename = config.prefix + ".results.json";
   std::ofstream outfile(json_filename);
   outfile << root_json.dump();
   // nlohmann::json::to_cbor(root_json, outfile);
 }
-
-#if 0
-static void writeResultTree(const config_options_t &config,
-                            const std::shared_ptr<Tree> &tree) {
-  std::string result_tree_filename = config.treefile + ".results.tree";
-  std::ofstream outfile(result_tree_filename);
-  outfile << tree->getNewickLambda([](const Node &n) -> std::string {
-    if (n.isInternal()) {
-      std::ostringstream oss;
-      oss << "[&&NHX";
-      if (!n.getStateString().empty()) {
-        oss << ":state=" << n.getStateString();
-      }
-      if (!n.getSplitString().empty()) {
-        oss << ":split=" << n.getSplitString();
-      }
-      oss << "]";
-      return oss.str();
-    }
-    return n.getName();
-  });
-}
-#endif
 
 static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;
@@ -334,12 +305,12 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
       states, splits, stateGoalIndexToIdMap, config.areaNames,
       context.stateCount(), config.maxareas);
   writeJsonToFile(config, root_json);
-  std::ofstream node_tree(config.treefile + ".nodes.tre");
+  std::ofstream node_tree(config.prefix + ".nodes.tre");
 
   node_tree << intree->getNewickLambda([](const Node &n) -> std::string {
     return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
   });
-  std::ofstream anal_tree(config.treefile + ".scaled.tre");
+  std::ofstream anal_tree(config.prefix + ".scaled.tre");
   anal_tree << intree->getNewickLambda([](const Node &n) -> std::string {
     return n.getName() + ":" + std::to_string(n.getBL());
   }) << std::endl;
@@ -380,6 +351,18 @@ bool check_alignment_against_trees(
   return ok;
 }
 
+bool validate_and_make_prefix(const std::filesystem::path &prefix) {
+  bool ok = true;
+  try {
+    std::filesystem::create_directories(prefix.parent_path());
+  } catch (const std::filesystem::filesystem_error &err) {
+    std::cerr << err.what() << std::endl;
+    ok = false;
+  }
+
+  return ok;
+}
+
 auto main(int argc, char *argv[]) -> int {
 #if MKL_ENABLED
   mkl_set_num_threads(1);
@@ -394,6 +377,7 @@ auto main(int argc, char *argv[]) -> int {
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
+    validate_and_make_prefix(config.prefix);
     setThreads(config);
 
     std::cout << "reading tree..." << std::endl;
