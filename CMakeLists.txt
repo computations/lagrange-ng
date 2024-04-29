@@ -77,5 +77,7 @@ add_subdirectory(src)
 option(BUILD_TESTS "Enable building the tests" OFF)
 
 if(${BUILD_TESTS})
+  include(CTest)
+  enable_testing()
   add_subdirectory(tests)
 endif()
