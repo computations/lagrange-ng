@@ -21,6 +21,11 @@ two important build options for the purposes of building Lagrange-NG:
   algebra computation. If it is set to `OFF`, OpenBLAS will be used instead.
 - `MKL_PREFIX_DIR`: Implies `ENABLE_MKL=ON`, and can be used to point to the MKL install directory.
 
+## Troubleshooting
+
+Some users have reported issues with CMake not finding NLOpt properly. In this case, I would recommend installing NLOpt
+as a library via `apt` or `brew`. If this fails to fix the issue, please let me know.
+
 # Running
 
 In order to run Lagrange-NG, three files are needed:
