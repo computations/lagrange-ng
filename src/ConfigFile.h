@@ -1,10 +1,10 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
 
 #include "Alignment.h"
 #include "Common.h"

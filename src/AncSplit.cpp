@@ -17,6 +17,7 @@
  */
 
 #include "AncSplit.h"
+
 #include "Common.h"
 
 AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,

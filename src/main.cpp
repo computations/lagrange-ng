@@ -314,7 +314,7 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
     return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
   });
 
-  std::filesystem::path scaled_tree_filename  = config.prefix;
+  std::filesystem::path scaled_tree_filename = config.prefix;
   scaled_tree_filename += ".scaled.tre";
 
   std::ofstream anal_tree(scaled_tree_filename);

@@ -58,7 +58,8 @@ constexpr double ROOT_IM[] = {
 namespace expm {
 void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                                 size_t rate_matrix_index, size_t clv_src_index,
-                                size_t clv_dst_index, bool transposed, double t) {
+                                size_t clv_dst_index, bool transposed,
+                                double t) {
   // allocate buffers
   constexpr int m = 20;
   const int rows = static_cast<int>(ws->matrix_rows());

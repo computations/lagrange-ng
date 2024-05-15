@@ -94,10 +94,8 @@ class PeriodSpan {
       _begin++;
       _start_index++;
     }
-    
-    if (_length == 0.0){
-      _length = std::numeric_limits<double>::epsilon();
-    }
+
+    if (_length == 0.0) { _length = std::numeric_limits<double>::epsilon(); }
   }
 
   Iterator begin() const {
