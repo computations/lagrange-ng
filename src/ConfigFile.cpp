@@ -1,6 +1,8 @@
 #include "ConfigFile.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -13,7 +15,19 @@ void set_mrcas_for_fossils(ConfigFile &config) {
   for (auto &f : config.fossils) { f.clade = config.mrcas[f.mrca_name]; }
 }
 
-void finalize(ConfigFile &config) { set_mrcas_for_fossils(config); }
+void check_prefix(ConfigFile &config) {
+  if (config.prefix.empty()) { config.prefix = config.treefile; }
+  if (config.prefix.filename().string()[0] == '.') {
+    std::cout << "Warning, the current prefix starts with a dot, results will "
+                 "be hidden on linux systems"
+              << std::endl;
+  }
+}
+
+void finalize(ConfigFile &config) {
+  set_mrcas_for_fossils(config);
+  check_prefix(config);
+}
 
 class config_lexer_t {
  public:
@@ -376,4 +390,22 @@ ConfigFile parse_config_file(std::istream &instream) {
   finalize(config);
 
   return config;
+}
+
+std::filesystem::path ConfigFile::get_results_filename() {
+  auto results_filename = prefix;
+  results_filename += ".results.json";
+  return results_filename;
+}
+
+std::filesystem::path ConfigFile::get_node_tree_filename() {
+  auto node_tree_filename = prefix;
+  node_tree_filename += ".nodes.tre";
+  return node_tree_filename;
+}
+
+std::filesystem::path ConfigFile::get_scaled_tree_filename() {
+  auto scaled_tree_filename = prefix;
+  scaled_tree_filename += ".scaled.tre";
+  return scaled_tree_filename;
 }

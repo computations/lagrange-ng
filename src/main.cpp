@@ -180,7 +180,8 @@ static auto makeNodeReultsJSONOutput(
 
 static void writeJsonToFile(const ConfigFile &config,
                             const nlohmann ::json &root_json) {
-  std::string json_filename = config.prefix + ".results.json";
+  std::filesystem::path json_filename = config.prefix;
+  json_filename += ".results.json";
   std::ofstream outfile(json_filename);
   outfile << root_json.dump();
   // nlohmann::json::to_cbor(root_json, outfile);
@@ -305,12 +306,18 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
       states, splits, stateGoalIndexToIdMap, config.areaNames,
       context.stateCount(), config.maxareas);
   writeJsonToFile(config, root_json);
-  std::ofstream node_tree(config.prefix + ".nodes.tre");
+  std::filesystem::path node_tree_filename = config.prefix;
+  node_tree_filename += ".nodes.tre";
+  std::ofstream node_tree(node_tree_filename);
 
   node_tree << intree->getNewickLambda([](const Node &n) -> std::string {
     return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
   });
-  std::ofstream anal_tree(config.prefix + ".scaled.tre");
+
+  std::filesystem::path scaled_tree_filename  = config.prefix;
+  scaled_tree_filename += ".scaled.tre";
+
+  std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << intree->getNewickLambda([](const Node &n) -> std::string {
     return n.getName() + ":" + std::to_string(n.getBL());
   }) << std::endl;

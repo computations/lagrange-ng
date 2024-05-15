@@ -1,11 +1,10 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #include "Alignment.h"
 #include "Common.h"
@@ -20,7 +19,7 @@ struct ConfigFile {
   std::string datafile;
   std::string ratematrixfile;
   std::string logfile;
-  std::string prefix;
+  std::filesystem::path prefix;
 
   size_t maxareas = 0;
 
@@ -56,6 +55,10 @@ struct ConfigFile {
   lagrange_option_t<lagrange_operation_mode> mode{
       lagrange_operation_mode::OPTIMIZE};
   lagrange_option_t<std::pair<double, double>> params;
+
+  std::filesystem::path get_results_filename();
+  std::filesystem::path get_node_tree_filename();
+  std::filesystem::path get_scaled_tree_filename();
 };
 
 ConfigFile parse_config_file(std::istream& instream);
