@@ -56,9 +56,9 @@ struct ConfigFile {
       lagrange_operation_mode::OPTIMIZE};
   lagrange_option_t<std::pair<double, double>> params;
 
-  std::filesystem::path get_results_filename();
-  std::filesystem::path get_node_tree_filename();
-  std::filesystem::path get_scaled_tree_filename();
+  std::filesystem::path get_results_filename() const;
+  std::filesystem::path get_node_tree_filename() const;
+  std::filesystem::path get_scaled_tree_filename() const;
 };
 
 ConfigFile parse_config_file(std::istream& instream);

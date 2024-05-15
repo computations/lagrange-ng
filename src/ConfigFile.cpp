@@ -392,19 +392,19 @@ ConfigFile parse_config_file(std::istream &instream) {
   return config;
 }
 
-std::filesystem::path ConfigFile::get_results_filename() {
+std::filesystem::path ConfigFile::get_results_filename() const {
   auto results_filename = prefix;
   results_filename += ".results.json";
   return results_filename;
 }
 
-std::filesystem::path ConfigFile::get_node_tree_filename() {
+std::filesystem::path ConfigFile::get_node_tree_filename() const {
   auto node_tree_filename = prefix;
   node_tree_filename += ".nodes.tre";
   return node_tree_filename;
 }
 
-std::filesystem::path ConfigFile::get_scaled_tree_filename() {
+std::filesystem::path ConfigFile::get_scaled_tree_filename() const {
   auto scaled_tree_filename = prefix;
   scaled_tree_filename += ".scaled.tre";
   return scaled_tree_filename;
