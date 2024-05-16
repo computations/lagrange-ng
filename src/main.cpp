@@ -355,7 +355,9 @@ bool check_alignment_against_trees(
 bool validate_and_make_prefix(const std::filesystem::path &prefix) {
   bool ok = true;
   try {
-    std::filesystem::create_directories(prefix.parent_path());
+    if(!prefix.parent_path().empty()){
+      std::filesystem::create_directories(prefix.parent_path());
+    }
   } catch (const std::filesystem::filesystem_error &err) {
     std::cerr << err.what() << std::endl;
     ok = false;
