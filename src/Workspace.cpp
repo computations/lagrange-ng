@@ -9,7 +9,6 @@
 #include <limits>
 
 #include "Common.h"
-#include "Utils.h"
 
 Workspace::~Workspace() {
   for (auto &res : _rate_matrix) { delete[] res._matrix; }

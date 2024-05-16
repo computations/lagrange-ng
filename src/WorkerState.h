@@ -2,17 +2,11 @@
 #define LAGRANGE_WORKER_STATE_H
 
 #include <atomic>
-#include <cctype>
-#include <chrono>
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <vector>
 
-#include "Common.h"
 #include "Operation.h"
-#include "Quarantine.h"
-#include "Utils.h"
 #include "Workspace.h"
 
 enum class WorkerMode {

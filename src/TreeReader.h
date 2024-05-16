@@ -11,9 +11,7 @@
 #define TREE_READER_H
 
 #include <string>
-#include <vector>
-
-#include "Node.h"
+ 
 #include "Tree.h"
 
 class TreeReader {

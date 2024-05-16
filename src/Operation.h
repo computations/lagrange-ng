@@ -13,7 +13,6 @@
 #include <memory>
 #include <mutex>
 #include <ostream>
-#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -533,7 +532,7 @@ class StateLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline auto result() {
+  inline auto result() const {
     decltype(_result) ret{new decltype(_result)::element_type[_states]};
     for (size_t i = 0; i < _states; i++) { ret.get()[i] = _result.get()[i]; }
     return ret;

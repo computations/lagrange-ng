@@ -7,7 +7,6 @@
 #undef NDEBUG
 #include "Operation.h"
 
-#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -17,7 +16,6 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include <stdexcept>
 #include <tuple>
 #include <unordered_map>
 #include <utility>

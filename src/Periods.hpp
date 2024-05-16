@@ -1,7 +1,6 @@
 #ifndef PERIODS_H
 #define PERIODS_H
 
-#include <iterator>
 #include <limits>
 #include <vector>
 

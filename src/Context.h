@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -33,9 +32,9 @@ class Context {
   void registerStateLHGoal();
   void registerSplitLHGoal();
 
-  auto getStateResults()
+  auto getStateResults() const
       -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>;
-  auto getSplitResults() -> lagrange_split_list_t;
+  auto getSplitResults() const -> lagrange_split_list_t;
 
   void registerTipClvs(
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);

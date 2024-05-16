@@ -10,8 +10,6 @@
 #include "Tree.h"
 
 #include <cmath>
-#include <exception>
-#include <limits>
 #include <sstream>
 #include <unordered_map>
 #include <utility>

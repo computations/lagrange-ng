@@ -1,15 +1,10 @@
 #include "Context.h"
 
 #include <cmath>
-#include <fstream>
 #include <iostream>
-#include <limits>
 #include <memory>
 #include <nlopt.hpp>
-#include <random>
-#include <sstream>
 #include <string>
-#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -18,7 +13,6 @@
 #include "Operation.h"
 #include "Utils.h"
 #include "WorkerState.h"
-#include "Workspace.h"
 
 void Context::registerForwardOperations() {
   _forward_operations = _tree->generateForwardOperations(*_workspace);
@@ -240,7 +234,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
  * vector indexed by lagrange_dist_t, where each entry contains the likelihood
  * of that particular distribution at that node.
  */
-auto Context::getStateResults()
+auto Context::getStateResults() const
     -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> {
   std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> states;
   states.reserve(_state_lh_goal.size());
@@ -250,7 +244,7 @@ auto Context::getStateResults()
   return states;
 }
 
-auto Context::getSplitResults() -> lagrange_split_list_t {
+auto Context::getSplitResults() const -> lagrange_split_list_t {
   lagrange_split_list_t splits;
   splits.reserve(_split_lh_goal.size());
 

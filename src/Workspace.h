@@ -10,9 +10,6 @@
 #include <cassert>
 #include <cstddef>
 #include <limits>
-#include <mutex>
-#include <new>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>

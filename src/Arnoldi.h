@@ -6,10 +6,8 @@
 #ifndef LAGRANGE_CPP_ARNOLDI_H
 #define LAGRANGE_CPP_ARNOLDI_H
 
-#include <algorithm>
 #include <memory>
 
-#include "Common.h"
 #include "Workspace.h"
 
 /*
