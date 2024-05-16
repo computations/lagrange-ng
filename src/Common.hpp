@@ -15,21 +15,20 @@
 #include <vector>
 
 #ifndef MKL_ENABLED
-#include <complex>
+  #include <complex>
 
-namespace lagrange {
-
-#define COMPLEX_DATA_TYPE double
-#define lapack_complex_double std::complex<COMPLEX_DATA_TYPE>
-#define lapack_complex_double_real(z) \
-  (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[0])
-#define lapack_complex_double_imag(z) \
-  (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[1])
+  #define COMPLEX_DATA_TYPE double
+  #define lapack_complex_double std::complex<COMPLEX_DATA_TYPE>
+  #define lapack_complex_double_real(z) \
+    (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[0])
+  #define lapack_complex_double_imag(z) \
+    (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[1])
 #else
-#define lapack_complex_double_real(z) (z.real)
-#define lapack_complex_double_imag(z) (z.imag)
+  #define lapack_complex_double_real(z) (z.real)
+  #define lapack_complex_double_imag(z) (z.imag)
 #endif
 
+namespace lagrange {
 #include "Quarantine.hpp"
 
 using Dist = uint64_t;
@@ -40,13 +39,14 @@ using Clock = std::atomic<uint64_t>;
 using OpID = uint64_t;
 
 struct NodeReservation {
-  NodeReservation()
-      : _top_clv{std::numeric_limits<size_t>::max()},
-        _bot1_clv{std::numeric_limits<size_t>::max()},
-        _bot2_clv{std::numeric_limits<size_t>::max()},
-        _top_rclv{std::numeric_limits<size_t>::max()},
-        _bot1_rclv{std::numeric_limits<size_t>::max()},
-        _bot2_rclv{std::numeric_limits<size_t>::max()} {}
+  NodeReservation() :
+      _top_clv{std::numeric_limits<size_t>::max()},
+      _bot1_clv{std::numeric_limits<size_t>::max()},
+      _bot2_clv{std::numeric_limits<size_t>::max()},
+      _top_rclv{std::numeric_limits<size_t>::max()},
+      _bot1_rclv{std::numeric_limits<size_t>::max()},
+      _bot2_rclv{std::numeric_limits<size_t>::max()} {}
+
   size_t _top_clv;
   size_t _bot1_clv;
   size_t _bot2_clv;
@@ -84,9 +84,9 @@ struct PeriodParams {
   }
 
   inline auto getDispersionRate(size_t from, size_t to) const -> double {
-    return dispersion_rate * (adjustment_matrix != nullptr
-                                  ? (*adjustment_matrix)[from][to]
-                                  : 1.0);
+    return dispersion_rate
+           * (adjustment_matrix != nullptr ? (*adjustment_matrix)[from][to]
+                                           : 1.0);
   }
 
   inline auto getExtinctionRate() const -> double { return extinction_rate; }
@@ -115,5 +115,5 @@ constexpr double lagrange_scaling_factor_log =
 enum class LagrangeOperationMode { OPTIMIZE, EVALUATE };
 
 enum class LagrangeEXPMComputationMode { PADE, KRYLOV, ADAPTIVE };
-}
+}  // namespace lagrange
 #endif  // LAGRANGE_COMMON_H

@@ -2,11 +2,12 @@
 
 #include <fstream>
 
+#include "AncSplit.hpp"
 #include "Utils.hpp"
 
 namespace lagrange {
 
-auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
+auto normalize_split_distribution_by_lwr(SplitReturn &splits)
     -> void {
   double max_llh = -std::numeric_limits<double>::infinity();
   for (const auto &kv : splits) {
@@ -65,7 +66,8 @@ auto normalize_state_distribution_by_lwr(
 
 auto make_state_results_for_node(
     const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
-    const std::vector<std::string> &region_names, size_t states_len,
+    const std::vector<std::string> &region_names,
+    size_t states_len,
     size_t max_areas) -> nlohmann::json {
   nlohmann::json node_json;
   auto lwr_distribution =
@@ -86,10 +88,10 @@ auto make_state_results_for_node(
   return node_json;
 }
 
-auto make_split_results_for_node(lagrange_split_return_t &splits,
+auto make_split_results_for_node(SplitReturn &splits,
                                  const std::vector<std::string> &region_names,
-                                 size_t states_len, size_t max_areas)
-    -> nlohmann::json {
+                                 size_t states_len,
+                                 size_t max_areas) -> nlohmann::json {
   nlohmann::json node_json;
   normalize_split_distribution_by_lwr(splits);
   for (size_t dist = 0, dist_index = 0; dist_index < states_len;
@@ -132,8 +134,10 @@ auto make_split_results_for_node(lagrange_split_return_t &splits,
 
 auto make_results_for_node(
     const std::vector<std::unique_ptr<LagrangeMatrixBase[]>> &states,
-    lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
-    const std::vector<std::string> &region_names, size_t states_len,
+    SplitReturnList &splits,
+    const std::vector<size_t> &state_id_map,
+    const std::vector<std::string> &region_names,
+    size_t states_len,
     size_t max_areas) -> nlohmann::json {
   nlohmann::json root_json;
 
@@ -143,12 +147,12 @@ auto make_results_for_node(
     nlohmann::json node_json;
 
     if (i < states.size()) {
-      node_json["states"] = make_state_results_for_node(states[i], region_names,
-                                                        states_len, max_areas);
+      node_json["states"] = make_state_results_for_node(
+          states[i], region_names, states_len, max_areas);
     }
     if (i < splits.size()) {
-      node_json["splits"] = make_split_results_for_node(splits[i], region_names,
-                                                        states_len, max_areas);
+      node_json["splits"] = make_split_results_for_node(
+          splits[i], region_names, states_len, max_areas);
     }
 
     node_json["number"] = state_id_map[i];
@@ -159,7 +163,8 @@ auto make_results_for_node(
 }
 
 void write_result_file(const std::shared_ptr<Tree> &tree,
-                       const ConfigFile &config, const Context &context) {
+                       const ConfigFile &config,
+                       const Context &context) {
   auto root_json = init_json(tree, config);
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -175,9 +180,12 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
 
   auto states = context.getStateResults();
   auto splits = context.getSplitResults();
-  root_json["node-results"] = make_results_for_node(
-      states, splits, stateGoalIndexToIdMap, config.area_names,
-      context.stateCount(), config.maxareas);
+  root_json["node-results"] = make_results_for_node(states,
+                                                    splits,
+                                                    stateGoalIndexToIdMap,
+                                                    config.area_names,
+                                                    context.stateCount(),
+                                                    config.maxareas);
 
   write_json_file(config, root_json);
 }
@@ -216,8 +224,8 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
   attributes_json["nodes-tree"] =
       tree->getNewickLambda([](const Node &n) -> std::string {
         if (n.isInternal()) {
-          return std::to_string(n.getNumber()) + ":" +
-                 std::to_string(n.getBL());
+          return std::to_string(n.getNumber()) + ":"
+                 + std::to_string(n.getBL());
         } else {
           return n.getName() + ":" + std::to_string(n.getBL());
         }

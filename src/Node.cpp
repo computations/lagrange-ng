@@ -25,12 +25,12 @@ namespace lagrange {
 
 Node::Node() : _branch_length(0.0), _height(0.0), _number(0), _id(0) {}
 
-Node::Node(double bl, size_t innumber, std::string inname)
-    : _branch_length(bl),
-      _height(0.0),
-      _number(innumber),
-      _id(0),
-      _label(std::move(inname)) {}
+Node::Node(double bl, size_t innumber, std::string inname) :
+    _branch_length(bl),
+    _height(0.0),
+    _number(innumber),
+    _id(0),
+    _label(std::move(inname)) {}
 
 auto Node::isExternal() const -> bool { return _children.empty(); }
 
@@ -45,8 +45,9 @@ auto Node::getBL() const -> double { return _branch_length; }
 void Node::setBL(double bl) { _branch_length = bl; }
 
 auto Node::hasChild(const std::shared_ptr<Node> &test) -> bool {
-  return std::any_of(_children.begin(), _children.end(),
-                     [&test](auto n) { return n == test; });
+  return std::any_of(_children.begin(), _children.end(), [&test](auto n) {
+    return n == test;
+  });
 }
 
 auto Node::addChild(const std::shared_ptr<Node> &c) -> bool {
@@ -122,8 +123,9 @@ auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                       const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
   if (current->_children.empty()) {
-    if (std::any_of(leaves.begin(), leaves.end(),
-                    [&current](auto &n) { return n == current; })) {
+    if (std::any_of(leaves.begin(), leaves.end(), [&current](auto &n) {
+          return n == current;
+        })) {
       return current;
     }
     return {nullptr};
@@ -142,8 +144,9 @@ auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
 
 auto Node::findNode(const std::shared_ptr<Node> &n) -> bool {
   if (this == n.get()) { return true; }
-  return std::any_of(_children.begin(), _children.end(),
-                     [&n](auto &c) { return c->findNode(n); });
+  return std::any_of(_children.begin(), _children.end(), [&n](auto &c) {
+    return c->findNode(n);
+  });
 }
 
 auto getParentWithNode(const std::shared_ptr<Node> &current,
@@ -157,11 +160,11 @@ auto getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-auto Node::traverseAndGenerateForwardOperations(
-    Workspace &ws, PeriodRateMatrixMap &pm_map,
-    BranchProbMatrixMap &bm_map) const
-    -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-                 std::shared_ptr<DispersionOperation>> {
+auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
+                                                PeriodRateMatrixMap &pm_map,
+                                                BranchProbMatrixMap &bm_map)
+    const -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
+                       std::shared_ptr<DispersionOperation>> {
   if (_children.size() != 2 && !_children.empty()) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -219,14 +222,16 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   if (root && disp_ops == nullptr) {
     ws.registerBot1CLVReverse(_id);
-    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.getBot1CLVReverse(_id), ws.getTopCLVReverse(_id),
-        ws.getRightChildCLV(_id)));
+    rsplit_ops.push_back(
+        std::make_shared<ReverseSplitOperation>(ws.getBot1CLVReverse(_id),
+                                                ws.getTopCLVReverse(_id),
+                                                ws.getRightChildCLV(_id)));
 
     ws.registerBot2CLVReverse(_id);
-    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.getBot2CLVReverse(_id), ws.getTopCLVReverse(_id),
-        ws.getLeftChildCLV(_id)));
+    rsplit_ops.push_back(
+        std::make_shared<ReverseSplitOperation>(ws.getBot2CLVReverse(_id),
+                                                ws.getTopCLVReverse(_id),
+                                                ws.getLeftChildCLV(_id)));
   } else {
     ws.registerBot1CLVReverse(_id);
     rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
@@ -247,8 +252,8 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminateBot(ws.getBot1CLVReverse(_id));
-    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
-                      child_trav.first.end());
+    rsplit_ops.insert(
+        rsplit_ops.end(), child_trav.first.begin(), child_trav.first.end());
   }
 
   if (_children[1]->isInternal()) {
@@ -257,8 +262,8 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
     auto child_disp_op = child_trav.second;
 
     child_disp_op->terminateBot(ws.getBot2CLVReverse(_id));
-    rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
-                      child_trav.first.end());
+    rsplit_ops.insert(
+        rsplit_ops.end(), child_trav.first.begin(), child_trav.first.end());
   }
   return {rsplit_ops, disp_ops};
 }
@@ -284,7 +289,8 @@ auto Node::generateDispersionOperations(Workspace &ws,
 }
 
 auto Node::generateDispersionOperationsReverse(
-    Workspace &ws, PeriodRateMatrixMap &rm_map,
+    Workspace &ws,
+    PeriodRateMatrixMap &rm_map,
     BranchProbMatrixMap &pm_map) const -> std::shared_ptr<DispersionOperation> {
   std::vector<PeriodSegment> reverse_periods;
   for (auto p : _periods) { reverse_periods.push_back(p); }
@@ -293,7 +299,8 @@ auto Node::generateDispersionOperationsReverse(
   std::shared_ptr<DispersionOperation> child_op = nullptr;
   for (const auto period : reverse_periods) {
     auto tmp = std::make_shared<DispersionOperation>(
-        ws.getTopCLVReverse(_id), std::numeric_limits<size_t>::max(),
+        ws.getTopCLVReverse(_id),
+        std::numeric_limits<size_t>::max(),
         getProbMatrixOperation(ws, rm_map, pm_map, period, true));
     tmp->setChildOp(child_op);
     tmp->terminateBot(ws.getTopCLVReverse(_id));
@@ -334,9 +341,9 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
   }
 }
 
-void Node::assignTipData(Workspace &ws,
-                         const std::unordered_map<std::string, Dist>
-                             &distrib_data) const {
+void Node::assignTipData(
+    Workspace &ws,
+    const std::unordered_map<std::string, Dist> &distrib_data) const {
   if (_children.empty()) {
     ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
   } else {
@@ -376,9 +383,7 @@ void Node::assignIncludedAreas(Dist incl_area_mask) {
   _incl_area_mask = incl_area_mask;
 }
 
-void Node::assignFixedDist(Dist fixed_dist) {
-  _fixed_dist = fixed_dist;
-}
+void Node::assignFixedDist(Dist fixed_dist) { _fixed_dist = fixed_dist; }
 
 void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
   func(*this);
@@ -392,19 +397,16 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-Option<Dist> Node::getFixedDist() const {
-  return _fixed_dist;
-}
+Option<Dist> Node::getFixedDist() const { return _fixed_dist; }
 
-Option<Dist> Node::getIncludedAreas() const {
-  return _incl_area_mask;
-}
+Option<Dist> Node::getIncludedAreas() const { return _incl_area_mask; }
 
 void Node::setPeriodSegments(const Periods &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);
 }
 
-auto Node::getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+auto Node::getRateMatrixOperation(Workspace &ws,
+                                  PeriodRateMatrixMap &rm_map,
                                   size_t period) const
     -> std::shared_ptr<MakeRateMatrixOperation> {
   auto it = rm_map.find(period);
@@ -420,16 +422,18 @@ auto Node::getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
   return it->second;
 }
 
-auto Node::getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+auto Node::getProbMatrixOperation(Workspace &ws,
+                                  PeriodRateMatrixMap &rm_map,
                                   BranchProbMatrixMap &pm_map,
-                                  PeriodSegment period, bool transpose) const
+                                  PeriodSegment period,
+                                  bool transpose) const
     -> std::shared_ptr<ExpmOperation> {
   auto key = std::make_pair(period.index, period.duration);
   auto it = pm_map.find(key);
   if (it == pm_map.end()) {
     auto rm = getRateMatrixOperation(ws, rm_map, period.index);
-    auto pm = std::make_shared<ExpmOperation>(ws.suggestProbMatrixIndex(),
-                                              _branch_length, rm, transpose);
+    auto pm = std::make_shared<ExpmOperation>(
+        ws.suggestProbMatrixIndex(), _branch_length, rm, transpose);
     pm_map.emplace(key, pm);
     return pm;
   }

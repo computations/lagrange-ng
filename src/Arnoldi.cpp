@@ -9,33 +9,40 @@ namespace lagrange {
 
 constexpr int N_ROOT = 5;
 
-constexpr double COEF_RE[] = {
-    0.136112052334544905E-09,  0.963676398167865499E+01,
-    -0.142343302081794718E+02, 0.513116990967461106E+01,
-    -0.545173960592769901E+00, 0.115698077160221179E-01};
+constexpr double COEF_RE[] = {0.136112052334544905E-09,
+                              0.963676398167865499E+01,
+                              -0.142343302081794718E+02,
+                              0.513116990967461106E+01,
+                              -0.545173960592769901E+00,
+                              0.115698077160221179E-01};
 constexpr double COEF_IM[] = {0,
                               -0.421091944767815675E+02,
                               0.176390663157379776E+02,
                               -0.243277141223876469E+01,
                               0.284234540632477550E-01,
                               0.137170141788336280E-02};
-constexpr double ROOT_RE[] = {
-    -0.402773246751880265E+01, -0.328375288323169911E+01,
-    -0.171540601576881357E+01, 0.894404701609481378E+00,
-    0.516119127202031791E+01};
-constexpr double ROOT_IM[] = {
-    0.119385606645509767E+01, 0.359438677235566217E+01,
-    0.603893492548519361E+01, 0.858275689861307000E+01,
-    0.113751562519165076E+02};
+constexpr double ROOT_RE[] = {-0.402773246751880265E+01,
+                              -0.328375288323169911E+01,
+                              -0.171540601576881357E+01,
+                              0.894404701609481378E+00,
+                              0.516119127202031791E+01};
+constexpr double ROOT_IM[] = {0.119385606645509767E+01,
+                              0.359438677235566217E+01,
+                              0.603893492548519361E+01,
+                              0.858275689861307000E+01,
+                              0.113751562519165076E+02};
 
 #elif CHEBYSHEV_DEG == 14
 constexpr int N_ROOT = 7;
 
-constexpr double COEF_RE[] = {
-    0.183216998528140087E-11,  0.557503973136501826E+02,
-    -0.938666838877006739E+02, 0.469965415550370835E+02,
-    -0.961424200626061065E+01, 0.752722063978321642E+00,
-    -0.188781253158648576E-01, 0.143086431411801849E-03};
+constexpr double COEF_RE[] = {0.183216998528140087E-11,
+                              0.557503973136501826E+02,
+                              -0.938666838877006739E+02,
+                              0.469965415550370835E+02,
+                              -0.961424200626061065E+01,
+                              0.752722063978321642E+00,
+                              -0.188781253158648576E-01,
+                              0.143086431411801849E-03};
 constexpr double COEF_IM[] = {0,
                               -0.204295038779771857E+03,
                               0.912874896775456363E+02,
@@ -44,22 +51,28 @@ constexpr double COEF_IM[] = {0,
                               0.670367365566377770E+00,
                               -0.343696176445802414E-01,
                               0.287221133228814096E-03};
-constexpr double ROOT_RE[] = {
-    -0.562314417475317895E+01, -0.508934679728216110E+01,
-    -0.399337136365302569E+01, -0.226978543095856366E+01,
-    0.208756929753827868E+00,  0.370327340957595652E+01,
-    0.889777151877331107E+01};
-constexpr double ROOT_IM[] = {
-    0.119406921611247440E+01, 0.358882439228376881E+01,
-    0.600483209099604664E+01, 0.846173881758693369E+01,
-    0.109912615662209418E+02, 0.136563731924991884E+02,
-    0.166309842834712071E+02};
+constexpr double ROOT_RE[] = {-0.562314417475317895E+01,
+                              -0.508934679728216110E+01,
+                              -0.399337136365302569E+01,
+                              -0.226978543095856366E+01,
+                              0.208756929753827868E+00,
+                              0.370327340957595652E+01,
+                              0.889777151877331107E+01};
+constexpr double ROOT_IM[] = {0.119406921611247440E+01,
+                              0.358882439228376881E+01,
+                              0.600483209099604664E+01,
+                              0.846173881758693369E+01,
+                              0.109912615662209418E+02,
+                              0.136563731924991884E+02,
+                              0.166309842834712071E+02};
 #endif
 
 namespace expm {
 void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
-                                size_t rate_matrix_index, size_t clv_src_index,
-                                size_t clv_dst_index, bool transposed,
+                                size_t rate_matrix_index,
+                                size_t clv_src_index,
+                                size_t clv_dst_index,
+                                bool transposed,
                                 double t) {
   // allocate buffers
   constexpr int m = 20;
@@ -99,11 +112,23 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   // so transpose before and after the expm operation is the same thing...
   if (transposed) {
 #ifdef MKL_ENABLED
-    mkl_dimatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, A.get(),
-                  leading_dim, leading_dim);
+    mkl_dimatcopy(CblasRowMajor,
+                  CblasTrans,
+                  rows,
+                  rows,
+                  1.0,
+                  A.get(),
+                  leading_dim,
+                  leading_dim);
 #else
-    cblas_dimatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, A.get(),
-                    leading_dim, leading_dim);
+    cblas_dimatcopy(CblasRowMajor,
+                    CblasTrans,
+                    rows,
+                    rows,
+                    1.0,
+                    A.get(),
+                    leading_dim,
+                    leading_dim);
 #endif
   }
 
@@ -132,8 +157,18 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 
   for (int j = 0; j < m; j++) {
     // candidate for the next basis: w = A * v_j+1
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, n, n, 1.0, A.get(), n, Q.get() + j,
-                m + 1, 0.0, Q.get() + j + 1, m + 1);
+    cblas_dgemv(CblasRowMajor,
+                CblasNoTrans,
+                n,
+                n,
+                1.0,
+                A.get(),
+                n,
+                Q.get() + j,
+                m + 1,
+                0.0,
+                Q.get() + j + 1,
+                m + 1);
 
     // remove components in directions of other bases
     for (int i = 0; i <= j; i++) {
@@ -179,22 +214,39 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
     }
 
     cblas_zcopy(m, e1_c.get(), 1, y_c.get() + m * i, 1);
-    LAPACKE_zgesv(CblasRowMajor, m, 1, Hm_minus_theta_I_c.get() + m_sqrd * i, m,
-                  ipiv_m.get(), y_c.get() + m * i, 1);
+    LAPACKE_zgesv(CblasRowMajor,
+                  m,
+                  1,
+                  Hm_minus_theta_I_c.get() + m_sqrd * i,
+                  m,
+                  ipiv_m.get(),
+                  y_c.get() + m * i,
+                  1);
 
     LagrangeComplex alpha{COEF_RE[i + 1], COEF_IM[i + 1]};
     cblas_zscal(m, &alpha, y_c.get() + m * i, 1);
 
     // #pragma omp critical
     {
-      for (size_t j = 0; j < m; j++)
+      for (size_t j = 0; j < m; j++) {
         eHme1[j] += lapack_complex_double_real(y_c[m * i + j]);
+      }
     }
   }
 
   // update target clv directly
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, n, m, beta, Q.get(), m + 1,
-              eHme1.get(), 1, 0.0, ws->CLV(clv_dst_index), 1);
+  cblas_dgemv(CblasRowMajor,
+              CblasNoTrans,
+              n,
+              m,
+              beta,
+              Q.get(),
+              m + 1,
+              eHme1.get(),
+              1,
+              0.0,
+              ws->CLV(clv_dst_index),
+              1);
 }
 
 };  // namespace expm

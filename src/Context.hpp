@@ -24,11 +24,11 @@ namespace lagrange {
 
 class Context {
  public:
-  Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas)
-      : _tree{std::move(tree)},
-        _workspace{std::make_shared<Workspace>(_tree->getExternalNodeCount(),
-                                               regions, max_areas)},
-        _rate_matrix_ops{} {}
+  Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas) :
+      _tree{std::move(tree)},
+      _workspace{std::make_shared<Workspace>(
+          _tree->getExternalNodeCount(), regions, max_areas)},
+      _rate_matrix_ops{} {}
 
   void registerLHGoal();
   void registerStateLHGoal();
@@ -36,19 +36,21 @@ class Context {
 
   auto getStateResults() const
       -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
-  auto getSplitResults() const -> lagrange_split_list_t;
+  auto getSplitResults() const -> SplitReturnList;
 
-  void registerTipClvs(
-      const std::unordered_map<std::string, Dist>& dist_data);
+  void registerTipClvs(const std::unordered_map<std::string, Dist>& dist_data);
 
-  void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
-                                bool output, const LagrangeOperationMode& mode);
+  void optimizeAndComputeValues(WorkerState& ts,
+                                bool states,
+                                bool splits,
+                                bool output,
+                                const LagrangeOperationMode& mode);
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
   auto computeStateGoal(WorkerState& ts)
       -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
-  auto computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t;
+  auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
 
   auto toString() const -> std::string;
 
@@ -64,8 +66,11 @@ class Context {
   auto currentParams() const -> std::vector<PeriodParams>;
 
   auto makeThreadContext() -> WorkerContext {
-    WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,
-                     _state_lh_goal, _split_lh_goal};
+    WorkerContext tc{_forward_operations,
+                     _reverse_operations,
+                     _llh_goal,
+                     _state_lh_goal,
+                     _split_lh_goal};
     return tc;
   }
 

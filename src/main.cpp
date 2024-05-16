@@ -71,7 +71,8 @@ static void setup_tree(const std::shared_ptr<Tree> &tree,
 }
 
 static void handle_tree(const std::shared_ptr<Tree> &tree,
-                        const Alignment &data, const ConfigFile &config) {
+                        const Alignment &data,
+                        const ConfigFile &config) {
   auto root_json = init_json(tree, config);
 
   setup_tree(tree, config);
@@ -95,9 +96,13 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
     std::cout << "Making Worker #" << i + 1 << std::endl;
     worker_states.emplace_back();
     worker_states.back().setAssignedThreads(config.threads_per_worker.get());
-    threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
-                         std::ref(worker_states[i]), config.states,
-                         config.splits, true, std::cref(config.run_mode.get()));
+    threads.emplace_back(&Context::optimizeAndComputeValues,
+                         std::ref(context),
+                         std::ref(worker_states[i]),
+                         config.states,
+                         config.splits,
+                         true,
+                         std::cref(config.run_mode.get()));
   }
 
   std::cout << "Waiting for workers to finish" << std::endl;

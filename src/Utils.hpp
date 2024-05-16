@@ -88,8 +88,7 @@ auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-constexpr inline auto next_dist(Dist d, uint32_t n)
-    -> Dist {
+constexpr inline auto next_dist(Dist d, uint32_t n) -> Dist {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
@@ -97,24 +96,24 @@ constexpr inline auto next_dist(Dist d, uint32_t n)
 
 /* Returns true if the dist "passes" the check. That is, if there are no common
  * bits set */
-constexpr inline auto check_excl_dist(Dist dist,
-                                      Dist excl_dist) -> bool {
+constexpr inline auto check_excl_dist(Dist dist, Dist excl_dist) -> bool {
   return !(dist & excl_dist);
 }
 
-constexpr inline auto check_incl_dist(Dist dist,
-                                      Dist incl_dist) -> bool {
+constexpr inline auto check_incl_dist(Dist dist, Dist incl_dist) -> bool {
   return (dist & incl_dist) == incl_dist;
 }
 
-constexpr inline auto next_dist(Dist d, uint32_t n, size_t index,
+constexpr inline auto next_dist(Dist d,
+                                uint32_t n,
+                                size_t index,
                                 Dist excl_area_mask = 0,
                                 Dist incl_area_mask = 0)
     -> std::pair<Dist, size_t> {
   auto next = next_dist(d, n);
   index += 1;
-  if (check_excl_dist(next, excl_area_mask) &&
-      check_incl_dist(next, incl_area_mask)) {
+  if (check_excl_dist(next, excl_area_mask)
+      && check_incl_dist(next, incl_area_mask)) {
     return {next, index};
   }
   return next_dist(next, n, index, excl_area_mask, incl_area_mask);
@@ -129,6 +128,7 @@ template <typename T>
 class Option {
  public:
   Option() = default;
+
   explicit Option(const T &val) : _value{val}, _has_value{true} {}
 
   Option(const Option<T> &o) = default;

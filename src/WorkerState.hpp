@@ -24,13 +24,14 @@ struct WorkerContext {
  public:
   WorkerContext(std::vector<std::shared_ptr<SplitOperation>>& fwb,
                 std::vector<std::shared_ptr<ReverseSplitOperation>>& rwb,
-                std::vector<LLHGoal>& lhg, std::vector<StateLHGoal>& stg,
-                std::vector<SplitLHGoal>& slg)
-      : _forward_work_buffer{fwb},
-        _reverse_work_buffer{rwb},
-        _lh_goal{lhg},
-        _state_lh_work_buffer{stg},
-        _split_lh_work_buffer{slg} {}
+                std::vector<LLHGoal>& lhg,
+                std::vector<StateLHGoal>& stg,
+                std::vector<SplitLHGoal>& slg) :
+      _forward_work_buffer{fwb},
+      _reverse_work_buffer{rwb},
+      _lh_goal{lhg},
+      _state_lh_work_buffer{stg},
+      _split_lh_work_buffer{slg} {}
 
   std::vector<std::shared_ptr<SplitOperation>>& _forward_work_buffer;
   std::vector<std::shared_ptr<ReverseSplitOperation>>& _reverse_work_buffer;
@@ -47,6 +48,7 @@ class WorkerState {
   auto operator=(const WorkerState&) -> WorkerState& = delete;
 
   WorkerState(WorkerState&& ts) noexcept { *this = std::move(ts); }
+
   auto operator=(WorkerState&& ts) noexcept -> WorkerState& {
     _tid = ts._tid;
     _assigned_threads = ts._assigned_threads;
@@ -106,13 +108,15 @@ class WorkerState {
     }
   }
 
-  inline void work(WorkerMode tm, WorkerContext& tc,
+  inline void work(WorkerMode tm,
+                   WorkerContext& tc,
                    const std::shared_ptr<Workspace>& ws) {
     setRunMode(tm);
     work(tc, ws);
   }
 
   auto masterThread() const -> bool { return _tid == 0; }
+
   auto threadID() const -> size_t { return _tid; }
 
   void haltThreads() {
@@ -186,8 +190,8 @@ class WorkerState {
                     const std::shared_ptr<Workspace>& workspace) ->
       typename std::vector<T>::iterator {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
-    if (work_buffer.size() - _start_index == 0 ||
-        activeThreads() > work_buffer.size()) {
+    if (work_buffer.size() - _start_index == 0
+        || activeThreads() > work_buffer.size()) {
       return work_buffer.end();
     }
 
@@ -209,8 +213,8 @@ class WorkerState {
               << std::endl;
               */
 
-    if (work_buffer.size() - _start_index == 0 ||
-        activeThreads() > work_buffer.size()) {
+    if (work_buffer.size() - _start_index == 0
+        || activeThreads() > work_buffer.size()) {
       return {};
     }
 

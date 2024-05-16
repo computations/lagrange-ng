@@ -28,8 +28,9 @@ enum LexemeType {
 
 class Lexer {
  public:
-  explicit Lexer(std::string input)
-      : _input{std::move(input)}, _current_index{0} {};
+  explicit Lexer(std::string input) :
+      _input{std::move(input)},
+      _current_index{0} {};
 
   auto consume() -> LexemeType;
   auto peak() -> LexemeType;
@@ -45,8 +46,8 @@ class Lexer {
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around") +
-                               describePosition()};
+      throw std::runtime_error{std::string("Float conversion failed around")
+                               + describePosition()};
     }
     return val;
   }
@@ -61,9 +62,9 @@ class Lexer {
     auto ret = consumeTokenPos();
     if (ret.first != token_type) {
       throw std::runtime_error{
-          std::string("Got the wrong token type at position ") +
-          std::to_string(ret.second + 1) + " was expecting " +
-          describeToken(token_type)};
+          std::string("Got the wrong token type at position ")
+          + std::to_string(ret.second + 1) + " was expecting "
+          + describeToken(token_type)};
     }
   }
 
@@ -75,8 +76,8 @@ class Lexer {
 
  private:
   static auto isPunct(char c) -> bool {
-    return c == '[' || c == ']' || c == '(' || c == ')' || c == ':' ||
-           c == ';' || c == ',' || c == 0 || c == EOF;
+    return c == '[' || c == ']' || c == '(' || c == ')' || c == ':' || c == ';'
+           || c == ',' || c == 0 || c == EOF;
   }
 
   auto consumeTokenPos() -> std::pair<LexemeType, size_t> {
@@ -214,6 +215,7 @@ auto Lexer::consume() -> LexemeType {
 class Parser {
  public:
   explicit Parser(std::string input) : _lexer{std::move(input)} {};
+
   auto parse() -> std::shared_ptr<Tree> { return parseTree(); }
 
  private:
@@ -248,16 +250,15 @@ auto Parser::parseSubtree() -> std::shared_ptr<Node> {
   if (token == OPENING_PAREN) {
     auto tmp = parseInternal();
     if (tmp->getChildCount() < 2) {
-      throw std::runtime_error{
-          std::string("Got a singleton inner node around ") +
-          _lexer.describePosition()};
+      throw std::runtime_error{std::string("Got a singleton inner node around ")
+                               + _lexer.describePosition()};
     }
     return tmp;
   }
   auto tmp = parseLeaf();
   if (tmp->getChildCount() != 0) {
-    throw std::runtime_error{std::string("Got a leaf with children around ") +
-                             _lexer.describePosition()};
+    throw std::runtime_error{std::string("Got a leaf with children around ")
+                             + _lexer.describePosition()};
   }
   return tmp;
 }
@@ -292,8 +293,8 @@ auto Parser::parseLeaf() -> std::shared_ptr<Node> {
   parseNodeAttributes(current_node);
   if (current_node->getName().empty()) {
     throw std::runtime_error{
-        std::string("Got a leaf with an empty name around ") +
-        std::string(_lexer.describePosition())};
+        std::string("Got a leaf with an empty name around ")
+        + std::string(_lexer.describePosition())};
   }
   return current_node;
 }

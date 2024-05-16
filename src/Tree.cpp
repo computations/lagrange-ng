@@ -20,10 +20,10 @@ namespace lagrange {
 
 Tree::Tree() : Tree(nullptr) {}
 
-Tree::Tree(std::shared_ptr<Node> inroot)
-    : _root(std::move(inroot)),
-      _internal_node_count(0),
-      _external_node_count(0) {
+Tree::Tree(std::shared_ptr<Node> inroot) :
+    _root(std::move(inroot)),
+    _internal_node_count(0),
+    _external_node_count(0) {
   processRoot();
   _root->assignId();
 }
@@ -175,7 +175,8 @@ auto Tree::generateForwardOperations(Workspace &ws)
   return generateForwardOperations(ws, rm_map, pm_map);
 }
 
-auto Tree::generateForwardOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
+auto Tree::generateForwardOperations(Workspace &ws,
+                                     PeriodRateMatrixMap &rm_map,
                                      BranchProbMatrixMap &pm_map)
     -> std::vector<std::shared_ptr<SplitOperation>> {
   return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
@@ -216,8 +217,7 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
 }
 
 void Tree::assignTipData(
-    Workspace &ws,
-    const std::unordered_map<std::string, Dist> &dist_data) {
+    Workspace &ws, const std::unordered_map<std::string, Dist> &dist_data) {
   _root->assignTipData(ws, dist_data);
 }
 

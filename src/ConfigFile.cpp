@@ -31,8 +31,9 @@ void finalize(ConfigFile &config) {
 
 class ConfigLexer {
  public:
-  explicit ConfigLexer(std::string input)
-      : _input{std::move(input)}, _current_index{0} {};
+  explicit ConfigLexer(std::string input) :
+      _input{std::move(input)},
+      _current_index{0} {};
 
   auto consume() -> ConfigLexemeType {
     auto token = peak();
@@ -73,8 +74,8 @@ class ConfigLexer {
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around") +
-                               describePosition()};
+      throw std::runtime_error{std::string("Float conversion failed around")
+                               + describePosition()};
     }
     return val;
   }
@@ -84,8 +85,8 @@ class ConfigLexer {
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around") +
-                               describePosition()};
+      throw std::runtime_error{std::string("Float conversion failed around")
+                               + describePosition()};
     }
     return val;
   }
@@ -100,9 +101,9 @@ class ConfigLexer {
     auto ret = consumeTokenPos();
     if (ret.first != token_type) {
       throw std::runtime_error{
-          std::string("Got the wrong token type at position ") +
-          std::to_string(ret.second + 1) + " was expecting " +
-          describeToken(token_type)};
+          std::string("Got the wrong token type at position ")
+          + std::to_string(ret.second + 1) + " was expecting "
+          + describeToken(token_type)};
     }
   }
 
@@ -226,7 +227,8 @@ Fossil parse_fossil(ConfigLexer &lexer) {
   lexer.expect(ConfigLexemeType::VALUE);
   auto fossil_type_string = lexer.consumeValueAsString();
 
-  std::transform(fossil_type_string.cbegin(), fossil_type_string.cend(),
+  std::transform(fossil_type_string.cbegin(),
+                 fossil_type_string.cend(),
                  fossil_type_string.begin(),
                  [](char c) -> char { return std::tolower(c); });
 
@@ -275,7 +277,9 @@ ConfigFile parse_config_file(std::istream &instream) {
         time_points.resize(tmp_values.size());
 
         std::transform(
-            tmp_values.begin(), tmp_values.end(), time_points.begin(),
+            tmp_values.begin(),
+            tmp_values.end(),
+            time_points.begin(),
             [](const std::string &s) -> double { return std::stof(s); });
 
         config.periods = Periods(time_points);

@@ -14,11 +14,13 @@ struct PeriodSegment {
 class Periods {
  public:
   using const_iterator = std::vector<double>::const_iterator;
+
   Periods(const std::vector<double> &periods) : _periods{periods} {
     terminate();
   }
 
   Periods() : _periods{} { terminate(); }
+
   Periods(const Periods &) = default;
   Periods(Periods &&) = default;
 
@@ -26,9 +28,11 @@ class Periods {
   Periods &operator=(Periods &&) = default;
 
   const_iterator begin() const { return _periods.begin(); }
+
   const_iterator end() const { return _periods.end(); }
 
   double min() const { return _periods.front(); }
+
   double max() const { return _periods.back(); }
 
   bool empty() const { return _periods.empty(); }
@@ -49,9 +53,14 @@ class PeriodSpan {
    public:
     using value_type = PeriodSegment;
 
-    Iterator(double start, double len, size_t index,
-             Periods::const_iterator period)
-        : _time{start}, _length{len}, _index{index}, _period{period} {}
+    Iterator(double start,
+             double len,
+             size_t index,
+             Periods::const_iterator period) :
+        _time{start},
+        _length{len},
+        _index{index},
+        _period{period} {}
 
     value_type operator*() const {
       return {.index = _index, .duration = segmentLength()};
@@ -68,6 +77,7 @@ class PeriodSpan {
     friend bool operator==(const Iterator &a, const Iterator &b) {
       return a._length == b._length || a._period == b._period;
     }
+
     friend bool operator!=(const Iterator &a, const Iterator &b) {
       return !(a == b);
     }
@@ -80,10 +90,12 @@ class PeriodSpan {
     size_t _index;
     Periods::const_iterator _period;
   };
+
   PeriodSpan() = default;
 
-  PeriodSpan(const Periods &periods, double start, double length)
-      : _start_time{start}, _length{length} {
+  PeriodSpan(const Periods &periods, double start, double length) :
+      _start_time{start},
+      _length{length} {
     _begin = periods.begin();
     _end = periods.end();
 

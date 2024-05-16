@@ -32,26 +32,26 @@ struct CLVReservation {
 
 class Workspace {
  public:
-  Workspace(size_t taxa_count, size_t inner_count, size_t regions,
-            size_t max_areas)
-      : _taxa_count{taxa_count},
-        _inner_count{inner_count},
-        _regions{regions},
-        _states{1ULL << regions},
-        _max_areas{max_areas},
-        _next_free_clv{0},
-        _leading_dim{_states},
-        _rate_matrix{1},
-        _prob_matrix{1},
-
-        _base_frequencies_count{1},
-        _base_frequencies{nullptr},
-
-        _clv_scalars{nullptr},
-        _node_reservations{nodeCount()},
-        _periods{1},
-        _current_clock{0},
-        _reserved{false} {
+  Workspace(size_t taxa_count,
+            size_t inner_count,
+            size_t regions,
+            size_t max_areas) :
+      _taxa_count{taxa_count},
+      _inner_count{inner_count},
+      _regions{regions},
+      _states{1ULL << regions},
+      _max_areas{max_areas},
+      _next_free_clv{0},
+      _leading_dim{_states},
+      _rate_matrix{1},
+      _prob_matrix{1},
+      _base_frequencies_count{1},
+      _base_frequencies{nullptr},
+      _clv_scalars{nullptr},
+      _node_reservations{nodeCount()},
+      _periods{1},
+      _current_clock{0},
+      _reserved{false} {
     if (taxa_count == 0) {
       throw std::runtime_error{"We cannot make a workspace with zero taxa"};
     }
@@ -63,8 +63,8 @@ class Workspace {
         lagrange_compute_restricted_state_count(_regions, _max_areas);
   }
 
-  Workspace(size_t taxa_count, size_t regions, size_t max_areas)
-      : Workspace(taxa_count, taxa_count - 1, regions, max_areas) {}
+  Workspace(size_t taxa_count, size_t regions, size_t max_areas) :
+      Workspace(taxa_count, taxa_count - 1, regions, max_areas) {}
 
   ~Workspace();
 
@@ -196,10 +196,15 @@ class Workspace {
   }
 
   inline auto states() const -> size_t { return _states; }
+
   inline auto regions() const -> size_t { return _regions; }
+
   inline auto probMatrixCount() const -> size_t { return _prob_matrix.size(); }
+
   inline auto rateMatrixCount() const -> size_t { return _rate_matrix.size(); }
+
   inline auto CLVCount() const -> size_t { return _next_free_clv; }
+
   inline auto matrixSize() const -> size_t {
     return leadingDimension() * restrictedStateCount();
   }
@@ -285,9 +290,8 @@ class Workspace {
 
   void reserve();
 
-  inline auto advanceClock() -> ClockTick {
-    return _current_clock++;
-  }
+  inline auto advanceClock() -> ClockTick { return _current_clock++; }
+
   inline auto readClock() -> ClockTick { return _current_clock; }
 
   auto getPeriodParams() const -> const std::vector<PeriodParams> & {
@@ -324,8 +328,7 @@ class Workspace {
       _clvs[index]._clv[i] = 1.0;
     }
 
-    _clvs[index]._last_update =
-        std::numeric_limits<ClockTick>::max();
+    _clvs[index]._last_update = std::numeric_limits<ClockTick>::max();
   }
 
   inline auto leadingDimension() const -> size_t { return _leading_dim; }
@@ -337,6 +340,7 @@ class Workspace {
   inline auto maxAreas() const -> size_t { return _max_areas; }
 
   inline auto matrixRows() const -> size_t { return restrictedStateCount(); }
+
   inline auto matrixCols() const -> size_t { return matrixRows(); }
 
   inline auto CLVSize() const -> size_t { return restrictedStateCount(); }

@@ -124,8 +124,10 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
   return _llh_goal.begin()->result();
 }
 
-void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
-                                       bool splits, bool output,
+void Context::optimizeAndComputeValues(WorkerState& ts,
+                                       bool states,
+                                       bool splits,
+                                       bool output,
                                        const LagrangeOperationMode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
@@ -184,7 +186,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   const size_t dims = _workspace->rateMatrixCount() * 2;
   nlopt::opt opt(nlopt::LN_NELDERMEAD, dims);
-  auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
+  auto objective = [](const std::vector<double>& x,
+                      std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
     auto* obj = static_cast<OptContext*>(f_data);
@@ -240,8 +243,8 @@ auto Context::getStateResults() const
   return states;
 }
 
-auto Context::getSplitResults() const -> lagrange_split_list_t {
-  lagrange_split_list_t splits;
+auto Context::getSplitResults() const -> SplitReturnList {
+  SplitReturnList splits;
   splits.reserve(_split_lh_goal.size());
 
   for (auto& op : _split_lh_goal) { splits.push_back(op.result()); }
@@ -252,6 +255,7 @@ auto Context::getSplitResults() const -> lagrange_split_list_t {
 void Context::computeStateGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeStateGoal, tc, _workspace);
 }
+
 void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
 }
@@ -280,7 +284,7 @@ auto Context::computeStateGoal(WorkerState& ts)
   return getStateResults();
 }
 
-auto Context::computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t {
+auto Context::computeSplitGoal(WorkerState& ts) -> SplitReturnList {
   auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeSplitGoal(ts, tc);

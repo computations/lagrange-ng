@@ -30,6 +30,7 @@ class Node {
  public:
   Node();
   Node(double bl, size_t number, std::string name);
+
   ~Node() {
     for (auto &c : _children) { c.reset(); }
   }
@@ -95,7 +96,8 @@ class Node {
       -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
                    std::shared_ptr<DispersionOperation>>;
 
-  auto generateDispersionOperations(Workspace &ws, PeriodRateMatrixMap &rm_map,
+  auto generateDispersionOperations(Workspace &ws,
+                                    PeriodRateMatrixMap &rm_map,
                                     BranchProbMatrixMap &pm_map) const
       -> std::shared_ptr<DispersionOperation>;
 
@@ -105,7 +107,8 @@ class Node {
       -> std::shared_ptr<DispersionOperation>;
 
   auto traverseAndGenerateBackwardOperations(
-      Workspace &ws, const std::shared_ptr<MakeRateMatrixOperation> &rm_op,
+      Workspace &ws,
+      const std::shared_ptr<MakeRateMatrixOperation> &rm_op,
       bool root = false) const
       -> std::pair<std::vector<ReverseSplitOperation>,
                    std::shared_ptr<DispersionOperation>>;
@@ -122,9 +125,9 @@ class Node {
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
   void applyPreorder(const std::function<void(Node &)> &func);
 
-  void assignTipData(Workspace &ws,
-                     const std::unordered_map<std::string, Dist>
-                         &distrib_data) const;
+  void assignTipData(
+      Workspace &ws,
+      const std::unordered_map<std::string, Dist> &distrib_data) const;
 
   size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
@@ -142,12 +145,15 @@ class Node {
  private:
   void assignIdRecursive(size_t &id);
 
-  auto getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+  auto getRateMatrixOperation(Workspace &ws,
+                              PeriodRateMatrixMap &rm_map,
                               size_t period) const
       -> std::shared_ptr<MakeRateMatrixOperation>;
 
-  auto getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
-                              BranchProbMatrixMap &pm_map, PeriodSegment period,
+  auto getProbMatrixOperation(Workspace &ws,
+                              PeriodRateMatrixMap &rm_map,
+                              BranchProbMatrixMap &pm_map,
+                              PeriodSegment period,
                               bool transpose = false) const
       -> std::shared_ptr<ExpmOperation>;
 

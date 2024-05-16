@@ -51,8 +51,7 @@ struct ConfigFile {
   size_t region_count{};
   Option<size_t> workers;
   Option<size_t> threads_per_worker;
-  Option<LagrangeOperationMode> run_mode{
-      LagrangeOperationMode::OPTIMIZE};
+  Option<LagrangeOperationMode> run_mode{LagrangeOperationMode::OPTIMIZE};
   Option<std::pair<double, double>> rate_params;
 
   std::filesystem::path resultsFilename() const;

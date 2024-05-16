@@ -50,7 +50,17 @@ std::vector<std::string> lagrange_convert_dist_to_list(
 constexpr size_t factorial_table_size = 11;
 
 constexpr std::array<size_t, factorial_table_size> factorial_table = {
-    1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
+    1,
+    1,
+    2,
+    6,
+    24,
+    120,
+    720,
+    5040,
+    40320,
+    362880,
+    3628800,
 };
 
 constexpr inline auto factorial(uint64_t i) -> size_t {

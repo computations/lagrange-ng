@@ -21,13 +21,12 @@
 #include "Common.hpp"
 
 namespace lagrange {
-AncSplit::AncSplit(Dist dist, Dist ldesc,
-                   Dist rdesc, double we)
-    : _weight(we),
-      _likelihood(0.0),
-      anc_dist(dist),
-      l_dist(ldesc),
-      r_dist(rdesc) {}
+AncSplit::AncSplit(Dist dist, Dist ldesc, Dist rdesc, double we) :
+    _weight(we),
+    _likelihood(0.0),
+    anc_dist(dist),
+    l_dist(ldesc),
+    r_dist(rdesc) {}
 
 auto AncSplit::getWeight() const -> double { return _weight; }
 

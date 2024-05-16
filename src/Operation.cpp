@@ -43,7 +43,9 @@ static auto operator<<(std::ostream &os,
   return os;
 }
 
-inline void generate_splits(uint64_t state, size_t regions, size_t max_areas,
+inline void generate_splits(uint64_t state,
+                            size_t regions,
+                            size_t max_areas,
                             std::vector<RegionSplit> &results) {
   assert(regions > 0);
   results.clear();
@@ -71,12 +73,16 @@ inline void generate_splits(uint64_t state, size_t regions, size_t max_areas,
   }
 }
 
-inline void join_splits(
-    Dist splitting_dist, size_t dist_index, size_t regions,
-    size_t max_areas, std::vector<RegionSplit> &splits,
-    const LagrangeConstColVector &c1, const LagrangeConstColVector &c2,
-    LagrangeColVector dest, bool &scale,
-    const std::function<size_t(Dist)> &dist_map) {
+inline void join_splits(Dist splitting_dist,
+                        size_t dist_index,
+                        size_t regions,
+                        size_t max_areas,
+                        std::vector<RegionSplit> &splits,
+                        const LagrangeConstColVector &c1,
+                        const LagrangeConstColVector &c2,
+                        LagrangeColVector dest,
+                        bool &scale,
+                        const std::function<size_t(Dist)> &dist_map) {
   generate_splits(splitting_dist, regions, max_areas, splits);
   double sum = 0.0;
   for (auto &p : splits) {
@@ -106,19 +112,24 @@ static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
   return ret;
 }
 
-constexpr auto weighted_combine_check_happy_path(
-    size_t states, size_t max_areas,
-    const Option<Dist> &fixed_dist,
-    Dist excl_area_mask, Dist incl_area_mask) {
-  return (states == max_areas) && (!fixed_dist.hasValue()) &&
-         (excl_area_mask == 0) && (incl_area_mask == 0);
+constexpr auto weighted_combine_check_happy_path(size_t states,
+                                                 size_t max_areas,
+                                                 const Option<Dist> &fixed_dist,
+                                                 Dist excl_area_mask,
+                                                 Dist incl_area_mask) {
+  return (states == max_areas) && (!fixed_dist.hasValue())
+         && (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 
 inline void weighted_combine(const LagrangeConstColVector &c1,
-                             const LagrangeConstColVector &c2, size_t states,
-                             size_t regions, size_t max_areas,
-                             LagrangeColVector dest, size_t c1_scale,
-                             size_t c2_scale, size_t &scale_count,
+                             const LagrangeConstColVector &c2,
+                             size_t states,
+                             size_t regions,
+                             size_t max_areas,
+                             LagrangeColVector dest,
+                             size_t c1_scale,
+                             size_t c2_scale,
+                             size_t &scale_count,
                              const Option<Dist> &fixed_dist,
                              Dist excl_area_mask,
                              Dist incl_area_mask) {
@@ -129,12 +140,12 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
   std::vector<RegionSplit> splits;
 
-  if (weighted_combine_check_happy_path(states, max_areas, fixed_dist,
-                                        excl_area_mask, incl_area_mask)) {
+  if (weighted_combine_check_happy_path(
+          states, max_areas, fixed_dist, excl_area_mask, incl_area_mask)) {
     const auto identity_func = [](Dist d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
-      join_splits(i, i, regions, max_areas, splits, c1, c2, dest, scale,
-                  identity_func);
+      join_splits(
+          i, i, regions, max_areas, splits, c1, c2, dest, scale, identity_func);
     }
   } else {
     Dist dist = 0;
@@ -154,7 +165,15 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
-      join_splits(dist, index, regions, max_areas, splits, c1, c2, dest, scale,
+      join_splits(dist,
+                  index,
+                  regions,
+                  max_areas,
+                  splits,
+                  c1,
+                  c2,
+                  dest,
+                  scale,
                   dist_map_func);
     }
   }
@@ -168,11 +187,14 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
   }
 }
 
-inline void reverse_join_splits(
-    Dist i, size_t regions, size_t max_areas,
-    std::vector<RegionSplit> &splits, const LagrangeConstColVector &c1,
-    const LagrangeConstColVector &c2, LagrangeColVector dest,
-    const std::function<size_t(Dist)> &dist_map) {
+inline void reverse_join_splits(Dist i,
+                                size_t regions,
+                                size_t max_areas,
+                                std::vector<RegionSplit> &splits,
+                                const LagrangeConstColVector &c1,
+                                const LagrangeConstColVector &c2,
+                                LagrangeColVector dest,
+                                const std::function<size_t(Dist)> &dist_map) {
   generate_splits(i, regions, max_areas, splits);
   if (splits.empty()) { return; }
 
@@ -191,11 +213,15 @@ inline void reverse_join_splits(
   // for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
 }
 
-inline void reverse_weighted_combine(
-    const LagrangeConstColVector &c1, const LagrangeConstColVector &c2,
-    size_t states, size_t regions, size_t max_areas, LagrangeColVector dest,
-    const Option<Dist> &fixed_dist,
-    Dist excl_area_mask, Dist incl_area_mask) {
+inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
+                                     const LagrangeConstColVector &c2,
+                                     size_t states,
+                                     size_t regions,
+                                     size_t max_areas,
+                                     LagrangeColVector dest,
+                                     const Option<Dist> &fixed_dist,
+                                     Dist excl_area_mask,
+                                     Dist incl_area_mask) {
   assert(states != 0);
   // size_t regions = lagrange_fast_log2(states);
 
@@ -204,8 +230,8 @@ inline void reverse_weighted_combine(
   if (max_areas == regions && !fixed_dist.hasValue()) {
     const auto identity_func = [](Dist d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
-      reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
-                          identity_func);
+      reverse_join_splits(
+          i, regions, max_areas, splits, c1, c2, dest, identity_func);
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
@@ -226,8 +252,8 @@ inline void reverse_weighted_combine(
 
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
-      reverse_join_splits(dist, regions, max_areas, splits, c1, c2, dest,
-                          dist_map_func);
+      reverse_join_splits(
+          dist, regions, max_areas, splits, c1, c2, dest, dist_map_func);
     }
 
     /*
@@ -358,8 +384,8 @@ auto MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  if ((_rate_matrix_op != nullptr) &&
-      (_last_execution > _rate_matrix_op->lastUpdate())) {
+  if ((_rate_matrix_op != nullptr)
+      && (_last_execution > _rate_matrix_op->lastUpdate())) {
     return;
   }
 
@@ -388,8 +414,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   double inf_norm =
       LAPACKE_dlange(CblasRowMajor, 'I', rows, rows, _A.get(), leading_dim);
 #else
-  double inf_norm = LAPACK_dlange("I", &rows, &rows, _A.get(), &leading_dim,
-                                  _lapack_work_buffer.get());
+  double inf_norm = LAPACK_dlange(
+      "I", &rows, &rows, _A.get(), &leading_dim, _lapack_work_buffer.get());
 #endif
   assert(inf_norm > 0.0);
   int At_norm = static_cast<int>(inf_norm * _t);
@@ -447,9 +473,20 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     sign *= -1.0;
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rows, rows,
-                1.0, _A.get(), leading_dim, _X_1.get(), leading_dim, 0.0,
-                _X_2.get(), leading_dim);
+    cblas_dgemm(CblasRowMajor,
+                CblasNoTrans,
+                CblasNoTrans,
+                rows,
+                rows,
+                rows,
+                1.0,
+                _A.get(),
+                leading_dim,
+                _X_1.get(),
+                leading_dim,
+                0.0,
+                _X_2.get(),
+                leading_dim);
     cblas_daxpy(ws->matrixSize(), c, _X_2.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrixSize(), sign * c, _X_2.get(), 1, _D.get(), 1);
 
@@ -460,9 +497,20 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     sign *= -1.0;
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rows, rows,
-                1.0, _A.get(), leading_dim, _X_2.get(), leading_dim, 0.0,
-                _X_1.get(), leading_dim);
+    cblas_dgemm(CblasRowMajor,
+                CblasNoTrans,
+                CblasNoTrans,
+                rows,
+                rows,
+                rows,
+                1.0,
+                _A.get(),
+                leading_dim,
+                _X_2.get(),
+                leading_dim,
+                0.0,
+                _X_1.get(),
+                leading_dim);
     cblas_daxpy(ws->matrixSize(), c, _X_1.get(), 1, _N.get(), 1);
     cblas_daxpy(ws->matrixSize(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
@@ -471,21 +519,33 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   {
 #ifdef MKL_ENABLED
-    long long int *ipiv = (long long int *)malloc(sizeof(long long int) *
-                                                  static_cast<size_t>(rows));
+    long long int *ipiv = (long long int *)malloc(sizeof(long long int)
+                                                  * static_cast<size_t>(rows));
 #else
     int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
 #endif
     assert(ipiv != nullptr);
 
 #ifdef MKL_ENABLED
-    ret = LAPACKE_dgesv(CblasRowMajor, rows, rows, _D.get(), leading_dim, ipiv,
-                        _N.get(), leading_dim);
+    ret = LAPACKE_dgesv(CblasRowMajor,
+                        rows,
+                        rows,
+                        _D.get(),
+                        leading_dim,
+                        ipiv,
+                        _N.get(),
+                        leading_dim);
     assert(ret == 0);
 #else
     int info = 0;
-    LAPACK_dgesv(&rows, &rows, _D.get(), &leading_dim, ipiv, _N.get(),
-                 &leading_dim, &info);
+    LAPACK_dgesv(&rows,
+                 &rows,
+                 _D.get(),
+                 &leading_dim,
+                 ipiv,
+                 _N.get(),
+                 &leading_dim,
+                 &info);
     assert(info == 0);
 #endif
 
@@ -495,23 +555,41 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   auto &r1 = _N;
   auto &r2 = _D;
   for (int i = 0; i < scale_exp; ++i) {
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rows, rows,
-                1.0, r1.get(), leading_dim, r1.get(), leading_dim, 0.0,
-                r2.get(), leading_dim);
+    cblas_dgemm(CblasRowMajor,
+                CblasNoTrans,
+                CblasNoTrans,
+                rows,
+                rows,
+                rows,
+                1.0,
+                r1.get(),
+                leading_dim,
+                r1.get(),
+                leading_dim,
+                0.0,
+                r2.get(),
+                leading_dim);
     std::swap(r1, r2);
   }
 
   if (_transposed) {
 #ifdef MKL_ENABLED
-    mkl_dimatcopy('r', 't', rows, rows, 1.0, r1.get(), leading_dim,
-                  leading_dim);
+    mkl_dimatcopy(
+        'r', 't', rows, rows, 1.0, r1.get(), leading_dim, leading_dim);
     for (size_t i = 0; i < static_cast<size_t>(rows); i++) {
       r1.get()[ws->compute_matrix_index(i, 0)] = 0.0;
     }
     r1.get()[0] = 1.0;
 #else
-    cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
-                    leading_dim, r2.get(), leading_dim);
+    cblas_domatcopy(CblasRowMajor,
+                    CblasTrans,
+                    rows,
+                    rows,
+                    1.0,
+                    r1.get(),
+                    leading_dim,
+                    r2.get(),
+                    leading_dim);
     for (int i = 0; i < rows; i++) {
       r2.get()[ws->computeMatrixIndex(i, 0)] = 0.0;
     }
@@ -527,7 +605,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 }
 
 void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                std::ostream &os, size_t tabLevel) const {
+                                std::ostream &os,
+                                size_t tabLevel) const {
   if (_arnoldi_mode) { return; }
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
@@ -576,8 +655,11 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   if (_expm_op != nullptr) {
     if (_expm_op->isArnoldiMode()) {
-      expm::multiply_arnoldi_chebyshev(ws, _expm_op->rateMatrix(), _bot_clv,
-                                       _top_clv, _expm_op->transposed(),
+      expm::multiply_arnoldi_chebyshev(ws,
+                                       _expm_op->rateMatrix(),
+                                       _bot_clv,
+                                       _top_clv,
+                                       _expm_op->transposed(),
                                        _expm_op->getT());
     } else {
       if (_expm_op.use_count() > 1) {
@@ -590,17 +672,25 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   if (_expm_op != nullptr && !_expm_op->isArnoldiMode()) {
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restrictedStateCount(),
-                ws->restrictedStateCount(), 1.0,
-                ws->probMatrix(_prob_matrix_index), ws->leadingDimension(),
-                ws->CLV(_bot_clv), 1, 0.0, ws->CLV(_top_clv), 1);
+    cblas_dgemv(CblasRowMajor,
+                CblasNoTrans,
+                ws->restrictedStateCount(),
+                ws->restrictedStateCount(),
+                1.0,
+                ws->probMatrix(_prob_matrix_index),
+                ws->leadingDimension(),
+                ws->CLV(_bot_clv),
+                1,
+                0.0,
+                ws->CLV(_top_clv),
+                1);
   }
 
   if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
     auto &top_clv = ws->CLV(_top_clv);
     for (size_t i = 0; i < ws->CLVSize(); ++i) {
-      if (std::isnan(top_clv[i]) ||
-          ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
+      if (std::isnan(top_clv[i])
+          || ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
         fallback();
         eval(ws);
         break;
@@ -615,7 +705,8 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                      std::ostream &os, size_t tabLevel) const {
+                                      std::ostream &os,
+                                      size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
 
   os << opening_line(tabs) << "\n";
@@ -662,18 +753,26 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   const auto &lchild_clv = ws->CLV(_lbranch_clv_index);
   const auto &rchild_clv = ws->CLV(_rbranch_clv_index);
 
-  weighted_combine(
-      lchild_clv, rchild_clv, ws->restrictedStateCount(), ws->regions(),
-      ws->maxAreas(), parent_clv, ws->CLVScalar(_lbranch_clv_index),
-      ws->CLVScalar(_rbranch_clv_index), ws->CLVScalar(_parent_clv_index),
-      _fixed_dist, _excl_area_mask.get(0), _incl_area_mask.get(0));
+  weighted_combine(lchild_clv,
+                   rchild_clv,
+                   ws->restrictedStateCount(),
+                   ws->regions(),
+                   ws->maxAreas(),
+                   parent_clv,
+                   ws->CLVScalar(_lbranch_clv_index),
+                   ws->CLVScalar(_rbranch_clv_index),
+                   ws->CLVScalar(_parent_clv_index),
+                   _fixed_dist,
+                   _excl_area_mask.get(0),
+                   _incl_area_mask.get(0));
 
   _last_execution = ws->advanceClock();
   ws->updateCLVClock(_parent_clv_index);
 }
 
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                 std::ostream &os, size_t tabLevel) const {
+                                 std::ostream &os,
+                                 size_t tabLevel) const {
   std::string tabs = make_tabs(tabLevel);
   os << opening_line(tabs) << "\n";
   os << tabs << "SplitOperation:\n";
@@ -721,10 +820,15 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
     const auto &ltop_clv = ws->CLV(_ltop_clv_index);
     const auto &rtop_clv = ws->CLV(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, ws->restrictedStateCount(),
-                             ws->regions(), ws->maxAreas(),
-                             ws->CLV(_bot_clv_index), _fixed_dist,
-                             _excl_area_mask.get(0), _incl_area_mask.get(0));
+    reverse_weighted_combine(ltop_clv,
+                             rtop_clv,
+                             ws->restrictedStateCount(),
+                             ws->regions(),
+                             ws->maxAreas(),
+                             ws->CLV(_bot_clv_index),
+                             _fixed_dist,
+                             _excl_area_mask.get(0),
+                             _incl_area_mask.get(0));
 
     for (size_t i = 0; i < ws->CLVSize(); ++i) {
       assert(!std::isnan(ws->CLV(_bot_clv_index)[i]));
@@ -782,11 +886,14 @@ auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  double rho = cblas_ddot(ws->CLVSize(), ws->CLV(_root_clv_index), 1,
-                          ws->getBaseFrequencies(_prior_index), 1);
+  double rho = cblas_ddot(ws->CLVSize(),
+                          ws->CLV(_root_clv_index),
+                          1,
+                          ws->getBaseFrequencies(_prior_index),
+                          1);
   assert(rho > 0.0);
-  _result = std::log(rho) -
-            lagrange_scaling_factor_log * ws->CLVScalar(_root_clv_index);
+  _result = std::log(rho)
+            - lagrange_scaling_factor_log * ws->CLVScalar(_root_clv_index);
 
   _last_execution = ws->advanceClock();
 }
@@ -804,11 +911,18 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 
   size_t tmp_scalar = 0;
 
-  weighted_combine(ws->CLV(_lchild_clv_index), ws->CLV(_rchild_clv_index),
-                   _states, ws->regions(), ws->maxAreas(), _result.get(),
+  weighted_combine(ws->CLV(_lchild_clv_index),
+                   ws->CLV(_rchild_clv_index),
+                   _states,
+                   ws->regions(),
+                   ws->maxAreas(),
+                   _result.get(),
                    ws->CLVScalar(_lchild_clv_index),
-                   ws->CLVScalar(_rchild_clv_index), tmp_scalar, _fixed_dist,
-                   _excl_area_mask, _incl_area_mask);
+                   ws->CLVScalar(_rchild_clv_index),
+                   tmp_scalar,
+                   _fixed_dist,
+                   _excl_area_mask,
+                   _incl_area_mask);
 
   tmp_scalar += ws->CLVScalar(_parent_clv_index);
   auto result = _result.get();
@@ -816,17 +930,17 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
     double tmp_val = result[i];
     double parent_val = ws->CLV(_parent_clv_index)[i];
-    result[i] = std::log(tmp_val * parent_val) -
-                tmp_scalar * lagrange_scaling_factor_log;
+    result[i] = std::log(tmp_val * parent_val)
+                - tmp_scalar * lagrange_scaling_factor_log;
     assert(!std::isnan(result[i]));
   }
   _last_execution = ws->advanceClock();
 }
 
 auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution &&
-         ws->lastUpdateCLV(_rchild_clv_index) > _last_execution &&
-         ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
+  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
+         && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
+         && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
 }
 
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
@@ -849,8 +963,8 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
     double weight = 1.0 / splits.size();
     for (auto sp : splits) {
       AncSplit anc_split(index, sp.left, sp.right, weight);
-      double lh = parent_clv[index] * lchild_clv[sp.left] *
-                  rchild_clv[sp.right] * weight;
+      double lh = parent_clv[index] * lchild_clv[sp.left] * rchild_clv[sp.right]
+                  * weight;
       anc_split.setLikelihood(std::log(lh));
       anc_split_vec.push_back(anc_split);
     }
@@ -860,8 +974,8 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 }
 
 auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution &&
-         ws->lastUpdateCLV(_rchild_clv_index) > _last_execution &&
-         ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
+  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
+         && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
+         && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
 }
 }  // namespace lagrange
