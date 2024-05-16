@@ -116,7 +116,7 @@ void Node::setHeightReverse(double h) {
   for (const auto &c : _children) { c->setHeightReverse(_height); }
 }
 
-auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                      const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
   if (current->_children.empty()) {
@@ -128,7 +128,7 @@ auto getMRCAWithNode(const std::shared_ptr<Node> &current,
   }
   std::shared_ptr<Node> mrca = nullptr;
   for (auto &c : current->_children) {
-    auto tmp_mrca = getMRCAWithNode(c, leaves);
+    auto tmp_mrca = getMRCAWithNodes(c, leaves);
     if (tmp_mrca != nullptr) {
       // if this is our second match, then we can return with this pointer.
       if (mrca != nullptr) { return current; }
@@ -166,7 +166,7 @@ auto Node::traverseAndGenerateForwardOperations(
   }
 
   if (_children.empty()) {
-    ws.register_top_clv(_id);
+    ws.registerTopCLV(_id);
     return {{}, generateDispersionOperations(ws, pm_map, bm_map)};
   }
 
@@ -181,15 +181,15 @@ auto Node::traverseAndGenerateForwardOperations(
   split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
   split_ops.insert(split_ops.end(), rchild.first.begin(), rchild.first.end());
 
-  ws.register_top_clv(_id);
-  ws.register_children_clv(_id);
-  lchild.second->terminate_top(ws.get_lchild_clv(_id));
-  rchild.second->terminate_top(ws.get_rchild_clv(_id));
+  ws.registerTopCLV(_id);
+  ws.registerChildrenCLV(_id);
+  lchild.second->terminateTop(ws.getLeftChildCLV(_id));
+  rchild.second->terminateTop(ws.getRightChildCLV(_id));
 
   split_ops.push_back(std::make_shared<SplitOperation>(
-      ws.get_top_clv(_id), lchild.second, rchild.second));
+      ws.getTopCLV(_id), lchild.second, rchild.second));
 
-  if (_incl_area_mask.has_value()) {
+  if (_incl_area_mask.hasValue()) {
     split_ops.back()->setInclAreas(_incl_area_mask.get());
   }
 
@@ -211,30 +211,30 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
 
   std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
 
-  ws.register_top_clv_reverse(_id);
+  ws.registerTopCLVReverse(_id);
 
   auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
   if (root && disp_ops == nullptr) {
-    ws.register_bot1_clv_reverse(_id);
+    ws.registerBot1CLVReverse(_id);
     rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.get_bot1_clv_reverse(_id), ws.get_top_clv_reverse(_id),
-        ws.get_rchild_clv(_id)));
+        ws.getBot1CLVReverse(_id), ws.getTopCLVReverse(_id),
+        ws.getRightChildCLV(_id)));
 
-    ws.register_bot2_clv_reverse(_id);
+    ws.registerBot2CLVReverse(_id);
     rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.get_bot2_clv_reverse(_id), ws.get_top_clv_reverse(_id),
-        ws.get_lchild_clv(_id)));
+        ws.getBot2CLVReverse(_id), ws.getTopCLVReverse(_id),
+        ws.getLeftChildCLV(_id)));
   } else {
-    ws.register_bot1_clv_reverse(_id);
+    ws.registerBot1CLVReverse(_id);
     rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.get_bot1_clv_reverse(_id), ws.get_rchild_clv(_id), disp_ops));
+        ws.getBot1CLVReverse(_id), ws.getRightChildCLV(_id), disp_ops));
 
-    ws.register_bot2_clv_reverse(_id);
+    ws.registerBot2CLVReverse(_id);
     rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.get_bot2_clv_reverse(_id), ws.get_lchild_clv(_id), disp_ops));
+        ws.getBot2CLVReverse(_id), ws.getLeftChildCLV(_id), disp_ops));
   }
-  if (_incl_area_mask.has_value()) {
+  if (_incl_area_mask.hasValue()) {
     rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(_incl_area_mask.get());
     rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(_incl_area_mask.get());
   }
@@ -244,7 +244,7 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
         _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
-    child_disp_op->terminate_bot(ws.get_bot1_clv_reverse(_id));
+    child_disp_op->terminateBot(ws.getBot1CLVReverse(_id));
     rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
                       child_trav.first.end());
   }
@@ -254,7 +254,7 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
         _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
     auto child_disp_op = child_trav.second;
 
-    child_disp_op->terminate_bot(ws.get_bot2_clv_reverse(_id));
+    child_disp_op->terminateBot(ws.getBot2CLVReverse(_id));
     rsplit_ops.insert(rsplit_ops.end(), child_trav.first.begin(),
                       child_trav.first.end());
   }
@@ -266,18 +266,18 @@ auto Node::generateDispersionOperations(Workspace &ws,
                                         BranchProbMatrixMap &pm_map) const
     -> std::shared_ptr<DispersionOperation> {
   std::shared_ptr<DispersionOperation> child_op = nullptr;
-  size_t top_clv = ws.get_top_clv(_id);
+  size_t top_clv = ws.getTopCLV(_id);
 
   for (const auto period : _periods) {
     auto tmp = std::make_shared<DispersionOperation>(
         top_clv, getProbMatrixOperation(ws, rm_map, pm_map, period));
     tmp->setChildOp(child_op);
-    tmp->terminate_top(ws.register_generic_clv());
-    top_clv = tmp->top_clv_index();
+    tmp->terminateTop(ws.registerGenericCLV());
+    top_clv = tmp->topCLVIndex();
     child_op = tmp;
   }
 
-  if (child_op) { child_op->unterminate_top(); }
+  if (child_op) { child_op->unterminateTop(); }
   return child_op;
 }
 
@@ -291,14 +291,14 @@ auto Node::generateDispersionOperationsReverse(
   std::shared_ptr<DispersionOperation> child_op = nullptr;
   for (const auto period : reverse_periods) {
     auto tmp = std::make_shared<DispersionOperation>(
-        ws.get_top_clv_reverse(_id), std::numeric_limits<size_t>::max(),
+        ws.getTopCLVReverse(_id), std::numeric_limits<size_t>::max(),
         getProbMatrixOperation(ws, rm_map, pm_map, period, true));
     tmp->setChildOp(child_op);
-    tmp->terminate_bot(ws.get_top_clv_reverse(_id));
+    tmp->terminateBot(ws.getTopCLVReverse(_id));
     child_op = tmp;
   };
 
-  if (child_op) { child_op->unterminate_bot(); }
+  if (child_op) { child_op->unterminateBot(); }
   return child_op;
 }
 
@@ -336,7 +336,7 @@ void Node::assignTipData(Workspace &ws,
                          const std::unordered_map<std::string, lagrange_dist_t>
                              &distrib_data) const {
   if (_children.empty()) {
-    ws.set_tip_clv(ws.get_top_clv(_id), distrib_data.at(_label));
+    ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
   } else {
     for (const auto &c : _children) { c->assignTipData(ws, distrib_data); }
   }
@@ -370,7 +370,7 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   return count;
 }
 
-void Node::assignInclAreas(lagrange_dist_t incl_area_mask) {
+void Node::assignIncludedAreas(lagrange_dist_t incl_area_mask) {
   _incl_area_mask = incl_area_mask;
 }
 
@@ -390,11 +390,11 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-lagrange_option_t<lagrange_dist_t> Node::getFixedDist() const {
+LagrangeOption<lagrange_dist_t> Node::getFixedDist() const {
   return _fixed_dist;
 }
 
-lagrange_option_t<lagrange_dist_t> Node::getInclAreas() const {
+LagrangeOption<lagrange_dist_t> Node::getIncludedAreas() const {
   return _incl_area_mask;
 }
 
@@ -408,7 +408,7 @@ auto Node::getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
   auto it = rm_map.find(period);
   if (it == rm_map.end()) {
     auto rm = std::make_shared<MakeRateMatrixOperation>(
-        ws.reserve_rate_matrix_index(period), period);
+        ws.reserveRateMatrixIndex(period), period);
     rm_map.emplace(period, rm);
     return rm;
   }
@@ -426,7 +426,7 @@ auto Node::getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
   auto it = pm_map.find(key);
   if (it == pm_map.end()) {
     auto rm = getRateMatrixOperation(ws, rm_map, period.index);
-    auto pm = std::make_shared<ExpmOperation>(ws.suggest_prob_matrix_index(),
+    auto pm = std::make_shared<ExpmOperation>(ws.suggestProbMatrixIndex(),
                                               _branch_length, rm, transpose);
     pm_map.emplace(key, pm);
     return pm;

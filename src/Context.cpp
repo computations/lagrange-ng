@@ -30,8 +30,8 @@ void Context::registerBackwardOperations() {
 void Context::registerLHGoal() {
   if (_forward_operations.empty()) { registerForwardOperations(); }
 
-  auto root_clv = _forward_operations.back()->get_parent_clv();
-  size_t frequency_index = _workspace->suggest_freq_vector_index();
+  auto root_clv = _forward_operations.back()->getParentCLV();
+  size_t frequency_index = _workspace->suggestFreqVectorIndex();
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
 
@@ -39,13 +39,13 @@ void Context::registerStateLHGoal() {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
   auto cb = [&](Node& n) {
-    _state_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
-                                _workspace->get_lchild_clv(n.getId()),
-                                _workspace->get_rchild_clv(n.getId()));
-    if (n.getInclAreas().has_value()) {
-      _state_lh_goal.back().setInclAreas(n.getInclAreas().get());
+    _state_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
+                                _workspace->getLeftChildCLV(n.getId()),
+                                _workspace->getRightChildCLV(n.getId()));
+    if (n.getIncludedAreas().hasValue()) {
+      _state_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
     }
-    if (n.getFixedDist().has_value()) {
+    if (n.getFixedDist().hasValue()) {
       _state_lh_goal.back().fixDist(n.getFixedDist().get());
     }
   };
@@ -57,13 +57,13 @@ void Context::registerSplitLHGoal() {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
   auto cb = [&](Node& n) {
-    _split_lh_goal.emplace_back(_workspace->get_top_clv_reverse(n.getId()),
-                                _workspace->get_lchild_clv(n.getId()),
-                                _workspace->get_rchild_clv(n.getId()));
-    if (n.getInclAreas().has_value()) {
-      _split_lh_goal.back().setInclAreas(n.getInclAreas().get());
+    _split_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
+                                _workspace->getLeftChildCLV(n.getId()),
+                                _workspace->getRightChildCLV(n.getId()));
+    if (n.getIncludedAreas().hasValue()) {
+      _split_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
     }
-    if (n.getFixedDist().has_value()) {
+    if (n.getFixedDist().hasValue()) {
       _split_lh_goal.back().fixDist(n.getFixedDist().get());
     }
   };
@@ -71,29 +71,29 @@ void Context::registerSplitLHGoal() {
   _tree->applyPreorderInternalOnly(cb);
 }
 
-void Context::updateRates(const std::vector<period_params_t>& params) {
+void Context::updateRates(const std::vector<PeriodParams>& params) {
   for (size_t i = 0; i < _rate_matrix_ops.size(); ++i) {
-    _rate_matrix_ops[i]->update_rates(_workspace, params[i]);
+    _rate_matrix_ops[i]->updateRates(_workspace, params[i]);
     _rate_matrix_ops[i]->eval(_workspace);
   }
 }
 
 void Context::init() {
   _workspace->reserve();
-  std::vector<period_params_t> initial_rates(_workspace->rate_matrix_count(),
+  std::vector<PeriodParams> initial_rates(_workspace->rateMatrixCount(),
                                              {0.01, 0.01});
-  _workspace->set_period_params_count(_workspace->rate_matrix_count());
+  _workspace->setPeriodParamsCount(_workspace->rateMatrixCount());
   updateRates(initial_rates);
 
   if (!_reverse_operations.empty()) {
     size_t prior_index = _reverse_operations.front()->getStableCLV();
-    _workspace->set_reverse_prior(prior_index);
+    _workspace->setReversePrior(prior_index);
   }
 
   auto fixed_dist = _forward_operations.back()->getFixedDist();
 
-  if (fixed_dist.has_value()) {
-    _workspace->set_base_frequencies_by_dist(0, fixed_dist.get());
+  if (fixed_dist.hasValue()) {
+    _workspace->setBaseFrequenciesByDist(0, fixed_dist.get());
   }
 }
 
@@ -124,20 +124,20 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
 
 void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
                                        bool splits, bool output,
-                                       const lagrange_operation_mode& mode) {
+                                       const LagrangeOperationMode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that all further code is only executed by one thread
    */
-  if (!ts.master_thread()) {
+  if (!ts.masterThread()) {
     ts.work(tc, _workspace);
     return;
   }
 
   double initial_lh = computeLLH(ts, tc);
 
-  if (mode == lagrange_operation_mode::EVALUATE) {
+  if (mode == LagrangeOperationMode::EVALUATE) {
     if (output) {
       std::cout << "LLH: " << initial_lh << std::endl;
       auto params = currentParams();
@@ -148,7 +148,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
     }
   }
 
-  if (mode == lagrange_operation_mode::OPTIMIZE) {
+  if (mode == LagrangeOperationMode::OPTIMIZE) {
     if (output) { std::cout << "Initial LLH: " << initial_lh << std::endl; }
 
     double final_lh = optimize(ts, tc);
@@ -169,7 +169,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts, bool states,
     std::cout << "Computing split goals" << std::endl;
     computeSplitGoal(ts, tc);
   }
-  ts.halt_threads();
+  ts.haltThreads();
 }
 
 auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
@@ -180,14 +180,14 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     size_t iter = 0;
   } oc{*this, tc, ts};
 
-  const size_t dims = _workspace->rate_matrix_count() * 2;
+  const size_t dims = _workspace->rateMatrixCount() * 2;
   nlopt::opt opt(nlopt::LN_NELDERMEAD, dims);
   auto objective = [](const std::vector<double>& x, std::vector<double>& grad,
                       void* f_data) -> double {
     (void)(grad);
     auto* obj = static_cast<OptContext*>(f_data);
-    std::vector<period_params_t> period_paramters(
-        obj->context._workspace->rate_matrix_count());
+    std::vector<PeriodParams> period_paramters(
+        obj->context._workspace->rateMatrixCount());
     for (size_t i = 0; i < period_paramters.size(); ++i) {
       period_paramters[i] = {x[2 * i], x[2 * i + 1]};
     }
@@ -229,8 +229,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
  * of that particular distribution at that node.
  */
 auto Context::getStateResults() const
-    -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> {
-  std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> states;
+    -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>> {
+  std::vector<std::unique_ptr<LagrangeMatrixBase[]>> states;
   states.reserve(_state_lh_goal.size());
 
   for (auto& op : _state_lh_goal) { states.push_back(op.result()); }
@@ -254,8 +254,8 @@ void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
 }
 
-auto Context::currentParams() const -> std::vector<period_params_t> {
-  return _workspace->get_period_params();
+auto Context::currentParams() const -> std::vector<PeriodParams> {
+  return _workspace->getPeriodParams();
 }
 
 #if 0
@@ -271,7 +271,7 @@ std::string Context::treeCLVStatus() const {
 #endif
 
 auto Context::computeStateGoal(WorkerState& ts)
-    -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> {
+    -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>> {
   auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeStateGoal(ts, tc);

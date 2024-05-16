@@ -28,9 +28,9 @@
 
 static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;
-  if (expm_mode.has_value()) {
+  if (expm_mode.hasValue()) {
     switch (expm_mode.get()) {
-      case lagrange_expm_computation_mode::ADAPTIVE:
+      case LagrangeEXPMComputationMode::ADAPTIVE:
         if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
           std::cout << "Enabling adaptive expm computation" << std::endl;
           context.useArnoldi();
@@ -39,11 +39,11 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
           context.useArnoldi(false, false);
         }
         break;
-      case lagrange_expm_computation_mode::PADE:
+      case LagrangeEXPMComputationMode::PADE:
         std::cout << "Using Pade's method expm computation" << std::endl;
         context.useArnoldi(false, false);
         break;
-      case lagrange_expm_computation_mode::KRYLOV:
+      case LagrangeEXPMComputationMode::KRYLOV:
         std::cout << "Using Krylov subspace based method for expm computation"
                   << std::endl;
         context.useArnoldi(true, false);
@@ -92,10 +92,10 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
   for (size_t i = 0; i < config.workers.get(); i++) {
     std::cout << "Making Worker #" << i + 1 << std::endl;
     worker_states.emplace_back();
-    worker_states.back().set_assigned_threads(config.threads_per_worker.get());
+    worker_states.back().setAssignedThreads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues, std::ref(context),
                          std::ref(worker_states[i]), config.states,
-                         config.splits, true, std::cref(config.mode.get()));
+                         config.splits, true, std::cref(config.run_mode.get()));
   }
 
   std::cout << "Waiting for workers to finish" << std::endl;
@@ -107,8 +107,8 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
 }
 
 static void setThreads(ConfigFile &config) {
-  if (!config.workers.has_value()) { config.workers = 1; }
-  if (!config.threads_per_worker.has_value()) { config.threads_per_worker = 1; }
+  if (!config.workers.hasValue()) { config.workers = 1; }
+  if (!config.threads_per_worker.hasValue()) { config.threads_per_worker = 1; }
 }
 
 static ConfigFile read_config_file(const std::string &filename) {
@@ -174,11 +174,11 @@ auto main(int argc, char *argv[]) -> int {
 
     std::cout << "reading tree..." << std::endl;
     std::vector<std::shared_ptr<Tree>> intrees =
-        read_tree_file_line_by_line(config.treefile);
+        read_tree_file_line_by_line(config.tree_filename);
 
     std::cout << "reading data..." << std::endl;
     Alignment data =
-        read_alignment(config.datafile, config.alignment_file_type);
+        read_alignment(config.data_filename, config.alignment_file_type);
 
     std::cout << "checking data..." << std::endl;
     check_alignment_against_trees(data, intrees);

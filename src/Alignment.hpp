@@ -4,6 +4,7 @@
 #include <istream>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 #include "Common.hpp"
 #include "Utils.hpp"
@@ -14,13 +15,13 @@ struct Alignment {
   size_t taxa_count;
 };
 
-enum class AlignmentFileType { fasta, phylip };
+enum class AlignmentFileType { FASTA, PHYLIP };
 
 Alignment read_fasta(std::istream& instream);
 Alignment read_phylip(std::istream& instream);
 
 Alignment read_alignment(std::istream& instream, AlignmentFileType type);
-Alignment read_alignment(const std::string& infile,
-                         lagrange_option_t<AlignmentFileType> type);
+Alignment read_alignment(const std::filesystem::path& infile,
+                         LagrangeOption<AlignmentFileType> type);
 
 #endif

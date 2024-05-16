@@ -8,11 +8,11 @@
 #include "MRCA.hpp"
 #include "Utils.hpp"
 
-enum class fossil_type { node, branch, fixed };
+enum class fossil_type { NODE, BRANCH, FIXED };
 
 struct Fossil {
   std::string mrca_name;
-  lagrange_option_t<std::shared_ptr<MRCAEntry>> clade;
+  LagrangeOption<std::shared_ptr<MRCAEntry>> clade;
   double age;
   lagrange_dist_t area;
   fossil_type type;

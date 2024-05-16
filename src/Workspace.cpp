@@ -29,17 +29,17 @@ Workspace::~Workspace() {
   delete[] _clv_scalars;
 }
 
-void Workspace::register_top_clv(size_t node_id) {
-  _node_reservations[node_id]._top_clv = register_clv();
+void Workspace::registerTopCLV(size_t node_id) {
+  _node_reservations[node_id]._top_clv = registerCLV();
 }
 
-void Workspace::register_children_clv(size_t node_id) {
-  _node_reservations[node_id]._bot1_clv = register_clv();
-  _node_reservations[node_id]._bot2_clv = register_clv();
+void Workspace::registerChildrenCLV(size_t node_id) {
+  _node_reservations[node_id]._bot1_clv = registerCLV();
+  _node_reservations[node_id]._bot2_clv = registerCLV();
 }
 
-void Workspace::set_tip_clv(size_t index, lagrange_dist_t clv_index) {
-  if (clv_index >= restricted_state_count()) {
+void Workspace::setTipCLV(size_t index, lagrange_dist_t clv_index) {
+  if (clv_index >= restrictedStateCount()) {
     throw std::runtime_error{
         "Attempted to set a state that is too large for this dataset"};
   }
@@ -55,54 +55,54 @@ void Workspace::reserve() {
     delete[] _base_frequencies;
   }
 
-  _base_frequencies = new lagrange_col_vector_t[_base_frequencies_count];
+  _base_frequencies = new LagrangeColVector[_base_frequencies_count];
 
   for (size_t i = 0; i < _base_frequencies_count; ++i) {
-    _base_frequencies[i] = new lagrange_matrix_base_t[clv_size()];
-    for (size_t j = 0; j < restricted_state_count(); j++) {
+    _base_frequencies[i] = new LagrangeMatrixBase[CLVSize()];
+    for (size_t j = 0; j < restrictedStateCount(); j++) {
       _base_frequencies[i][j] = 1.0;
     }
   }
 
-  _clvs.resize(clv_count());
+  _clvs.resize(CLVCount());
 
   for (auto &c : _clvs) {
     delete[] c._clv;
 
-    c._clv = new lagrange_matrix_base_t[clv_size()];
+    c._clv = new LagrangeMatrixBase[CLVSize()];
 
-    for (size_t j = 0; j < restricted_state_count(); j++) { c._clv[j] = 0.0; }
+    for (size_t j = 0; j < restrictedStateCount(); j++) { c._clv[j] = 0.0; }
   }
   for (auto &_clv : _clvs) {
     delete[] _clv._clv;
 
-    _clv._clv = new lagrange_matrix_base_t[clv_size()];
+    _clv._clv = new LagrangeMatrixBase[CLVSize()];
 
-    for (size_t j = 0; j < restricted_state_count(); j++) {
+    for (size_t j = 0; j < restrictedStateCount(); j++) {
       _clv._clv[j] = 0.0;
     }
   }
 
   delete[] _clv_scalars;
 
-  _clv_scalars = new size_t[clv_count()];
+  _clv_scalars = new size_t[CLVCount()];
 
-  for (size_t i = 0; i < clv_count(); i++) { _clv_scalars[i] = 0; }
+  for (size_t i = 0; i < CLVCount(); i++) { _clv_scalars[i] = 0; }
 
   for (auto &rm : _rate_matrix) {
     delete[] rm._matrix;
-    rm._matrix = new lagrange_matrix_base_t[matrix_size()];
+    rm._matrix = new LagrangeMatrixBase[matrixSize()];
   }
 
   for (auto &pm : _prob_matrix) {
     delete[] pm._matrix;
-    pm._matrix = new lagrange_matrix_base_t[matrix_size()];
+    pm._matrix = new LagrangeMatrixBase[matrixSize()];
   }
 
   _reserved = true;
 }
 
-void Workspace::set_period_params(size_t period_index, double d, double e) {
+void Workspace::setPeriodParams(size_t period_index, double d, double e) {
   _periods[period_index] = {d, e};
 }
 

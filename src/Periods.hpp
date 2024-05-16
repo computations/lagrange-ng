@@ -52,12 +52,12 @@ class PeriodSpan {
         : _time{start}, _length{len}, _index{index}, _period{period} {}
 
     value_type operator*() const {
-      return {.index = _index, .duration = segment_length()};
+      return {.index = _index, .duration = segmentLength()};
     }
 
     Iterator &operator++() {
       _index += 1;
-      _length -= std::max(segment_length(), 0.0);
+      _length -= std::max(segmentLength(), 0.0);
       _time = *_period;
       _period++;
       return *this;
@@ -71,7 +71,7 @@ class PeriodSpan {
     }
 
    private:
-    double segment_length() const {
+    double segmentLength() const {
       return std::min(*_period - _time, _length);
     }
 

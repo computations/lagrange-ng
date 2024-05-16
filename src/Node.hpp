@@ -25,34 +25,6 @@
 #include "Workspace.hpp"
 
 class Node {
- private:
-  void assignIdRecursive(size_t &id);
-
-  double _branch_length;  // branch length
-  double _height;         // could be from tip or from root
-
-  size_t _number;
-  size_t _id;
-
-  PeriodSpan _periods;
-
-  std::string _label;
-  std::string _comment;
-  std::vector<std::shared_ptr<Node>> _children;
-
-  lagrange_option_t<lagrange_dist_t> _fixed_dist;
-  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
-  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
-
-  auto getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
-                              size_t period) const
-      -> std::shared_ptr<MakeRateMatrixOperation>;
-
-  auto getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
-                              BranchProbMatrixMap &pm_map, PeriodSegment period,
-                              bool transpose = false) const
-      -> std::shared_ptr<ExpmOperation>;
-
  public:
   Node();
   Node(double bl, size_t number, std::string name);
@@ -88,11 +60,11 @@ class Node {
 
   void setSplitStringRecursive(
       const std::vector<size_t> &id_map,
-      const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
+      const std::vector<LagrangeColVector> &dist_lhs, size_t states,
       const std::vector<std::string> &names);
   void setStateStringRecursive(
       const std::vector<size_t> &id_map,
-      const std::vector<lagrange_col_vector_t> &dist_lhs, size_t states,
+      const std::vector<LagrangeColVector> &dist_lhs, size_t states,
       const std::vector<std::string> &names);
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
@@ -104,7 +76,7 @@ class Node {
                                 const std::shared_ptr<Node> &n)
       -> std::shared_ptr<Node>;
 
-  friend auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+  friend auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                               const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
@@ -156,17 +128,46 @@ class Node {
 
   void assignId();
 
-  void assignInclAreas(lagrange_dist_t fixed_dist);
+  void assignIncludedAreas(lagrange_dist_t fixed_dist);
   void assignFixedDist(lagrange_dist_t fixed_dist);
 
-  lagrange_option_t<lagrange_dist_t> getFixedDist() const;
+  LagrangeOption<lagrange_dist_t> getFixedDist() const;
 
-  lagrange_option_t<lagrange_dist_t> getInclAreas() const;
+  LagrangeOption<lagrange_dist_t> getIncludedAreas() const;
 
   void setPeriodSegments(const Periods &periods);
+
+ private:
+  void assignIdRecursive(size_t &id);
+
+  auto getRateMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                              size_t period) const
+      -> std::shared_ptr<MakeRateMatrixOperation>;
+
+  auto getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
+                              BranchProbMatrixMap &pm_map, PeriodSegment period,
+                              bool transpose = false) const
+      -> std::shared_ptr<ExpmOperation>;
+
+  double _branch_length;  // branch length
+  double _height;         // could be from tip or from root
+
+  size_t _number;
+  size_t _id;
+
+  PeriodSpan _periods;
+
+  std::string _label;
+  std::string _comment;
+  std::vector<std::shared_ptr<Node>> _children;
+
+  LagrangeOption<lagrange_dist_t> _fixed_dist;
+  LagrangeOption<lagrange_dist_t> _incl_area_mask;
+  LagrangeOption<lagrange_dist_t> _excl_area_mask;
+
 };
 
-auto getMRCAWithNode(const std::shared_ptr<Node> &current,
+auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                      const std::vector<std::shared_ptr<Node>> &nodes)
     -> std::shared_ptr<Node>;
 

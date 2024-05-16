@@ -72,23 +72,23 @@ Alignment read_phylip(std::istream& instream) {
 }
 
 Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
-  if (type == AlignmentFileType::fasta) {
+  if (type == AlignmentFileType::FASTA) {
     return read_fasta(infile);
   } else {
     return read_phylip(infile);
   }
 }
 
-Alignment read_alignment(const std::string& infile,
-                         lagrange_option_t<AlignmentFileType> type) {
+Alignment read_alignment(const std::filesystem::path& infile,
+                         LagrangeOption<AlignmentFileType> type) {
   std::ifstream alignment_file(infile);
-  if (type.has_value()) { return read_alignment(alignment_file, type.get()); }
+  if (type.hasValue()) { return read_alignment(alignment_file, type.get()); }
 
   auto extension = get_file_extension(infile);
   if (extension == "fasta" || extension == "fas") {
-    return read_alignment(alignment_file, AlignmentFileType::fasta);
+    return read_alignment(alignment_file, AlignmentFileType::FASTA);
   } else if (extension == "phylip" || extension == "phy") {
-    return read_alignment(alignment_file, AlignmentFileType::phylip);
+    return read_alignment(alignment_file, AlignmentFileType::PHYLIP);
   }
   throw std::runtime_error{"Failed to recognize alignment file type"};
 }

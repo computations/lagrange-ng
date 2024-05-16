@@ -62,27 +62,27 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                                 double t) {
   // allocate buffers
   constexpr int m = 20;
-  const int rows = static_cast<int>(ws->matrix_rows());
+  const int rows = static_cast<int>(ws->matrixRows());
   const int n = rows;
-  const int leading_dim = static_cast<int>(ws->leading_dimension());
+  const int leading_dim = static_cast<int>(ws->leadingDimension());
 
   assert(rows > 0);
   assert(leading_dim > 0);
 
   thread_local auto A =
-      std::make_unique<lagrange_matrix_base_t[]>(ws->matrix_size());
+      std::make_unique<LagrangeMatrixBase[]>(ws->matrixSize());
 
   // complex buffers
-  thread_local auto e1_c = std::make_unique<lagrange_complex_t[]>(m);
+  thread_local auto e1_c = std::make_unique<LagrangeComplex[]>(m);
   thread_local auto Hm_minus_theta_I_c =
-      std::make_unique<lagrange_complex_t[]>(m * m * N_ROOT);
-  thread_local auto y_c = std::make_unique<lagrange_complex_t[]>(m * N_ROOT);
+      std::make_unique<LagrangeComplex[]>(m * m * N_ROOT);
+  thread_local auto y_c = std::make_unique<LagrangeComplex[]>(m * N_ROOT);
 
   thread_local auto eHme1 =
-      std::make_unique<lagrange_matrix_base_t[]>(m);  // e^(Hm) * e1
-  thread_local auto H = std::make_unique<lagrange_matrix_base_t[]>((m + 1) * m);
-  thread_local auto Q = std::make_unique<lagrange_matrix_base_t[]>(n * (m + 1));
-  thread_local auto e1 = std::make_unique<lagrange_matrix_base_t[]>(m);
+      std::make_unique<LagrangeMatrixBase[]>(m);  // e^(Hm) * e1
+  thread_local auto H = std::make_unique<LagrangeMatrixBase[]>((m + 1) * m);
+  thread_local auto Q = std::make_unique<LagrangeMatrixBase[]>(n * (m + 1));
+  thread_local auto e1 = std::make_unique<LagrangeMatrixBase[]>(m);
 
 #if MKL_ENABLED
   thread_local auto ipiv_m = std::make_unique<long long int[]>(m);
@@ -91,8 +91,8 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 #endif
 
   // initialization
-  for (size_t i = 0; i < ws->matrix_size(); i++) {
-    A.get()[i] = ws->rate_matrix(rate_matrix_index)[i] * t;
+  for (size_t i = 0; i < ws->matrixSize(); i++) {
+    A.get()[i] = ws->rateMatrix(rate_matrix_index)[i] * t;
   }
 
   // so transpose before and after the expm operation is the same thing...
@@ -124,9 +124,9 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   std::fill(H.get(), H.get() + (m + 1) * m, 0.0);
   std::fill(Q.get(), Q.get() + n * (m + 1), 0.0);
 
-  const double beta = cblas_dnrm2(n, ws->clv(clv_src_index), 1);
+  const double beta = cblas_dnrm2(n, ws->CLV(clv_src_index), 1);
 
-  cblas_dcopy(n, ws->clv(clv_src_index), 1, Q.get(), m + 1);
+  cblas_dcopy(n, ws->CLV(clv_src_index), 1, Q.get(), m + 1);
   cblas_dscal(n, 1.0 / beta, Q.get(), m + 1);
 
   for (int j = 0; j < m; j++) {
@@ -169,7 +169,7 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
       lapack_complex_double_imag(Hm_minus_theta_I_c[m_sqrd * i + j]) = 0.0;
     }
 
-    lagrange_complex_t theta{ROOT_RE[i], ROOT_IM[i]};
+    LagrangeComplex theta{ROOT_RE[i], ROOT_IM[i]};
     for (size_t j = 0; j < m; j++) {
       lapack_complex_double_real(Hm_minus_theta_I_c[m_sqrd * i + j * m + j]) -=
           lapack_complex_double_real(theta);
@@ -181,7 +181,7 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
     LAPACKE_zgesv(CblasRowMajor, m, 1, Hm_minus_theta_I_c.get() + m_sqrd * i, m,
                   ipiv_m.get(), y_c.get() + m * i, 1);
 
-    lagrange_complex_t alpha{COEF_RE[i + 1], COEF_IM[i + 1]};
+    LagrangeComplex alpha{COEF_RE[i + 1], COEF_IM[i + 1]};
     cblas_zscal(m, &alpha, y_c.get() + m * i, 1);
 
     // #pragma omp critical
@@ -193,7 +193,7 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 
   // update target clv directly
   cblas_dgemv(CblasRowMajor, CblasNoTrans, n, m, beta, Q.get(), m + 1,
-              eHme1.get(), 1, 0.0, ws->clv(clv_dst_index), 1);
+              eHme1.get(), 1, 0.0, ws->CLV(clv_dst_index), 1);
 }
 
 };  // namespace expm

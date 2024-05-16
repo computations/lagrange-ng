@@ -28,10 +28,10 @@ auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
 }
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
-    -> std::unique_ptr<lagrange_matrix_base_t[]> {
-  std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
-      new lagrange_matrix_base_t[states_len]};
+    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
+    -> std::unique_ptr<LagrangeMatrixBase[]> {
+  std::unique_ptr<LagrangeMatrixBase[]> normalized_states{
+      new LagrangeMatrixBase[states_len]};
 
   for (size_t i = 0; i < states_len; i++) {
     normalized_states.get()[i] = states.get()[i];
@@ -62,7 +62,7 @@ auto normalize_state_distribution_by_lwr(
 }
 
 auto make_state_results_for_node(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &state_distribution,
+    const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
     const std::vector<std::string> &region_names, size_t states_len,
     size_t max_areas) -> nlohmann::json {
   nlohmann::json node_json;
@@ -129,7 +129,7 @@ auto make_split_results_for_node(lagrange_split_return_t &splits,
 }
 
 auto make_results_for_node(
-    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
+    const std::vector<std::unique_ptr<LagrangeMatrixBase[]>> &states,
     lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
     const std::vector<std::string> &region_names, size_t states_len,
     size_t max_areas) -> nlohmann::json {
@@ -174,7 +174,7 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
   auto states = context.getStateResults();
   auto splits = context.getSplitResults();
   root_json["node-results"] = make_results_for_node(
-      states, splits, stateGoalIndexToIdMap, config.areaNames,
+      states, splits, stateGoalIndexToIdMap, config.area_names,
       context.stateCount(), config.maxareas);
 
   write_json_file(config, root_json);
@@ -182,7 +182,7 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
 
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config) {
-  auto node_tree_filename = config.get_node_tree_filename();
+  auto node_tree_filename = config.NodeTreeFilename();
   std::cout << "Writing node annotated tree to " << node_tree_filename
             << std::endl;
 
@@ -194,7 +194,7 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
-  auto scaled_tree_filename = config.get_scaled_tree_filename();
+  auto scaled_tree_filename = config.scaledTreeFilename();
   std::cout << "Writing node annotated tree to " << scaled_tree_filename
             << std::endl;
   std::ofstream anal_tree(scaled_tree_filename);
@@ -230,8 +230,8 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
 
 void write_json_file(const ConfigFile &config,
                             const nlohmann ::json &root_json) {
-  auto json_filename = config.get_results_filename();
+  auto json_filename = config.resultsFilename();
   std::cout << "Writing results to " << json_filename << std::endl;
-  std::ofstream outfile(config.get_results_filename());
+  std::ofstream outfile(config.resultsFilename());
   outfile << root_json.dump();
 }

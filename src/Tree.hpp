@@ -23,26 +23,11 @@
 #include "Operation.hpp"
 
 class Tree {
- private:
-  std::shared_ptr<Node> _root;
-  std::vector<std::shared_ptr<Node>> _nodes;
-  std::vector<std::shared_ptr<Node>> _internal_nodes;
-  std::vector<std::shared_ptr<Node>> _external_nodes;
-  std::unordered_map<std::string, std::shared_ptr<Node>> _mrcas;
-  size_t _internal_node_count;
-  size_t _external_node_count;
-
-  void processReRoot(const std::shared_ptr<Node> &node);
-  static void exchangeInfo(const std::shared_ptr<Node> &node1,
-                           const std::shared_ptr<Node> &node2);
-  void postOrderProcessRoot(const std::shared_ptr<Node> &node);
-  auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
-
-  auto findNode(const std::shared_ptr<Node> &n) -> bool;
-
  public:
   Tree();
   explicit Tree(std::shared_ptr<Node> root);
+
+  ~Tree();
 
   void addExternalNode(const std::shared_ptr<Node> &tn);
   void addInternalNode(const std::shared_ptr<Node> &tn);
@@ -102,7 +87,22 @@ class Tree {
 
   void assignFossils(const std::vector<Fossil> &fossils);
 
-  ~Tree();
+ private:
+  void processReRoot(const std::shared_ptr<Node> &node);
+  static void exchangeInfo(const std::shared_ptr<Node> &node1,
+                           const std::shared_ptr<Node> &node2);
+  void postOrderProcessRoot(const std::shared_ptr<Node> &node);
+  auto getGreatestDistance(std::shared_ptr<Node> inNode) -> double;
+
+  auto findNode(const std::shared_ptr<Node> &n) -> bool;
+
+  std::shared_ptr<Node> _root;
+  std::vector<std::shared_ptr<Node>> _nodes;
+  std::vector<std::shared_ptr<Node>> _internal_nodes;
+  std::vector<std::shared_ptr<Node>> _external_nodes;
+  std::unordered_map<std::string, std::shared_ptr<Node>> _mrcas;
+  size_t _internal_node_count;
+  size_t _external_node_count;
 };
 
 #endif /* TREE_H_ */

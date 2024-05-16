@@ -56,8 +56,8 @@ class WorkerState {
     if (_total_threads > 0) { _total_threads--; }
   }
 
-  void set_mode(WorkerMode tm) const {
-    if (master_thread()) { _mode = tm; }
+  void setRunMode(WorkerMode tm) const {
+    if (masterThread()) { _mode = tm; }
   }
 
   void work(WorkerContext& tc, const std::shared_ptr<Workspace>& ws) {
@@ -68,7 +68,7 @@ class WorkerState {
 #endif
     while (true) {
       barrier();
-      if (master_thread()) {
+      if (masterThread()) {
         _start_index = 0;
         _finished_threads = 0;
       }
@@ -82,15 +82,15 @@ class WorkerState {
           break;
 
         case WorkerMode::ComputeSplitGoal:
-          work_goal(tc._split_lh_work_buffer, ws);
+          workGoal(tc._split_lh_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeStateGoal:
-          work_goal(tc._state_lh_work_buffer, ws);
+          workGoal(tc._state_lh_work_buffer, ws);
           break;
 
         case WorkerMode::ComputeLH:
-          if (master_thread()) { work_goal(tc._lh_goal, ws); }
+          if (masterThread()) { workGoal(tc._lh_goal, ws); }
           break;
 
         case WorkerMode::Halt:
@@ -100,25 +100,25 @@ class WorkerState {
           throw std::runtime_error{"Found a mode that doesn't exist"};
       }
       _finished_threads += 1;
-      if (master_thread()) { return; }
+      if (masterThread()) { return; }
     }
   }
 
   inline void work(WorkerMode tm, WorkerContext& tc,
                    const std::shared_ptr<Workspace>& ws) {
-    set_mode(tm);
+    setRunMode(tm);
     work(tc, ws);
   }
 
-  auto master_thread() const -> bool { return _tid == 0; }
-  auto thread_id() const -> size_t { return _tid; }
+  auto masterThread() const -> bool { return _tid == 0; }
+  auto threadID() const -> size_t { return _tid; }
 
-  void halt_threads() {
-    set_mode(WorkerMode::Halt);
+  void haltThreads() {
+    setRunMode(WorkerMode::Halt);
     barrier();
   }
 
-  void set_assigned_threads(size_t at) { _assigned_threads = at; }
+  void setAssignedThreads(size_t at) { _assigned_threads = at; }
 
   void assign_threads() const {
 #ifdef MKL_ENABLED
@@ -130,9 +130,9 @@ class WorkerState {
 
  private:
   template <typename T>
-  void work_goal(std::vector<T>& work_buffer,
+  void workGoal(std::vector<T>& work_buffer,
                  const std::shared_ptr<Workspace>& workspace) {
-    if (!master_thread()) { return; }
+    if (!masterThread()) { return; }
 
     for (auto& w : work_buffer) {
       while (!w.ready(workspace)) {}
@@ -143,8 +143,8 @@ class WorkerState {
   template <typename T>
   void work(std::vector<std::shared_ptr<T>>& work_buffer,
             const std::shared_ptr<Workspace>& workspace) {
-    for (auto w = find_work(work_buffer, workspace); w != nullptr;
-         w = find_work(work_buffer, workspace)) {
+    for (auto w = findWork(work_buffer, workspace); w != nullptr;
+         w = findWork(work_buffer, workspace)) {
       /* We only lock on greater than 2 here because we have 2 copies of the
        * shared pointer here. One in the vector, and one returned by value from
        * the find_work function
@@ -168,7 +168,7 @@ class WorkerState {
     // barrier_threads++;
     __sync_fetch_and_add(&barrier_threads, 1);
 
-    if (master_thread()) {
+    if (masterThread()) {
       while (barrier_threads < _total_threads) {}
       barrier_threads = 0;
       wait_flag = wait_flag == 0 ? 1 : 0;
@@ -180,12 +180,12 @@ class WorkerState {
   }
 
   template <typename T>
-  auto find_work_goal(std::vector<T>& work_buffer,
+  auto findWorkGoal(std::vector<T>& work_buffer,
                       const std::shared_ptr<Workspace>& workspace) ->
       typename std::vector<T>::iterator {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     if (work_buffer.size() - _start_index == 0 ||
-        active_threads() > work_buffer.size()) {
+        activeThreads() > work_buffer.size()) {
       return work_buffer.end();
     }
 
@@ -195,7 +195,7 @@ class WorkerState {
   }
 
   template <typename T>
-  auto find_work(std::vector<std::shared_ptr<T>>& work_buffer,
+  auto findWork(std::vector<std::shared_ptr<T>>& work_buffer,
                  const std::shared_ptr<Workspace>& workspace)
       -> std::shared_ptr<T> {
     assert(!work_buffer.empty());
@@ -208,7 +208,7 @@ class WorkerState {
               */
 
     if (work_buffer.size() - _start_index == 0 ||
-        active_threads() > work_buffer.size()) {
+        activeThreads() > work_buffer.size()) {
       return {};
     }
 
@@ -240,7 +240,7 @@ class WorkerState {
     return {};
   }
 
-  static inline auto active_threads() -> size_t {
+  static inline auto activeThreads() -> size_t {
     return _total_threads - _finished_threads;
   }
 

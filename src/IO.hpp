@@ -11,11 +11,11 @@ auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
     -> void;
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
-    -> std::unique_ptr<lagrange_matrix_base_t[]>;
+    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
+    -> std::unique_ptr<LagrangeMatrixBase[]>;
 
 auto make_state_results_for_node(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &state_distribution,
+    const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
     const std::vector<std::string> &region_names, size_t states_len,
     size_t max_areas) -> nlohmann::json;
 
@@ -25,7 +25,7 @@ auto make_split_results_for_node(lagrange_split_return_t &splits,
     -> nlohmann::json;
 
 auto make_results_for_node(
-    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
+    const std::vector<std::unique_ptr<LagrangeMatrixBase[]>> &states,
     lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
     const std::vector<std::string> &region_names, size_t states_len,
     size_t max_areas) -> nlohmann::json;

@@ -31,22 +31,22 @@ class MakeRateMatrixOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  inline auto last_update() const -> lagrange_clock_tick_t {
+  inline auto lastUpdate() const -> lagrange_clock_tick_t {
     return _last_execution;
   }
 
-  inline void update_rates(const std::shared_ptr<Workspace>& ws, double disp,
+  inline void updateRates(const std::shared_ptr<Workspace>& ws, double disp,
                            double ext) {
-    ws->set_period_params(_period_index, disp, ext);
-    _last_update = ws->advance_clock();
+    ws->setPeriodParams(_period_index, disp, ext);
+    _last_update = ws->advanceClock();
   }
 
-  inline void update_rates(const std::shared_ptr<Workspace>& ws,
-                           const period_params_t& p) {
-    update_rates(ws, p.dispersion_rate, p.extinction_rate);
+  inline void updateRates(const std::shared_ptr<Workspace>& ws,
+                           const PeriodParams& p) {
+    updateRates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
-  inline auto rate_matrix_index() const -> size_t { return _rate_matrix_index; }
+  inline auto rateMatrixIndex() const -> size_t { return _rate_matrix_index; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -72,7 +72,7 @@ class ExpmOperation {
                 const std::shared_ptr<MakeRateMatrixOperation>& rm_op,
                 bool transpose)
       : _prob_matrix_index{prob_matrix},
-        _rate_matrix_index{rm_op->rate_matrix_index()},
+        _rate_matrix_index{rm_op->rateMatrixIndex()},
         _t{t},
         _rate_matrix_op{rm_op},
         _transposed{transpose} {}
@@ -86,12 +86,12 @@ class ExpmOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  auto prob_matrix() const -> size_t { return _prob_matrix_index; }
-  auto rate_matrix() const -> size_t { return _rate_matrix_index; }
+  auto probMatrix() const -> size_t { return _prob_matrix_index; }
+  auto rateMatrix() const -> size_t { return _rate_matrix_index; }
   bool transposed() const { return _transposed; }
-  auto get_t() const { return _t; }
+  auto getT() const { return _t; }
 
-  auto last_execution() const -> lagrange_clock_tick_t {
+  auto lastExecution() const -> lagrange_clock_tick_t {
     return _last_execution;
   }
 
@@ -126,12 +126,12 @@ class ExpmOperation {
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   /* Temp matrices for the computation of the exponential */
-  std::unique_ptr<lagrange_matrix_base_t[]> _A = nullptr;
-  std::unique_ptr<lagrange_matrix_base_t[]> _X_1 = nullptr;
-  std::unique_ptr<lagrange_matrix_base_t[]> _X_2 = nullptr;
-  std::unique_ptr<lagrange_matrix_base_t[]> _N = nullptr;
-  std::unique_ptr<lagrange_matrix_base_t[]> _D = nullptr;
-  std::unique_ptr<lagrange_matrix_base_t[]> _lapack_work_buffer = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _A = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _X_1 = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _X_2 = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _N = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _D = nullptr;
+  std::unique_ptr<LagrangeMatrixBase[]> _lapack_work_buffer = nullptr;
 
   lagrange_clock_tick_t _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
@@ -178,13 +178,13 @@ class DispersionOperation {
                       const std::shared_ptr<ExpmOperation>& op)
       : _top_clv{top},
         _bot_clv{bot},
-        _prob_matrix_index{op->prob_matrix()},
+        _prob_matrix_index{op->probMatrix()},
         _expm_op{op} {}
 
   DispersionOperation(size_t bot, const std::shared_ptr<ExpmOperation>& op)
       : _top_clv{std::numeric_limits<size_t>::max()},
         _bot_clv{bot},
-        _prob_matrix_index{op->prob_matrix()},
+        _prob_matrix_index{op->probMatrix()},
         _expm_op{op} {}
 
   DispersionOperation(size_t top, size_t bot, size_t prob_matrix)
@@ -195,7 +195,7 @@ class DispersionOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  void terminate_top(size_t clv_index) {
+  void terminateTop(size_t clv_index) {
     if (_top_clv != std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{
           "Dispersion Operation already terminated at the top"};
@@ -203,14 +203,14 @@ class DispersionOperation {
     _top_clv = clv_index;
   }
 
-  void unterminate_top() {
+  void unterminateTop() {
     if (_top_clv == std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{"Tried to unterminate an unterminated top"};
     }
     _top_clv = std::numeric_limits<size_t>::max();
   }
 
-  void terminate_bot(size_t clv_index) {
+  void terminateBot(size_t clv_index) {
     if (_bot_clv != std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{
           "Dispersion Operation already terminated at the bot"};
@@ -218,15 +218,15 @@ class DispersionOperation {
     _bot_clv = clv_index;
   }
 
-  void unterminate_bot() {
+  void unterminateBot() {
     if (_bot_clv == std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{"Tried to unterminate an unterminated bot"};
     }
     _bot_clv = std::numeric_limits<size_t>::max();
   }
 
-  auto top_clv_index() const -> size_t { return _top_clv; }
-  auto bot_clv_index() const -> size_t { return _bot_clv; }
+  auto topCLVIndex() const -> size_t { return _top_clv; }
+  auto botCLVIndex() const -> size_t { return _bot_clv; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -236,7 +236,7 @@ class DispersionOperation {
 
   auto ready(const std::shared_ptr<Workspace>& ws,
              lagrange_clock_tick_t deadline) const -> bool {
-    if (ws->last_update_clv(_bot_clv) > deadline) { return true; }
+    if (ws->lastUpdateCLV(_bot_clv) > deadline) { return true; }
     return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }
 
@@ -328,15 +328,15 @@ class SplitOperation {
 
   SplitOperation(size_t parent_clv, std::shared_ptr<DispersionOperation> l_ops,
                  std::shared_ptr<DispersionOperation> r_ops)
-      : _lbranch_clv_index{l_ops->top_clv_index()},
-        _rbranch_clv_index{r_ops->top_clv_index()},
+      : _lbranch_clv_index{l_ops->topCLVIndex()},
+        _rbranch_clv_index{r_ops->topCLVIndex()},
         _parent_clv_index{parent_clv},
         _lbranch_op{l_ops},
         _rbranch_op{r_ops} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  auto get_parent_clv() const -> size_t { return _parent_clv_index; }
+  auto getParentCLV() const -> size_t { return _parent_clv_index; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws, std::ostream& os,
                    size_t tabLevel = 0) const;
@@ -370,7 +370,7 @@ class SplitOperation {
 
   void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> lagrange_option_t<lagrange_dist_t> const {
+  auto getFixedDist() -> LagrangeOption<lagrange_dist_t> const {
     return _fixed_dist;
   }
 
@@ -386,9 +386,9 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _lbranch_op;
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
-  lagrange_option_t<lagrange_dist_t> _fixed_dist;
-  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
-  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
+  LagrangeOption<lagrange_dist_t> _fixed_dist;
+  LagrangeOption<lagrange_dist_t> _excl_area_mask;
+  LagrangeOption<lagrange_dist_t> _incl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -413,7 +413,7 @@ class ReverseSplitOperation {
   ReverseSplitOperation(size_t bot_clv, size_t rtop_clv,
                         std::shared_ptr<DispersionOperation> branch_op)
       : _bot_clv_index{bot_clv},
-        _ltop_clv_index{branch_op->top_clv_index()},
+        _ltop_clv_index{branch_op->topCLVIndex()},
         _rtop_clv_index{rtop_clv},
         _eval_clvs{true},
         _branch_op{{branch_op}} {}
@@ -457,7 +457,7 @@ class ReverseSplitOperation {
     bool branch_op_ready =
         (_branch_op && _branch_op->ready(ws, _last_execution)) || (!_branch_op);
     return branch_op_ready &&
-           (ws->last_update_clv(_ltop_clv_index) >= _last_execution);
+           (ws->lastUpdateCLV(_ltop_clv_index) >= _last_execution);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
@@ -469,7 +469,7 @@ class ReverseSplitOperation {
 
   void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> lagrange_option_t<lagrange_dist_t> const {
+  auto getFixedDist() -> LagrangeOption<lagrange_dist_t> const {
     return _fixed_dist;
   }
 
@@ -483,9 +483,9 @@ class ReverseSplitOperation {
 
   std::shared_ptr<DispersionOperation> _branch_op;
 
-  lagrange_option_t<lagrange_dist_t> _fixed_dist;
-  lagrange_option_t<lagrange_dist_t> _incl_area_mask;
-  lagrange_option_t<lagrange_dist_t> _excl_area_mask;
+  LagrangeOption<lagrange_dist_t> _fixed_dist;
+  LagrangeOption<lagrange_dist_t> _incl_area_mask;
+  LagrangeOption<lagrange_dist_t> _excl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   lagrange_clock_tick_t _last_execution = 0;
@@ -541,7 +541,7 @@ class StateLHGoal {
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
   void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
-  lagrange_option_t<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
+  LagrangeOption<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
 
   void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
 
@@ -550,13 +550,13 @@ class StateLHGoal {
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  LagrangeOption<lagrange_dist_t> _fixed_dist;
   lagrange_dist_t _excl_area_mask = 0;
   lagrange_dist_t _incl_area_mask = 0;
 
   lagrange_clock_tick_t _last_execution = 0;
 
-  std::unique_ptr<lagrange_matrix_base_t[]> _result;
+  std::unique_ptr<LagrangeMatrixBase[]> _result;
   size_t _states;
 };
 
@@ -582,7 +582,7 @@ class SplitLHGoal {
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  lagrange_option_t<lagrange_dist_t> _fixed_dist;
+  LagrangeOption<lagrange_dist_t> _fixed_dist;
   lagrange_dist_t _excl_area_mask = 0;
   lagrange_dist_t _incl_area_mask = 0;
 

@@ -33,7 +33,7 @@ class Context {
   void registerSplitLHGoal();
 
   auto getStateResults() const
-      -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>;
+      -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
   auto getSplitResults() const -> lagrange_split_list_t;
 
   void registerTipClvs(
@@ -41,26 +41,26 @@ class Context {
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
                                 bool output,
-                                const lagrange_operation_mode& mode);
+                                const LagrangeOperationMode& mode);
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
   auto computeStateGoal(WorkerState& ts)
-      -> std::vector<std::unique_ptr<lagrange_matrix_base_t[]>>;
+      -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
   auto computeSplitGoal(WorkerState& ts) -> lagrange_split_list_t;
 
   auto toString() const -> std::string;
 
-  void updateRates(const std::vector<period_params_t>& p);
+  void updateRates(const std::vector<PeriodParams>& p);
   void init();
 
   auto stateCount() const -> size_t {
-    return _workspace->restricted_state_count();
+    return _workspace->restrictedStateCount();
   }
 
-  void setParams(double e, double d) { _workspace->set_period_params(0, e, d); }
+  void setParams(double e, double d) { _workspace->setPeriodParams(0, e, d); }
 
-  auto currentParams() const -> std::vector<period_params_t>;
+  auto currentParams() const -> std::vector<PeriodParams>;
 
   auto makeThreadContext() -> WorkerContext {
     WorkerContext tc{_forward_operations, _reverse_operations, _llh_goal,

@@ -42,7 +42,7 @@ static auto operator<<(std::ostream &os,
 }
 
 inline void generate_splits(uint64_t state, size_t regions, size_t max_areas,
-                            std::vector<lagrange_region_split_t> &results) {
+                            std::vector<LagrangeRegionSplit> &results) {
   assert(regions > 0);
   results.clear();
   uint64_t valid_region_mask = (1ULL << regions) - 1;
@@ -71,9 +71,9 @@ inline void generate_splits(uint64_t state, size_t regions, size_t max_areas,
 
 inline void join_splits(
     lagrange_dist_t splitting_dist, size_t dist_index, size_t regions,
-    size_t max_areas, std::vector<lagrange_region_split_t> &splits,
-    const lagrange_const_col_vector_t &c1,
-    const lagrange_const_col_vector_t &c2, lagrange_col_vector_t dest,
+    size_t max_areas, std::vector<LagrangeRegionSplit> &splits,
+    const LagrangeConstColVector &c1,
+    const LagrangeConstColVector &c2, LagrangeColVector dest,
     bool &scale, const std::function<size_t(lagrange_dist_t)> &dist_map) {
   generate_splits(splitting_dist, regions, max_areas, splits);
   double sum = 0.0;
@@ -106,25 +106,25 @@ static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
 
 constexpr auto weighted_combine_check_happy_path(
     size_t states, size_t max_areas,
-    const lagrange_option_t<lagrange_dist_t> &fixed_dist,
+    const LagrangeOption<lagrange_dist_t> &fixed_dist,
     lagrange_dist_t excl_area_mask, lagrange_dist_t incl_area_mask) {
-  return (states == max_areas) && (!fixed_dist.has_value()) &&
+  return (states == max_areas) && (!fixed_dist.hasValue()) &&
          (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 
 inline void weighted_combine(
-    const lagrange_const_col_vector_t &c1,
-    const lagrange_const_col_vector_t &c2, size_t states, size_t regions,
-    size_t max_areas, lagrange_col_vector_t dest, size_t c1_scale,
+    const LagrangeConstColVector &c1,
+    const LagrangeConstColVector &c2, size_t states, size_t regions,
+    size_t max_areas, LagrangeColVector dest, size_t c1_scale,
     size_t c2_scale, size_t &scale_count,
-    const lagrange_option_t<lagrange_dist_t> &fixed_dist,
+    const LagrangeOption<lagrange_dist_t> &fixed_dist,
     lagrange_dist_t excl_area_mask, lagrange_dist_t incl_area_mask) {
   assert(states != 0);
   // size_t regions = lagrange_fast_log2(states);
 
   bool scale = true;
 
-  std::vector<lagrange_region_split_t> splits;
+  std::vector<LagrangeRegionSplit> splits;
 
   if (weighted_combine_check_happy_path(states, max_areas, fixed_dist,
                                         excl_area_mask, incl_area_mask)) {
@@ -149,7 +149,7 @@ inline void weighted_combine(
 
       if (index >= states) { break; }
 
-      if (fixed_dist.has_value() && fixed_dist.get() != dist) { continue; }
+      if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
       join_splits(dist, index, regions, max_areas, splits, c1, c2, dest, scale,
                   dist_map_func);
@@ -167,9 +167,9 @@ inline void weighted_combine(
 
 inline void reverse_join_splits(
     lagrange_dist_t i, size_t regions, size_t max_areas,
-    std::vector<lagrange_region_split_t> &splits,
-    const lagrange_const_col_vector_t &c1,
-    const lagrange_const_col_vector_t &c2, lagrange_col_vector_t dest,
+    std::vector<LagrangeRegionSplit> &splits,
+    const LagrangeConstColVector &c1,
+    const LagrangeConstColVector &c2, LagrangeColVector dest,
     const std::function<size_t(lagrange_dist_t)> &dist_map) {
   generate_splits(i, regions, max_areas, splits);
   if (splits.empty()) { return; }
@@ -190,17 +190,17 @@ inline void reverse_join_splits(
 }
 
 inline void reverse_weighted_combine(
-    const lagrange_const_col_vector_t &c1,
-    const lagrange_const_col_vector_t &c2, size_t states, size_t regions,
-    size_t max_areas, lagrange_col_vector_t dest,
-    const lagrange_option_t<lagrange_dist_t> &fixed_dist,
+    const LagrangeConstColVector &c1,
+    const LagrangeConstColVector &c2, size_t states, size_t regions,
+    size_t max_areas, LagrangeColVector dest,
+    const LagrangeOption<lagrange_dist_t> &fixed_dist,
     lagrange_dist_t excl_area_mask, lagrange_dist_t incl_area_mask) {
   assert(states != 0);
   // size_t regions = lagrange_fast_log2(states);
 
-  std::vector<lagrange_region_split_t> splits;
+  std::vector<LagrangeRegionSplit> splits;
 
-  if (max_areas == regions && !fixed_dist.has_value()) {
+  if (max_areas == regions && !fixed_dist.hasValue()) {
     const auto identity_func = [](lagrange_dist_t d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
@@ -223,7 +223,7 @@ inline void reverse_weighted_combine(
 
       if (index >= states) { break; }
 
-      if (fixed_dist.has_value() && fixed_dist.get() != dist) { continue; }
+      if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
       reverse_join_splits(dist, regions, max_areas, splits, c1, c2, dest,
                           dist_map_func);
@@ -231,7 +231,7 @@ inline void reverse_weighted_combine(
 
     /*
     for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
-      if (fixed_dist.has_value() && fixed_dist.get() != i) { continue; }
+      if (fixed_dist.hasValue() && fixed_dist.get() != i) { continue; }
       reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
                           dist_map_func);
     }
@@ -267,27 +267,27 @@ inline auto closing_line(const std::string &tabs) -> std::string {
 }
 
 void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  auto &rm = ws->rate_matrix(_rate_matrix_index);
+  auto &rm = ws->rateMatrix(_rate_matrix_index);
 
-  for (size_t i = 0; i < ws->matrix_size(); i++) { rm[i] = 0.0; }
+  for (size_t i = 0; i < ws->matrixSize(); i++) { rm[i] = 0.0; }
 
-  const auto &period = ws->get_period_params(_period_index);
+  const auto &period = ws->getPeriodParams(_period_index);
 
   size_t source_index = 0;
   lagrange_dist_t source_dist = 0;
 
   for (source_index = 0, source_dist = 0;
-       source_index < ws->restricted_state_count();
+       source_index < ws->restrictedStateCount();
        source_dist =
-           next_dist(source_dist, static_cast<uint32_t>(ws->max_areas())),
+           next_dist(source_dist, static_cast<uint32_t>(ws->maxAreas())),
       ++source_index) {
     size_t dest_index = 0;
     lagrange_dist_t dest_dist = 0;
 
     for (dest_index = 0, dest_dist = 0;
-         dest_index < ws->restricted_state_count();
+         dest_index < ws->restrictedStateCount();
          dest_dist =
-             next_dist(dest_dist, static_cast<uint32_t>(ws->max_areas())),
+             next_dist(dest_dist, static_cast<uint32_t>(ws->maxAreas())),
         ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
 
@@ -300,28 +300,28 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
               period.getDispersionRate(i, j) * lagrange_bextr(source_dist, j);
         }
 
-        rm[ws->compute_matrix_index(source_index, dest_index)] = sum;
+        rm[ws->computeMatrixIndex(source_index, dest_index)] = sum;
 
       }
       /* Otherwise, source is loosing a region, so we just set the value */
       else if (source_dist != 0) {
-        rm[ws->compute_matrix_index(source_index, dest_index)] =
+        rm[ws->computeMatrixIndex(source_index, dest_index)] =
             period.getExtinctionRate();
       }
     }
   }
 
-  for (size_t i = 0; i < ws->restricted_state_count(); i++) {
+  for (size_t i = 0; i < ws->restrictedStateCount(); i++) {
     double sum = 0.0;
-    for (size_t j = 0; j < ws->restricted_state_count(); j++) {
-      sum += rm[ws->compute_matrix_index(i, j)];
+    for (size_t j = 0; j < ws->restrictedStateCount(); j++) {
+      sum += rm[ws->computeMatrixIndex(i, j)];
     }
     assert(sum >= 0);
-    rm[ws->compute_matrix_index(i, i)] = -sum;
+    rm[ws->computeMatrixIndex(i, i)] = -sum;
   }
 
-  _last_execution = ws->advance_clock();
-  ws->update_rate_matrix_clock(_rate_matrix_index);
+  _last_execution = ws->advanceClock();
+  ws->updateRateMatrixAndAdvanceClock(_rate_matrix_index);
 }
 
 void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -331,20 +331,20 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << opening_line(tabs) << "\n";
   os << tabs << "MakeRateMatrixOperation:\n"
      << tabs << "Rate Matrix (index: " << _rate_matrix_index
-     << " update: " << ws->last_update_rate_matrix(_rate_matrix_index)
+     << " update: " << ws->lastUpdateRateMatrix(_rate_matrix_index)
      << "):\n";
 
-  const auto &rm = ws->rate_matrix(_rate_matrix_index);
+  const auto &rm = ws->rateMatrix(_rate_matrix_index);
 
-  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
+  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
     os << tabs << std::setprecision(10)
-       << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
-                          ws->restricted_state_count())
+       << std::make_tuple(rm + ws->computeMatrixIndex(i, 0),
+                          ws->restrictedStateCount())
        << "\n";
   }
 
   os << tabs << "Period index: " << _period_index << "\n"
-     << tabs << ws->get_period_params(_period_index).toString() << "\n"
+     << tabs << ws->getPeriodParams(_period_index).toString() << "\n"
      << tabs << "_last_execution: " << _last_execution << "\n"
      << tabs << "_last_update: " << _last_update << "\n";
   os << closing_line(tabs);
@@ -360,27 +360,27 @@ auto MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if ((_rate_matrix_op != nullptr) &&
-      (_last_execution > _rate_matrix_op->last_update())) {
+      (_last_execution > _rate_matrix_op->lastUpdate())) {
     return;
   }
 
   if (_last_execution == 0) {
-    _A.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _A.reset(new LagrangeMatrixBase[ws->matrixSize()]);
     _lapack_work_buffer.reset(
-        new lagrange_matrix_base_t[ws->restricted_state_count()]);
+        new LagrangeMatrixBase[ws->restrictedStateCount()]);
   }
 
 #ifdef MKL_ENABLED
   int ret = 0;
 #endif  // MKL_ENABLED
-  int rows = static_cast<int>(ws->matrix_rows());
-  int leading_dim = static_cast<int>(ws->leading_dimension());
+  int rows = static_cast<int>(ws->matrixRows());
+  int leading_dim = static_cast<int>(ws->leadingDimension());
 
   assert(rows > 0);
   assert(leading_dim > 0);
 
-  for (size_t i = 0; i < ws->matrix_size(); i++) {
-    _A.get()[i] = ws->rate_matrix(_rate_matrix_index)[i];
+  for (size_t i = 0; i < ws->matrixSize(); i++) {
+    _A.get()[i] = ws->rateMatrix(_rate_matrix_index)[i];
   }
 
   // We place an arbitrary limit on the size of scale exp because if it is too
@@ -398,7 +398,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   double Ascal = _t / std::pow(2.0, scale_exp);
   assert(Ascal > 0.0);
-  cblas_dscal(ws->matrix_size(), Ascal, _A.get(), 1);
+  cblas_dscal(ws->matrixSize(), Ascal, _A.get(), 1);
 
   // q is a magic parameter that controls the number of iterations of the loop
   // higher is more accurate, with each increase of q decreasing error by 4
@@ -408,27 +408,27 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   double sign = -1.0;
 
   if (_last_execution == 0) {
-    _X_1.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _X_2.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _N.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
-    _D.reset(new lagrange_matrix_base_t[ws->matrix_size()]);
+    _X_1.reset(new LagrangeMatrixBase[ws->matrixSize()]);
+    _X_2.reset(new LagrangeMatrixBase[ws->matrixSize()]);
+    _N.reset(new LagrangeMatrixBase[ws->matrixSize()]);
+    _D.reset(new LagrangeMatrixBase[ws->matrixSize()]);
   }
 
-  cblas_dcopy(ws->matrix_size(), _A.get(), 1, _X_1.get(), 1);
+  cblas_dcopy(ws->matrixSize(), _A.get(), 1, _X_1.get(), 1);
 
-  for (size_t i = 0; i < ws->matrix_size(); i++) {
+  for (size_t i = 0; i < ws->matrixSize(); i++) {
     _X_2.get()[i] = 0.0;
     _N.get()[i] = 0.0;
     _D.get()[i] = 0.0;
   }
 
   for (size_t i = 0; i < static_cast<size_t>(rows); i++) {
-    _N.get()[ws->compute_matrix_index(i, i)] = 1.0;
-    _D.get()[ws->compute_matrix_index(i, i)] = 1.0;
+    _N.get()[ws->computeMatrixIndex(i, i)] = 1.0;
+    _D.get()[ws->computeMatrixIndex(i, i)] = 1.0;
   }
 
-  cblas_daxpy(ws->matrix_size(), c, _X_1.get(), 1, _N.get(), 1);
-  cblas_daxpy(ws->matrix_size(), sign * c, _X_1.get(), 1, _D.get(), 1);
+  cblas_daxpy(ws->matrixSize(), c, _X_1.get(), 1, _N.get(), 1);
+  cblas_daxpy(ws->matrixSize(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
   // Using fortran indexing, and we started an iteration ahead to skip some
   // setup. Furthermore, we are going to unroll the loop to allow us to skip
@@ -451,8 +451,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rows, rows,
                 1.0, _A.get(), leading_dim, _X_1.get(), leading_dim, 0.0,
                 _X_2.get(), leading_dim);
-    cblas_daxpy(ws->matrix_size(), c, _X_2.get(), 1, _N.get(), 1);
-    cblas_daxpy(ws->matrix_size(), sign * c, _X_2.get(), 1, _D.get(), 1);
+    cblas_daxpy(ws->matrixSize(), c, _X_2.get(), 1, _N.get(), 1);
+    cblas_daxpy(ws->matrixSize(), sign * c, _X_2.get(), 1, _D.get(), 1);
 
     i += 1;
 
@@ -464,8 +464,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rows, rows,
                 1.0, _A.get(), leading_dim, _X_2.get(), leading_dim, 0.0,
                 _X_1.get(), leading_dim);
-    cblas_daxpy(ws->matrix_size(), c, _X_1.get(), 1, _N.get(), 1);
-    cblas_daxpy(ws->matrix_size(), sign * c, _X_1.get(), 1, _D.get(), 1);
+    cblas_daxpy(ws->matrixSize(), c, _X_1.get(), 1, _N.get(), 1);
+    cblas_daxpy(ws->matrixSize(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
     i += 1;
   }
@@ -514,16 +514,16 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     cblas_domatcopy(CblasRowMajor, CblasTrans, rows, rows, 1.0, r1.get(),
                     leading_dim, r2.get(), leading_dim);
     for (int i = 0; i < rows; i++) {
-      r2.get()[ws->compute_matrix_index(i, 0)] = 0.0;
+      r2.get()[ws->computeMatrixIndex(i, 0)] = 0.0;
     }
     r2.get()[0] = 1.0;
     std::swap(r1, r2);
 #endif
   }
 
-  ws->update_prob_matrix(_prob_matrix_index, r1.get());
+  ws->updateProbMatrix(_prob_matrix_index, r1.get());
 
-  _last_execution = ws->advance_clock();
+  _last_execution = ws->advanceClock();
   _execution_count += 1;
 }
 
@@ -536,15 +536,15 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
 
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index
-     << " update: " << ws->last_update_prob_matrix(_prob_matrix_index)
+     << " update: " << ws->lastUpdateProbMatrix(_prob_matrix_index)
      << "):\n";
 
-  const auto &pm = ws->prob_matrix(_prob_matrix_index);
+  const auto &pm = ws->probMatrix(_prob_matrix_index);
 
-  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
+  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
     os << tabs << std::setprecision(10)
-       << std::make_tuple(pm + ws->compute_matrix_index(i, 0),
-                          ws->restricted_state_count())
+       << std::make_tuple(pm + ws->computeMatrixIndex(i, 0),
+                          ws->restrictedStateCount())
        << "\n";
   }
 
@@ -553,11 +553,11 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   if (_rate_matrix_op != nullptr) {
     os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
   } else {
-    auto &rm = ws->rate_matrix(_rate_matrix_index);
-    for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
+    auto &rm = ws->rateMatrix(_rate_matrix_index);
+    for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
       os << tabs << std::setprecision(10)
-         << std::make_tuple(rm + ws->compute_matrix_index(i, 0),
-                            ws->restricted_state_count())
+         << std::make_tuple(rm + ws->computeMatrixIndex(i, 0),
+                            ws->restrictedStateCount())
          << "\n";
     }
   }
@@ -578,9 +578,9 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   if (_expm_op != nullptr) {
     if (_expm_op->isArnoldiMode()) {
-      expm::multiply_arnoldi_chebyshev(ws, _expm_op->rate_matrix(), _bot_clv,
+      expm::multiply_arnoldi_chebyshev(ws, _expm_op->rateMatrix(), _bot_clv,
                                        _top_clv, _expm_op->transposed(),
-                                       _expm_op->get_t());
+                                       _expm_op->getT());
     } else {
       if (_expm_op.use_count() > 1) {
         std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
@@ -592,15 +592,15 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   if (_expm_op != nullptr && !_expm_op->isArnoldiMode()) {
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restricted_state_count(),
-                ws->restricted_state_count(), 1.0,
-                ws->prob_matrix(_prob_matrix_index), ws->leading_dimension(),
-                ws->clv(_bot_clv), 1, 0.0, ws->clv(_top_clv), 1);
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, ws->restrictedStateCount(),
+                ws->restrictedStateCount(), 1.0,
+                ws->probMatrix(_prob_matrix_index), ws->leadingDimension(),
+                ws->CLV(_bot_clv), 1, 0.0, ws->CLV(_top_clv), 1);
   }
 
   if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
-    auto &top_clv = ws->clv(_top_clv);
-    for (size_t i = 0; i < ws->clv_size(); ++i) {
+    auto &top_clv = ws->CLV(_top_clv);
+    for (size_t i = 0; i < ws->CLVSize(); ++i) {
       if (std::isnan(top_clv[i]) ||
           ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
         fallback();
@@ -610,10 +610,10 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
   }
 
-  _last_execution = ws->advance_clock();
+  _last_execution = ws->advanceClock();
 
-  ws->clv_scalar(_top_clv) = ws->clv_scalar(_bot_clv);
-  ws->update_clv_clock(_top_clv);
+  ws->CLVScalar(_top_clv) = ws->CLVScalar(_bot_clv);
+  ws->updateCLVClock(_top_clv);
 }
 
 void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -623,14 +623,14 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << opening_line(tabs) << "\n";
   os << tabs << "DispersionOperation:\n";
   os << tabs << "Top clv (index: " << _top_clv
-     << " update: " << ws->last_update_clv(_top_clv)
+     << " update: " << ws->lastUpdateCLV(_top_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->clv(_top_clv), ws->restricted_state_count())
+     << std::make_tuple(ws->CLV(_top_clv), ws->restrictedStateCount())
      << "\n";
   os << tabs << "Bot clv (index: " << _bot_clv
-     << " update: " << ws->last_update_clv(_bot_clv)
+     << " update: " << ws->lastUpdateCLV(_bot_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->clv(_bot_clv), ws->restricted_state_count())
+     << std::make_tuple(ws->CLV(_bot_clv), ws->restrictedStateCount())
      << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
@@ -662,18 +662,18 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   eval_branch_op(_lbranch_op, ws);
   eval_branch_op(_rbranch_op, ws);
 
-  const auto &parent_clv = ws->clv(_parent_clv_index);
-  const auto &lchild_clv = ws->clv(_lbranch_clv_index);
-  const auto &rchild_clv = ws->clv(_rbranch_clv_index);
+  const auto &parent_clv = ws->CLV(_parent_clv_index);
+  const auto &lchild_clv = ws->CLV(_lbranch_clv_index);
+  const auto &rchild_clv = ws->CLV(_rbranch_clv_index);
 
   weighted_combine(
-      lchild_clv, rchild_clv, ws->restricted_state_count(), ws->regions(),
-      ws->max_areas(), parent_clv, ws->clv_scalar(_lbranch_clv_index),
-      ws->clv_scalar(_rbranch_clv_index), ws->clv_scalar(_parent_clv_index),
+      lchild_clv, rchild_clv, ws->restrictedStateCount(), ws->regions(),
+      ws->maxAreas(), parent_clv, ws->CLVScalar(_lbranch_clv_index),
+      ws->CLVScalar(_rbranch_clv_index), ws->CLVScalar(_parent_clv_index),
       _fixed_dist, _excl_area_mask.get(0), _incl_area_mask.get(0));
 
-  _last_execution = ws->advance_clock();
-  ws->update_clv_clock(_parent_clv_index);
+  _last_execution = ws->advanceClock();
+  ws->updateCLVClock(_parent_clv_index);
 }
 
 void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
@@ -683,19 +683,19 @@ void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "SplitOperation:\n";
 
   os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
-     << ", scalar: " << ws->clv_scalar(_lbranch_clv_index)
-     << ", update: " << ws->last_update_clv(_lbranch_clv_index)
-     << "): " << std::setprecision(10) << ws->clv_size_tuple(_lbranch_clv_index)
+     << ", scalar: " << ws->CLVScalar(_lbranch_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_lbranch_clv_index)
+     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_lbranch_clv_index)
      << "\n";
   os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
-     << ", scalar: " << ws->clv_scalar(_rbranch_clv_index)
-     << ", update: " << ws->last_update_clv(_rbranch_clv_index)
-     << "): " << std::setprecision(10) << ws->clv_size_tuple(_rbranch_clv_index)
+     << ", scalar: " << ws->CLVScalar(_rbranch_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_rbranch_clv_index)
+     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_rbranch_clv_index)
      << "\n";
   os << tabs << "Parent clv (index: " << _parent_clv_index
-     << ", scalar: " << ws->clv_scalar(_parent_clv_index)
-     << ", update: " << ws->last_update_clv(_parent_clv_index)
-     << "):  " << std::setprecision(10) << ws->clv_size_tuple(_parent_clv_index)
+     << ", scalar: " << ws->CLVScalar(_parent_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_parent_clv_index)
+     << "):  " << std::setprecision(10) << ws->CLVSizeTuple(_parent_clv_index)
      << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
 
@@ -722,20 +722,20 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   eval_branch_op(_branch_op, ws);
 
   if (_eval_clvs) {
-    const auto &ltop_clv = ws->clv(_ltop_clv_index);
-    const auto &rtop_clv = ws->clv(_rtop_clv_index);
+    const auto &ltop_clv = ws->CLV(_ltop_clv_index);
+    const auto &rtop_clv = ws->CLV(_rtop_clv_index);
 
-    reverse_weighted_combine(ltop_clv, rtop_clv, ws->restricted_state_count(),
-                             ws->regions(), ws->max_areas(),
-                             ws->clv(_bot_clv_index), _fixed_dist,
+    reverse_weighted_combine(ltop_clv, rtop_clv, ws->restrictedStateCount(),
+                             ws->regions(), ws->maxAreas(),
+                             ws->CLV(_bot_clv_index), _fixed_dist,
                              _excl_area_mask.get(0), _incl_area_mask.get(0));
 
-    for (size_t i = 0; i < ws->clv_size(); ++i) {
-      assert(!std::isnan(ws->clv(_bot_clv_index)[i]));
+    for (size_t i = 0; i < ws->CLVSize(); ++i) {
+      assert(!std::isnan(ws->CLV(_bot_clv_index)[i]));
     }
 
-    _last_execution = ws->advance_clock();
-    ws->update_clv_clock(_bot_clv_index);
+    _last_execution = ws->advanceClock();
+    ws->updateCLVClock(_bot_clv_index);
   }
 }
 
@@ -747,16 +747,16 @@ void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "ReverseSplitOperation:\n";
 
   os << tabs << "Bot clv (index: " << _bot_clv_index
-     << ", update: " << ws->last_update_clv(_bot_clv_index)
-     << "): " << std::setprecision(10) << ws->clv_size_tuple(_bot_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_bot_clv_index)
+     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_bot_clv_index)
      << "\n";
   os << tabs << "Ltop clv (index: " << _ltop_clv_index
-     << ", update: " << ws->last_update_clv(_ltop_clv_index)
-     << "): " << std::setprecision(10) << ws->clv_size_tuple(_ltop_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_ltop_clv_index)
+     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_ltop_clv_index)
      << "\n";
   os << tabs << "Rtop clv (index: " << _rtop_clv_index
-     << ", update: " << ws->last_update_clv(_rtop_clv_index)
-     << "): " << std::setprecision(10) << ws->clv_size_tuple(_rtop_clv_index)
+     << ", update: " << ws->lastUpdateCLV(_rtop_clv_index)
+     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_rtop_clv_index)
      << "\n";
 
   /*
@@ -786,71 +786,71 @@ auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  double rho = cblas_ddot(ws->clv_size(), ws->clv(_root_clv_index), 1,
-                          ws->get_base_frequencies(_prior_index), 1);
+  double rho = cblas_ddot(ws->CLVSize(), ws->CLV(_root_clv_index), 1,
+                          ws->getBaseFrequencies(_prior_index), 1);
   assert(rho > 0.0);
   _result = std::log(rho) -
-            lagrange_scaling_factor_log * ws->clv_scalar(_root_clv_index);
+            lagrange_scaling_factor_log * ws->CLVScalar(_root_clv_index);
 
-  _last_execution = ws->advance_clock();
+  _last_execution = ws->advanceClock();
 }
 
 auto LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->last_update_clv(_root_clv_index) > _last_execution;
+  return ws->lastUpdateCLV(_root_clv_index) > _last_execution;
 }
 
 void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   if (_last_execution == 0) {
-    _result.reset(new lagrange_matrix_base_t[ws->restricted_state_count()]);
-    _states = ws->restricted_state_count();
+    _result.reset(new LagrangeMatrixBase[ws->restrictedStateCount()]);
+    _states = ws->restrictedStateCount();
     for (lagrange_dist_t i = 0; i < _states; ++i) { _result[i] = 0.0; }
   }
 
   size_t tmp_scalar = 0;
 
-  weighted_combine(ws->clv(_lchild_clv_index), ws->clv(_rchild_clv_index),
-                   _states, ws->regions(), ws->max_areas(), _result.get(),
-                   ws->clv_scalar(_lchild_clv_index),
-                   ws->clv_scalar(_rchild_clv_index), tmp_scalar, _fixed_dist,
+  weighted_combine(ws->CLV(_lchild_clv_index), ws->CLV(_rchild_clv_index),
+                   _states, ws->regions(), ws->maxAreas(), _result.get(),
+                   ws->CLVScalar(_lchild_clv_index),
+                   ws->CLVScalar(_rchild_clv_index), tmp_scalar, _fixed_dist,
                    _excl_area_mask, _incl_area_mask);
 
-  tmp_scalar += ws->clv_scalar(_parent_clv_index);
+  tmp_scalar += ws->CLVScalar(_parent_clv_index);
   auto result = _result.get();
 
-  for (size_t i = 0; i < ws->restricted_state_count(); ++i) {
+  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
     double tmp_val = result[i];
-    double parent_val = ws->clv(_parent_clv_index)[i];
+    double parent_val = ws->CLV(_parent_clv_index)[i];
     result[i] = std::log(tmp_val * parent_val) -
                 tmp_scalar * lagrange_scaling_factor_log;
     assert(!std::isnan(result[i]));
   }
-  _last_execution = ws->advance_clock();
+  _last_execution = ws->advanceClock();
 }
 
 auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
-         ws->last_update_clv(_rchild_clv_index) > _last_execution &&
-         ws->last_update_clv(_parent_clv_index) > _last_execution;
+  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution &&
+         ws->lastUpdateCLV(_rchild_clv_index) > _last_execution &&
+         ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
 }
 
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   std::unordered_map<lagrange_dist_t, std::vector<AncSplit>> ret;
 
-  const auto &parent_clv = ws->clv(_parent_clv_index);
-  const auto &lchild_clv = ws->clv(_lchild_clv_index);
-  const auto &rchild_clv = ws->clv(_rchild_clv_index);
+  const auto &parent_clv = ws->CLV(_parent_clv_index);
+  const auto &lchild_clv = ws->CLV(_lchild_clv_index);
+  const auto &rchild_clv = ws->CLV(_rchild_clv_index);
 
-  std::vector<lagrange_region_split_t> splits;
+  std::vector<LagrangeRegionSplit> splits;
 
-  for (lagrange_dist_t index = 0; index < ws->restricted_state_count();
+  for (lagrange_dist_t index = 0; index < ws->restrictedStateCount();
        index++) {
-    if (_fixed_dist.has_value() && _fixed_dist.get() != index) { continue; }
+    if (_fixed_dist.hasValue() && _fixed_dist.get() != index) { continue; }
 
     if (!check_excl_dist(index, _excl_area_mask)) { continue; }
     if (!check_incl_dist(index, _incl_area_mask)) { continue; }
 
     std::vector<AncSplit> anc_split_vec;
-    generate_splits(index, ws->regions(), ws->max_areas(), splits);
+    generate_splits(index, ws->regions(), ws->maxAreas(), splits);
     double weight = 1.0 / splits.size();
     for (auto sp : splits) {
       AncSplit anc_split(index, sp.left, sp.right, weight);
@@ -865,7 +865,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 }
 
 auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->last_update_clv(_lchild_clv_index) > _last_execution &&
-         ws->last_update_clv(_rchild_clv_index) > _last_execution &&
-         ws->last_update_clv(_parent_clv_index) > _last_execution;
+  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution &&
+         ws->lastUpdateCLV(_rchild_clv_index) > _last_execution &&
+         ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
 }

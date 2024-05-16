@@ -16,7 +16,7 @@
 
 #include "Common.hpp"
 
-struct lagrange_region_split_t {
+struct LagrangeRegionSplit {
   lagrange_dist_t left;
   lagrange_dist_t right;
 };
@@ -52,7 +52,7 @@ constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
 }
 
 inline auto lagrange_compute_best_dist(
-    const lagrange_const_col_vector_t &dist_lhs, size_t states)
+    const LagrangeConstColVector &dist_lhs, size_t states)
     -> lagrange_dist_t {
   lagrange_dist_t best_dist = 0;
 
@@ -125,14 +125,14 @@ std::vector<std::string> lagrange_convert_dist_to_list(
 std::string get_file_extension(const std::string &filename);
 
 template <typename T>
-class lagrange_option_t {
+class LagrangeOption {
  public:
-  lagrange_option_t() = default;
-  explicit lagrange_option_t(const T &val) : _value{val}, _has_value{true} {}
+  LagrangeOption() = default;
+  explicit LagrangeOption(const T &val) : _value{val}, _has_value{true} {}
 
-  lagrange_option_t(const lagrange_option_t<T> &o) = default;
+  LagrangeOption(const LagrangeOption<T> &o) = default;
 
-  auto operator=(const T &v) -> lagrange_option_t<T> & {
+  auto operator=(const T &v) -> LagrangeOption<T> & {
     _value = v;
     _has_value = true;
     return *this;
@@ -153,9 +153,9 @@ class lagrange_option_t {
     return def;
   }
 
-  auto has_value() const -> bool { return _has_value; }
+  auto hasValue() const -> bool { return _has_value; }
 
-  operator bool() const { return has_value(); }
+  operator bool() const { return hasValue(); }
 
  private:
   T _value;

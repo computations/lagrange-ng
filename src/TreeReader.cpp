@@ -12,7 +12,7 @@
 #include <memory>
 #include <sstream>
 
-enum lexeme_type_t {
+enum LexemeType {
   OPENING_SQUARE_BRACKET,
   CLOSING_SQUARE_BRACKET,
   OPENING_PAREN,
@@ -24,66 +24,66 @@ enum lexeme_type_t {
   END
 };
 
-class lexer_t {
+class Lexer {
  public:
-  explicit lexer_t(std::string input)
+  explicit Lexer(std::string input)
       : _input{std::move(input)}, _current_index{0} {};
 
-  auto consume() -> lexeme_type_t;
-  auto peak() -> lexeme_type_t;
+  auto consume() -> LexemeType;
+  auto peak() -> LexemeType;
 
-  auto consume_value_as_string() -> std::string {
+  auto consumeValueAsString() -> std::string {
     std::string tmp;
     std::swap(tmp, _value);
     return tmp;
   }
 
-  auto consume_value_as_float() -> double {
-    auto f_str = consume_value_as_string();
+  auto consumeValueAsFloat() -> double {
+    auto f_str = consumeValueAsString();
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
       throw std::runtime_error{std::string("Float conversion failed around") +
-                               describe_position()};
+                               describePosition()};
     }
     return val;
   }
 
-  auto describe_position() const -> std::string {
+  auto describePosition() const -> std::string {
     std::stringstream builder;
     builder << "position " << _current_index;
     return builder.str();
   }
 
-  void expect(lexeme_type_t token_type) {
-    auto ret = consume_token_pos();
+  void expect(LexemeType token_type) {
+    auto ret = consumeTokenPos();
     if (ret.first != token_type) {
       throw std::runtime_error{
           std::string("Got the wrong token type at position ") +
           std::to_string(ret.second + 1) + " was expecting " +
-          describe_token(token_type)};
+          describeToken(token_type)};
     }
   }
 
-  void consume_until(lexeme_type_t token_type) {
+  void consumeUntil(LexemeType token_type) {
     while (token_type != consume()) {}
   }
 
-  auto at_end() -> bool { return _input.size() == _current_index; }
+  auto atEnd() -> bool { return _input.size() == _current_index; }
 
  private:
-  static auto is_punct(char c) -> bool {
+  static auto isPunct(char c) -> bool {
     return c == '[' || c == ']' || c == '(' || c == ')' || c == ':' ||
            c == ';' || c == ',' || c == 0 || c == EOF;
   }
 
-  auto consume_token_pos() -> std::pair<lexeme_type_t, size_t> {
+  auto consumeTokenPos() -> std::pair<LexemeType, size_t> {
     auto start_index = _current_index;
     auto token = consume();
     return {token, start_index};
   }
 
-  static auto describe_token(lexeme_type_t token_type) -> std::string {
+  static auto describeToken(LexemeType token_type) -> std::string {
     switch (token_type) {
       case OPENING_SQUARE_BRACKET:
         return {"opening square bracket"};
@@ -108,7 +108,7 @@ class lexer_t {
     }
   }
 
-  void skip_whitespace() {
+  void skipWhitespace() {
     // while (char c = _input[_current_index]) {
     while (_current_index < _input.size()) {
       char c = _input[_current_index];
@@ -122,10 +122,10 @@ class lexer_t {
   size_t _current_index;
 };
 
-auto lexer_t::peak() -> lexeme_type_t {
+auto Lexer::peak() -> LexemeType {
   size_t tmp_index = _current_index;
   char current_char = _input[tmp_index++];
-  if (is_punct(current_char)) {
+  if (isPunct(current_char)) {
     switch (current_char) {
       case '[':
         return OPENING_SQUARE_BRACKET;
@@ -152,14 +152,14 @@ auto lexer_t::peak() -> lexeme_type_t {
   }
 }
 
-auto lexer_t::consume() -> lexeme_type_t {
+auto Lexer::consume() -> LexemeType {
   auto token = peak();
   if (token == VALUE) {
     // we have a value, so we need to scan until we have found punctuation, or
     // the end of the string
     std::stringstream builder;
     while (char tmp = _input[_current_index]) {
-      if (is_punct(tmp)) { break; }
+      if (isPunct(tmp)) { break; }
       builder << tmp;
       _current_index++;
     }
@@ -171,7 +171,7 @@ auto lexer_t::consume() -> lexeme_type_t {
     return token;
   }
   _current_index++;
-  skip_whitespace();
+  skipWhitespace();
   return token;
 }
 
@@ -209,127 +209,127 @@ auto lexer_t::consume() -> lexeme_type_t {
  *     ""
  */
 
-class parser_t {
+class Parser {
  public:
-  explicit parser_t(std::string input) : _lexer{std::move(input)} {};
-  auto parse() -> std::shared_ptr<Tree> { return parse_tree(); }
+  explicit Parser(std::string input) : _lexer{std::move(input)} {};
+  auto parse() -> std::shared_ptr<Tree> { return parseTree(); }
 
  private:
-  auto parse_tree() -> std::shared_ptr<Tree>;
-  auto parse_subtree() -> std::shared_ptr<Node>;
-  auto parse_internal() -> std::shared_ptr<Node>;  // creates node
-  void parse_node_set(const std::shared_ptr<Node>& current_node);
-  void parse_node_attrs(const std::shared_ptr<Node>& current_node);
-  auto parse_leaf() -> std::shared_ptr<Node>;  // creates node
-  void parse_length(const std::shared_ptr<Node>& current_node);
-  void parse_name(const std::shared_ptr<Node>& current_node);
-  auto parse_string() -> std::string;
-  auto parse_number() -> double;
-  void parse_comment();
+  auto parseTree() -> std::shared_ptr<Tree>;
+  auto parseSubtree() -> std::shared_ptr<Node>;
+  auto parseInternal() -> std::shared_ptr<Node>;  // creates node
+  void parseNodeSet(const std::shared_ptr<Node>& current_node);
+  void parseNodeAttributes(const std::shared_ptr<Node>& current_node);
+  auto parseLeaf() -> std::shared_ptr<Node>;  // creates node
+  void parseLength(const std::shared_ptr<Node>& current_node);
+  void parseName(const std::shared_ptr<Node>& current_node);
+  auto parseString() -> std::string;
+  auto parseNumber() -> double;
+  void parseComment();
 
   /* member variables */
-  lexer_t _lexer;
+  Lexer _lexer;
 };
 
-auto parser_t::parse_tree() -> std::shared_ptr<Tree> {
-  auto root_node = parse_subtree();
+auto Parser::parseTree() -> std::shared_ptr<Tree> {
+  auto root_node = parseSubtree();
   _lexer.expect(SEMICOLON);
-  if (!_lexer.at_end()) {
+  if (!_lexer.atEnd()) {
     throw std::runtime_error{
         "There were extra charcters when we finished parsing"};
   }
   return std::make_shared<Tree>(root_node);
 }
 
-auto parser_t::parse_subtree() -> std::shared_ptr<Node> {
+auto Parser::parseSubtree() -> std::shared_ptr<Node> {
   auto token = _lexer.peak();
   if (token == OPENING_PAREN) {
-    auto tmp = parse_internal();
+    auto tmp = parseInternal();
     if (tmp->getChildCount() < 2) {
       throw std::runtime_error{
           std::string("Got a singleton inner node around ") +
-          _lexer.describe_position()};
+          _lexer.describePosition()};
     }
     return tmp;
   }
-  auto tmp = parse_leaf();
+  auto tmp = parseLeaf();
   if (tmp->getChildCount() != 0) {
     throw std::runtime_error{std::string("Got a leaf with children around ") +
-                             _lexer.describe_position()};
+                             _lexer.describePosition()};
   }
   return tmp;
 }
 
-auto parser_t::parse_internal() -> std::shared_ptr<Node> {
+auto Parser::parseInternal() -> std::shared_ptr<Node> {
   _lexer.expect(OPENING_PAREN);
   auto current_node = std::make_shared<Node>();
-  parse_node_set(current_node);
+  parseNodeSet(current_node);
   _lexer.expect(CLOSING_PAREN);
-  parse_node_attrs(current_node);
+  parseNodeAttributes(current_node);
   return current_node;
 }
 
-void parser_t::parse_node_set(const std::shared_ptr<Node>& current_node) {
-  current_node->addChild(parse_subtree());
+void Parser::parseNodeSet(const std::shared_ptr<Node>& current_node) {
+  current_node->addChild(parseSubtree());
   auto token = _lexer.peak();
   if (token == COMMA) {
     _lexer.consume();
-    parse_node_set(current_node);
+    parseNodeSet(current_node);
   }
 }
 
-void parser_t::parse_node_attrs(const std::shared_ptr<Node>& current_node) {
-  parse_name(current_node);
-  parse_comment();
-  parse_length(current_node);
-  parse_comment();
+void Parser::parseNodeAttributes(const std::shared_ptr<Node>& current_node) {
+  parseName(current_node);
+  parseComment();
+  parseLength(current_node);
+  parseComment();
 }
 
-auto parser_t::parse_leaf() -> std::shared_ptr<Node> {
+auto Parser::parseLeaf() -> std::shared_ptr<Node> {
   auto current_node = std::make_shared<Node>();
-  parse_node_attrs(current_node);
+  parseNodeAttributes(current_node);
   if (current_node->getName().empty()) {
     throw std::runtime_error{
         std::string("Got a leaf with an empty name around ") +
-        std::string(_lexer.describe_position())};
+        std::string(_lexer.describePosition())};
   }
   return current_node;
 }
 
-void parser_t::parse_length(const std::shared_ptr<Node>& current_node) {
+void Parser::parseLength(const std::shared_ptr<Node>& current_node) {
   auto token = _lexer.peak();
   if (token == COLON) {
     _lexer.consume();
     _lexer.expect(VALUE);
-    current_node->setBL(parse_number());
+    current_node->setBL(parseNumber());
   }
 }
 
-void parser_t::parse_name(const std::shared_ptr<Node>& current_node) {
+void Parser::parseName(const std::shared_ptr<Node>& current_node) {
   auto token = _lexer.peak();
   if (token == VALUE) {
     _lexer.consume();
-    current_node->setName(parse_string());
+    current_node->setName(parseString());
   }
 }
 
-auto parser_t::parse_string() -> std::string {
-  return _lexer.consume_value_as_string();
+auto Parser::parseString() -> std::string {
+  return _lexer.consumeValueAsString();
 }
 
-auto parser_t::parse_number() -> double {
-  return _lexer.consume_value_as_float();
+auto Parser::parseNumber() -> double {
+  return _lexer.consumeValueAsFloat();
 }
 
-void parser_t::parse_comment() {
+void Parser::parseComment() {
   auto token = _lexer.peak();
   if (token == OPENING_SQUARE_BRACKET) {
     _lexer.consume();
-    _lexer.consume_until(CLOSING_SQUARE_BRACKET);
+    _lexer.consumeUntil(CLOSING_SQUARE_BRACKET);
   }
 }
 
 auto TreeReader::readTree(const std::string& tree) -> std::shared_ptr<Tree> {
-  parser_t parser(tree);
+  Parser parser(tree);
   return parser.parse();
 }

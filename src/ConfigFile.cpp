@@ -8,14 +8,14 @@
 
 #include "Fossil.hpp"
 
-enum class config_lexeme_type_t { VALUE, EQUALS_SIGN, END };
+enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
 
 void set_mrcas_for_fossils(ConfigFile &config) {
   for (auto &f : config.fossils) { f.clade = config.mrcas[f.mrca_name]; }
 }
 
 void check_prefix(ConfigFile &config) {
-  if (config.prefix.empty()) { config.prefix = config.treefile; }
+  if (config.prefix.empty()) { config.prefix = config.tree_filename; }
   if (config.prefix.filename().string()[0] == '.') {
     std::cout << "Warning, the current prefix starts with a dot, results will "
                  "be hidden on linux systems"
@@ -28,99 +28,99 @@ void finalize(ConfigFile &config) {
   check_prefix(config);
 }
 
-class config_lexer_t {
+class ConfigLexer {
  public:
-  explicit config_lexer_t(std::string input)
+  explicit ConfigLexer(std::string input)
       : _input{std::move(input)}, _current_index{0} {};
 
-  auto consume() -> config_lexeme_type_t {
+  auto consume() -> ConfigLexemeType {
     auto token = peak();
-    if (token == config_lexeme_type_t::VALUE) {
+    if (token == ConfigLexemeType::VALUE) {
       std::stringstream builder;
       while (char tmp = _input[_current_index]) {
-        if (is_punct(tmp) || std::isspace(tmp)) { break; }
+        if (isPunct(tmp) || std::isspace(tmp)) { break; }
         builder << tmp;
         _current_index++;
       }
 
       _value = builder.str();
-      skip_whitespace();
+      skipWhitespace();
       return token;
     }
     _current_index++;
-    skip_whitespace();
+    skipWhitespace();
     return token;
   }
 
-  auto peak() -> config_lexeme_type_t {
+  auto peak() -> ConfigLexemeType {
     size_t tmp_index = _current_index;
     char current_char = _input[tmp_index++];
 
-    if (_current_index == _input.size()) { return config_lexeme_type_t::END; }
-    if (current_char == '=') { return config_lexeme_type_t::EQUALS_SIGN; }
-    return config_lexeme_type_t::VALUE;
+    if (_current_index == _input.size()) { return ConfigLexemeType::END; }
+    if (current_char == '=') { return ConfigLexemeType::EQUALS_SIGN; }
+    return ConfigLexemeType::VALUE;
   }
 
-  auto consume_value_as_string() -> std::string {
+  auto consumeValueAsString() -> std::string {
     std::string tmp;
     std::swap(tmp, _value);
     return tmp;
   }
 
-  auto consume_value_as_float() -> double {
-    auto f_str = consume_value_as_string();
+  auto consumeValueAsFloat() -> double {
+    auto f_str = consumeValueAsString();
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
       throw std::runtime_error{std::string("Float conversion failed around") +
-                               describe_position()};
+                               describePosition()};
     }
     return val;
   }
 
-  auto consume_value_as_size_t() -> size_t {
-    auto f_str = consume_value_as_string();
+  auto consumeValueAsSizeT() -> size_t {
+    auto f_str = consumeValueAsString();
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
       throw std::runtime_error{std::string("Float conversion failed around") +
-                               describe_position()};
+                               describePosition()};
     }
     return val;
   }
 
-  auto describe_position() const -> std::string {
+  auto describePosition() const -> std::string {
     std::stringstream builder;
     builder << "position " << _current_index;
     return builder.str();
   }
 
-  void expect(config_lexeme_type_t token_type) {
-    auto ret = consume_token_pos();
+  void expect(ConfigLexemeType token_type) {
+    auto ret = consumeTokenPos();
     if (ret.first != token_type) {
       throw std::runtime_error{
           std::string("Got the wrong token type at position ") +
           std::to_string(ret.second + 1) + " was expecting " +
-          describe_token(token_type)};
+          describeToken(token_type)};
     }
   }
 
-  void consume_until(config_lexeme_type_t token_type) {
+  void consumeUntil(ConfigLexemeType token_type) {
     while (token_type != consume()) {}
   }
 
-  auto at_end() -> bool { return _input.size() == _current_index; }
+  auto atEnd() -> bool { return _input.size() == _current_index; }
 
  private:
-  bool is_punct(char c) { return c == '='; }
+  bool isPunct(char c) { return c == '='; }
 
-  auto consume_token_pos() -> std::pair<config_lexeme_type_t, size_t> {
+  auto consumeTokenPos() -> std::pair<ConfigLexemeType, size_t> {
     auto start_index = _current_index;
     auto token = consume();
     return {token, start_index};
   }
 
-  void skip_whitespace() {
+  void skipWhitespace() {
     while (_current_index < _input.size()) {
       char c = _input[_current_index];
       if (std::isspace(c) == 0) { break; }
@@ -128,13 +128,13 @@ class config_lexer_t {
     }
   }
 
-  static auto describe_token(config_lexeme_type_t token_type) -> std::string {
+  static auto describeToken(ConfigLexemeType token_type) -> std::string {
     switch (token_type) {
-      case config_lexeme_type_t::VALUE:
+      case ConfigLexemeType::VALUE:
         return {"either a number or a string"};
-      case config_lexeme_type_t::EQUALS_SIGN:
+      case ConfigLexemeType::EQUALS_SIGN:
         return {"equals sign"};
-      case config_lexeme_type_t::END:
+      case ConfigLexemeType::END:
         return {"end of line"};
       default:
         return {"unknown token"};
@@ -146,84 +146,84 @@ class config_lexer_t {
   size_t _current_index;
 };
 
-std::string parse_filename(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto filename_value = lexer.consume_value_as_string();
+std::string parse_filename(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto filename_value = lexer.consumeValueAsString();
   return filename_value;
 }
 
-std::vector<std::string> parse_list(config_lexer_t &lexer) {
+std::vector<std::string> parse_list(ConfigLexer &lexer) {
   std::vector<std::string> values;
-  while (lexer.peak() != config_lexeme_type_t::END) {
-    lexer.expect(config_lexeme_type_t::VALUE);
-    values.push_back(lexer.consume_value_as_string());
+  while (lexer.peak() != ConfigLexemeType::END) {
+    lexer.expect(ConfigLexemeType::VALUE);
+    values.push_back(lexer.consumeValueAsString());
   }
   return values;
 }
 
-double parse_double(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
+double parse_double(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
 
-  return lexer.consume_value_as_float();
+  return lexer.consumeValueAsFloat();
 }
 
-double parse_size_t(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
+double parse_size_t(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
 
-  return lexer.consume_value_as_size_t();
+  return lexer.consumeValueAsSizeT();
 }
 
-Fossil parse_node_fossil(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto fossile_mrca = lexer.consume_value_as_string();
+Fossil parse_node_fossil(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto fossile_mrca = lexer.consumeValueAsString();
 
-  lexer.expect(config_lexeme_type_t::VALUE);
+  lexer.expect(ConfigLexemeType::VALUE);
   auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consume_value_as_string());
+      lexer.consumeValueAsString());
 
   return {.mrca_name = fossile_mrca,
           .clade = {},
           .age = 0.0,
           .area = fossil_area,
-          .type = fossil_type::node};
+          .type = fossil_type::NODE};
 }
 
-Fossil parse_branch_fossil(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto fossile_mrca = lexer.consume_value_as_string();
+Fossil parse_branch_fossil(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto fossile_mrca = lexer.consumeValueAsString();
 
-  lexer.expect(config_lexeme_type_t::VALUE);
+  lexer.expect(ConfigLexemeType::VALUE);
   auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consume_value_as_string());
+      lexer.consumeValueAsString());
 
-  lexer.expect(config_lexeme_type_t::VALUE);
-  double fossil_age = lexer.consume_value_as_float();
+  lexer.expect(ConfigLexemeType::VALUE);
+  double fossil_age = lexer.consumeValueAsFloat();
 
   return {.mrca_name = fossile_mrca,
           .clade = {},
           .age = fossil_age,
           .area = fossil_area,
-          .type = fossil_type::branch};
+          .type = fossil_type::BRANCH};
 };
 
-Fossil parse_fixed_fossil(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto fossile_mrca = lexer.consume_value_as_string();
+Fossil parse_fixed_fossil(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto fossile_mrca = lexer.consumeValueAsString();
 
-  lexer.expect(config_lexeme_type_t::VALUE);
+  lexer.expect(ConfigLexemeType::VALUE);
   auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consume_value_as_string());
+      lexer.consumeValueAsString());
 
   return {.mrca_name = fossile_mrca,
           .clade = {},
           .age = 0,
           .area = fossil_area,
-          .type = fossil_type::fixed};
+          .type = fossil_type::FIXED};
 }
 
-Fossil parse_fossil(config_lexer_t &lexer) {
-  lexer.expect(config_lexeme_type_t::VALUE);
-  auto fossil_type_string = lexer.consume_value_as_string();
+Fossil parse_fossil(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto fossil_type_string = lexer.consumeValueAsString();
 
   std::transform(fossil_type_string.cbegin(), fossil_type_string.cend(),
                  fossil_type_string.begin(),
@@ -244,30 +244,30 @@ ConfigFile parse_config_file(std::istream &instream) {
   std::string line;
   size_t line_number = 1;
   while (getline(instream, line)) {
-    config_lexer_t lexer(line);
+    ConfigLexer lexer(line);
     try {
-      if (lexer.peak() == config_lexeme_type_t::END) { continue; }
+      if (lexer.peak() == ConfigLexemeType::END) { continue; }
 
-      lexer.expect(config_lexeme_type_t::VALUE);
-      auto config_value = lexer.consume_value_as_string();
+      lexer.expect(ConfigLexemeType::VALUE);
+      auto config_value = lexer.consumeValueAsString();
 
       if (config_value == "treefile") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        config.treefile = parse_filename(lexer);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.tree_filename = parse_filename(lexer);
       } else if (config_value == "datafile") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        config.datafile = parse_filename(lexer);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.data_filename = parse_filename(lexer);
       } else if (config_value == "ratematrix") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        config.ratematrixfile = parse_filename(lexer);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.rate_matrix_filename = parse_filename(lexer);
       } else if (config_value == "areanames") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        config.areaNames = parse_list(lexer);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.area_names = parse_list(lexer);
       } else if (config_value == "prefix") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         config.prefix = parse_filename(lexer);
       } else if (config_value == "periods") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         auto tmp_values = parse_list(lexer);
 
         std::vector<double> time_points;
@@ -279,93 +279,93 @@ ConfigFile parse_config_file(std::istream &instream) {
 
         config.periods = Periods(time_points);
       } else if (config_value == "mrca") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        lexer.expect(config_lexeme_type_t::VALUE);
-        auto mrca_name = lexer.consume_value_as_string();
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
+        auto mrca_name = lexer.consumeValueAsString();
 
         auto mrca_entries = parse_list(lexer);
         config.mrcas[mrca_name] = std::shared_ptr<MRCAEntry>(
             new MRCAEntry{.clade = std::move(mrca_entries)});
       } else if (config_value == "ancstate") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        config.ancstates = parse_list(lexer);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.anc_states = parse_list(lexer);
       } else if (config_value == "fossil") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.fossils.push_back(parse_fossil(lexer));
       } else if (config_value == "calctype") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        lexer.expect(config_lexeme_type_t::VALUE);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
 
-        auto calc_type_value = lexer.consume_value_as_string();
+        auto calc_type_value = lexer.consumeValueAsString();
         if (std::tolower(calc_type_value[0]) == 'm') {
           config.marginal = true;
         } else {
           config.marginal = false;
         }
       } else if (config_value == "report") {
-        lexer.expect(config_lexeme_type_t::VALUE);
-        auto report_value = lexer.consume_value_as_string();
+        lexer.expect(ConfigLexemeType::VALUE);
+        auto report_value = lexer.consumeValueAsString();
         if (report_value != "split") { config.splits = false; }
       } else if (config_value == "splits") {
         config.splits = true;
       } else if (config_value == "states") {
         config.states = true;
       } else if (config_value == "dispersal") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
       } else if (config_value == "extinction") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.extinction = parse_double(lexer);
       } else if (config_value == "lh-epsilon") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.extinction = parse_double(lexer);
       } else if (config_value == "workers") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.workers = parse_size_t(lexer);
       } else if (config_value == "threads-per-worker") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.threads_per_worker = parse_size_t(lexer);
       } else if (config_value == "maxareas") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         config.maxareas = parse_size_t(lexer);
       } else if (config_value == "expm-mode") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        lexer.expect(config_lexeme_type_t::VALUE);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
 
-        auto expm_type = lexer.consume_value_as_string();
+        auto expm_type = lexer.consumeValueAsString();
 
         if (expm_type == "krylov") {
-          config.expm_mode = lagrange_expm_computation_mode::KRYLOV;
+          config.expm_mode = LagrangeEXPMComputationMode::KRYLOV;
         } else if (expm_type == "pade") {
-          config.expm_mode = lagrange_expm_computation_mode::PADE;
+          config.expm_mode = LagrangeEXPMComputationMode::PADE;
         } else if (expm_type == "adaptive") {
-          config.expm_mode = lagrange_expm_computation_mode::ADAPTIVE;
+          config.expm_mode = LagrangeEXPMComputationMode::ADAPTIVE;
         }
       } else if (config_value == "mode") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        lexer.expect(config_lexeme_type_t::VALUE);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
 
-        auto mode_type = lexer.consume_value_as_string();
+        auto mode_type = lexer.consumeValueAsString();
         if (mode_type == "optimize") {
-          config.mode = lagrange_operation_mode::OPTIMIZE;
+          config.run_mode = LagrangeOperationMode::OPTIMIZE;
         } else if (mode_type == "evaluate") {
-          config.mode = lagrange_operation_mode::EVALUATE;
+          config.run_mode = LagrangeOperationMode::EVALUATE;
         }
       } else if (config_value == "alignment-type") {
-        lexer.expect(config_lexeme_type_t::EQUALS_SIGN);
-        lexer.expect(config_lexeme_type_t::VALUE);
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
 
-        auto align_type_str = lexer.consume_value_as_string();
+        auto align_type_str = lexer.consumeValueAsString();
         if (align_type_str == "fasta") {
-          config.alignment_file_type = AlignmentFileType::fasta;
+          config.alignment_file_type = AlignmentFileType::FASTA;
         }
         if (align_type_str == "phylip") {
-          config.alignment_file_type = AlignmentFileType::phylip;
+          config.alignment_file_type = AlignmentFileType::PHYLIP;
         }
       } else {
         std::stringstream oss;
@@ -374,7 +374,7 @@ ConfigFile parse_config_file(std::istream &instream) {
         throw std::runtime_error{oss.str()};
       }
 
-      lexer.expect(config_lexeme_type_t::END);
+      lexer.expect(ConfigLexemeType::END);
     } catch (const std::exception &e) {
       std::ostringstream oss;
       oss << "There was a problem parsing line " << line_number
@@ -391,19 +391,19 @@ ConfigFile parse_config_file(std::istream &instream) {
   return config;
 }
 
-std::filesystem::path ConfigFile::get_results_filename() const {
+std::filesystem::path ConfigFile::resultsFilename() const {
   auto results_filename = prefix;
   results_filename += ".results.json";
   return results_filename;
 }
 
-std::filesystem::path ConfigFile::get_node_tree_filename() const {
+std::filesystem::path ConfigFile::NodeTreeFilename() const {
   auto node_tree_filename = prefix;
   node_tree_filename += ".nodes.tre";
   return node_tree_filename;
 }
 
-std::filesystem::path ConfigFile::get_scaled_tree_filename() const {
+std::filesystem::path ConfigFile::scaledTreeFilename() const {
   auto scaled_tree_filename = prefix;
   scaled_tree_filename += ".scaled.tre";
   return scaled_tree_filename;

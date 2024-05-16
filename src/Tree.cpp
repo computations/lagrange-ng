@@ -88,7 +88,7 @@ auto Tree::getMRCA(const std::shared_ptr<MRCAEntry> &mrca)
     -> std::shared_ptr<Node> {
   std::vector<std::shared_ptr<Node>> members;
   for (auto &&e : mrca->clade) { members.push_back(getExternalNode(e)); }
-  return getMRCAWithNode(_root, members);
+  return getMRCAWithNodes(_root, members);
 }
 
 void Tree::setHeightTopDown() { _root->setHeightReverse(); }
@@ -192,8 +192,8 @@ auto Tree::generateBackwardOperations(Workspace &ws,
     -> std::vector<std::shared_ptr<ReverseSplitOperation>> {
   auto ret =
       _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map, true);
-  (ret.first[0])->makeRootOperation(ws.get_bot1_clv_reverse(_root->getId()));
-  (ret.first[1])->makeRootOperation(ws.get_bot2_clv_reverse(_root->getId()));
+  (ret.first[0])->makeRootOperation(ws.getBot1CLVReverse(_root->getId()));
+  (ret.first[1])->makeRootOperation(ws.getBot2CLVReverse(_root->getId()));
 
   return ret.first;
 }
@@ -239,10 +239,10 @@ bool Tree::checkAlignmentConsistency(const Alignment &align) const {
 
 void Tree::assignFossils(const std::vector<Fossil> &fossils) {
   for (const auto &f : fossils) {
-    if (f.type == fossil_type::node) {
-      getMRCA(f.clade.get())->assignInclAreas(f.area);
+    if (f.type == fossil_type::NODE) {
+      getMRCA(f.clade.get())->assignIncludedAreas(f.area);
     }
-    if (f.type == fossil_type::fixed) {
+    if (f.type == fossil_type::FIXED) {
       getMRCA(f.clade.get())->assignFixedDist(f.area);
     }
   }

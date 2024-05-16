@@ -37,8 +37,8 @@ using lagrange_clock_t = std::atomic<uint64_t>;
 
 using lagrange_op_id_t = uint64_t;
 
-struct node_reservation_t {
-  node_reservation_t()
+struct NodeReservation {
+  NodeReservation()
       : _top_clv{std::numeric_limits<size_t>::max()},
         _bot1_clv{std::numeric_limits<size_t>::max()},
         _bot2_clv{std::numeric_limits<size_t>::max()},
@@ -54,7 +54,7 @@ struct node_reservation_t {
   size_t _bot2_rclv;
 };
 
-struct period_derivative_t {
+struct PeriodDerivative {
   double d_dispersion;
   double d_extinction;
 
@@ -63,12 +63,12 @@ struct period_derivative_t {
   }
 };
 
-struct period_params_t {
+struct PeriodParams {
   double dispersion_rate;
   double extinction_rate;
   std::shared_ptr<std::vector<std::vector<double>>> adjustment_matrix = nullptr;
 
-  void applyDerivative(const period_derivative_t &d) {
+  void applyDerivative(const PeriodDerivative &d) {
     dispersion_rate += d.d_dispersion;
     extinction_rate += d.d_extinction;
     if (dispersion_rate < 0) { dispersion_rate = 0.0; }
@@ -90,17 +90,17 @@ struct period_params_t {
   inline auto getExtinctionRate() const -> double { return extinction_rate; }
 };
 
-using lagrange_float_t = double;
-using lagrange_complex_t = lapack_complex_double;
+using LagrangeFloat = double;
+using LagrangeComplex = lapack_complex_double;
 
-using lagrange_matrix_base_t = lagrange_float_t;
+using LagrangeMatrixBase = LagrangeFloat;
 
-using lagrange_matrix_t = lagrange_matrix_base_t *;
-using lagrange_const_matrix_t = const lagrange_matrix_base_t *const;
-using lagrange_complex_matrix_t = lagrange_matrix_base_t *;
-using lagrange_col_vector_t = lagrange_matrix_base_t *;
-using lagrange_const_col_vector_t = const lagrange_matrix_base_t *const;
-using lagrange_complex_col_vector_t = lagrange_matrix_base_t *;
+using LagrangeMatrix = LagrangeMatrixBase *;
+using LagrangeConstMatrix = const LagrangeMatrixBase *const;
+using LagrangeComplexMatrix = LagrangeMatrixBase *;
+using LagrangeColVector = LagrangeMatrixBase *;
+using LagrangeConstColVector = const LagrangeMatrixBase *const;
+using LagrangeComplexColVector = LagrangeMatrixBase *;
 
 constexpr double lagrange_scaling_factor = 0x1p256;
 
@@ -110,8 +110,8 @@ constexpr double lagrange_scaling_factor_log =
     177.445678223345993274051579646766185760498046875;
 /* = std::log(lagrange_scaling_factor) */
 
-enum class lagrange_operation_mode { OPTIMIZE, EVALUATE };
+enum class LagrangeOperationMode { OPTIMIZE, EVALUATE };
 
-enum class lagrange_expm_computation_mode { PADE, KRYLOV, ADAPTIVE };
+enum class LagrangeEXPMComputationMode { PADE, KRYLOV, ADAPTIVE };
 
 #endif  // LAGRANGE_COMMON_H
