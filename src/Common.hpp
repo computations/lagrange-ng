@@ -32,12 +32,12 @@ namespace lagrange {
 
 #include "Quarantine.hpp"
 
-using lagrange_dist_t = uint64_t;
+using Dist = uint64_t;
 
-using lagrange_clock_tick_t = uint64_t;
-using lagrange_clock_t = std::atomic<uint64_t>;
+using ClockTick = uint64_t;
+using Clock = std::atomic<uint64_t>;
 
-using lagrange_op_id_t = uint64_t;
+using OpID = uint64_t;
 
 struct NodeReservation {
   NodeReservation()

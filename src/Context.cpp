@@ -100,7 +100,7 @@ void Context::init() {
 }
 
 void Context::registerTipClvs(
-    const std::unordered_map<std::string, lagrange_dist_t>& dist_data) {
+    const std::unordered_map<std::string, Dist>& dist_data) {
   if (_forward_operations.empty()) {
     throw std::runtime_error{
         "The forward operations need to be generated first"};

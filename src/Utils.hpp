@@ -18,30 +18,30 @@
 
 namespace lagrange {
 
-struct LagrangeRegionSplit {
-  lagrange_dist_t left;
-  lagrange_dist_t right;
+struct RegionSplit {
+  Dist left;
+  Dist right;
 };
 
-inline auto lagrange_bextr(lagrange_dist_t a, size_t i) -> uint64_t {
+inline auto lagrange_bextr(Dist a, size_t i) -> uint64_t {
   return (a >> i) & 1ULL;
 }
 
-inline auto lagrange_popcount(lagrange_dist_t a) -> size_t {
+inline auto lagrange_popcount(Dist a) -> size_t {
   return static_cast<size_t>(__builtin_popcountll(a));
 }
 
-constexpr inline auto lagrange_clz(lagrange_dist_t a) -> size_t {
+constexpr inline auto lagrange_clz(Dist a) -> size_t {
   return static_cast<size_t>(__builtin_clzll(a));
 }
 
 inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
-    -> lagrange_dist_t {
-  lagrange_dist_t ret = 0;
+    -> Dist {
+  Dist ret = 0;
   size_t area_count = vec_dist.size();
 
   for (size_t i = 0; i < area_count; ++i) {
-    ret |= static_cast<lagrange_dist_t>(vec_dist[i]) << i;
+    ret |= static_cast<Dist>(vec_dist[i]) << i;
   }
 
   return ret;
@@ -54,12 +54,12 @@ constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
 }
 
 inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
-                                       size_t states) -> lagrange_dist_t {
-  lagrange_dist_t best_dist = 0;
+                                       size_t states) -> Dist {
+  Dist best_dist = 0;
 
   double best_lh = dist_lhs[0];
 
-  for (lagrange_dist_t i = 1; i < states; i++) {
+  for (Dist i = 1; i < states; i++) {
     double cur_lh = dist_lhs[i];
     if (best_lh < cur_lh) {
       best_dist = i;
@@ -73,23 +73,23 @@ inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
 auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
     -> size_t;
 
-auto compute_index_from_dist(lagrange_dist_t i, size_t max_areas) -> size_t;
+auto compute_index_from_dist(Dist i, size_t max_areas) -> size_t;
 
-auto lagrange_convert_dist_string(lagrange_dist_t dist,
+auto lagrange_convert_dist_string(Dist dist,
                                   const std::vector<std::string> &names)
     -> std::string;
 
 auto lagrange_convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
-    -> lagrange_dist_t;
+    -> Dist;
 
 auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
-    -> lagrange_dist_t;
+    -> Dist;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n)
-    -> lagrange_dist_t {
+constexpr inline auto next_dist(Dist d, uint32_t n)
+    -> Dist {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
@@ -97,20 +97,20 @@ constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n)
 
 /* Returns true if the dist "passes" the check. That is, if there are no common
  * bits set */
-constexpr inline auto check_excl_dist(lagrange_dist_t dist,
-                                      lagrange_dist_t excl_dist) -> bool {
+constexpr inline auto check_excl_dist(Dist dist,
+                                      Dist excl_dist) -> bool {
   return !(dist & excl_dist);
 }
 
-constexpr inline auto check_incl_dist(lagrange_dist_t dist,
-                                      lagrange_dist_t incl_dist) -> bool {
+constexpr inline auto check_incl_dist(Dist dist,
+                                      Dist incl_dist) -> bool {
   return (dist & incl_dist) == incl_dist;
 }
 
-constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n, size_t index,
-                                lagrange_dist_t excl_area_mask = 0,
-                                lagrange_dist_t incl_area_mask = 0)
-    -> std::pair<lagrange_dist_t, size_t> {
+constexpr inline auto next_dist(Dist d, uint32_t n, size_t index,
+                                Dist excl_area_mask = 0,
+                                Dist incl_area_mask = 0)
+    -> std::pair<Dist, size_t> {
   auto next = next_dist(d, n);
   index += 1;
   if (check_excl_dist(next, excl_area_mask) &&
@@ -121,19 +121,19 @@ constexpr inline auto next_dist(lagrange_dist_t d, uint32_t n, size_t index,
 }
 
 std::vector<std::string> lagrange_convert_dist_to_list(
-    lagrange_dist_t dist, const std::vector<std::string> &names);
+    Dist dist, const std::vector<std::string> &names);
 
 std::string get_file_extension(const std::string &filename);
 
 template <typename T>
-class LagrangeOption {
+class Option {
  public:
-  LagrangeOption() = default;
-  explicit LagrangeOption(const T &val) : _value{val}, _has_value{true} {}
+  Option() = default;
+  explicit Option(const T &val) : _value{val}, _has_value{true} {}
 
-  LagrangeOption(const LagrangeOption<T> &o) = default;
+  Option(const Option<T> &o) = default;
 
-  auto operator=(const T &v) -> LagrangeOption<T> & {
+  auto operator=(const T &v) -> Option<T> & {
     _value = v;
     _has_value = true;
     return *this;
@@ -163,7 +163,7 @@ class LagrangeOption {
   bool _has_value{false};
 };
 
-class lagrange_util_dist_index_conversion_exception : public std::exception {};
+class UtilDistIndexConversionException : public std::exception {};
 }  // namespace lagrange
 
 namespace std {

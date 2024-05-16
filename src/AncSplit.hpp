@@ -33,7 +33,7 @@ class AncSplit {
   double _lwr;
 
  public:
-  AncSplit(lagrange_dist_t, lagrange_dist_t, lagrange_dist_t, double);
+  AncSplit(Dist, Dist, Dist, double);
   auto getWeight() const -> double;
   auto getLikelihood() const -> double;
   void setLikelihood(double li);
@@ -41,13 +41,13 @@ class AncSplit {
   void setLWR(double lwr);
   auto getLWR() const -> double;
 
-  lagrange_dist_t anc_dist;
-  lagrange_dist_t l_dist;
-  lagrange_dist_t r_dist;
+  Dist anc_dist;
+  Dist l_dist;
+  Dist r_dist;
 };
 
 using lagrange_split_return_t =
-    std::unordered_map<lagrange_dist_t, std::vector<AncSplit>>;
+    std::unordered_map<Dist, std::vector<AncSplit>>;
 
 using lagrange_split_list_t = std::vector<lagrange_split_return_t>;
 

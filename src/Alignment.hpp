@@ -11,7 +11,7 @@
 
 namespace lagrange {
 struct Alignment {
-  std::unordered_map<std::string, lagrange_dist_t> data;
+  std::unordered_map<std::string, Dist> data;
   size_t region_count;
   size_t taxa_count;
 };
@@ -23,7 +23,7 @@ Alignment read_phylip(std::istream& instream);
 
 Alignment read_alignment(std::istream& instream, AlignmentFileType type);
 Alignment read_alignment(const std::filesystem::path& infile,
-                         LagrangeOption<AlignmentFileType> type);
+                         Option<AlignmentFileType> type);
 }  // namespace lagrange
 
 #endif

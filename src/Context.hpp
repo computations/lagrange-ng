@@ -39,7 +39,7 @@ class Context {
   auto getSplitResults() const -> lagrange_split_list_t;
 
   void registerTipClvs(
-      const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
+      const std::unordered_map<std::string, Dist>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
                                 bool output, const LagrangeOperationMode& mode);

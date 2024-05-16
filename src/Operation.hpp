@@ -33,7 +33,7 @@ class MakeRateMatrixOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  inline auto lastUpdate() const -> lagrange_clock_tick_t {
+  inline auto lastUpdate() const -> ClockTick {
     return _last_execution;
   }
 
@@ -64,8 +64,8 @@ class MakeRateMatrixOperation {
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
 
-  lagrange_clock_tick_t _last_execution;
-  lagrange_clock_tick_t _last_update;
+  ClockTick _last_execution;
+  ClockTick _last_update;
 };
 
 class ExpmOperation {
@@ -93,7 +93,7 @@ class ExpmOperation {
   bool transposed() const { return _transposed; }
   auto getT() const { return _t; }
 
-  auto lastExecution() const -> lagrange_clock_tick_t {
+  auto lastExecution() const -> ClockTick {
     return _last_execution;
   }
 
@@ -135,7 +135,7 @@ class ExpmOperation {
   std::unique_ptr<LagrangeMatrixBase[]> _D = nullptr;
   std::unique_ptr<LagrangeMatrixBase[]> _lapack_work_buffer = nullptr;
 
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};
 
   bool _transposed;
@@ -237,7 +237,7 @@ class DispersionOperation {
                    size_t tabLevel = 0) const -> std::string;
 
   auto ready(const std::shared_ptr<Workspace>& ws,
-             lagrange_clock_tick_t deadline) const -> bool {
+             ClockTick deadline) const -> bool {
     if (ws->lastUpdateCLV(_bot_clv) > deadline) { return true; }
     return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }
@@ -299,7 +299,7 @@ class DispersionOperation {
   std::shared_ptr<DispersionOperation> _child_op;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 };
 
 class SplitOperation {
@@ -370,15 +370,15 @@ class SplitOperation {
     _rbranch_op->emplaceRateMatrixOperations(ret);
   }
 
-  void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
+  void fixDist(Dist fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> LagrangeOption<lagrange_dist_t> const {
+  auto getFixedDist() -> Option<Dist> const {
     return _fixed_dist;
   }
 
-  void setExclAreas(lagrange_dist_t e) { _excl_area_mask = e; }
+  void setExclAreas(Dist e) { _excl_area_mask = e; }
 
-  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+  void setInclAreas(Dist i) { _incl_area_mask = i; }
 
  private:
   size_t _lbranch_clv_index;
@@ -388,12 +388,12 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _lbranch_op;
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
-  LagrangeOption<lagrange_dist_t> _fixed_dist;
-  LagrangeOption<lagrange_dist_t> _excl_area_mask;
-  LagrangeOption<lagrange_dist_t> _incl_area_mask;
+  Option<Dist> _fixed_dist;
+  Option<Dist> _excl_area_mask;
+  Option<Dist> _incl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 };
 
 class ReverseSplitOperation {
@@ -469,13 +469,13 @@ class ReverseSplitOperation {
     return {};
   }
 
-  void fixDist(lagrange_dist_t fix_dist) { _fixed_dist = fix_dist; }
+  void fixDist(Dist fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> LagrangeOption<lagrange_dist_t> const {
+  auto getFixedDist() -> Option<Dist> const {
     return _fixed_dist;
   }
 
-  void setInclAreas(lagrange_dist_t i) { _incl_area_mask = i; }
+  void setInclAreas(Dist i) { _incl_area_mask = i; }
 
  private:
   size_t _bot_clv_index;
@@ -485,12 +485,12 @@ class ReverseSplitOperation {
 
   std::shared_ptr<DispersionOperation> _branch_op;
 
-  LagrangeOption<lagrange_dist_t> _fixed_dist;
-  LagrangeOption<lagrange_dist_t> _incl_area_mask;
-  LagrangeOption<lagrange_dist_t> _excl_area_mask;
+  Option<Dist> _fixed_dist;
+  Option<Dist> _incl_area_mask;
+  Option<Dist> _excl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 };
 
 class LLHGoal {
@@ -508,7 +508,7 @@ class LLHGoal {
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
  private:
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 };
 
 class StateLHGoal {
@@ -542,21 +542,21 @@ class StateLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
-  void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
-  LagrangeOption<lagrange_dist_t> getFixedDist() { return _fixed_dist; }
+  void fixDist(Dist dist) { _fixed_dist = dist; }
+  Option<Dist> getFixedDist() { return _fixed_dist; }
 
-  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+  void setInclAreas(Dist dist) { _incl_area_mask = dist; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  LagrangeOption<lagrange_dist_t> _fixed_dist;
-  lagrange_dist_t _excl_area_mask = 0;
-  lagrange_dist_t _incl_area_mask = 0;
+  Option<Dist> _fixed_dist;
+  Dist _excl_area_mask = 0;
+  Dist _incl_area_mask = 0;
 
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 
   std::unique_ptr<LagrangeMatrixBase[]> _result;
   size_t _states;
@@ -575,20 +575,20 @@ class SplitLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
-  void fixDist(lagrange_dist_t dist) { _fixed_dist = dist; }
+  void fixDist(Dist dist) { _fixed_dist = dist; }
 
-  void setInclAreas(lagrange_dist_t dist) { _incl_area_mask = dist; }
+  void setInclAreas(Dist dist) { _incl_area_mask = dist; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  LagrangeOption<lagrange_dist_t> _fixed_dist;
-  lagrange_dist_t _excl_area_mask = 0;
-  lagrange_dist_t _incl_area_mask = 0;
+  Option<Dist> _fixed_dist;
+  Dist _excl_area_mask = 0;
+  Dist _incl_area_mask = 0;
 
-  lagrange_clock_tick_t _last_execution = 0;
+  ClockTick _last_execution = 0;
 
   lagrange_split_return_t _result;
 };

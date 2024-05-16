@@ -217,7 +217,7 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
 
 void Tree::assignTipData(
     Workspace &ws,
-    const std::unordered_map<std::string, lagrange_dist_t> &dist_data) {
+    const std::unordered_map<std::string, Dist> &dist_data) {
   _root->assignTipData(ws, dist_data);
 }
 

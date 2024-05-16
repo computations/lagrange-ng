@@ -26,13 +26,13 @@ struct ConfigFile {
 
   Periods periods;
   std::unordered_map<std::string, std::shared_ptr<MRCAEntry>> mrcas;
-  std::vector<lagrange_dist_t> exclude_dists;
-  std::vector<lagrange_dist_t> include_dists;
+  std::vector<Dist> exclude_dists;
+  std::vector<Dist> include_dists;
   std::vector<std::string> area_names;
   std::vector<std::string> anc_states;
 
   std::vector<Fossil> fossils;
-  std::unordered_map<std::string, lagrange_dist_t> fix_node_with_mrca;
+  std::unordered_map<std::string, Dist> fix_node_with_mrca;
 
   bool marginal = true;  // false means joint
   bool splits = false;
@@ -44,16 +44,16 @@ struct ConfigFile {
 
   double lh_epsilon = 1e-9;
 
-  LagrangeOption<LagrangeEXPMComputationMode> expm_mode;
+  Option<LagrangeEXPMComputationMode> expm_mode;
 
-  LagrangeOption<AlignmentFileType> alignment_file_type;
+  Option<AlignmentFileType> alignment_file_type;
 
   size_t region_count{};
-  LagrangeOption<size_t> workers;
-  LagrangeOption<size_t> threads_per_worker;
-  LagrangeOption<LagrangeOperationMode> run_mode{
+  Option<size_t> workers;
+  Option<size_t> threads_per_worker;
+  Option<LagrangeOperationMode> run_mode{
       LagrangeOperationMode::OPTIMIZE};
-  LagrangeOption<std::pair<double, double>> rate_params;
+  Option<std::pair<double, double>> rate_params;
 
   std::filesystem::path resultsFilename() const;
   std::filesystem::path NodeTreeFilename() const;

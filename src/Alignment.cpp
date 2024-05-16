@@ -82,7 +82,7 @@ Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
 }
 
 Alignment read_alignment(const std::filesystem::path& infile,
-                         LagrangeOption<AlignmentFileType> type) {
+                         Option<AlignmentFileType> type) {
   std::ifstream alignment_file(infile);
   if (type.hasValue()) { return read_alignment(alignment_file, type.get()); }
 

@@ -21,8 +21,8 @@
 #include "Common.hpp"
 
 namespace lagrange {
-AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
-                   lagrange_dist_t rdesc, double we)
+AncSplit::AncSplit(Dist dist, Dist ldesc,
+                   Dist rdesc, double we)
     : _weight(we),
       _likelihood(0.0),
       anc_dist(dist),

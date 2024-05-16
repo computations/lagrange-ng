@@ -19,15 +19,15 @@
 
 namespace lagrange {
 
-struct matrix_reservation_t {
+struct MatrixReservation {
   LagrangeMatrix _matrix = nullptr;
-  lagrange_clock_tick_t _last_update = 0;
-  lagrange_op_id_t _op_id{};
+  ClockTick _last_update = 0;
+  OpID _op_id{};
 };
 
-struct clv_reservation_t {
+struct CLVReservation {
   LagrangeColVector _clv = nullptr;
-  lagrange_clock_tick_t _last_update = 0;
+  ClockTick _last_update = 0;
 };
 
 class Workspace {
@@ -122,7 +122,7 @@ class Workspace {
   }
 
   inline auto updateProbMatrix(size_t index, const LagrangeConstMatrix &A)
-      -> lagrange_clock_tick_t {
+      -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -152,12 +152,12 @@ class Workspace {
   }
   */
 
-  inline auto lastUpdateProbMatrix(size_t i) -> lagrange_clock_tick_t {
+  inline auto lastUpdateProbMatrix(size_t i) -> ClockTick {
     assert(_reserved);
     return _prob_matrix[i]._last_update;
   }
 
-  inline auto lastUpdateRateMatrix(size_t i) -> lagrange_clock_tick_t {
+  inline auto lastUpdateRateMatrix(size_t i) -> ClockTick {
     assert(_reserved);
     return _rate_matrix[i]._last_update;
   }
@@ -191,7 +191,7 @@ class Workspace {
     _clvs[index]._last_update = advanceClock();
   }
 
-  inline auto lastUpdateCLV(size_t index) -> lagrange_clock_tick_t {
+  inline auto lastUpdateCLV(size_t index) -> ClockTick {
     return _clvs[index]._last_update;
   }
 
@@ -225,7 +225,7 @@ class Workspace {
 
   void registerChildrenCLV(size_t node_id);
 
-  void setTipCLV(size_t index, lagrange_dist_t dist);
+  void setTipCLV(size_t index, Dist dist);
 
   inline void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();
@@ -267,13 +267,13 @@ class Workspace {
     return _base_frequencies[index];
   }
 
-  inline void setBaseFrequenciesByDist(size_t index, lagrange_dist_t dist) {
+  inline void setBaseFrequenciesByDist(size_t index, Dist dist) {
     for (size_t i = 0; i < CLVSize(); ++i) {
       _base_frequencies[index][i] = 0.0;
     }
 
     size_t tmp_index = 0;
-    lagrange_dist_t tmp_dist = 0;
+    Dist tmp_dist = 0;
     while (true) {
       tmp_dist = next_dist(tmp_dist, maxAreas());
       tmp_index += 1;
@@ -285,10 +285,10 @@ class Workspace {
 
   void reserve();
 
-  inline auto advanceClock() -> lagrange_clock_tick_t {
+  inline auto advanceClock() -> ClockTick {
     return _current_clock++;
   }
-  inline auto readClock() -> lagrange_clock_tick_t { return _current_clock; }
+  inline auto readClock() -> ClockTick { return _current_clock; }
 
   auto getPeriodParams() const -> const std::vector<PeriodParams> & {
     return _periods;
@@ -325,7 +325,7 @@ class Workspace {
     }
 
     _clvs[index]._last_update =
-        std::numeric_limits<lagrange_clock_tick_t>::max();
+        std::numeric_limits<ClockTick>::max();
   }
 
   inline auto leadingDimension() const -> size_t { return _leading_dim; }
@@ -356,20 +356,20 @@ class Workspace {
 
   size_t _leading_dim;
 
-  std::vector<matrix_reservation_t> _rate_matrix;
-  std::vector<matrix_reservation_t> _prob_matrix;
+  std::vector<MatrixReservation> _rate_matrix;
+  std::vector<MatrixReservation> _prob_matrix;
 
   size_t _base_frequencies_count;
   LagrangeColVector *_base_frequencies;
 
-  std::vector<clv_reservation_t> _clvs;
+  std::vector<CLVReservation> _clvs;
   size_t *_clv_scalars;
 
   std::vector<NodeReservation> _node_reservations;
 
   std::vector<PeriodParams> _periods;
 
-  lagrange_clock_t _current_clock;
+  Clock _current_clock;
   bool _reserved;
 
   size_t _expm_count = 0;

@@ -57,7 +57,7 @@ class Tree {
 
   void assignTipData(
       Workspace &ws,
-      const std::unordered_map<std::string, lagrange_dist_t> &dist_data);
+      const std::unordered_map<std::string, Dist> &dist_data);
 
   auto getExternalNode(size_t num) -> std::shared_ptr<Node>;
   auto getExternalNode(const std::string &name) -> std::shared_ptr<Node>;

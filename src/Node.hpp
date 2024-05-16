@@ -123,19 +123,19 @@ class Node {
   void applyPreorder(const std::function<void(Node &)> &func);
 
   void assignTipData(Workspace &ws,
-                     const std::unordered_map<std::string, lagrange_dist_t>
+                     const std::unordered_map<std::string, Dist>
                          &distrib_data) const;
 
   size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
   void assignId();
 
-  void assignIncludedAreas(lagrange_dist_t fixed_dist);
-  void assignFixedDist(lagrange_dist_t fixed_dist);
+  void assignIncludedAreas(Dist fixed_dist);
+  void assignFixedDist(Dist fixed_dist);
 
-  LagrangeOption<lagrange_dist_t> getFixedDist() const;
+  Option<Dist> getFixedDist() const;
 
-  LagrangeOption<lagrange_dist_t> getIncludedAreas() const;
+  Option<Dist> getIncludedAreas() const;
 
   void setPeriodSegments(const Periods &periods);
 
@@ -163,9 +163,9 @@ class Node {
   std::string _comment;
   std::vector<std::shared_ptr<Node>> _children;
 
-  LagrangeOption<lagrange_dist_t> _fixed_dist;
-  LagrangeOption<lagrange_dist_t> _incl_area_mask;
-  LagrangeOption<lagrange_dist_t> _excl_area_mask;
+  Option<Dist> _fixed_dist;
+  Option<Dist> _incl_area_mask;
+  Option<Dist> _excl_area_mask;
 };
 
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,

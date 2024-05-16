@@ -335,7 +335,7 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
 }
 
 void Node::assignTipData(Workspace &ws,
-                         const std::unordered_map<std::string, lagrange_dist_t>
+                         const std::unordered_map<std::string, Dist>
                              &distrib_data) const {
   if (_children.empty()) {
     ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
@@ -372,11 +372,11 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   return count;
 }
 
-void Node::assignIncludedAreas(lagrange_dist_t incl_area_mask) {
+void Node::assignIncludedAreas(Dist incl_area_mask) {
   _incl_area_mask = incl_area_mask;
 }
 
-void Node::assignFixedDist(lagrange_dist_t fixed_dist) {
+void Node::assignFixedDist(Dist fixed_dist) {
   _fixed_dist = fixed_dist;
 }
 
@@ -392,11 +392,11 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-LagrangeOption<lagrange_dist_t> Node::getFixedDist() const {
+Option<Dist> Node::getFixedDist() const {
   return _fixed_dist;
 }
 
-LagrangeOption<lagrange_dist_t> Node::getIncludedAreas() const {
+Option<Dist> Node::getIncludedAreas() const {
   return _incl_area_mask;
 }
 
