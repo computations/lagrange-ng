@@ -17,6 +17,8 @@
 #include "Common.hpp"
 #include "Utils.hpp"
 
+namespace lagrange {
+
 struct matrix_reservation_t {
   LagrangeMatrix _matrix = nullptr;
   lagrange_clock_tick_t _last_update = 0;
@@ -202,9 +204,7 @@ class Workspace {
     return leadingDimension() * restrictedStateCount();
   }
 
-  inline auto nodeCount() const -> size_t {
-    return _inner_count + _taxa_count;
-  }
+  inline auto nodeCount() const -> size_t { return _inner_count + _taxa_count; }
 
   inline auto suggestProbMatrixIndex() -> size_t {
     size_t suggested_index = _prob_matrix.size();
@@ -375,4 +375,5 @@ class Workspace {
   size_t _expm_count = 0;
 };
 
+}  // namespace lagrange
 #endif

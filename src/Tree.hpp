@@ -22,6 +22,8 @@
 #include "Node.hpp"
 #include "Operation.hpp"
 
+namespace lagrange {
+
 class Tree {
  public:
   Tree();
@@ -104,5 +106,7 @@ class Tree {
   size_t _internal_node_count;
   size_t _external_node_count;
 };
+
+}  // namespace lagrange
 
 #endif /* TREE_H_ */

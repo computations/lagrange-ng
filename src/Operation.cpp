@@ -26,6 +26,8 @@
 #include "Utils.hpp"
 #include "Workspace.hpp"
 
+namespace lagrange {
+
 static auto operator<<(std::ostream &os,
                        std::tuple<double *, size_t> vector_tuple)
     -> std::ostream & {
@@ -72,9 +74,9 @@ inline void generate_splits(uint64_t state, size_t regions, size_t max_areas,
 inline void join_splits(
     lagrange_dist_t splitting_dist, size_t dist_index, size_t regions,
     size_t max_areas, std::vector<LagrangeRegionSplit> &splits,
-    const LagrangeConstColVector &c1,
-    const LagrangeConstColVector &c2, LagrangeColVector dest,
-    bool &scale, const std::function<size_t(lagrange_dist_t)> &dist_map) {
+    const LagrangeConstColVector &c1, const LagrangeConstColVector &c2,
+    LagrangeColVector dest, bool &scale,
+    const std::function<size_t(lagrange_dist_t)> &dist_map) {
   generate_splits(splitting_dist, regions, max_areas, splits);
   double sum = 0.0;
   for (auto &p : splits) {
@@ -112,13 +114,14 @@ constexpr auto weighted_combine_check_happy_path(
          (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 
-inline void weighted_combine(
-    const LagrangeConstColVector &c1,
-    const LagrangeConstColVector &c2, size_t states, size_t regions,
-    size_t max_areas, LagrangeColVector dest, size_t c1_scale,
-    size_t c2_scale, size_t &scale_count,
-    const LagrangeOption<lagrange_dist_t> &fixed_dist,
-    lagrange_dist_t excl_area_mask, lagrange_dist_t incl_area_mask) {
+inline void weighted_combine(const LagrangeConstColVector &c1,
+                             const LagrangeConstColVector &c2, size_t states,
+                             size_t regions, size_t max_areas,
+                             LagrangeColVector dest, size_t c1_scale,
+                             size_t c2_scale, size_t &scale_count,
+                             const LagrangeOption<lagrange_dist_t> &fixed_dist,
+                             lagrange_dist_t excl_area_mask,
+                             lagrange_dist_t incl_area_mask) {
   assert(states != 0);
   // size_t regions = lagrange_fast_log2(states);
 
@@ -167,8 +170,7 @@ inline void weighted_combine(
 
 inline void reverse_join_splits(
     lagrange_dist_t i, size_t regions, size_t max_areas,
-    std::vector<LagrangeRegionSplit> &splits,
-    const LagrangeConstColVector &c1,
+    std::vector<LagrangeRegionSplit> &splits, const LagrangeConstColVector &c1,
     const LagrangeConstColVector &c2, LagrangeColVector dest,
     const std::function<size_t(lagrange_dist_t)> &dist_map) {
   generate_splits(i, regions, max_areas, splits);
@@ -190,9 +192,8 @@ inline void reverse_join_splits(
 }
 
 inline void reverse_weighted_combine(
-    const LagrangeConstColVector &c1,
-    const LagrangeConstColVector &c2, size_t states, size_t regions,
-    size_t max_areas, LagrangeColVector dest,
+    const LagrangeConstColVector &c1, const LagrangeConstColVector &c2,
+    size_t states, size_t regions, size_t max_areas, LagrangeColVector dest,
     const LagrangeOption<lagrange_dist_t> &fixed_dist,
     lagrange_dist_t excl_area_mask, lagrange_dist_t incl_area_mask) {
   assert(states != 0);
@@ -284,8 +285,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
     size_t dest_index = 0;
     lagrange_dist_t dest_dist = 0;
 
-    for (dest_index = 0, dest_dist = 0;
-         dest_index < ws->restrictedStateCount();
+    for (dest_index = 0, dest_dist = 0; dest_index < ws->restrictedStateCount();
          dest_dist =
              next_dist(dest_dist, static_cast<uint32_t>(ws->maxAreas())),
         ++dest_index) {
@@ -331,8 +331,7 @@ void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << opening_line(tabs) << "\n";
   os << tabs << "MakeRateMatrixOperation:\n"
      << tabs << "Rate Matrix (index: " << _rate_matrix_index
-     << " update: " << ws->lastUpdateRateMatrix(_rate_matrix_index)
-     << "):\n";
+     << " update: " << ws->lastUpdateRateMatrix(_rate_matrix_index) << "):\n";
 
   const auto &rm = ws->rateMatrix(_rate_matrix_index);
 
@@ -536,8 +535,7 @@ void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
      << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
 
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index
-     << " update: " << ws->lastUpdateProbMatrix(_prob_matrix_index)
-     << "):\n";
+     << " update: " << ws->lastUpdateProbMatrix(_prob_matrix_index) << "):\n";
 
   const auto &pm = ws->probMatrix(_prob_matrix_index);
 
@@ -625,13 +623,11 @@ void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   os << tabs << "Top clv (index: " << _top_clv
      << " update: " << ws->lastUpdateCLV(_top_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->CLV(_top_clv), ws->restrictedStateCount())
-     << "\n";
+     << std::make_tuple(ws->CLV(_top_clv), ws->restrictedStateCount()) << "\n";
   os << tabs << "Bot clv (index: " << _bot_clv
      << " update: " << ws->lastUpdateCLV(_bot_clv)
      << "): " << std::setprecision(10)
-     << std::make_tuple(ws->CLV(_bot_clv), ws->restrictedStateCount())
-     << "\n";
+     << std::make_tuple(ws->CLV(_bot_clv), ws->restrictedStateCount()) << "\n";
   os << tabs << "Last Executed: " << _last_execution << "\n";
   os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
 
@@ -842,8 +838,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 
   std::vector<LagrangeRegionSplit> splits;
 
-  for (lagrange_dist_t index = 0; index < ws->restrictedStateCount();
-       index++) {
+  for (lagrange_dist_t index = 0; index < ws->restrictedStateCount(); index++) {
     if (_fixed_dist.hasValue() && _fixed_dist.get() != index) { continue; }
 
     if (!check_excl_dist(index, _excl_area_mask)) { continue; }
@@ -869,3 +864,4 @@ auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
          ws->lastUpdateCLV(_rchild_clv_index) > _last_execution &&
          ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
 }
+}  // namespace lagrange

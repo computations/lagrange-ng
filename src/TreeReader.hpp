@@ -11,13 +11,15 @@
 #define TREE_READER_H
 
 #include <string>
- 
+
 #include "Tree.hpp"
 
+namespace lagrange {
 class TreeReader {
  public:
   TreeReader() = default;
   static auto readTree(const std::string &tree) -> std::shared_ptr<Tree>;
 };
+}  // namespace lagrange
 
 #endif /* TREE_READER_H_ */

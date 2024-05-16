@@ -24,6 +24,8 @@
 
 #include "Common.hpp"
 
+namespace lagrange {
+
 class AncSplit {
  private:
   double _weight;
@@ -49,4 +51,5 @@ using lagrange_split_return_t =
 
 using lagrange_split_list_t = std::vector<lagrange_split_return_t>;
 
+}  // namespace lagrange
 #endif /* ANCSPLIT_H_ */

@@ -7,6 +7,7 @@
 #include "Context.hpp"
 #include "nlohmann/json.hpp"
 
+namespace lagrange {
 auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
     -> void;
 
@@ -43,4 +44,5 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
                const ConfigFile &config) -> nlohmann::json;
 
 void write_json_file(const ConfigFile &config,
-                            const nlohmann ::json &root_json) ;
+                     const nlohmann ::json &root_json);
+}  // namespace lagrange

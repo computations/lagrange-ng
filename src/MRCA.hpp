@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
+namespace lagrange {
 struct MRCAEntry {
   std::vector<std::string> clade;
 };
+}  // namespace lagrange
 
 #endif  // !MRCA_H

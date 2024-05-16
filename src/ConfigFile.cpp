@@ -8,6 +8,7 @@
 
 #include "Fossil.hpp"
 
+namespace lagrange {
 enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
 
 void set_mrcas_for_fossils(ConfigFile &config) {
@@ -178,8 +179,8 @@ Fossil parse_node_fossil(ConfigLexer &lexer) {
   auto fossile_mrca = lexer.consumeValueAsString();
 
   lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consumeValueAsString());
+  auto fossil_area =
+      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
 
   return {.mrca_name = fossile_mrca,
           .clade = {},
@@ -193,8 +194,8 @@ Fossil parse_branch_fossil(ConfigLexer &lexer) {
   auto fossile_mrca = lexer.consumeValueAsString();
 
   lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consumeValueAsString());
+  auto fossil_area =
+      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
 
   lexer.expect(ConfigLexemeType::VALUE);
   double fossil_age = lexer.consumeValueAsFloat();
@@ -211,8 +212,8 @@ Fossil parse_fixed_fossil(ConfigLexer &lexer) {
   auto fossile_mrca = lexer.consumeValueAsString();
 
   lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area = lagrange_convert_dist_binary_string_to_dist(
-      lexer.consumeValueAsString());
+  auto fossil_area =
+      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
 
   return {.mrca_name = fossile_mrca,
           .clade = {},
@@ -408,3 +409,4 @@ std::filesystem::path ConfigFile::scaledTreeFilename() const {
   scaled_tree_filename += ".scaled.tre";
   return scaled_tree_filename;
 }
+}  // namespace lagrange

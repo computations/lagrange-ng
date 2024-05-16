@@ -10,18 +10,15 @@
 
 #include "Workspace.hpp"
 
-/*
- * expm_multiply_arnoldi_chebyshev:
- */
-
+namespace lagrange {
 namespace expm {
 /*
  * Combination of Arnoldi and Chebyshev approximation
  * see Saad 1990 and Saad 1992
  */
-void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
+void multiply_arnoldi_chebyshev(const std::shared_ptr<lagrange::Workspace> ws,
                                 size_t rate_matrix, size_t clv_src,
                                 size_t clv_dst, bool transposed, double t);
 }  // namespace expm
-
+}  // namespace lagrange
 #endif  // LAGRANGE_CPP_ARNOLDI_H

@@ -20,6 +20,7 @@
 
 #include "Common.hpp"
 
+namespace lagrange {
 AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
                    lagrange_dist_t rdesc, double we)
     : _weight(we),
@@ -37,3 +38,4 @@ auto AncSplit::getLikelihood() const -> double { return _likelihood; }
 void AncSplit::setLWR(double lwr) { _lwr = lwr; }
 
 auto AncSplit::getLWR() const -> double { return _lwr; }
+}  // namespace lagrange

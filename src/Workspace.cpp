@@ -10,6 +10,8 @@
 
 #include "Common.hpp"
 
+namespace lagrange {
+
 Workspace::~Workspace() {
   for (auto &res : _rate_matrix) { delete[] res._matrix; }
 
@@ -78,9 +80,7 @@ void Workspace::reserve() {
 
     _clv._clv = new LagrangeMatrixBase[CLVSize()];
 
-    for (size_t j = 0; j < restrictedStateCount(); j++) {
-      _clv._clv[j] = 0.0;
-    }
+    for (size_t j = 0; j < restrictedStateCount(); j++) { _clv._clv[j] = 0.0; }
   }
 
   delete[] _clv_scalars;
@@ -138,3 +138,4 @@ std::string Workspace::report_node_vecs(size_t node_id) const {
   return oss.str();
 }
 #endif
+}  // namespace lagrange

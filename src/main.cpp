@@ -26,6 +26,8 @@
 #include "Utils.hpp"
 #include "WorkerState.hpp"
 
+using namespace lagrange;
+
 static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;
   if (expm_mode.hasValue()) {

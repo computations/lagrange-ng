@@ -12,6 +12,8 @@
 #include <memory>
 #include <sstream>
 
+namespace lagrange {
+
 enum LexemeType {
   OPENING_SQUARE_BRACKET,
   CLOSING_SQUARE_BRACKET,
@@ -317,9 +319,7 @@ auto Parser::parseString() -> std::string {
   return _lexer.consumeValueAsString();
 }
 
-auto Parser::parseNumber() -> double {
-  return _lexer.consumeValueAsFloat();
-}
+auto Parser::parseNumber() -> double { return _lexer.consumeValueAsFloat(); }
 
 void Parser::parseComment() {
   auto token = _lexer.peak();
@@ -333,3 +333,4 @@ auto TreeReader::readTree(const std::string& tree) -> std::shared_ptr<Tree> {
   Parser parser(tree);
   return parser.parse();
 }
+}  // namespace lagrange

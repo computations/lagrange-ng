@@ -1,5 +1,6 @@
 #include "Arnoldi.hpp"
 
+namespace lagrange {
 #define MIDX(A, r, c, lda) ((A)[(r) * (lda) + (c)])
 
 // coefficients are copied from Saad1990.pdf
@@ -197,3 +198,4 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
 }
 
 };  // namespace expm
+}  // namespace lagrange

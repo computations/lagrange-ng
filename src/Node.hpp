@@ -24,6 +24,8 @@
 #include "Utils.hpp"
 #include "Workspace.hpp"
 
+namespace lagrange {
+
 class Node {
  public:
   Node();
@@ -58,14 +60,14 @@ class Node {
 
   auto getChildCount() const -> size_t;
 
-  void setSplitStringRecursive(
-      const std::vector<size_t> &id_map,
-      const std::vector<LagrangeColVector> &dist_lhs, size_t states,
-      const std::vector<std::string> &names);
-  void setStateStringRecursive(
-      const std::vector<size_t> &id_map,
-      const std::vector<LagrangeColVector> &dist_lhs, size_t states,
-      const std::vector<std::string> &names);
+  void setSplitStringRecursive(const std::vector<size_t> &id_map,
+                               const std::vector<LagrangeColVector> &dist_lhs,
+                               size_t states,
+                               const std::vector<std::string> &names);
+  void setStateStringRecursive(const std::vector<size_t> &id_map,
+                               const std::vector<LagrangeColVector> &dist_lhs,
+                               size_t states,
+                               const std::vector<std::string> &names);
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
@@ -77,7 +79,7 @@ class Node {
       -> std::shared_ptr<Node>;
 
   friend auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
-                              const std::vector<std::shared_ptr<Node>> &nodes)
+                               const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
   auto traverseAndGenerateForwardOperations(Workspace &ws,
@@ -164,11 +166,11 @@ class Node {
   LagrangeOption<lagrange_dist_t> _fixed_dist;
   LagrangeOption<lagrange_dist_t> _incl_area_mask;
   LagrangeOption<lagrange_dist_t> _excl_area_mask;
-
 };
 
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
-                     const std::vector<std::shared_ptr<Node>> &nodes)
+                      const std::vector<std::shared_ptr<Node>> &nodes)
     -> std::shared_ptr<Node>;
 
+}  // namespace lagrange
 #endif /* NODE_H_ */

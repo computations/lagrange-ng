@@ -8,6 +8,8 @@
 #include "Utils.hpp"
 #include "WorkerState.hpp"
 
+namespace lagrange {
+
 void Context::registerForwardOperations() {
   _forward_operations = _tree->generateForwardOperations(*_workspace);
   extractRateMatrixOperations();
@@ -81,7 +83,7 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
 void Context::init() {
   _workspace->reserve();
   std::vector<PeriodParams> initial_rates(_workspace->rateMatrixCount(),
-                                             {0.01, 0.01});
+                                          {0.01, 0.01});
   _workspace->setPeriodParamsCount(_workspace->rateMatrixCount());
   updateRates(initial_rates);
 
@@ -303,3 +305,5 @@ void Context::useArnoldi(bool mode_set, bool adaptive) const {
 }
 
 size_t Context::getPeriodCount() const { return _rate_matrix_ops.size(); }
+
+}  // namespace lagrange

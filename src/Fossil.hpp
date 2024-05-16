@@ -8,6 +8,8 @@
 #include "MRCA.hpp"
 #include "Utils.hpp"
 
+namespace lagrange {
+
 enum class fossil_type { NODE, BRANCH, FIXED };
 
 struct Fossil {
@@ -18,4 +20,5 @@ struct Fossil {
   fossil_type type;
 };
 
+}  // namespace lagrange
 #endif  // !FOSSIL_H

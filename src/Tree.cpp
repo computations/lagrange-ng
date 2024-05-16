@@ -16,6 +16,8 @@
 
 #include "Operation.hpp"
 
+namespace lagrange {
+
 Tree::Tree() : Tree(nullptr) {}
 
 Tree::Tree(std::shared_ptr<Node> inroot)
@@ -256,3 +258,4 @@ void Tree::setPeriods(const Periods &periods) {
   auto period_func = [&](Node &n) { n.setPeriodSegments(periods); };
   _root->applyPreorder(period_func);
 }
+}  // namespace lagrange

@@ -4,6 +4,8 @@
 #include <limits>
 #include <vector>
 
+namespace lagrange {
+
 struct PeriodSegment {
   size_t index;
   double duration;
@@ -71,9 +73,7 @@ class PeriodSpan {
     }
 
    private:
-    double segmentLength() const {
-      return std::min(*_period - _time, _length);
-    }
+    double segmentLength() const { return std::min(*_period - _time, _length); }
 
     double _time;
     double _length;
@@ -111,5 +111,7 @@ class PeriodSpan {
   Periods::const_iterator _begin;
   Periods::const_iterator _end;
 };
+
+}  // namespace lagrange
 
 #endif

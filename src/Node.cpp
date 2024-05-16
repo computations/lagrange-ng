@@ -21,6 +21,8 @@
 #include "Operation.hpp"
 #include "Utils.hpp"
 
+namespace lagrange {
+
 Node::Node() : _branch_length(0.0), _height(0.0), _number(0), _id(0) {}
 
 Node::Node(double bl, size_t innumber, std::string inname)
@@ -117,7 +119,7 @@ void Node::setHeightReverse(double h) {
 }
 
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
-                     const std::vector<std::shared_ptr<Node>> &leaves)
+                      const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
   if (current->_children.empty()) {
     if (std::any_of(leaves.begin(), leaves.end(),
@@ -436,3 +438,4 @@ auto Node::getProbMatrixOperation(Workspace &ws, PeriodRateMatrixMap &rm_map,
   }
   return it->second;
 }
+}  // namespace lagrange

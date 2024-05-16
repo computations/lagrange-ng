@@ -12,6 +12,7 @@
 #include "Periods.hpp"
 #include "Utils.hpp"
 
+namespace lagrange {
 constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
 
 struct ConfigFile {
@@ -61,4 +62,5 @@ struct ConfigFile {
 
 ConfigFile parse_config_file(std::istream& instream);
 
+}  // namespace lagrange
 #endif

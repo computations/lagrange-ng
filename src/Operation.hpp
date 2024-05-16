@@ -21,6 +21,8 @@
 #include "Utils.hpp"
 #include "Workspace.hpp"
 
+namespace lagrange {
+
 class MakeRateMatrixOperation {
  public:
   explicit MakeRateMatrixOperation(size_t index, size_t period_index)
@@ -36,13 +38,13 @@ class MakeRateMatrixOperation {
   }
 
   inline void updateRates(const std::shared_ptr<Workspace>& ws, double disp,
-                           double ext) {
+                          double ext) {
     ws->setPeriodParams(_period_index, disp, ext);
     _last_update = ws->advanceClock();
   }
 
   inline void updateRates(const std::shared_ptr<Workspace>& ws,
-                           const PeriodParams& p) {
+                          const PeriodParams& p) {
     updateRates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
@@ -597,4 +599,5 @@ using PeriodRateMatrixMap =
 using BranchProbMatrixMap = std::unordered_map<std::pair<size_t, double>,
                                                std::shared_ptr<ExpmOperation>>;
 
+}  // namespace lagrange
 #endif

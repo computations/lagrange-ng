@@ -16,6 +16,8 @@
 
 #include "Common.hpp"
 
+namespace lagrange {
+
 struct LagrangeRegionSplit {
   lagrange_dist_t left;
   lagrange_dist_t right;
@@ -51,9 +53,8 @@ constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
   return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
 }
 
-inline auto lagrange_compute_best_dist(
-    const LagrangeConstColVector &dist_lhs, size_t states)
-    -> lagrange_dist_t {
+inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
+                                       size_t states) -> lagrange_dist_t {
   lagrange_dist_t best_dist = 0;
 
   double best_lh = dist_lhs[0];
@@ -162,6 +163,9 @@ class LagrangeOption {
   bool _has_value{false};
 };
 
+class lagrange_util_dist_index_conversion_exception : public std::exception {};
+}  // namespace lagrange
+
 namespace std {
 template <>
 struct hash<std::pair<size_t, double>> {
@@ -169,8 +173,6 @@ struct hash<std::pair<size_t, double>> {
     return std::hash<size_t>{}(p.first) ^ std::hash<double>{}(p.second);
   }
 };
-
-class lagrange_util_dist_index_conversion_exception : public std::exception {};
 
 }  // namespace std
 #endif /* UTILS_H_ */

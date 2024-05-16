@@ -6,6 +6,8 @@
 
 #include "Utils.hpp"
 
+namespace lagrange {
+
 std::string clean_taxa_name(const std::string& str) {
   auto start_itr = str.begin();
   auto end_itr = str.end() - 1;
@@ -92,3 +94,4 @@ Alignment read_alignment(const std::filesystem::path& infile,
   }
   throw std::runtime_error{"Failed to recognize alignment file type"};
 }
+}  // namespace lagrange

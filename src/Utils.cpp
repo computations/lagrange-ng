@@ -13,6 +13,8 @@
 
 #include "Common.hpp"
 
+namespace lagrange {
+
 auto lagrange_convert_dist_string(lagrange_dist_t dist,
                                   const std::vector<std::string> &names)
     -> std::string {
@@ -92,7 +94,7 @@ static auto compute_skips(size_t i, size_t n) -> size_t {
 
 auto compute_index_from_dist(lagrange_dist_t i, size_t max_areas) -> size_t {
   if (lagrange_popcount(i) > max_areas) {
-    throw std::lagrange_util_dist_index_conversion_exception{};
+    throw lagrange_util_dist_index_conversion_exception{};
   }
   size_t skips = compute_skips(i, max_areas);
 
@@ -143,3 +145,4 @@ std::string get_file_extension(const std::string &filename) {
   while (*itr != '.') { itr--; }
   return {itr + 1, filename.end()};
 }
+}  // namespace lagrange

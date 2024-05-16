@@ -4,6 +4,8 @@
 
 #include "Utils.hpp"
 
+namespace lagrange {
+
 auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
     -> void {
   double max_llh = -std::numeric_limits<double>::infinity();
@@ -229,9 +231,10 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
 }
 
 void write_json_file(const ConfigFile &config,
-                            const nlohmann ::json &root_json) {
+                     const nlohmann ::json &root_json) {
   auto json_filename = config.resultsFilename();
   std::cout << "Writing results to " << json_filename << std::endl;
   std::ofstream outfile(config.resultsFilename());
   outfile << root_json.dump();
 }
+}  // namespace lagrange

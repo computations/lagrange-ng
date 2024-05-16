@@ -1,14 +1,15 @@
 #ifndef ALIGNMENT_H
 #define ALIGNMENT_H
 
+#include <filesystem>
 #include <istream>
 #include <string>
 #include <unordered_map>
-#include <filesystem>
 
 #include "Common.hpp"
 #include "Utils.hpp"
 
+namespace lagrange {
 struct Alignment {
   std::unordered_map<std::string, lagrange_dist_t> data;
   size_t region_count;
@@ -23,5 +24,6 @@ Alignment read_phylip(std::istream& instream);
 Alignment read_alignment(std::istream& instream, AlignmentFileType type);
 Alignment read_alignment(const std::filesystem::path& infile,
                          LagrangeOption<AlignmentFileType> type);
+}  // namespace lagrange
 
 #endif

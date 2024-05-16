@@ -9,6 +9,8 @@
 #include "Operation.hpp"
 #include "Workspace.hpp"
 
+namespace lagrange {
+
 enum class WorkerMode {
   ComputeForward,
   ComputeReverse,
@@ -131,7 +133,7 @@ class WorkerState {
  private:
   template <typename T>
   void workGoal(std::vector<T>& work_buffer,
-                 const std::shared_ptr<Workspace>& workspace) {
+                const std::shared_ptr<Workspace>& workspace) {
     if (!masterThread()) { return; }
 
     for (auto& w : work_buffer) {
@@ -181,7 +183,7 @@ class WorkerState {
 
   template <typename T>
   auto findWorkGoal(std::vector<T>& work_buffer,
-                      const std::shared_ptr<Workspace>& workspace) ->
+                    const std::shared_ptr<Workspace>& workspace) ->
       typename std::vector<T>::iterator {
     // std::lock_guard<std::mutex> work_lock(_work_buffer_mutex);
     if (work_buffer.size() - _start_index == 0 ||
@@ -196,7 +198,7 @@ class WorkerState {
 
   template <typename T>
   auto findWork(std::vector<std::shared_ptr<T>>& work_buffer,
-                 const std::shared_ptr<Workspace>& workspace)
+                const std::shared_ptr<Workspace>& workspace)
       -> std::shared_ptr<T> {
     assert(!work_buffer.empty());
     // auto t1 = std::chrono::high_resolution_clock::now();
@@ -257,5 +259,6 @@ class WorkerState {
   static std::atomic_size_t _start_index;
   static std::atomic<WorkerMode> _mode;
 };
+}  // namespace lagrange
 
 #endif

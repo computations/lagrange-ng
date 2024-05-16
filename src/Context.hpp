@@ -20,6 +20,8 @@
 #include "WorkerState.hpp"
 #include "Workspace.hpp"
 
+namespace lagrange {
+
 class Context {
  public:
   Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas)
@@ -40,8 +42,7 @@ class Context {
       const std::unordered_map<std::string, lagrange_dist_t>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts, bool states, bool splits,
-                                bool output,
-                                const LagrangeOperationMode& mode);
+                                bool output, const LagrangeOperationMode& mode);
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
@@ -101,4 +102,5 @@ class Context {
   std::vector<std::shared_ptr<MakeRateMatrixOperation>> _rate_matrix_ops;
 };
 
+}  // namespace lagrange
 #endif /* end of include guard */

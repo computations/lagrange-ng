@@ -17,6 +17,8 @@
 #ifndef MKL_ENABLED
 #include <complex>
 
+namespace lagrange {
+
 #define COMPLEX_DATA_TYPE double
 #define lapack_complex_double std::complex<COMPLEX_DATA_TYPE>
 #define lapack_complex_double_real(z) \
@@ -113,5 +115,5 @@ constexpr double lagrange_scaling_factor_log =
 enum class LagrangeOperationMode { OPTIMIZE, EVALUATE };
 
 enum class LagrangeEXPMComputationMode { PADE, KRYLOV, ADAPTIVE };
-
+}
 #endif  // LAGRANGE_COMMON_H
