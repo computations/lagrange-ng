@@ -14,8 +14,8 @@
 #include <string>
 #include <tuple>
 
-#include "Common.h"
-#include "Utils.h"
+#include "Common.hpp"
+#include "Utils.hpp"
 
 struct matrix_reservation_t {
   lagrange_matrix_t _matrix = nullptr;

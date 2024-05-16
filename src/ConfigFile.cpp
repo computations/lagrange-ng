@@ -1,13 +1,12 @@
-#include "ConfigFile.h"
+#include "ConfigFile.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
-#include <memory>
 #include <sstream>
 #include <string>
 
-#include "Fossil.h"
+#include "Fossil.hpp"
 
 enum class config_lexeme_type_t { VALUE, EQUALS_SIGN, END };
 

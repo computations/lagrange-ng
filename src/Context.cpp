@@ -1,18 +1,12 @@
-#include "Context.h"
+#include "Context.hpp"
 
-#include <cmath>
-#include <iostream>
-#include <memory>
 #include <nlopt.hpp>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
-#include "AncSplit.h"
-#include "Common.h"
-#include "Operation.h"
-#include "Utils.h"
-#include "WorkerState.h"
+#include "AncSplit.hpp"
+#include "Common.hpp"
+#include "Operation.hpp"
+#include "Utils.hpp"
+#include "WorkerState.hpp"
 
 void Context::registerForwardOperations() {
   _forward_operations = _tree->generateForwardOperations(*_workspace);

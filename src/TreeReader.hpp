@@ -12,7 +12,7 @@
 
 #include <string>
  
-#include "Tree.h"
+#include "Tree.hpp"
 
 class TreeReader {
  public:

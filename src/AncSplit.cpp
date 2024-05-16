@@ -16,9 +16,9 @@
   calculating the likeklihood.
  */
 
-#include "AncSplit.h"
+#include "AncSplit.hpp"
 
-#include "Common.h"
+#include "Common.hpp"
 
 AncSplit::AncSplit(lagrange_dist_t dist, lagrange_dist_t ldesc,
                    lagrange_dist_t rdesc, double we)

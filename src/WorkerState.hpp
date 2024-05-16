@@ -6,8 +6,8 @@
 #include <mutex>
 #include <vector>
 
-#include "Operation.h"
-#include "Workspace.h"
+#include "Operation.hpp"
+#include "Workspace.hpp"
 
 enum class WorkerMode {
   ComputeForward,

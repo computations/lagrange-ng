@@ -16,11 +16,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Alignment.h"
-#include "Common.h"
-#include "Fossil.h"
-#include "Node.h"
-#include "Operation.h"
+#include "Alignment.hpp"
+#include "Common.hpp"
+#include "Fossil.hpp"
+#include "Node.hpp"
+#include "Operation.hpp"
 
 class Tree {
  private:

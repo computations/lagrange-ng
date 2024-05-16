@@ -5,7 +5,7 @@
  */
 
 #undef NDEBUG
-#include "Operation.h"
+#include "Operation.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -20,11 +20,11 @@
 #include <unordered_map>
 #include <utility>
 
-#include "AncSplit.h"
-#include "Arnoldi.h"
-#include "Common.h"
-#include "Utils.h"
-#include "Workspace.h"
+#include "AncSplit.hpp"
+#include "Arnoldi.hpp"
+#include "Common.hpp"
+#include "Utils.hpp"
+#include "Workspace.hpp"
 
 static auto operator<<(std::ostream &os,
                        std::tuple<double *, size_t> vector_tuple)

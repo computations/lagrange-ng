@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "Common.h"
-#include "Utils.h"
+#include "Common.hpp"
+#include "Utils.hpp"
 
 struct Alignment {
   std::unordered_map<std::string, lagrange_dist_t> data;

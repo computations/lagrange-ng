@@ -16,10 +16,10 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "AncSplit.h"
-#include "Common.h"
-#include "Utils.h"
-#include "Workspace.h"
+#include "AncSplit.hpp"
+#include "Common.hpp"
+#include "Utils.hpp"
+#include "Workspace.hpp"
 
 class MakeRateMatrixOperation {
  public:

@@ -5,7 +5,7 @@
  *      Author: smitty
  */
 
-#include "Node.h"
+#include "Node.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -17,9 +17,9 @@
 #include <utility>
 #include <vector>
 
-#include "Common.h"
-#include "Operation.h"
-#include "Utils.h"
+#include "Common.hpp"
+#include "Operation.hpp"
+#include "Utils.hpp"
 
 Node::Node() : _branch_length(0.0), _height(0.0), _number(0), _id(0) {}
 

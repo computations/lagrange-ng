@@ -13,12 +13,12 @@
 #include <utility>
 #include <vector>
 
-#include "AncSplit.h"
-#include "Common.h"
-#include "Operation.h"
-#include "Tree.h"
-#include "WorkerState.h"
-#include "Workspace.h"
+#include "AncSplit.hpp"
+#include "Common.hpp"
+#include "Operation.hpp"
+#include "Tree.hpp"
+#include "WorkerState.hpp"
+#include "Workspace.hpp"
 
 class Context {
  public:

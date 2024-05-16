@@ -1,10 +1,10 @@
-#include "Alignment.h"
+#include "Alignment.hpp"
 
 #include <fstream>
 #include <sstream>
 #include <string>
 
-#include "Utils.h"
+#include "Utils.hpp"
 
 std::string clean_taxa_name(const std::string& str) {
   auto start_itr = str.begin();

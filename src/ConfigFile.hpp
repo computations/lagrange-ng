@@ -6,11 +6,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Alignment.h"
-#include "Common.h"
-#include "Fossil.h"
+#include "Alignment.hpp"
+#include "Common.hpp"
+#include "Fossil.hpp"
 #include "Periods.hpp"
-#include "Utils.h"
+#include "Utils.hpp"
 
 constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
 

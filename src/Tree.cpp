@@ -7,14 +7,14 @@
  *      Author: Ben Bettisworth
  */
 
-#include "Tree.h"
+#include "Tree.hpp"
 
 #include <cmath>
 #include <sstream>
 #include <unordered_map>
 #include <utility>
 
-#include "Operation.h"
+#include "Operation.hpp"
 
 Tree::Tree() : Tree(nullptr) {}
 

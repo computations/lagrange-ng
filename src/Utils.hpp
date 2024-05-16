@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "Common.h"
+#include "Common.hpp"
 
 struct lagrange_region_split_t {
   lagrange_dist_t left;

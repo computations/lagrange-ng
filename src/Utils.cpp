@@ -7,11 +7,11 @@
  *      Author: Ben Bettisworth
  */
 
-#include "Utils.h"
+#include "Utils.hpp"
 
 #include <array>
 
-#include "Common.h"
+#include "Common.hpp"
 
 auto lagrange_convert_dist_string(lagrange_dist_t dist,
                                   const std::vector<std::string> &names)

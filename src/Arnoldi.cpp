@@ -1,4 +1,4 @@
-#include "Arnoldi.h"
+#include "Arnoldi.hpp"
 
 #define MIDX(A, r, c, lda) ((A)[(r) * (lda) + (c)])
 

@@ -7,11 +7,10 @@
  *      Author: Ben Bettisworth
  */
 
-#include "TreeReader.h"
+#include "TreeReader.hpp"
 
 #include <memory>
 #include <sstream>
-#include <unordered_map>
 
 enum lexeme_type_t {
   OPENING_SQUARE_BRACKET,

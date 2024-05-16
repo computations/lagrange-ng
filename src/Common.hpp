@@ -28,7 +28,7 @@
 #define lapack_complex_double_imag(z) (z.imag)
 #endif
 
-#include "Quarantine.h"
+#include "Quarantine.hpp"
 
 using lagrange_dist_t = uint64_t;
 

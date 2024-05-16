@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 
-#include "AncSplit.h"
-#include "Common.h"
-#include "ConfigFile.h"
-#include "Context.h"
+#include "AncSplit.hpp"
+#include "Common.hpp"
+#include "ConfigFile.hpp"
+#include "Context.hpp"
 #include "nlohmann/json.hpp"
 
 auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)

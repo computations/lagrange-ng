@@ -4,9 +4,9 @@
 #include <memory>
 #include <string>
 
-#include "Common.h"
-#include "MRCA.h"
-#include "Utils.h"
+#include "Common.hpp"
+#include "MRCA.hpp"
+#include "Utils.hpp"
 
 enum class fossil_type { node, branch, fixed };
 

@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "Workspace.h"
+#include "Workspace.hpp"
 
 /*
  * expm_multiply_arnoldi_chebyshev:

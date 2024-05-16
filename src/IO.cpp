@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "Utils.h"
+#include "Utils.hpp"
 
 auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
     -> void {

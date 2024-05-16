@@ -17,14 +17,14 @@
 #include <thread>
 #include <vector>
 
-#include "Alignment.h"
-#include "Common.h"
-#include "ConfigFile.h"
-#include "Context.h"
+#include "Alignment.hpp"
+#include "Common.hpp"
+#include "ConfigFile.hpp"
+#include "Context.hpp"
 #include "IO.hpp"
-#include "TreeReader.h"
-#include "Utils.h"
-#include "WorkerState.h"
+#include "TreeReader.hpp"
+#include "Utils.hpp"
+#include "WorkerState.hpp"
 
 static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;

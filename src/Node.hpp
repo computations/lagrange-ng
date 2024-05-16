@@ -17,12 +17,12 @@
 #include <utility>
 #include <vector>
 
-#include "Alignment.h"
-#include "Common.h"
-#include "Operation.h"
+#include "Alignment.hpp"
+#include "Common.hpp"
+#include "Operation.hpp"
 #include "Periods.hpp"
-#include "Utils.h"
-#include "Workspace.h"
+#include "Utils.hpp"
+#include "Workspace.hpp"
 
 class Node {
  private:
