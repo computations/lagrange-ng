@@ -13,6 +13,7 @@ set(LAGRANGE_SOURCES
         ConfigFile.cpp
         Alignment.cpp
         Periods.cpp
+        IO.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})

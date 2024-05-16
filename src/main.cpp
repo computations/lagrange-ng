@@ -21,170 +21,10 @@
 #include "Common.h"
 #include "ConfigFile.h"
 #include "Context.h"
+#include "IO.hpp"
 #include "TreeReader.h"
 #include "Utils.h"
 #include "WorkerState.h"
-#include "nlohmann/json.hpp"
-
-static auto normalizeSplitDistributionByLWR(lagrange_split_return_t &splits)
-    -> void {
-  double max_llh = -std::numeric_limits<double>::infinity();
-  for (const auto &kv : splits) {
-    for (const auto &sp : kv.second) {
-      max_llh = std::max(max_llh, sp.getLikelihood());
-    }
-  }
-
-  double total_llh = 0.0;
-  for (const auto &kv : splits) {
-    for (const auto &sp : kv.second) {
-      total_llh += std::exp(sp.getLikelihood() - max_llh);
-    }
-  }
-
-  for (auto &kv : splits) {
-    for (auto &sp : kv.second) {
-      sp.setLWR(std::exp(sp.getLikelihood() - max_llh) / total_llh);
-    }
-  }
-}
-
-static auto normalizeStateDistrubtionByLWR(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
-    -> std::unique_ptr<lagrange_matrix_base_t[]> {
-  std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
-      new lagrange_matrix_base_t[states_len]};
-
-  for (size_t i = 0; i < states_len; i++) {
-    normalized_states.get()[i] = states.get()[i];
-  }
-
-  double max_llh = -std::numeric_limits<double>::infinity();
-
-  assert(states_len != 1);
-
-  for (size_t i = 0; i < states_len; ++i) {
-    double tmp = normalized_states.get()[i];
-
-    max_llh = std::max(max_llh, tmp);
-  }
-
-  double total_llh = 0.0;
-  for (size_t i = 1; i < states_len; i++) {
-    total_llh += std::exp(normalized_states.get()[i] - max_llh);
-  }
-
-  for (size_t i = 0; i < states_len; i++) {
-    double tmp = std::exp(normalized_states.get()[i] - max_llh) / total_llh;
-
-    normalized_states.get()[i] = tmp;
-  }
-
-  return normalized_states;
-}
-
-static auto makeStateResultNode(
-    const std::unique_ptr<lagrange_matrix_base_t[]> &state_distribution,
-    const std::vector<std::string> &region_names, size_t states_len,
-    size_t max_areas) -> nlohmann::json {
-  nlohmann::json node_json;
-  auto lwr_distribution =
-      normalizeStateDistrubtionByLWR(state_distribution, states_len);
-  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
-       ++dist_index, dist = next_dist(dist, max_areas)) {
-    nlohmann::json tmp;
-    tmp["distribution"] = dist;
-    double llh = state_distribution.get()[dist_index];
-    tmp["distribution-string"] =
-        lagrange_convert_dist_string(dist, region_names);
-    tmp["llh"] = llh;
-    double ratio = lwr_distribution.get()[dist_index];
-    tmp["ratio"] = ratio;
-    tmp["regions"] = lagrange_convert_dist_to_list(dist, region_names);
-    node_json.push_back(tmp);
-  }
-  return node_json;
-}
-
-static auto makeSplitResultNode(lagrange_split_return_t &splits,
-                                const std::vector<std::string> &region_names,
-                                size_t states_len, size_t max_areas)
-    -> nlohmann::json {
-  nlohmann::json node_json;
-  normalizeSplitDistributionByLWR(splits);
-  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
-       ++dist_index, dist = next_dist(dist, max_areas)) {
-    for (const auto &sp : splits[dist]) {
-      nlohmann::json anc_json;
-      nlohmann::json left_json;
-      nlohmann::json right_json;
-
-      assert(dist == sp.anc_dist);
-      anc_json["distribution"] = dist;
-      anc_json["distribution-string"] =
-          lagrange_convert_dist_string(dist, region_names);
-      anc_json["regions"] = lagrange_convert_dist_to_list(dist, region_names);
-
-      left_json["distribution"] = sp.l_dist;
-      left_json["distribution-string"] =
-          lagrange_convert_dist_string(sp.l_dist, region_names);
-      left_json["regions"] =
-          lagrange_convert_dist_to_list(sp.l_dist, region_names);
-
-      right_json["distribution"] = sp.r_dist;
-      right_json["distribution-string"] =
-          lagrange_convert_dist_string(sp.r_dist, region_names);
-      right_json["regions"] =
-          lagrange_convert_dist_to_list(sp.r_dist, region_names);
-
-      nlohmann::json tmp;
-      tmp["anc-dist"] = anc_json;
-      tmp["left-dist"] = left_json;
-      tmp["right-dist"] = right_json;
-      tmp["llh"] = sp.getLikelihood();
-      tmp["ratio"] = sp.getLWR();
-      node_json.push_back(tmp);
-    }
-  }
-
-  return node_json;
-}
-
-static auto makeNodeReultsJSONOutput(
-    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
-    lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
-    const std::vector<std::string> &region_names, size_t states_len,
-    size_t max_areas) -> nlohmann::json {
-  nlohmann::json root_json;
-
-  size_t node_count = std::max(states.size(), splits.size());
-
-  for (size_t i = 0; i < node_count; ++i) {
-    nlohmann::json node_json;
-
-    if (i < states.size()) {
-      node_json["states"] =
-          makeStateResultNode(states[i], region_names, states_len, max_areas);
-    }
-    if (i < splits.size()) {
-      node_json["splits"] =
-          makeSplitResultNode(splits[i], region_names, states_len, max_areas);
-    }
-
-    node_json["number"] = state_id_map[i];
-    root_json.push_back(node_json);
-  }
-
-  return root_json;
-}
-
-static void writeJsonToFile(const ConfigFile &config,
-                            const nlohmann ::json &root_json) {
-  std::filesystem::path json_filename = config.prefix;
-  json_filename += ".results.json";
-  std::ofstream outfile(config.get_results_filename());
-  outfile << root_json.dump();
-}
 
 static void set_expm_mode(Context &context, const ConfigFile &config) {
   auto &expm_mode = config.expm_mode;
@@ -221,31 +61,6 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
   }
 }
 
-static auto init_json(const std::shared_ptr<const Tree> &tree,
-                      const ConfigFile &config) -> nlohmann::json {
-  nlohmann::json root_json;
-  nlohmann::json attributes_json;
-  attributes_json["periods"] =
-      !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
-  attributes_json["regions"] = config.region_count;
-  attributes_json["taxa"] = tree->getExternalNodeCount();
-  attributes_json["nodes-tree"] =
-      tree->getNewickLambda([](const Node &n) -> std::string {
-        if (n.isInternal()) {
-          return std::to_string(n.getNumber()) + ":" +
-                 std::to_string(n.getBL());
-        } else {
-          return n.getName() + ":" + std::to_string(n.getBL());
-        }
-      });
-  attributes_json["max-areas"] = config.maxareas;
-  attributes_json["state-count"] = lagrange_compute_restricted_state_count(
-      config.region_count, config.maxareas);
-  root_json["attributes"] = attributes_json;
-
-  return root_json;
-}
-
 static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   tree->setHeightBottomUp();
@@ -253,13 +68,13 @@ static void setup_tree(const std::shared_ptr<Tree> &tree,
   tree->assignFossils(config.fossils);
 }
 
-static void handle_tree(const std::shared_ptr<Tree> &intree,
+static void handle_tree(const std::shared_ptr<Tree> &tree,
                         const Alignment &data, const ConfigFile &config) {
-  auto root_json = init_json(intree, config);
+  auto root_json = init_json(tree, config);
 
-  setup_tree(intree, config);
+  setup_tree(tree, config);
 
-  Context context(intree, config.region_count, config.maxareas);
+  Context context(tree, config.region_count, config.maxareas);
   context.registerLHGoal();
   if (config.states) { context.registerStateLHGoal(); }
   if (config.splits) { context.registerSplitLHGoal(); }
@@ -286,35 +101,9 @@ static void handle_tree(const std::shared_ptr<Tree> &intree,
   std::cout << "Waiting for workers to finish" << std::endl;
   for (auto &t : threads) { t.join(); }
 
-  nlohmann::json params_json;
-  auto params = context.currentParams();
-  for (size_t i = 0; i < params.size(); ++i) {
-    params_json[i]["dispersion"] = params[i].dispersion_rate;
-    params_json[i]["extinction"] = params[i].extinction_rate;
-  }
-  root_json["params"] = params_json;
-
-  auto stateGoalIndexToIdMap =
-      intree->traversePreorderInternalNodesOnlyNumbers();
-
-  // invert the map
-
-  auto states = context.getStateResults();
-  auto splits = context.getSplitResults();
-  root_json["node-results"] = makeNodeReultsJSONOutput(
-      states, splits, stateGoalIndexToIdMap, config.areaNames,
-      context.stateCount(), config.maxareas);
-  writeJsonToFile(config, root_json);
-  std::ofstream node_tree(config.get_node_tree_filename());
-
-  node_tree << intree->getNewickLambda([](const Node &n) -> std::string {
-    return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
-  });
-
-  std::ofstream anal_tree(config.get_scaled_tree_filename());
-  anal_tree << intree->getNewickLambda([](const Node &n) -> std::string {
-    return n.getName() + ":" + std::to_string(n.getBL());
-  }) << std::endl;
+  write_result_file(tree, config, context);
+  write_node_tree(tree, config);
+  write_scaled_tree(tree, config);
 }
 
 static void setThreads(ConfigFile &config) {
@@ -355,7 +144,7 @@ bool check_alignment_against_trees(
 bool validate_and_make_prefix(const std::filesystem::path &prefix) {
   bool ok = true;
   try {
-    if(!prefix.parent_path().empty()){
+    if (!prefix.parent_path().empty()) {
       std::filesystem::create_directories(prefix.parent_path());
     }
   } catch (const std::filesystem::filesystem_error &err) {

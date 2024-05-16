@@ -1,0 +1,237 @@
+#include "IO.hpp"
+
+#include <fstream>
+
+#include "Utils.h"
+
+auto normalize_split_distribution_by_lwr(lagrange_split_return_t &splits)
+    -> void {
+  double max_llh = -std::numeric_limits<double>::infinity();
+  for (const auto &kv : splits) {
+    for (const auto &sp : kv.second) {
+      max_llh = std::max(max_llh, sp.getLikelihood());
+    }
+  }
+
+  double total_llh = 0.0;
+  for (const auto &kv : splits) {
+    for (const auto &sp : kv.second) {
+      total_llh += std::exp(sp.getLikelihood() - max_llh);
+    }
+  }
+
+  for (auto &kv : splits) {
+    for (auto &sp : kv.second) {
+      sp.setLWR(std::exp(sp.getLikelihood() - max_llh) / total_llh);
+    }
+  }
+}
+
+auto normalize_state_distribution_by_lwr(
+    const std::unique_ptr<lagrange_matrix_base_t[]> &states, size_t states_len)
+    -> std::unique_ptr<lagrange_matrix_base_t[]> {
+  std::unique_ptr<lagrange_matrix_base_t[]> normalized_states{
+      new lagrange_matrix_base_t[states_len]};
+
+  for (size_t i = 0; i < states_len; i++) {
+    normalized_states.get()[i] = states.get()[i];
+  }
+
+  double max_llh = -std::numeric_limits<double>::infinity();
+
+  assert(states_len != 1);
+
+  for (size_t i = 0; i < states_len; ++i) {
+    double tmp = normalized_states.get()[i];
+
+    max_llh = std::max(max_llh, tmp);
+  }
+
+  double total_llh = 0.0;
+  for (size_t i = 1; i < states_len; i++) {
+    total_llh += std::exp(normalized_states.get()[i] - max_llh);
+  }
+
+  for (size_t i = 0; i < states_len; i++) {
+    double tmp = std::exp(normalized_states.get()[i] - max_llh) / total_llh;
+
+    normalized_states.get()[i] = tmp;
+  }
+
+  return normalized_states;
+}
+
+auto make_state_results_for_node(
+    const std::unique_ptr<lagrange_matrix_base_t[]> &state_distribution,
+    const std::vector<std::string> &region_names, size_t states_len,
+    size_t max_areas) -> nlohmann::json {
+  nlohmann::json node_json;
+  auto lwr_distribution =
+      normalize_state_distribution_by_lwr(state_distribution, states_len);
+  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+       ++dist_index, dist = next_dist(dist, max_areas)) {
+    nlohmann::json tmp;
+    tmp["distribution"] = dist;
+    double llh = state_distribution.get()[dist_index];
+    tmp["distribution-string"] =
+        lagrange_convert_dist_string(dist, region_names);
+    tmp["llh"] = llh;
+    double ratio = lwr_distribution.get()[dist_index];
+    tmp["ratio"] = ratio;
+    tmp["regions"] = lagrange_convert_dist_to_list(dist, region_names);
+    node_json.push_back(tmp);
+  }
+  return node_json;
+}
+
+auto make_split_results_for_node(lagrange_split_return_t &splits,
+                                 const std::vector<std::string> &region_names,
+                                 size_t states_len, size_t max_areas)
+    -> nlohmann::json {
+  nlohmann::json node_json;
+  normalize_split_distribution_by_lwr(splits);
+  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+       ++dist_index, dist = next_dist(dist, max_areas)) {
+    for (const auto &sp : splits[dist]) {
+      nlohmann::json anc_json;
+      nlohmann::json left_json;
+      nlohmann::json right_json;
+
+      assert(dist == sp.anc_dist);
+      anc_json["distribution"] = dist;
+      anc_json["distribution-string"] =
+          lagrange_convert_dist_string(dist, region_names);
+      anc_json["regions"] = lagrange_convert_dist_to_list(dist, region_names);
+
+      left_json["distribution"] = sp.l_dist;
+      left_json["distribution-string"] =
+          lagrange_convert_dist_string(sp.l_dist, region_names);
+      left_json["regions"] =
+          lagrange_convert_dist_to_list(sp.l_dist, region_names);
+
+      right_json["distribution"] = sp.r_dist;
+      right_json["distribution-string"] =
+          lagrange_convert_dist_string(sp.r_dist, region_names);
+      right_json["regions"] =
+          lagrange_convert_dist_to_list(sp.r_dist, region_names);
+
+      nlohmann::json tmp;
+      tmp["anc-dist"] = anc_json;
+      tmp["left-dist"] = left_json;
+      tmp["right-dist"] = right_json;
+      tmp["llh"] = sp.getLikelihood();
+      tmp["ratio"] = sp.getLWR();
+      node_json.push_back(tmp);
+    }
+  }
+
+  return node_json;
+}
+
+auto make_results_for_node(
+    const std::vector<std::unique_ptr<lagrange_matrix_base_t[]>> &states,
+    lagrange_split_list_t &splits, const std::vector<size_t> &state_id_map,
+    const std::vector<std::string> &region_names, size_t states_len,
+    size_t max_areas) -> nlohmann::json {
+  nlohmann::json root_json;
+
+  size_t node_count = std::max(states.size(), splits.size());
+
+  for (size_t i = 0; i < node_count; ++i) {
+    nlohmann::json node_json;
+
+    if (i < states.size()) {
+      node_json["states"] = make_state_results_for_node(states[i], region_names,
+                                                        states_len, max_areas);
+    }
+    if (i < splits.size()) {
+      node_json["splits"] = make_split_results_for_node(splits[i], region_names,
+                                                        states_len, max_areas);
+    }
+
+    node_json["number"] = state_id_map[i];
+    root_json.push_back(node_json);
+  }
+
+  return root_json;
+}
+
+void write_result_file(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config, const Context &context) {
+  auto root_json = init_json(tree, config);
+  nlohmann::json params_json;
+  auto params = context.currentParams();
+  for (size_t i = 0; i < params.size(); ++i) {
+    params_json[i]["dispersion"] = params[i].dispersion_rate;
+    params_json[i]["extinction"] = params[i].extinction_rate;
+  }
+  root_json["params"] = params_json;
+
+  auto stateGoalIndexToIdMap = tree->traversePreorderInternalNodesOnlyNumbers();
+
+  // invert the map
+
+  auto states = context.getStateResults();
+  auto splits = context.getSplitResults();
+  root_json["node-results"] = make_results_for_node(
+      states, splits, stateGoalIndexToIdMap, config.areaNames,
+      context.stateCount(), config.maxareas);
+
+  write_json_file(config, root_json);
+}
+
+void write_node_tree(const std::shared_ptr<Tree> &tree,
+                     const ConfigFile &config) {
+  auto node_tree_filename = config.get_node_tree_filename();
+  std::cout << "Writing node annotated tree to " << node_tree_filename
+            << std::endl;
+
+  std::ofstream node_tree(node_tree_filename);
+  node_tree << tree->getNewickLambda([](const Node &n) -> std::string {
+    return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
+  });
+}
+
+void write_scaled_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config) {
+  auto scaled_tree_filename = config.get_scaled_tree_filename();
+  std::cout << "Writing node annotated tree to " << scaled_tree_filename
+            << std::endl;
+  std::ofstream anal_tree(scaled_tree_filename);
+  anal_tree << tree->getNewickLambda([](const Node &n) -> std::string {
+    return n.getName() + ":" + std::to_string(n.getBL());
+  }) << std::endl;
+}
+
+auto init_json(const std::shared_ptr<const Tree> &tree,
+               const ConfigFile &config) -> nlohmann::json {
+  nlohmann::json root_json;
+  nlohmann::json attributes_json;
+  attributes_json["periods"] =
+      !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
+  attributes_json["regions"] = config.region_count;
+  attributes_json["taxa"] = tree->getExternalNodeCount();
+  attributes_json["nodes-tree"] =
+      tree->getNewickLambda([](const Node &n) -> std::string {
+        if (n.isInternal()) {
+          return std::to_string(n.getNumber()) + ":" +
+                 std::to_string(n.getBL());
+        } else {
+          return n.getName() + ":" + std::to_string(n.getBL());
+        }
+      });
+  attributes_json["max-areas"] = config.maxareas;
+  attributes_json["state-count"] = lagrange_compute_restricted_state_count(
+      config.region_count, config.maxareas);
+  root_json["attributes"] = attributes_json;
+
+  return root_json;
+}
+
+void write_json_file(const ConfigFile &config,
+                            const nlohmann ::json &root_json) {
+  auto json_filename = config.get_results_filename();
+  std::cout << "Writing results to " << json_filename << std::endl;
+  std::ofstream outfile(config.get_results_filename());
+  outfile << root_json.dump();
+}
