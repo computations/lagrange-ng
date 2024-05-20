@@ -5,10 +5,16 @@
 #include "AncSplit.hpp"
 #include "Utils.hpp"
 
+#define CONVERT_FLOAT_TO_JSON(y, x) \
+  if (std::isfinite(x)) {           \
+    y = x;                          \
+  } else {                          \
+    y = std::to_string(x);          \
+  }
+
 namespace lagrange {
 
-auto normalize_split_distribution_by_lwr(SplitReturn &splits)
-    -> void {
+auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
   double max_llh = -std::numeric_limits<double>::infinity();
   for (const auto &kv : splits) {
     for (const auto &sp : kv.second) {
@@ -79,9 +85,9 @@ auto make_state_results_for_node(
     double llh = state_distribution.get()[dist_index];
     tmp["distribution-string"] =
         lagrange_convert_dist_string(dist, region_names);
-    tmp["llh"] = llh;
+    CONVERT_FLOAT_TO_JSON(tmp["llh"], llh);
     double ratio = lwr_distribution.get()[dist_index];
-    tmp["ratio"] = ratio;
+    CONVERT_FLOAT_TO_JSON(tmp["ratio"], llh);
     tmp["regions"] = lagrange_convert_dist_to_list(dist, region_names);
     node_json.push_back(tmp);
   }
@@ -123,8 +129,8 @@ auto make_split_results_for_node(SplitReturn &splits,
       tmp["anc-dist"] = anc_json;
       tmp["left-dist"] = left_json;
       tmp["right-dist"] = right_json;
-      tmp["llh"] = sp.getLikelihood();
-      tmp["ratio"] = sp.getLWR();
+      CONVERT_FLOAT_TO_JSON(tmp["llh"], sp.getLikelihood());
+      CONVERT_FLOAT_TO_JSON(tmp["ratio"], sp.getLWR());
       node_json.push_back(tmp);
     }
   }
