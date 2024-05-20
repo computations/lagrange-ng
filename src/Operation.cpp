@@ -577,7 +577,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     mkl_dimatcopy(
         'r', 't', rows, rows, 1.0, r1.get(), leading_dim, leading_dim);
     for (size_t i = 0; i < static_cast<size_t>(rows); i++) {
-      r1.get()[ws->compute_matrix_index(i, 0)] = 0.0;
+      r1.get()[ws->computeMatrixIndex(i, 0)] = 0.0;
     }
     r1.get()[0] = 1.0;
 #else
