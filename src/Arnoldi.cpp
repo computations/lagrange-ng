@@ -112,8 +112,8 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   // so transpose before and after the expm operation is the same thing...
   if (transposed) {
 #ifdef MKL_ENABLED
-    mkl_dimatcopy(CblasRowMajor,
-                  CblasTrans,
+    mkl_dimatcopy('r',
+                  't',
                   rows,
                   rows,
                   1.0,
