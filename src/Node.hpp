@@ -12,13 +12,17 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "Alignment.hpp"
+#include "AncSplit.hpp"
 #include "Common.hpp"
+#include "Fossil.hpp"
+#include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Periods.hpp"
 #include "Utils.hpp"
@@ -29,13 +33,13 @@ namespace lagrange {
 class Node {
  public:
   Node();
-  Node(double bl, size_t number, std::string name);
+  Node(double bl, std::string name);
 
   ~Node() {
     for (auto &c : _children) { c.reset(); }
   }
 
-  auto isExternal() const -> bool;
+  auto isTip() const -> bool;
   auto isInternal() const -> bool;
 
   auto getNumber() const -> size_t;
@@ -53,7 +57,9 @@ class Node {
 
   auto getName() const -> std::string;
   void setName(const std::string &s);
-  void setComment(const std::string &s);
+
+  void setMRCALabel(const MRCALabel &);
+  auto getMRCALabel() const -> MRCALabel;
 
   auto getNewick() const -> std::string;
   auto getNewickLambda(const std::function<std::string(const Node &)> &) const
@@ -61,14 +67,8 @@ class Node {
 
   auto getChildCount() const -> size_t;
 
-  void setSplitStringRecursive(const std::vector<size_t> &id_map,
-                               const std::vector<LagrangeColVector> &dist_lhs,
-                               size_t states,
-                               const std::vector<std::string> &names);
-  void setStateStringRecursive(const std::vector<size_t> &id_map,
-                               const std::vector<LagrangeColVector> &dist_lhs,
-                               size_t states,
-                               const std::vector<std::string> &names);
+  auto getCount() -> size_t;
+  auto getTipCount() -> size_t;
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
@@ -77,6 +77,14 @@ class Node {
 
   friend auto getParentWithNode(const std::shared_ptr<Node> &current,
                                 const std::shared_ptr<Node> &n)
+      -> std::shared_ptr<Node>;
+
+  friend void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
+                                  const std::shared_ptr<MRCAEntry> &mrca,
+                                  std::vector<std::shared_ptr<Node>> &nodes);
+
+  friend auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
+                                  const MRCALabel &mrca)
       -> std::shared_ptr<Node>;
 
   friend auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
@@ -132,6 +140,7 @@ class Node {
   size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
   void assignId();
+  std::string getNodeLabel() const;
 
   void assignIncludedAreas(Dist fixed_dist);
   void assignFixedDist(Dist fixed_dist);
@@ -142,9 +151,22 @@ class Node {
 
   void setPeriodSegments(const Periods &periods);
 
-  void applyCB(const std::function<void(Node& )> & func);
+  void applyCB(const std::function<void(Node &)> &func);
+
+  bool hasAncestralState() const;
+  bool hasAncestralSplit() const;
+
+  std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState();
+  SplitReturn &getAncestralSplit();
+
+  void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
+  void assignAncestralSplit(SplitReturn);
+
+  bool assignFossil(const Fossil &);
 
  private:
+  auto getCount(size_t) -> size_t;
+  auto getTipCount(size_t) -> size_t;
   void assignIdRecursive(size_t &id);
 
   auto getRateMatrixOperation(Workspace &ws,
@@ -162,23 +184,31 @@ class Node {
   double _branch_length;  // branch length
   double _height;         // could be from tip or from root
 
-  size_t _number;
   size_t _id;
 
   PeriodSpan _periods;
 
   std::string _label;
-  std::string _comment;
+  MRCALabel _mrca;
   std::vector<std::shared_ptr<Node>> _children;
 
   Option<Dist> _fixed_dist;
   Option<Dist> _incl_area_mask;
   Option<Dist> _excl_area_mask;
+
+  std::optional<std::unique_ptr<LagrangeMatrixBase[]>> _ancestral_state;
+  std::optional<SplitReturn> _ancestral_split;
 };
 
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                       const std::vector<std::shared_ptr<Node>> &nodes)
     -> std::shared_ptr<Node>;
 
+void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
+                         const std::shared_ptr<MRCAEntry> &mrca,
+                         std::vector<std::shared_ptr<Node>> &nodes);
+
+auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
+                         const MRCALabel &mrca) -> std::shared_ptr<Node>;
 }  // namespace lagrange
 #endif /* NODE_H_ */

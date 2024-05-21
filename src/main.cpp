@@ -67,10 +67,45 @@ static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   tree->setHeightBottomUp();
   tree->setPeriods(config.periods);
+  tree->assignMCRALabels(config.mrcas);
   tree->assignFossils(config.fossils);
 }
 
-static void handle_tree(const std::shared_ptr<Tree> &tree,
+static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
+                                   const ConfigFile &config,
+                                   const Context &context) {
+  auto states = context.getStateResults();
+  if (config.all_states) {
+    auto stateGoalIndexToIdMap =
+        tree->traversePreorderInternalNodesOnlyNumbers();
+    auto cb = [&](Node &n) {
+      n.assignAncestralState(
+          std::move(states[stateGoalIndexToIdMap[n.getId()]]));
+    };
+    tree->applyPreorderInternalOnly(cb);
+  } else if (!config.state_nodes.empty()) {
+    for (size_t iter = 0; iter < config.state_nodes.size(); ++iter) {
+      tree->assignStateResult(std::move(states[iter]),
+                              config.state_nodes[iter]);
+    }
+  }
+
+  auto splits = context.getSplitResults();
+  if (config.all_splits) {
+    auto splitGoalIndexToIdMap =
+        tree->traversePreorderInternalNodesOnlyNumbers();
+    auto cb = [&](Node &n) {
+      n.assignAncestralSplit(
+          std::move(splits[splitGoalIndexToIdMap[n.getId()]]));
+    };
+  } else if (!config.split_nodes.empty()) {
+    for (size_t iter = 0; iter < config.split_nodes.size(); ++iter) {
+      tree->assignSplitResult(splits[iter], config.split_nodes[iter]);
+    }
+  }
+}
+
+static void handle_tree(std::shared_ptr<Tree> &tree,
                         const Alignment &data,
                         const ConfigFile &config) {
   auto root_json = init_json(tree, config);
@@ -79,8 +114,16 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
 
   Context context(tree, config.region_count, config.maxareas);
   context.registerLHGoal();
-  if (config.all_states) { context.registerStateLHGoal(); }
-  if (config.all_splits) { context.registerSplitLHGoal(); }
+  if (config.all_states) {
+    context.registerStateLHGoal();
+  } else if (!config.state_nodes.empty()) {
+    context.registerStateLHGoal(config.state_nodes, config.mrcas);
+  }
+  if (config.all_splits) {
+    context.registerSplitLHGoal();
+  } else if (!config.split_nodes.empty()) {
+    context.registerSplitLHGoal(config.split_nodes, config.mrcas);
+  }
   context.init();
   context.updateRates(
       {context.getPeriodCount(), {config.dispersal, config.extinction}});
@@ -99,8 +142,8 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
     threads.emplace_back(&Context::optimizeAndComputeValues,
                          std::ref(context),
                          std::ref(worker_states[i]),
-                         config.all_states,
-                         config.all_splits,
+                         config.computeStates(),
+                         config.computeSplits(),
                          true,
                          std::cref(config.run_mode.get()));
   }
@@ -108,6 +151,7 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
   std::cout << "Waiting for workers to finish" << std::endl;
   for (auto &t : threads) { t.join(); }
 
+  assign_results_to_tree(tree, config, context);
   write_result_file(tree, config, context);
   write_node_tree(tree, config);
   write_scaled_tree(tree, config);
@@ -132,7 +176,7 @@ static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
       auto intree = TreeReader::readTree(temp);
-      std::cout << "Tree " << count << " has " << intree->getExternalNodeCount()
+      std::cout << "Tree " << count << " has " << intree->getTipCount()
                 << " leaves." << std::endl;
       ret.push_back(intree);
       count++;

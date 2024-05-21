@@ -14,82 +14,34 @@
 #include <unordered_map>
 #include <utility>
 
+#include "MRCA.hpp"
+#include "Node.hpp"
 #include "Operation.hpp"
 
 namespace lagrange {
 
 Tree::Tree() : Tree(nullptr) {}
 
-Tree::Tree(std::shared_ptr<Node> inroot) :
-    _root(std::move(inroot)),
-    _internal_node_count(0),
-    _external_node_count(0) {
-  processRoot();
+Tree::Tree(std::shared_ptr<Node> inroot) : _root(std::move(inroot)) {
   _root->assignId();
+  _node_count = _root->getCount();
+  _tip_count = _root->getTipCount();
 }
 
-void Tree::addExternalNode(const std::shared_ptr<Node> &tn) {
-  _external_nodes.push_back(tn);
-  _external_node_count = _external_nodes.size();
-  _nodes.push_back(tn);
-}
+auto Tree::getNodeCount() const -> size_t { return _node_count; }
 
-void Tree::addInternalNode(const std::shared_ptr<Node> &tn) {
-  _internal_nodes.push_back(tn);
-  _internal_node_count = _internal_nodes.size();
-  _nodes.push_back(tn);
-}
+auto Tree::getTipCount() const -> size_t { return _tip_count; }
 
-auto Tree::getExternalNode(size_t num) -> std::shared_ptr<Node> {
-  return _external_nodes.at(num);
+auto Tree::getInternalCount() const -> size_t {
+  return _node_count - _tip_count;
 }
-
-/*
- * could precompute this, check for run time differences
- */
-auto Tree::getExternalNode(const std::string &name) -> std::shared_ptr<Node> {
-  std::shared_ptr<Node> ret = nullptr;
-  for (auto &_external_node : _external_nodes) {
-    if (_external_node->getName() == name) { ret = _external_node; }
-  }
-  return ret;
-}
-
-auto Tree::getInternalNode(size_t num) -> std::shared_ptr<Node> {
-  return _internal_nodes.at(num);
-}
-
-/*
- * could precompute this, check for run time differences
- */
-auto Tree::getInternalNode(const std::string &name) -> std::shared_ptr<Node> {
-  std::shared_ptr<Node> ret = nullptr;
-  for (auto &_internal_node : _internal_nodes) {
-    if (_internal_node->getName() == name) { ret = _internal_node; }
-  }
-  return ret;
-}
-
-auto Tree::getExternalNodeCount() const -> unsigned int {
-  return _external_node_count;
-}
-
-auto Tree::getInternalNodeCount() const -> unsigned int {
-  return _internal_node_count;
-}
-
-auto Tree::getNode(size_t num) -> std::shared_ptr<Node> {
-  return _nodes.at(num);
-}
-
-auto Tree::getNodeCount() const -> unsigned int { return _nodes.size(); }
 
 auto Tree::getRoot() -> std::shared_ptr<Node> { return _root; }
 
 auto Tree::getMRCA(const std::shared_ptr<MRCAEntry> &mrca)
     -> std::shared_ptr<Node> {
   std::vector<std::shared_ptr<Node>> members;
-  for (auto &&e : mrca->clade) { members.push_back(getExternalNode(e)); }
+  getNodesByMRCAEntry(_root, mrca, members);
   return getMRCAWithNodes(_root, members);
 }
 
@@ -100,21 +52,8 @@ void Tree::setHeightTopDown() { _root->setHeightReverse(); }
  */
 void Tree::setHeightBottomUp() { _root->setHeight(); }
 
-/*
- * private
- */
-void Tree::processRoot() {
-  _nodes.clear();
-  _internal_nodes.clear();
-  _external_nodes.clear();
-  _internal_node_count = 0;
-  _external_node_count = 0;
-  if (_root == nullptr) { return; }
-  postOrderProcessRoot(_root);
-}
-
 void Tree::processReRoot(const std::shared_ptr<Node> &node) {
-  if (node != _root || node->isExternal()) { return; }
+  if (node != _root || node->isTip()) { return; }
   if (getParent(node) != nullptr) { processReRoot(getParent(node)); }
   // Exchange branch label, length et cetera
   exchangeInfo(getParent(node), node);
@@ -136,26 +75,6 @@ void Tree::exchangeInfo(const std::shared_ptr<Node> &node1,
   node1->setBL(node2->getBL());
   node2->setBL(swapd);
 }
-
-void Tree::postOrderProcessRoot(const std::shared_ptr<Node> &node) {
-  if (node == nullptr) { return; }
-  if (node->getChildCount() > 0) {
-    for (size_t i = 0; i < node->getChildCount(); i++) {
-      postOrderProcessRoot(node->getChild(i));
-    }
-  }
-  if (node->isExternal()) {
-    addExternalNode(node);
-    node->setNumber(_external_node_count);
-  } else {
-    addInternalNode(node);
-    node->setNumber(_internal_node_count);
-  }
-}
-
-/*
- * end private
- */
 
 Tree::~Tree() { _root.reset(); }
 
@@ -203,7 +122,7 @@ auto Tree::generateBackwardOperations(Workspace &ws,
 
 auto Tree::traversePreorderInternalNodesOnly() const -> std::vector<size_t> {
   std::vector<size_t> ret;
-  ret.reserve(getInternalNodeCount());
+  ret.reserve(getInternalCount());
   _root->traverseAndGenerateBackwardNodeIdsInternalOnly(ret);
   return ret;
 }
@@ -211,7 +130,7 @@ auto Tree::traversePreorderInternalNodesOnly() const -> std::vector<size_t> {
 auto Tree::traversePreorderInternalNodesOnlyNumbers() const
     -> std::vector<size_t> {
   std::vector<size_t> ret;
-  ret.reserve(getInternalNodeCount());
+  ret.reserve(getInternalCount());
   _root->traverseAndGenerateBackwardNodeNumbersInternalOnly(ret);
   return ret;
 }
@@ -240,14 +159,7 @@ bool Tree::checkAlignmentConsistency(const Alignment &align) const {
 }
 
 void Tree::assignFossils(const std::vector<Fossil> &fossils) {
-  for (const auto &f : fossils) {
-    if (f.type == fossil_type::NODE) {
-      getMRCA(f.clade.get())->assignIncludedAreas(f.area);
-    }
-    if (f.type == fossil_type::FIXED) {
-      getMRCA(f.clade.get())->assignFixedDist(f.area);
-    }
-  }
+  for (const auto &f : fossils) { _root->assignFossil(f); }
 }
 
 void Tree::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
@@ -257,5 +169,21 @@ void Tree::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
 void Tree::setPeriods(const Periods &periods) {
   auto period_func = [&](Node &n) { n.setPeriodSegments(periods); };
   _root->applyPreorder(period_func);
+}
+
+void Tree::assignMCRALabels(const MRCAMap &mrca_map) {
+  for (const auto &kv : mrca_map) {
+    auto n = getMRCA(kv.second);
+    n->setMRCALabel(kv.first);
+  }
+}
+
+void Tree::assignStateResult(std::unique_ptr<LagrangeMatrixBase[]> r,
+                             const MRCALabel &mrca_label) {
+  getNodesByMRCALabel(_root, mrca_label)->assignAncestralState(std::move(r));
+}
+
+void Tree::assignSplitResult(const SplitReturn &r, const MRCALabel &mrca_label) {
+  getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
 }
 }  // namespace lagrange

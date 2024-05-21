@@ -2,7 +2,6 @@
 #define FOSSIL_H
 
 #include <memory>
-#include <string>
 
 #include "Common.hpp"
 #include "MRCA.hpp"
@@ -10,14 +9,14 @@
 
 namespace lagrange {
 
-enum class fossil_type { NODE, BRANCH, FIXED };
+enum class FossilType { NODE, BRANCH, FIXED };
 
 struct Fossil {
-  std::string mrca_name;
+  MRCALabel mrca_name;
   Option<std::shared_ptr<MRCAEntry>> clade;
   double age;
   Dist area;
-  fossil_type type;
+  FossilType type;
 };
 
 }  // namespace lagrange

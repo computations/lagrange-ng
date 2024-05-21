@@ -13,32 +13,31 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <unordered_map>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "Common.hpp"
+#include "Fossil.hpp"
+#include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
 
 namespace lagrange {
 
-Node::Node() : _branch_length(0.0), _height(0.0), _number(0), _id(0) {}
+Node::Node() : _branch_length(0.0), _height(0.0), _id(0) {}
 
-Node::Node(double bl, size_t innumber, std::string inname) :
+Node::Node(double bl, std::string inname) :
     _branch_length(bl),
     _height(0.0),
-    _number(innumber),
     _id(0),
     _label(std::move(inname)) {}
 
-auto Node::isExternal() const -> bool { return _children.empty(); }
+auto Node::isTip() const -> bool { return _children.empty(); }
 
 auto Node::isInternal() const -> bool { return !_children.empty(); }
 
-auto Node::getNumber() const -> size_t { return _number; }
-
-void Node::setNumber(size_t n) { _number = n; }
+auto Node::getNumber() const -> size_t { return _id; }
 
 auto Node::getBL() const -> double { return _branch_length; }
 
@@ -77,8 +76,6 @@ auto Node::getChild(size_t c) const -> std::shared_ptr<Node> {
 auto Node::getName() const -> std::string { return _label; }
 
 void Node::setName(const std::string &s) { _label = s; }
-
-void Node::setComment(const std::string &s) { _comment = s; }
 
 auto Node::getNewick() const -> std::string {
   static auto newick_lambda = [](const Node &n) { return n.getName(); };
@@ -119,6 +116,20 @@ void Node::setHeightReverse(double h) {
   for (const auto &c : _children) { c->setHeightReverse(_height); }
 }
 
+void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
+                         const std::shared_ptr<MRCAEntry> &mrca,
+                         std::vector<std::shared_ptr<Node>> &nodes) {
+  /* if it is a tip, then check for membership */
+  if (current->isTip()) {
+    if (mrca->in(current->getName())) { nodes.push_back(current); }
+    return;
+  }
+
+  for (const auto &c : current->_children) {
+    getNodesByMRCAEntry(c, mrca, nodes);
+  }
+}
+
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
                       const std::vector<std::shared_ptr<Node>> &leaves)
     -> std::shared_ptr<Node> {
@@ -140,6 +151,16 @@ auto getMRCAWithNodes(const std::shared_ptr<Node> &current,
     }
   }
   return mrca;
+}
+
+auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
+                         const MRCALabel &mrca) -> std::shared_ptr<Node> {
+  if (current->getMRCALabel() == mrca) { return current; }
+  for (const auto &c : current->_children) {
+    auto tmp = getNodesByMRCALabel(c, mrca);
+    if (tmp) { return tmp; }
+  }
+  return {nullptr};
 }
 
 auto Node::findNode(const std::shared_ptr<Node> &n) -> bool {
@@ -333,7 +354,7 @@ void Node::traverseAndGeneratePostorderNodeIdsInternalOnly(
 
 void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
     std::vector<size_t> &ret) const {
-  ret.push_back(_number);
+  ret.push_back(getNumber());
   for (const auto &c : _children) {
     if (c->isInternal()) {
       c->traverseAndGenerateBackwardNodeNumbersInternalOnly(ret);
@@ -364,7 +385,7 @@ void Node::assignId() {
 auto Node::getId() const -> size_t { return _id; }
 
 size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
-  if (isExternal()) {
+  if (isTip()) {
     if (align.data.count(_label) == 0) {
       std::ostringstream oss;
       oss << "Could not find taxa '" << _label
@@ -444,4 +465,61 @@ auto Node::getProbMatrixOperation(Workspace &ws,
 }
 
 void Node::applyCB(const std::function<void(Node &)> &func) { func(*this); }
+
+bool Node::hasAncestralState() const { return _ancestral_state.has_value(); }
+
+bool Node::hasAncestralSplit() const { return _ancestral_split.has_value(); }
+
+std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() {
+  return _ancestral_state.value();
+}
+
+SplitReturn &Node::getAncestralSplit() { return _ancestral_split.value(); }
+
+void Node::assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]> s) {
+  _ancestral_state = std::move(s);
+}
+
+void Node::assignAncestralSplit(SplitReturn s) { _ancestral_split = s; }
+
+auto Node::getCount() -> size_t { return getCount(0); }
+
+auto Node::getTipCount() -> size_t { return getTipCount(0); }
+
+auto Node::getCount(size_t cur) -> size_t {
+  for (const auto &c : _children) { cur = c->getCount(cur); }
+  cur += 1;
+  return cur;
+}
+
+auto Node::getTipCount(size_t cur) -> size_t {
+  if (isTip()) { return cur + 1; }
+  for (const auto &c : _children) { cur = c->getTipCount(cur); }
+  return cur;
+}
+
+void Node::setMRCALabel(const MRCALabel &l) { _mrca = l; }
+
+auto Node::getMRCALabel() const -> MRCALabel { return _mrca; }
+
+bool Node::assignFossil(const Fossil &f) {
+  if (getMRCALabel() == f.mrca_name) {
+    if (f.type == FossilType::NODE) {
+      assignIncludedAreas(f.area);
+    } else if (f.type == FossilType::BRANCH) {
+      assignFixedDist(f.area);
+    }
+    return true;
+  }
+  for (auto &c : _children) {
+    if (assignFossil(f)) { return true; }
+  }
+  return false;
+}
+
+std::string Node::getNodeLabel() const {
+  if (!_mrca.empty()) { return _mrca; }
+  return std::to_string(getNumber());
+}
+
 }  // namespace lagrange

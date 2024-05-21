@@ -17,8 +17,10 @@
 #include <vector>
 
 #include "Alignment.hpp"
+#include "AncSplit.hpp"
 #include "Common.hpp"
 #include "Fossil.hpp"
+#include "MRCA.hpp"
 #include "Node.hpp"
 #include "Operation.hpp"
 
@@ -30,10 +32,6 @@ class Tree {
   explicit Tree(std::shared_ptr<Node> root);
 
   ~Tree();
-
-  void addExternalNode(const std::shared_ptr<Node> &tn);
-  void addInternalNode(const std::shared_ptr<Node> &tn);
-  void pruneExternalNode(std::shared_ptr<Node> node);
 
   auto generateForwardOperations(Workspace &ws)
       -> std::vector<std::shared_ptr<SplitOperation>>;
@@ -58,15 +56,13 @@ class Tree {
   void assignTipData(Workspace &ws,
                      const std::unordered_map<std::string, Dist> &dist_data);
 
-  auto getExternalNode(size_t num) -> std::shared_ptr<Node>;
-  auto getExternalNode(const std::string &name) -> std::shared_ptr<Node>;
-  auto getInternalNode(size_t num) -> std::shared_ptr<Node>;
-  auto getInternalNode(const std::string &name) -> std::shared_ptr<Node>;
+  void assignMCRALabels(const MRCAMap& mrca_map);
+
   auto getNode(size_t num) -> std::shared_ptr<Node>;
 
-  auto getNodeCount() const -> unsigned int;
-  auto getExternalNodeCount() const -> unsigned int;
-  auto getInternalNodeCount() const -> unsigned int;
+  auto getNodeCount() const -> size_t;
+  auto getTipCount() const -> size_t;
+  auto getInternalCount() const -> size_t;
 
   auto getRoot() -> std::shared_ptr<Node>;
   void processRoot();
@@ -88,6 +84,9 @@ class Tree {
 
   void assignFossils(const std::vector<Fossil> &fossils);
 
+  void assignStateResult(std::unique_ptr<LagrangeMatrixBase[]>, const MRCALabel&);
+  void assignSplitResult(const SplitReturn&, const MRCALabel&);
+
  private:
   void processReRoot(const std::shared_ptr<Node> &node);
   static void exchangeInfo(const std::shared_ptr<Node> &node1,
@@ -98,12 +97,9 @@ class Tree {
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
   std::shared_ptr<Node> _root;
-  std::vector<std::shared_ptr<Node>> _nodes;
-  std::vector<std::shared_ptr<Node>> _internal_nodes;
-  std::vector<std::shared_ptr<Node>> _external_nodes;
-  std::unordered_map<std::string, std::shared_ptr<Node>> _mrcas;
-  size_t _internal_node_count;
-  size_t _external_node_count;
+  MRCAMap _mrcas;
+  size_t _node_count;
+  size_t _tip_count;
 };
 
 }  // namespace lagrange

@@ -27,7 +27,7 @@ class Context {
   Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas) :
       _tree{std::move(tree)},
       _workspace{std::make_shared<Workspace>(
-          _tree->getExternalNodeCount(), regions, max_areas)},
+          _tree->getTipCount(), regions, max_areas)},
       _rate_matrix_ops{} {}
 
   void registerLHGoal();

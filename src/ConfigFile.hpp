@@ -2,6 +2,7 @@
 #define CONFIGFILE_H
 
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -9,6 +10,7 @@
 #include "Alignment.hpp"
 #include "Common.hpp"
 #include "Fossil.hpp"
+#include "MRCA.hpp"
 #include "Periods.hpp"
 #include "Utils.hpp"
 
@@ -25,7 +27,7 @@ struct ConfigFile {
   size_t maxareas = 0;
 
   Periods periods;
-  std::unordered_map<std::string, std::shared_ptr<MRCAEntry>> mrcas;
+  MRCAMap mrcas;
   std::vector<Dist> exclude_dists;
   std::vector<Dist> include_dists;
   std::vector<std::string> area_names;
@@ -38,7 +40,8 @@ struct ConfigFile {
   bool all_splits = false;
   bool all_states = false;
 
-  std::vector<MRCAEntry> state_nodes;
+  std::vector<MRCALabel> state_nodes;
+  std::vector<MRCALabel> split_nodes;
 
   double dispersal = 0.01;
   double extinction = 0.01;
@@ -59,6 +62,9 @@ struct ConfigFile {
   std::filesystem::path resultsFilename() const;
   std::filesystem::path NodeTreeFilename() const;
   std::filesystem::path scaledTreeFilename() const;
+
+  bool computeStates() const;
+  bool computeSplits() const;
 };
 
 ConfigFile parse_config_file(std::istream& instream);

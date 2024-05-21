@@ -1,8 +1,12 @@
 #include "IO.hpp"
 
 #include <fstream>
+#include <memory>
+#include <optional>
 
 #include "AncSplit.hpp"
+#include "MRCA.hpp"
+#include "Tree.hpp"
 #include "Utils.hpp"
 
 #define CONVERT_FLOAT_TO_JSON(y, x) \
@@ -138,32 +142,27 @@ auto make_split_results_for_node(SplitReturn &splits,
   return node_json;
 }
 
-auto make_results_for_node(
-    const std::vector<std::unique_ptr<LagrangeMatrixBase[]>> &states,
-    SplitReturnList &splits,
-    const std::vector<size_t> &state_id_map,
-    const std::vector<std::string> &region_names,
-    size_t states_len,
-    size_t max_areas) -> nlohmann::json {
+auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
+                            const std::vector<std::string> &region_names,
+                            size_t states_len,
+                            size_t max_areas) -> nlohmann::json {
   nlohmann::json root_json;
 
-  size_t node_count = std::max(states.size(), splits.size());
-
-  for (size_t i = 0; i < node_count; ++i) {
+  auto cb = [&](Node &n) {
     nlohmann::json node_json;
-
-    if (i < states.size()) {
-      node_json["states"] = make_state_results_for_node(
-          states[i], region_names, states_len, max_areas);
-    }
-    if (i < splits.size()) {
+    node_json["number"] = n.getNodeLabel();
+    if (n.hasAncestralSplit()) {
       node_json["splits"] = make_split_results_for_node(
-          splits[i], region_names, states_len, max_areas);
+          n.getAncestralSplit(), region_names, states_len, max_areas);
     }
-
-    node_json["number"] = state_id_map[i];
+    if (n.hasAncestralState()) {
+      node_json["states"] = make_state_results_for_node(
+          n.getAncestralState(), region_names, states_len, max_areas);
+    }
     root_json.push_back(node_json);
-  }
+  };
+
+  tree->applyPreorderInternalOnly(cb);
 
   return root_json;
 }
@@ -180,18 +179,10 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
   }
   root_json["params"] = params_json;
 
-  auto stateGoalIndexToIdMap = tree->traversePreorderInternalNodesOnlyNumbers();
-
-  // invert the map
-
   auto states = context.getStateResults();
   auto splits = context.getSplitResults();
-  root_json["node-results"] = make_results_for_node(states,
-                                                    splits,
-                                                    stateGoalIndexToIdMap,
-                                                    config.area_names,
-                                                    context.stateCount(),
-                                                    config.maxareas);
+  root_json["node-results"] = make_results_for_nodes(
+      tree, config.area_names, context.stateCount(), config.maxareas);
 
   write_json_file(config, root_json);
 }
@@ -204,15 +195,14 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 
   std::ofstream node_tree(node_tree_filename);
   node_tree << tree->getNewickLambda([](const Node &n) -> std::string {
-    return std::to_string(n.getNumber()) + ":" + std::to_string(n.getBL());
+    return n.getNodeLabel() + ":" + std::to_string(n.getBL());
   });
 }
 
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto scaled_tree_filename = config.scaledTreeFilename();
-  std::cout << "Writing node annotated tree to " << scaled_tree_filename
-            << std::endl;
+  std::cout << "Writing scaled tree to " << scaled_tree_filename << std::endl;
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda([](const Node &n) -> std::string {
     return n.getName() + ":" + std::to_string(n.getBL());
@@ -226,12 +216,11 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
   attributes_json["periods"] =
       !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
   attributes_json["regions"] = config.region_count;
-  attributes_json["taxa"] = tree->getExternalNodeCount();
+  attributes_json["taxa"] = tree->getTipCount();
   attributes_json["nodes-tree"] =
       tree->getNewickLambda([](const Node &n) -> std::string {
         if (n.isInternal()) {
-          return std::to_string(n.getNumber()) + ":"
-                 + std::to_string(n.getBL());
+          return n.getNodeLabel() + ":" + std::to_string(n.getBL());
         } else {
           return n.getName() + ":" + std::to_string(n.getBL());
         }

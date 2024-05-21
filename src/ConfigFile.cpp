@@ -187,7 +187,7 @@ Fossil parse_node_fossil(ConfigLexer &lexer) {
           .clade = {},
           .age = 0.0,
           .area = fossil_area,
-          .type = fossil_type::NODE};
+          .type = FossilType::NODE};
 }
 
 Fossil parse_branch_fossil(ConfigLexer &lexer) {
@@ -205,7 +205,7 @@ Fossil parse_branch_fossil(ConfigLexer &lexer) {
           .clade = {},
           .age = fossil_age,
           .area = fossil_area,
-          .type = fossil_type::BRANCH};
+          .type = FossilType::BRANCH};
 };
 
 Fossil parse_fixed_fossil(ConfigLexer &lexer) {
@@ -220,7 +220,7 @@ Fossil parse_fixed_fossil(ConfigLexer &lexer) {
           .clade = {},
           .age = 0,
           .area = fossil_area,
-          .type = fossil_type::FIXED};
+          .type = FossilType::FIXED};
 }
 
 Fossil parse_fossil(ConfigLexer &lexer) {
@@ -284,9 +284,10 @@ ConfigFile parse_config_file(std::istream &instream) {
 
         config.periods = Periods(time_points);
       } else if (config_value == "mrca") {
-        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         lexer.expect(ConfigLexemeType::VALUE);
         auto mrca_name = lexer.consumeValueAsString();
+
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         auto mrca_entries = parse_list(lexer);
         config.mrcas[mrca_name] = std::shared_ptr<MRCAEntry>(
@@ -313,9 +314,17 @@ ConfigFile parse_config_file(std::istream &instream) {
         auto report_value = lexer.consumeValueAsString();
         if (report_value != "split") { config.all_splits = false; }
       } else if (config_value == "splits") {
-        config.all_splits = true;
+        if (lexer.peak() == ConfigLexemeType::VALUE) {
+          config.split_nodes = parse_list(lexer);
+        } else {
+          config.all_splits = true;
+        }
       } else if (config_value == "states") {
-        config.all_states = true;
+        if (lexer.peak() == ConfigLexemeType::VALUE) {
+          config.state_nodes = parse_list(lexer);
+        } else {
+          config.all_states = true;
+        }
       } else if (config_value == "dispersal") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
       } else if (config_value == "extinction") {
@@ -412,5 +421,13 @@ std::filesystem::path ConfigFile::scaledTreeFilename() const {
   auto scaled_tree_filename = prefix;
   scaled_tree_filename += ".scaled.tre";
   return scaled_tree_filename;
+}
+
+bool ConfigFile::computeStates() const {
+  return all_states || !state_nodes.empty();
+}
+
+bool ConfigFile::computeSplits() const {
+  return all_splits || !split_nodes.empty();
 }
 }  // namespace lagrange
