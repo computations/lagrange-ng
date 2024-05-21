@@ -1,9 +1,11 @@
 #include "Context.hpp"
 
 #include <nlopt.hpp>
+#include <unordered_map>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
+#include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
 #include "WorkerState.hpp"
@@ -37,9 +39,7 @@ void Context::registerLHGoal() {
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
 
-void Context::registerStateLHGoal() {
-  if (_reverse_operations.empty()) { registerBackwardOperations(); }
-
+std::function<void(Node&)> Context::makeStateGoalCB() {
   auto cb = [&](Node& n) {
     _state_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
@@ -51,13 +51,10 @@ void Context::registerStateLHGoal() {
       _state_lh_goal.back().fixDist(n.getFixedDist().get());
     }
   };
-
-  _tree->applyPreorderInternalOnly(cb);
+  return cb;
 }
 
-void Context::registerSplitLHGoal() {
-  if (_reverse_operations.empty()) { registerBackwardOperations(); }
-
+std::function<void(Node&)> Context::makeSplitGoalCB() {
   auto cb = [&](Node& n) {
     _split_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
@@ -69,8 +66,54 @@ void Context::registerSplitLHGoal() {
       _split_lh_goal.back().fixDist(n.getFixedDist().get());
     }
   };
+  return cb;
+}
+
+void Context::registerStateLHGoal() {
+  if (_reverse_operations.empty()) { registerBackwardOperations(); }
+
+  auto cb = makeStateGoalCB();
 
   _tree->applyPreorderInternalOnly(cb);
+}
+
+void Context::registerStateLHGoal(
+    const std::vector<std::string>& mrca_keys,
+    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+        mrca_map) {
+  auto cb = makeStateGoalCB();
+  registerGoals(mrca_keys, mrca_map, cb);
+}
+
+void Context::registerSplitLHGoal() {
+  auto cb = makeSplitGoalCB();
+  registerGoals(cb);
+}
+
+void Context::registerSplitLHGoal(
+    const std::vector<std::string>& mrca_keys,
+    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+        mrca_map) {
+  auto cb = makeSplitGoalCB();
+
+  registerGoals(mrca_keys, mrca_map, cb);
+}
+
+void Context::registerGoals(const std::function<void(Node&)>& cb) {
+  if (_reverse_operations.empty()) { registerBackwardOperations(); }
+  _tree->applyPreorderInternalOnly(cb);
+}
+
+void Context::registerGoals(
+    const std::vector<std::string> mrca_keys,
+    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>& mrca_map,
+    const std::function<void(Node&)>& cb) {
+  if (_reverse_operations.empty()) { registerBackwardOperations(); }
+
+  for (const auto& mrca_key : mrca_keys) {
+    auto n = _tree->getMRCA(mrca_map.at(mrca_key));
+    n->applyCB(cb);
+  }
 }
 
 void Context::updateRates(const std::vector<PeriodParams>& params) {

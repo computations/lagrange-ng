@@ -311,11 +311,11 @@ ConfigFile parse_config_file(std::istream &instream) {
       } else if (config_value == "report") {
         lexer.expect(ConfigLexemeType::VALUE);
         auto report_value = lexer.consumeValueAsString();
-        if (report_value != "split") { config.splits = false; }
+        if (report_value != "split") { config.all_splits = false; }
       } else if (config_value == "splits") {
-        config.splits = true;
+        config.all_splits = true;
       } else if (config_value == "states") {
-        config.states = true;
+        config.all_states = true;
       } else if (config_value == "dispersal") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
       } else if (config_value == "extinction") {

@@ -386,14 +386,14 @@ void Node::assignIncludedAreas(Dist incl_area_mask) {
 void Node::assignFixedDist(Dist fixed_dist) { _fixed_dist = fixed_dist; }
 
 void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
-  func(*this);
+  applyCB(func);
   for (auto &c : _children) {
     if (c->isInternal()) { c->applyPreorderInternalOnly(func); }
   }
 }
 
 void Node::applyPreorder(const std::function<void(Node &)> &func) {
-  func(*this);
+  applyCB(func);
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
@@ -442,4 +442,6 @@ auto Node::getProbMatrixOperation(Workspace &ws,
   }
   return it->second;
 }
+
+void Node::applyCB(const std::function<void(Node &)> &func) { func(*this); }
 }  // namespace lagrange

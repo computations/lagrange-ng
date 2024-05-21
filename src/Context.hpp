@@ -32,7 +32,15 @@ class Context {
 
   void registerLHGoal();
   void registerStateLHGoal();
+  void registerStateLHGoal(
+      const std::vector<std::string>& mrca_keys,
+      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+          mrca_map);
   void registerSplitLHGoal();
+  void registerSplitLHGoal(
+      const std::vector<std::string>& mrca_keys,
+      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+          mrca_map);
 
   auto getStateResults() const
       -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
@@ -93,6 +101,16 @@ class Context {
   auto optimize(WorkerState& ts, WorkerContext& tc) -> double;
 
   void extractRateMatrixOperations();
+
+  void registerGoals(const std::function<void(Node&)>& func);
+  void registerGoals(
+      const std::vector<std::string> mrca_keys,
+      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
+          mrca_map,
+      const std::function<void(Node&)>& func);
+
+  std::function<void (Node &)> makeStateGoalCB();
+  std::function<void (Node &)> makeSplitGoalCB();
 
   double _lh_epsilon;
 

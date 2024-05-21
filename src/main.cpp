@@ -79,8 +79,8 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
 
   Context context(tree, config.region_count, config.maxareas);
   context.registerLHGoal();
-  if (config.states) { context.registerStateLHGoal(); }
-  if (config.splits) { context.registerSplitLHGoal(); }
+  if (config.all_states) { context.registerStateLHGoal(); }
+  if (config.all_splits) { context.registerSplitLHGoal(); }
   context.init();
   context.updateRates(
       {context.getPeriodCount(), {config.dispersal, config.extinction}});
@@ -99,8 +99,8 @@ static void handle_tree(const std::shared_ptr<Tree> &tree,
     threads.emplace_back(&Context::optimizeAndComputeValues,
                          std::ref(context),
                          std::ref(worker_states[i]),
-                         config.states,
-                         config.splits,
+                         config.all_states,
+                         config.all_splits,
                          true,
                          std::cref(config.run_mode.get()));
   }

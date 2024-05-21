@@ -35,8 +35,10 @@ struct ConfigFile {
   std::unordered_map<std::string, Dist> fix_node_with_mrca;
 
   bool marginal = true;  // false means joint
-  bool splits = false;
-  bool states = false;
+  bool all_splits = false;
+  bool all_states = false;
+
+  std::vector<MRCAEntry> state_nodes;
 
   double dispersal = 0.01;
   double extinction = 0.01;

@@ -142,6 +142,8 @@ class Node {
 
   void setPeriodSegments(const Periods &periods);
 
+  void applyCB(const std::function<void(Node& )> & func);
+
  private:
   void assignIdRecursive(size_t &id);
 
