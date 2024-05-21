@@ -51,6 +51,8 @@ class Tree {
   auto traversePreorderInternalNodesOnly() const -> std::vector<size_t>;
   auto traversePreorderInternalNodesOnlyNumbers() const -> std::vector<size_t>;
 
+  auto inverseNodeIdMap() const -> std::unordered_map<size_t, size_t>;
+
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
 
   void assignTipData(Workspace &ws,

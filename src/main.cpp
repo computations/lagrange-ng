@@ -75,12 +75,11 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
                                    const ConfigFile &config,
                                    const Context &context) {
   auto states = context.getStateResults();
+  auto inv_map = tree->inverseNodeIdMap();
   if (config.all_states) {
-    auto stateGoalIndexToIdMap =
-        tree->traversePreorderInternalNodesOnlyNumbers();
     auto cb = [&](Node &n) {
       n.assignAncestralState(
-          std::move(states[stateGoalIndexToIdMap[n.getId()]]));
+          std::move(states[inv_map[n.getId()]]));
     };
     tree->applyPreorderInternalOnly(cb);
   } else if (!config.state_nodes.empty()) {
@@ -92,11 +91,9 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
 
   auto splits = context.getSplitResults();
   if (config.all_splits) {
-    auto splitGoalIndexToIdMap =
-        tree->traversePreorderInternalNodesOnlyNumbers();
     auto cb = [&](Node &n) {
       n.assignAncestralSplit(
-          std::move(splits[splitGoalIndexToIdMap[n.getId()]]));
+          std::move(splits[inv_map[n.getId()]]));
     };
   } else if (!config.split_nodes.empty()) {
     for (size_t iter = 0; iter < config.split_nodes.size(); ++iter) {

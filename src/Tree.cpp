@@ -191,4 +191,12 @@ void Tree::assignSplitResult(const SplitReturn &r,
                              const MRCALabel &mrca_label) {
   getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
 }
+
+auto Tree::inverseNodeIdMap() const -> std::unordered_map<size_t, size_t> {
+  auto map = traversePreorderInternalNodesOnlyNumbers();
+  std::unordered_map<size_t, size_t> inv_map;
+  for (size_t i = 0; i < map.size(); ++i) { inv_map[map[i]] = i; }
+
+  return inv_map;
+}
 }  // namespace lagrange
