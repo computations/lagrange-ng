@@ -476,6 +476,10 @@ auto Node::getProbMatrixOperation(Workspace &ws,
 
 void Node::applyCB(const std::function<void(Node &)> &func) { func(*this); }
 
+bool Node::hasResults() const {
+  return hasAncestralState() || hasAncestralSplit();
+}
+
 bool Node::hasAncestralState() const { return _ancestral_state.has_value(); }
 
 bool Node::hasAncestralSplit() const { return _ancestral_split.has_value(); }

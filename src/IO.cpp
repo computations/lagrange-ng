@@ -91,7 +91,7 @@ auto make_state_results_for_node(
         lagrange_convert_dist_string(dist, region_names);
     CONVERT_FLOAT_TO_JSON(tmp["llh"], llh);
     double ratio = lwr_distribution.get()[dist_index];
-    CONVERT_FLOAT_TO_JSON(tmp["ratio"], llh);
+    CONVERT_FLOAT_TO_JSON(tmp["ratio"], ratio);
     tmp["regions"] = lagrange_convert_dist_to_list(dist, region_names);
     node_json.push_back(tmp);
   }
@@ -149,6 +149,7 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
   nlohmann::json root_json;
 
   auto cb = [&](Node &n) {
+    if (!n.hasResults()) { return; }
     nlohmann::json node_json;
     node_json["number"] = n.getNodeLabel();
     if (n.hasAncestralSplit()) {

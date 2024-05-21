@@ -156,6 +156,7 @@ class Node {
 
   void applyCB(const std::function<void(Node &)> &func);
 
+  bool hasResults() const;
   bool hasAncestralState() const;
   bool hasAncestralSplit() const;
 
