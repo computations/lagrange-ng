@@ -1,17 +1,16 @@
-#include "Tree.h"
+#include "Tree.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
-#include "Common.h"
-#include "Node.h"
+#include "Common.hpp"
 #include "Periods.hpp"
-#include "TreeReader.h"
-#include "Workspace.h"
-#include "environment.hpp"
+#include "TreeReader.hpp"
+#include "Workspace.hpp"
 #include "gtest/gtest.h"
+
+using namespace lagrange;
 
 class TreeTest : public ::testing::Test {
  protected:
@@ -30,7 +29,7 @@ class TreeTest : public ::testing::Test {
     };
     */
 
-    _arbitrary_rate_matrix.reset(new lagrange_matrix_base_t[4 * 4]{
+    _arbitrary_rate_matrix.reset(new LagrangeMatrixBase[4 * 4]{
         0.00000,
         0.00000,
         0.00000,
@@ -61,13 +60,13 @@ class TreeTest : public ::testing::Test {
 
   std::string _basic_tree_newick;
 
-  std::unordered_map<std::string, lagrange_dist_t> _basic_tree_dist_data;
+  std::unordered_map<std::string, Dist> _basic_tree_dist_data;
 
   std::shared_ptr<Workspace> _basic_ws;
 
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
-  std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
+  std::unique_ptr<LagrangeMatrixBase[]> _arbitrary_rate_matrix;
 
   Periods _basic_periods;
   const size_t _basic_period_index = 0;

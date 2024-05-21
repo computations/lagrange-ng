@@ -36,6 +36,10 @@ auto Tree::getInternalCount() const -> size_t {
   return _node_count - _tip_count;
 }
 
+auto Tree::getNode(size_t id) -> std::shared_ptr<Node> {
+  return getNodeById(_root, id);
+}
+
 auto Tree::getRoot() -> std::shared_ptr<Node> { return _root; }
 
 auto Tree::getMRCA(const std::shared_ptr<MRCAEntry> &mrca)
@@ -183,7 +187,8 @@ void Tree::assignStateResult(std::unique_ptr<LagrangeMatrixBase[]> r,
   getNodesByMRCALabel(_root, mrca_label)->assignAncestralState(std::move(r));
 }
 
-void Tree::assignSplitResult(const SplitReturn &r, const MRCALabel &mrca_label) {
+void Tree::assignSplitResult(const SplitReturn &r,
+                             const MRCALabel &mrca_label) {
   getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
 }
 }  // namespace lagrange

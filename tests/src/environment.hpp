@@ -2,10 +2,7 @@
 #define LAGRANGE_ENV_HPP
 
 #include <fstream>
-#include <iostream>
 
-#include "Common.h"
-#include "Utils.h"
 #include "gtest/gtest.h"
 
 #define STRING(s) #s

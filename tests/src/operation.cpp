@@ -1,21 +1,18 @@
-#include "Operation.h"
+#include "Operation.hpp"
 
 #include <cmath>
-#include <iomanip>
 #include <memory>
-#include <type_traits>
-#include <unordered_map>
 
-#include "Common.h"
-#include "Utils.h"
-#include "Workspace.h"
-#include "environment.hpp"
+#include "Common.hpp"
+#include "Workspace.hpp"
 #include "gtest/gtest.h"
 
-#define lagrange_compute_error_fro_matrix(calc_buffer, ref_buffer, workspace) \
+using namespace lagrange;
+
+#define lagrange_compute_error_from_matrix(calc_buffer, ref_buffer, workspace) \
   {                                                                           \
     double error = 0.0;                                                       \
-    for (size_t i = 0; i < workspace->matrix_size(); i++) {                   \
+    for (size_t i = 0; i < workspace->matrixSize(); i++) {                   \
       double cur_error = calc_buffer[i] - ref_buffer.get()[i];                \
       error += cur_error * cur_error;                                         \
     }                                                                         \
@@ -23,7 +20,7 @@
     EXPECT_NEAR(error, 0.0, 1e-7);                                            \
   }
 
-#define lagrange_compute_error_fro_vector(calc_buffer, ref_buffer, workspace) \
+#define lagrange_compute_error_from_vector(calc_buffer, ref_buffer, workspace) \
   {                                                                           \
     double error = 0.0;                                                       \
     for (size_t i = 0; i < workspace->states(); i++) {                        \
@@ -46,7 +43,7 @@ class OperationTest : public ::testing::Test {
     };
     */
 
-    _arbitrary_rate_matrix.reset(new lagrange_matrix_base_t[4 * 4]{
+    _arbitrary_rate_matrix.reset(new LagrangeMatrixBase[4 * 4]{
         -2.426898,
         1.094290,
         0.849836,
@@ -74,7 +71,7 @@ class OperationTest : public ::testing::Test {
     };
     */
 
-    _correct_prob_matrix.reset(new lagrange_matrix_base_t[4 * 4]{
+    _correct_prob_matrix.reset(new LagrangeMatrixBase[4 * 4]{
         0.1949195896,
         0.2632718648,
         0.3005026902,
@@ -94,13 +91,13 @@ class OperationTest : public ::testing::Test {
     });
 
     /* _correct_root_clv = {0, 0.04839594797, 0.06003722477, 0.05381024353}; */
-    _correct_root_clv.reset(new lagrange_matrix_base_t[4]{
+    _correct_root_clv.reset(new LagrangeMatrixBase[4]{
         0, 0.04839594797, 0.06003722477, 0.05381024353});
 
     /* _correct_reverse_bot_clv = {0, 0.04898326741, 0.04287039582,
      * 0.01129551391};
      */
-    _correct_reverse_bot_clv.reset(new lagrange_matrix_base_t[4]{
+    _correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{
         0, 0.04898326741, 0.04287039582, 0.01129551391});
 
     /*
@@ -112,7 +109,7 @@ class OperationTest : public ::testing::Test {
       };
      */
 
-    _arbitrary_clv1.reset(new lagrange_matrix_base_t[4]{
+    _arbitrary_clv1.reset(new LagrangeMatrixBase[4]{
         0.491885,
         0.180252,
         0.136036,
@@ -128,7 +125,7 @@ class OperationTest : public ::testing::Test {
     };
     */
 
-    _arbitrary_clv2.reset(new lagrange_matrix_base_t[4]{
+    _arbitrary_clv2.reset(new LagrangeMatrixBase[4]{
         0.2921,
         0.297896,
         0.353511,
@@ -137,28 +134,26 @@ class OperationTest : public ::testing::Test {
 
     _ws = std::make_shared<Workspace>(_taxa, _regions, _regions);
 
-    _lbot_clv = _ws->register_generic_clv();
-    _ltop_clv = _ws->register_generic_clv();
-    _rbot_clv = _ws->register_generic_clv();
-    _rtop_clv = _ws->register_generic_clv();
+    _lbot_clv = _ws->registerGenericCLV();
+    _ltop_clv = _ws->registerGenericCLV();
+    _rbot_clv = _ws->registerGenericCLV();
+    _rtop_clv = _ws->registerGenericCLV();
 
-    _root_clv = _ws->register_generic_clv();
+    _root_clv = _ws->registerGenericCLV();
 
-    _reverse_bot_clv = _ws->register_generic_clv();
-    _reverse_ltop_clv = _ws->register_generic_clv();
-    _reverse_lbot_clv = _ws->register_generic_clv();
+    _reverse_bot_clv = _ws->registerGenericCLV();
+    _reverse_ltop_clv = _ws->registerGenericCLV();
+    _reverse_lbot_clv = _ws->registerGenericCLV();
 
     _ws->reserve();
 
-    _ws->update_rate_matrix(_rate_matrix, _arbitrary_rate_matrix.get());
+    _ws->updateRateMatrix(_rate_matrix, _arbitrary_rate_matrix.get());
 
-    _ws->update_clv(_arbitrary_clv1.get(), _rbot_clv);
-    _ws->update_clv(_arbitrary_clv2.get(), _lbot_clv);
-    //_ws->update_clv({0, 0, 0, 0}, &_root_clv);
+    _ws->updateCLV(_arbitrary_clv1.get(), _rbot_clv);
+    _ws->updateCLV(_arbitrary_clv2.get(), _lbot_clv);
 
-    //_ws->update_clv({0, 0, 0, 0}, _reverse_bot_clv);
-    _ws->update_clv(_arbitrary_clv1.get(), _reverse_lbot_clv);
-    _ws->set_period_params(0, .3123, 1.1231);
+    _ws->updateCLV(_arbitrary_clv1.get(), _reverse_lbot_clv);
+    _ws->setPeriodParams(0, .3123, 1.1231);
 
     _rate_matrix_op =
         std::make_shared<MakeRateMatrixOperation>(_rate_matrix, _period);
@@ -183,12 +178,12 @@ class OperationTest : public ::testing::Test {
   double _t = 1.0;
   size_t _period = 0;
 
-  std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_rate_matrix;
-  std::unique_ptr<lagrange_matrix_base_t[]> _correct_prob_matrix;
-  std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_clv1;
-  std::unique_ptr<lagrange_matrix_base_t[]> _arbitrary_clv2;
-  std::unique_ptr<lagrange_matrix_base_t[]> _correct_root_clv;
-  std::unique_ptr<lagrange_matrix_base_t[]> _correct_reverse_bot_clv;
+  std::unique_ptr<LagrangeMatrixBase[]> _arbitrary_rate_matrix;
+  std::unique_ptr<LagrangeMatrixBase[]> _correct_prob_matrix;
+  std::unique_ptr<LagrangeMatrixBase[]> _arbitrary_clv1;
+  std::unique_ptr<LagrangeMatrixBase[]> _arbitrary_clv2;
+  std::unique_ptr<LagrangeMatrixBase[]> _correct_root_clv;
+  std::unique_ptr<LagrangeMatrixBase[]> _correct_reverse_bot_clv;
 
   std::shared_ptr<Workspace> _ws;
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
@@ -204,8 +199,8 @@ TEST_F(OperationTest, ExpmSimple1) {
 
   expm_op.eval(_ws);
 
-  lagrange_compute_error_fro_matrix(_ws->prob_matrix(_prob_matrix),
-                                    _correct_prob_matrix, _ws);
+  lagrange_compute_error_from_matrix(
+      _ws->probMatrix(_prob_matrix), _correct_prob_matrix, _ws);
 }
 
 TEST_F(OperationTest, DispersionSimple0) {
@@ -228,8 +223,8 @@ TEST_F(OperationTest, DispersionSimple1) {
       blaze::norm(_ws->prob_matrix(_prob_matrix) - _correct_prob_matrix);
   */
 
-  lagrange_compute_error_fro_vector(_ws->prob_matrix(_prob_matrix),
-                                    _correct_prob_matrix, _ws);
+  lagrange_compute_error_from_vector(
+      _ws->probMatrix(_prob_matrix), _correct_prob_matrix, _ws);
 }
 
 /* Regression */
@@ -239,35 +234,46 @@ TEST_F(OperationTest, DispersionSimple2) {
   DispersionOperation disp_op(_rtop_clv, _rbot_clv, expm_op);
   disp_op.eval(_ws);
 
-  lagrange_compute_error_fro_vector(_ws->prob_matrix(_prob_matrix),
-                                    _correct_prob_matrix, _ws);
+  lagrange_compute_error_from_vector(
+      _ws->probMatrix(_prob_matrix), _correct_prob_matrix, _ws);
 
-  std::unique_ptr<lagrange_matrix_base_t[]> correct_clv(
-      new lagrange_matrix_base_t[4]{0.2305014254, 0.2067903737, 0.2174603189,
-                                    0.2142764931});
+  std::unique_ptr<LagrangeMatrixBase[]> correct_clv(
+      new LagrangeMatrixBase[4]{
+          0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931});
 
-  lagrange_compute_error_fro_vector(_ws->clv(_rtop_clv), correct_clv, _ws);
+  lagrange_compute_error_from_vector(_ws->CLV(_rtop_clv), correct_clv, _ws);
 }
 
 TEST_F(OperationTest, SplitSimple0) {
-  SplitOperation split_op(_ltop_clv, _lbot_clv, _rtop_clv, _rbot_clv, _t, _t,
-                          _prob_matrix, _rate_matrix_op, _root_clv);
+  SplitOperation split_op(_ltop_clv,
+                          _lbot_clv,
+                          _rtop_clv,
+                          _rbot_clv,
+                          _t,
+                          _t,
+                          _prob_matrix,
+                          _rate_matrix_op,
+                          _root_clv);
 
   split_op.eval(_ws);
 
-  lagrange_compute_error_fro_vector(_ws->clv(_root_clv), _correct_root_clv,
-                                    _ws);
+  lagrange_compute_error_from_vector(
+      _ws->CLV(_root_clv), _correct_root_clv, _ws);
 }
 
 TEST_F(OperationTest, ReverseSplitSimple0) {
-  ReverseSplitOperation rsplit_op(_reverse_bot_clv, _reverse_ltop_clv,
-                                  _rbot_clv, _rate_matrix_op, _prob_matrix,
-                                  _reverse_lbot_clv, _t);
+  ReverseSplitOperation rsplit_op(_reverse_bot_clv,
+                                  _reverse_ltop_clv,
+                                  _rbot_clv,
+                                  _rate_matrix_op,
+                                  _prob_matrix,
+                                  _reverse_lbot_clv,
+                                  _t);
 
   rsplit_op.eval(_ws);
 
-  lagrange_compute_error_fro_vector(_ws->clv(_reverse_bot_clv),
-                                    _correct_reverse_bot_clv, _ws);
+  lagrange_compute_error_from_vector(
+      _ws->CLV(_reverse_bot_clv), _correct_reverse_bot_clv, _ws);
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
@@ -279,7 +285,7 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
   auto local_ws = std::make_shared<Workspace>(_taxa, 3, 3);
   local_ws->reserve();
-  local_ws->set_period_params(_period, .3123, 1.1231);
+  local_ws->setPeriodParams(_period, .3123, 1.1231);
   MakeRateMatrixOperation make_op(_rate_matrix, _period);
 
   make_op.eval(local_ws);

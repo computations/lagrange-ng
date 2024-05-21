@@ -1,14 +1,15 @@
-#include "Context.h"
+#include "Context.hpp"
 
-#include <iomanip>
 #include <memory>
 #include <unordered_map>
 
+#include "Common.hpp"
 #include "Periods.hpp"
-#include "TreeReader.h"
-#include "WorkerState.h"
-#include "environment.hpp"
+#include "TreeReader.hpp"
+#include "WorkerState.hpp"
 #include "gtest/gtest.h"
+
+using namespace lagrange;
 
 class ContextTest : public ::testing::Test {
  protected:
@@ -26,7 +27,7 @@ class ContextTest : public ::testing::Test {
 
   std::string _basic_tree_newick;
   std::shared_ptr<Tree> _basic_tree;
-  std::unordered_map<std::string, lagrange_dist_t> _basic_tree_data;
+  std::unordered_map<std::string, Dist> _basic_tree_data;
   Periods _basic_periods;
   size_t _basic_tree_data_region_count = 2;
   WorkerState _worker_state;
@@ -67,8 +68,8 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.registerTipClvs(_basic_tree_data);
 
   double initial_llh = context.computeLLH(_worker_state);
-  context.optimizeAndComputeValues(_worker_state, false, false, false,
-                                   lagrange_operation_mode::OPTIMIZE);
+  context.optimizeAndComputeValues(
+      _worker_state, false, false, false, LagrangeOperationMode::OPTIMIZE);
   double llh = context.computeLLH(_worker_state);
 
   EXPECT_GT(llh, initial_llh);

@@ -163,6 +163,16 @@ auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
+auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
+    -> std::shared_ptr<Node> {
+  if (current->getId() == id) { return current; }
+  for (const auto &c : current->_children) {
+    auto tmp = getNodeById(c, id);
+    if (tmp) { return tmp; }
+  }
+  return {nullptr};
+}
+
 auto Node::findNode(const std::shared_ptr<Node> &n) -> bool {
   if (this == n.get()) { return true; }
   return std::any_of(_children.begin(), _children.end(), [&n](auto &c) {

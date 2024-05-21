@@ -1,9 +1,9 @@
 #include <stdexcept>
 
-#include "Quarantine.h"
-#include "Workspace.h"
-#include "environment.hpp"
+#include "Workspace.hpp"
 #include "gtest/gtest.h"
+
+using namespace lagrange;
 
 TEST(Workspace, simple0) {
   constexpr size_t regions = 3;
@@ -14,17 +14,17 @@ TEST(Workspace, simple0) {
 
   EXPECT_EQ(ws.states(), states);
 
-  EXPECT_EQ(ws.rate_matrix_count(), 1);
-  EXPECT_THROW(ws.rate_matrix(1), std::runtime_error);
+  EXPECT_EQ(ws.rateMatrixCount(), 1);
+  EXPECT_THROW(ws.rateMatrix(1), std::runtime_error);
 
-  EXPECT_EQ(ws.prob_matrix_count(), 1);
-  EXPECT_THROW(ws.prob_matrix(1), std::runtime_error);
+  EXPECT_EQ(ws.probMatrixCount(), 1);
+  EXPECT_THROW(ws.probMatrix(1), std::runtime_error);
 }
 
 TEST(Workspace, simple1) {
   constexpr size_t regions = 3;
   Workspace ws(10, regions, regions);
-  size_t clv_index = ws.register_generic_clv();
+  size_t clv_index = ws.registerGenericCLV();
   ws.reserve();
   EXPECT_EQ(clv_index, 0);
 }
