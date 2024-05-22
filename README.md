@@ -98,39 +98,33 @@ To run an analysis with these files, simply run in the terminal the command
 If Lagrange-NG has been built correctly, we should see the following output (or something similar):
 
 ```
-reading tree...
-Tree 1 has 10 leaves.
-reading data...
-Reading species: g 00110
-Reading species: f 11100
-Reading species: e 01110
-Reading species: d 10010
-Reading species: c 01011
-Reading species: b 10110
-Reading species: a 10101
-Reading species: j 11011
-Reading species: i 00100
-Reading species: h 10100
-checking data...
-running analysis...
-Using Pade's method expm computation
-Starting Workers
-Making Worker #1
-Waiting for workers to finish
-Initial LLH: -66.1632
-(disp: 0.01, ext: 0.01): -66.1632
-(disp: 0.105624, ext: 0.0198437): -37.5714
-(disp: 0.189061, ext: 0.0505465): -33.9578
-(disp: 0.363317, ext: 0.130848): -33.6551
-(disp: 0.21367, ext: 0.113534): -33.7848
-(disp: 0.257849, ext: 0.135184): -33.3235
-(disp: 0.305354, ext: 0.157489): -33.2058
-(disp: 0.298923, ext: 0.151987): -33.2045
-(disp: 0.299635, ext: 0.153142): -33.2045
-Final LLH: -33.2045
-Computing reverse operations
-Computing state goals
-Analysis took: 0.163195s
+[  0.00s] Reading tree...
+[  0.00s] Tree number 1 has 10 leaves
+[  0.00s] Reading data...
+[  0.00s] Checking data...
+[  0.00s] Running analysis...
+[  0.00s] Using Pade's method for EXPM computation
+[  0.00s] Starting Workers
+[  0.00s] Making Worker#1
+[  0.00s] Waiting for Workers to finish
+[  0.00s] Initial LLH: -66.235818
+[  0.01s] Current LLH: -66.235818
+[  0.01s] Current LLH: -37.599879
+[  0.02s] Current LLH: -31.542749
+[  0.02s] Current LLH: -31.447068
+[  0.03s] Current LLH: -31.428544
+[  0.04s] Current LLH: -31.425485
+[  0.04s] Current LLH: -31.424314
+[  0.04s] Current LLH: -31.424298
+[  0.05s] Current LLH: -31.424297
+[  0.05s] Final LLH: -31.424296
+[  0.05s] Computing reverse operations
+[  0.05s] Computing ancestral states
+[  0.05s] Computing ancestral splits
+[  0.05s] Writing results to example/example.nwk.results.json
+[  0.06s] Writing node annotated tree to example/example.nwk.nodes.tre
+[  0.06s] Writing node annotated tree to example/example.nwk.scaled.tre
+[  0.06s] Analysis took 0.056379s
 ```
 
 After Lagrange-NG is finished, there should be 3 new files in `example`:
