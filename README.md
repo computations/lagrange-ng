@@ -143,7 +143,8 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 ## Control File Options
 
 - `treefile`: Path to the newick file containing the phylogeny. Required.
-- `datafile`: Path to the matrix in a phylip format. At the moment, only phylip is supported. Required.
+- `datafile`: Path to the matrix in either PHYLIP or FASTA format. In both
+  cases, leading zeros are significant, I.E. `0011` is not the same as `11`.
 - `areanames`: A space separated list of region names, which will be used for reference in the output. Required.
 - `states`: Compute the ancestral states after fitting model parameters.
 - `splits`: Compute ancestral splits after fitting model parameters.
@@ -203,7 +204,9 @@ computation. There are 3 top level keys to the file:
 As mentioned, `node-results` contains a list of results for each node. Each entry of the list has the following keys and
 values:
 
-- `number`: Contains the node number, as specified in the `<treefile>.nodes.tre`.
+- `number`: Contains the node number, as specified in the
+  `<treefile>.nodes.tre`. When an `mrca` is specified in the config file, the
+  name of the MRCA is used instead.
 - `states` (optionally): Contains the results as a list from the ancestral state computation with the following keys:
     - `distribution`: The current distribution, as a binary number, output in decimal.
     - `distribution-string`: The current distribution, but expressed using the region names from the control file.
