@@ -9,6 +9,7 @@
 #include "Operation.hpp"
 #include "Utils.hpp"
 #include "WorkerState.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -170,7 +171,6 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
 void Context::optimizeAndComputeValues(WorkerState& ts,
                                        bool states,
                                        bool splits,
-                                       bool output,
                                        const LagrangeOperationMode& mode) {
   ts.assign_threads();
   WorkerContext tc = makeThreadContext();
@@ -185,35 +185,35 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
   double initial_lh = computeLLH(ts, tc);
 
   if (mode == LagrangeOperationMode::EVALUATE) {
-    if (output) {
-      std::cout << "LLH: " << initial_lh << std::endl;
-      auto params = currentParams();
-      for (const auto& p : params) {
-        std::cout << "Dispersion: " << p.dispersion_rate
-                  << " Extinction: " << p.extinction_rate << std::endl;
-      }
+    LOG(INFO, "LLH:%f:", initial_lh);
+    auto params = currentParams();
+    for (const auto& p : params) {
+      LOG(INFO,
+          "Dispersion: %f, Extinction: %f",
+          p.dispersion_rate,
+          p.extinction_rate);
     }
   }
 
   if (mode == LagrangeOperationMode::OPTIMIZE) {
-    if (output) { std::cout << "Initial LLH: " << initial_lh << std::endl; }
+    LOG(INFO, "Initial LLH: %f", initial_lh);
 
     double final_lh = optimize(ts, tc);
 
-    if (output) { std::cout << "Final LLH: " << final_lh << std::endl; }
+    LOG(INFO, "Final LLH: %f", final_lh);
   }
 
   if (states || splits) {
-    std::cout << "Computing reverse operations" << std::endl;
+    MESSAGE(INFO, "Computing reverse operations");
     computeBackwardOperations(ts, tc);
   }
 
   if (states) {
-    std::cout << "Computing state goals" << std::endl;
+    MESSAGE(INFO, "Computing ancestral states");
     computeStateGoal(ts, tc);
   }
   if (splits) {
-    std::cout << "Computing split goals" << std::endl;
+    MESSAGE(INFO, "Computing ancestral splits");
     computeSplitGoal(ts, tc);
   }
   ts.haltThreads();
@@ -242,9 +242,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
     obj->context.updateRates(period_paramters);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
-    if (obj->iter % 10 == 0) {
-      std::cout << "Current LLH: " << llh << std::endl;
-    }
+    if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: %f", llh); }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }

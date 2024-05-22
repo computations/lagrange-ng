@@ -173,6 +173,7 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
     the node `foo` (specified with `mrca`) to the distributions `111` and `011`.
   - `fixed`: Constrain a node to be exactly the distribution specified. For example, `fossil = fixed foo 011` will
     constrain the node `foo` to the distribution `011`.
+- `logfile`: Specify a file to log the output of the program (the log messages).
 
 ## Expm Modes
 

@@ -1,7 +1,9 @@
 #include "Alignment.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "Utils.hpp"
@@ -81,12 +83,16 @@ Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
   }
 }
 
-Alignment read_alignment(const std::filesystem::path& infile,
+Alignment read_alignment(const std::filesystem::path& filename,
                          Option<AlignmentFileType> type) {
-  std::ifstream alignment_file(infile);
+  if (!std::filesystem::exists(filename)) {
+    throw std::runtime_error{"Failed to find the alignment file "
+                             + filename.string()};
+  }
+  std::ifstream alignment_file(filename);
   if (type.hasValue()) { return read_alignment(alignment_file, type.get()); }
 
-  auto extension = get_file_extension(infile);
+  auto extension = get_file_extension(filename);
   if (extension == "fasta" || extension == "fas") {
     return read_alignment(alignment_file, AlignmentFileType::FASTA);
   } else if (extension == "phylip" || extension == "phy") {

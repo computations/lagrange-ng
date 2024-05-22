@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <logger.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -34,20 +35,20 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
     switch (expm_mode.get()) {
       case LagrangeEXPMComputationMode::ADAPTIVE:
         if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
-          std::cout << "Enabling adaptive expm computation" << std::endl;
+          MESSAGE(INFO, "Enabling adaptive EXPM mode");
           context.useArnoldi();
         } else {
-          std::cout << "Using Pade's method expm computation" << std::endl;
+          MESSAGE(INFO, "Using Pade's method for EXPM computation");
           context.useArnoldi(false, false);
         }
         break;
       case LagrangeEXPMComputationMode::PADE:
-        std::cout << "Using Pade's method expm computation" << std::endl;
+        MESSAGE(INFO, "Using Pade's method for EXPM computation");
         context.useArnoldi(false, false);
         break;
       case LagrangeEXPMComputationMode::KRYLOV:
-        std::cout << "Using Krylov subspace based method for expm computation"
-                  << std::endl;
+        MESSAGE(INFO,
+                "Using Krylov subspace based method for EXPM computation");
         context.useArnoldi(true, false);
         break;
       default:
@@ -55,10 +56,11 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
     }
   } else {
     if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
-      std::cout << "Enabling adaptive expm computation" << std::endl;
+      MESSAGE(INFO, "Enabling adaptive EXPM mode");
       context.useArnoldi();
     } else {
-      std::cout << "Using Pade's method expm computation" << std::endl;
+      MESSAGE(INFO, "Using Pade's method for EXPM computation");
+      context.useArnoldi(false, false);
     }
   }
 }
@@ -78,8 +80,7 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
   auto inv_map = tree->inverseNodeIdMap();
   if (config.all_states) {
     auto cb = [&](Node &n) {
-      n.assignAncestralState(
-          std::move(states[inv_map[n.getId()]]));
+      n.assignAncestralState(std::move(states[inv_map[n.getId()]]));
     };
     tree->applyPreorderInternalOnly(cb);
   } else if (!config.state_nodes.empty()) {
@@ -92,8 +93,7 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
   auto splits = context.getSplitResults();
   if (config.all_splits) {
     auto cb = [&](Node &n) {
-      n.assignAncestralSplit(
-          std::move(splits[inv_map[n.getId()]]));
+      n.assignAncestralSplit(std::move(splits[inv_map[n.getId()]]));
     };
   } else if (!config.split_nodes.empty()) {
     for (size_t iter = 0; iter < config.split_nodes.size(); ++iter) {
@@ -131,9 +131,9 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers.get());
   std::vector<std::thread> threads;
-  std::cout << "Starting Workers" << std::endl;
+  MESSAGE(INFO, "Starting Workers");
   for (size_t i = 0; i < config.workers.get(); i++) {
-    std::cout << "Making Worker #" << i + 1 << std::endl;
+    LOG(INFO, "Making Worker#%lu", i + 1);
     worker_states.emplace_back();
     worker_states.back().setAssignedThreads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues,
@@ -141,11 +141,10 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
                          std::ref(worker_states[i]),
                          config.computeStates(),
                          config.computeSplits(),
-                         true,
                          std::cref(config.run_mode.get()));
   }
 
-  std::cout << "Waiting for workers to finish" << std::endl;
+  MESSAGE(INFO, "Waiting for Workers to finish");
   for (auto &t : threads) { t.join(); }
 
   assign_results_to_tree(tree, config, context);
@@ -165,16 +164,21 @@ static ConfigFile read_config_file(const std::string &filename) {
 }
 
 static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
-    const std::string &filename) {
+    const std::filesystem::path &filename) {
   std::vector<std::shared_ptr<Tree>> ret;
+
+  if (!std::filesystem::exists(filename)) {
+    throw std::runtime_error{"Failed to find the tree file "
+                             + filename.string()};
+  }
+
   std::ifstream ifs(filename);
   std::string temp;
-  int count = 1;
+  size_t count = 1;
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
       auto intree = TreeReader::readTree(temp);
-      std::cout << "Tree " << count << " has " << intree->getTipCount()
-                << " leaves." << std::endl;
+      LOG(INFO, "Tree number %lu has %lu leaves", count, intree->getTipCount());
       ret.push_back(intree);
       count++;
     }
@@ -209,26 +213,34 @@ auto main(int argc, char *argv[]) -> int {
 #else
   openblas_set_num_threads(1);
 #endif
+
+  logger::get_log_states().add_stream(
+      stdout, INFO | IMPORTANT | PROGRESS | WARNING | ERROR);
+
   auto start_time = std::chrono::high_resolution_clock::now();
   if (argc != 2) {
-    std::cout << "you need more arguments." << std::endl;
-    std::cout << "usage: lagrange configfile" << std::endl;
-    return 0;
+    MESSAGE(ERROR, "Lagrange-ng needs a config file");
+    MESSAGE(ERROR, "Usage: lagrange configfile");
+    return 1;
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
     validate_and_make_prefix(config.prefix);
     setThreads(config);
 
-    std::cout << "reading tree..." << std::endl;
+    logger::get_log_states().add_file_stream(
+        config.log_filename.c_str(),
+        INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
+
+    MESSAGE(INFO, "Reading tree...");
     std::vector<std::shared_ptr<Tree>> intrees =
         read_tree_file_line_by_line(config.tree_filename);
 
-    std::cout << "reading data..." << std::endl;
+    MESSAGE(INFO, "Reading data...");
     Alignment data =
         read_alignment(config.data_filename, config.alignment_file_type);
 
-    std::cout << "checking data..." << std::endl;
+    MESSAGE(INFO, "Checking data...");
     check_alignment_against_trees(data, intrees);
 
     if (data.region_count == 0) {
@@ -238,11 +250,11 @@ auto main(int argc, char *argv[]) -> int {
     config.region_count = data.region_count;
     if (config.maxareas == 0) { config.maxareas = config.region_count; }
 
-    std::cout << "running analysis..." << std::endl;
+    MESSAGE(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end_time - start_time;
-  std::cout << "Analysis took: " << duration.count() << "s" << std::endl;
+  LOG(INFO, "Analysis took %fs", duration.count());
   return 0;
 }

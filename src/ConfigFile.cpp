@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Fossil.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
@@ -18,9 +19,9 @@ void set_mrcas_for_fossils(ConfigFile &config) {
 void check_prefix(ConfigFile &config) {
   if (config.prefix.empty()) { config.prefix = config.tree_filename; }
   if (config.prefix.filename().string()[0] == '.') {
-    std::cout << "Warning, the current prefix starts with a dot, results will "
-                 "be hidden on linux systems"
-              << std::endl;
+    MESSAGE(WARNING,
+            "The current prefix starts with a dot. The results will be hidden "
+            "on unix-like systems");
   }
 }
 
@@ -381,7 +382,13 @@ ConfigFile parse_config_file(std::istream &instream) {
         if (align_type_str == "phylip") {
           config.alignment_file_type = AlignmentFileType::PHYLIP;
         }
-      } else {
+      } 
+      else if (config_value == "logfile"){
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
+
+        config.log_filename = lexer.consumeValueAsString();
+      }else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
             << " was not recognized";

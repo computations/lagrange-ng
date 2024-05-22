@@ -51,7 +51,6 @@ class Context {
   void optimizeAndComputeValues(WorkerState& ts,
                                 bool states,
                                 bool splits,
-                                bool output,
                                 const LagrangeOperationMode& mode);
 
   auto computeLLH(WorkerState& ts) -> double;

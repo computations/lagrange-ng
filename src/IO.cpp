@@ -1,6 +1,7 @@
 #include "IO.hpp"
 
 #include <fstream>
+#include <logger.hpp>
 #include <memory>
 #include <optional>
 
@@ -191,8 +192,7 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config) {
   auto node_tree_filename = config.NodeTreeFilename();
-  std::cout << "Writing node annotated tree to " << node_tree_filename
-            << std::endl;
+  LOG(INFO, "Writing node annotated tree to %s", node_tree_filename.c_str());
 
   std::ofstream node_tree(node_tree_filename);
   node_tree << tree->getNewickLambda([](const Node &n) -> std::string {
@@ -203,7 +203,7 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto scaled_tree_filename = config.scaledTreeFilename();
-  std::cout << "Writing scaled tree to " << scaled_tree_filename << std::endl;
+  LOG(INFO, "Writing node annotated tree to %s", scaled_tree_filename.c_str());
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda([](const Node &n) -> std::string {
     return n.getName() + ":" + std::to_string(n.getBL());
@@ -237,7 +237,9 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
 void write_json_file(const ConfigFile &config,
                      const nlohmann ::json &root_json) {
   auto json_filename = config.resultsFilename();
-  std::cout << "Writing results to " << json_filename << std::endl;
+
+  LOG(INFO, "Writing results to %s", json_filename.c_str());
+
   std::ofstream outfile(config.resultsFilename());
   outfile << root_json.dump();
 }

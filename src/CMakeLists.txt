@@ -26,7 +26,8 @@ elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_LINK_FLAGS -fsanitize=address)
 endif()
 
-set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB})
+set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}
+  logger)
 
 target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_INCLUDES})

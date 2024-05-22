@@ -27,7 +27,14 @@ FetchContent_Declare(nlohmann_json
   FIND_PACKAGE_ARGS
 )
 
-FetchContent_MakeAvailable(NLopt nlohmann_json)
+FetchContent_Declare(logger
+  URL https://github.com/computations/logger/archive/refs/tags/v0.1.0.tar.gz
+  URL_HASH SHA256=ee376794107325597db8fe61117ef9b613ef529e4bb681839a453b96161a6a0c
+  EXCLUDE_FROM_ALL
+  FIND_PACKAGE_ARGS
+)
+
+FetchContent_MakeAvailable(NLopt nlohmann_json logger)
 
 FetchContent_GetProperties(NLopt
   POPULATED NLopt_POPULATED
