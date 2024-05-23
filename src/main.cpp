@@ -228,11 +228,13 @@ auto main(int argc, char *argv[]) -> int {
     validate_and_make_prefix(config.prefix);
     setThreads(config);
 
-    logger::get_log_states().add_file_stream(
-        config.log_filename.c_str(),
-        INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
+    if (!config.log_filename.empty()) {
+      logger::get_log_states().add_file_stream(
+          config.log_filename.c_str(),
+          INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
+    }
 
-    MESSAGE(INFO, "Reading tree...");
+    // MESSAGE(INFO, "Reading tree...");
     std::vector<std::shared_ptr<Tree>> intrees =
         read_tree_file_line_by_line(config.tree_filename);
 
