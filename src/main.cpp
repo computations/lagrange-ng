@@ -133,7 +133,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   std::vector<std::thread> threads;
   MESSAGE(INFO, "Starting Workers");
   for (size_t i = 0; i < config.workers.get(); i++) {
-    LOG(INFO, "Making Worker#%lu", i + 1);
+    LOG(INFO, "Making Worker #%lu", i + 1);
     worker_states.emplace_back();
     worker_states.back().setAssignedThreads(config.threads_per_worker.get());
     threads.emplace_back(&Context::optimizeAndComputeValues,
