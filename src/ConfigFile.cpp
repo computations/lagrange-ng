@@ -326,8 +326,10 @@ ConfigFile parse_config_file(std::istream &instream) {
         } else {
           config.all_states = true;
         }
-      } else if (config_value == "dispersal") {
+      } else if (config_value == "dispersion") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+
+        config.extinction = parse_double(lexer);
       } else if (config_value == "extinction") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
