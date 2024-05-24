@@ -1,12 +1,13 @@
 #include "IO.hpp"
 
+#undef NDEBUG
+#include <cassert>
+#include <cmath>
 #include <fstream>
 #include <logger.hpp>
 #include <memory>
-#include <optional>
 
 #include "AncSplit.hpp"
-#include "MRCA.hpp"
 #include "Tree.hpp"
 #include "Utils.hpp"
 
@@ -26,6 +27,7 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
       max_llh = std::max(max_llh, sp.getLikelihood());
     }
   }
+  assert(std::isfinite(max_llh));
 
   double total_llh = 0.0;
   for (const auto &kv : splits) {
@@ -33,6 +35,7 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
       total_llh += std::exp(sp.getLikelihood() - max_llh);
     }
   }
+  assert(std::isfinite(total_llh));
 
   for (auto &kv : splits) {
     for (auto &sp : kv.second) {
@@ -61,10 +64,13 @@ auto normalize_state_distribution_by_lwr(
     max_llh = std::max(max_llh, tmp);
   }
 
+  assert(std::isfinite(max_llh));
+
   double total_llh = 0.0;
   for (size_t i = 1; i < states_len; i++) {
     total_llh += std::exp(normalized_states.get()[i] - max_llh);
   }
+  assert(std::isfinite(total_llh));
 
   for (size_t i = 0; i < states_len; i++) {
     double tmp = std::exp(normalized_states.get()[i] - max_llh) / total_llh;

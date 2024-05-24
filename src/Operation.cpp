@@ -4,9 +4,9 @@
  * 2020-10-27
  */
 
-#undef NDEBUG
 #include "Operation.hpp"
 
+#undef NDEBUG
 #include <cassert>
 #include <cmath>
 #include <cstddef>
