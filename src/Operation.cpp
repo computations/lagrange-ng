@@ -93,6 +93,8 @@ inline void join_splits(Dist splitting_dist,
 
   scale &= sum < lagrange_scale_threshold;
 
+  assert(std::isfinite(sum));
+
   dest[dist_index] = sum;
 }
 
@@ -210,7 +212,7 @@ inline void reverse_join_splits(Dist i,
     assert(i_index < total_states);
     dest[l_index] += c1[i_index] * c2[r_index] * weight;
   }
-  // for (auto &p : splits) { dest[p.left] += c1[i] * c2[p.right] * weight; }
+  for (size_t i = 0; i < total_states; ++i) { assert(std::isfinite(dest[i])); }
 }
 
 inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
@@ -965,6 +967,8 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
       AncSplit anc_split(index, sp.left, sp.right, weight);
       double lh = parent_clv[index] * lchild_clv[sp.left] * rchild_clv[sp.right]
                   * weight;
+      double loglh = std::log(lh);
+      assert(!std::isnan(loglh));
       anc_split.setLikelihood(std::log(lh));
       anc_split_vec.push_back(anc_split);
     }

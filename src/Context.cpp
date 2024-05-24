@@ -185,7 +185,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
   double initial_lh = computeLLH(ts, tc);
 
   if (mode == LagrangeOperationMode::EVALUATE) {
-    LOG(INFO, "LLH:%f:", initial_lh);
+    LOG(INFO, "LLH:%f", initial_lh);
     auto params = currentParams();
     for (const auto& p : params) {
       LOG(INFO,
