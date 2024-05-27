@@ -195,6 +195,7 @@ inline void reverse_join_splits(Dist i,
                                 std::vector<RegionSplit> &splits,
                                 const LagrangeConstColVector &c1,
                                 const LagrangeConstColVector &c2,
+                                bool &scale,
                                 LagrangeColVector dest,
                                 const std::function<size_t(Dist)> &dist_map) {
   generate_splits(i, regions, max_areas, splits);
@@ -212,7 +213,10 @@ inline void reverse_join_splits(Dist i,
     assert(i_index < total_states);
     dest[l_index] += c1[i_index] * c2[r_index] * weight;
   }
-  for (size_t i = 0; i < total_states; ++i) { assert(std::isfinite(dest[i])); }
+  for (size_t i = 0; i < total_states; ++i) {
+    assert(std::isfinite(dest[i]));
+    scale &= dest[i] < lagrange_scale_threshold;
+  }
 }
 
 inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
@@ -221,11 +225,14 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
                                      size_t regions,
                                      size_t max_areas,
                                      LagrangeColVector dest,
+                                     size_t c1_scale,
+                                     size_t c2_scale,
+                                     size_t &scale_count,
                                      const Option<Dist> &fixed_dist,
                                      Dist excl_area_mask,
                                      Dist incl_area_mask) {
   assert(states != 0);
-  // size_t regions = lagrange_fast_log2(states);
+  bool scale = true;
 
   std::vector<RegionSplit> splits;
 
@@ -233,7 +240,7 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
     const auto identity_func = [](Dist d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       reverse_join_splits(
-          i, regions, max_areas, splits, c1, c2, dest, identity_func);
+          i, regions, max_areas, splits, c1, c2, scale, dest, identity_func);
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
@@ -255,16 +262,15 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
       reverse_join_splits(
-          dist, regions, max_areas, splits, c1, c2, dest, dist_map_func);
+          dist, regions, max_areas, splits, c1, c2, scale, dest, dist_map_func);
     }
+  }
 
-    /*
-    for (lagrange_dist_t i = 0; i < states; i = next_dist(i, max_areas)) {
-      if (fixed_dist.hasValue() && fixed_dist.get() != i) { continue; }
-      reverse_join_splits(i, regions, max_areas, splits, c1, c2, dest,
-                          dist_map_func);
-    }
-    */
+  scale_count = c1_scale + c2_scale;
+  if (scale) {
+    for (size_t i = 0; i < states; ++i) { dest[i] *= lagrange_scaling_factor; }
+
+    scale_count += 1;
   }
 }
 
@@ -828,13 +834,20 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
                              ws->regions(),
                              ws->maxAreas(),
                              ws->CLV(_bot_clv_index),
+                             ws->CLVScalar(_ltop_clv_index),
+                             ws->CLVScalar(_rtop_clv_index),
+                             ws->CLVScalar(_bot_clv_index),
                              _fixed_dist,
                              _excl_area_mask.get(0),
                              _incl_area_mask.get(0));
 
+    bool valid = false;
     for (size_t i = 0; i < ws->CLVSize(); ++i) {
-      assert(!std::isnan(ws->CLV(_bot_clv_index)[i]));
+      auto val = ws->CLV(_bot_clv_index)[i];
+      assert(!std::isnan(val));
+      if (std::isfinite(val) && val != 0.0) { valid = true; }
     }
+    assert(valid);
 
     _last_execution = ws->advanceClock();
     ws->updateCLVClock(_bot_clv_index);
