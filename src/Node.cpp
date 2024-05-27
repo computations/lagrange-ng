@@ -526,7 +526,7 @@ bool Node::assignFossil(const Fossil &f) {
     return true;
   }
   for (auto &c : _children) {
-    if (assignFossil(f)) { return true; }
+    if (c->assignFossil(f)) { return true; }
   }
   return false;
 }
