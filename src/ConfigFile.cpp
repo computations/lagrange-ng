@@ -13,7 +13,7 @@ namespace lagrange {
 enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
 
 void set_mrcas_for_fossils(ConfigFile &config) {
-  for (auto &f : config.fossils) { f.clade = config.mrcas[f.mrca_name]; }
+  for (auto &f : config.fossils) { f.clade = config.mrcas.at(f.mrca_name); }
 }
 
 void check_prefix(ConfigFile &config) {

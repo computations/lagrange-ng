@@ -23,6 +23,10 @@ class LagrangeEnvironment : public ::testing::Environment {
   std::ifstream get_sloth_tree() {
     return std::ifstream(STRINGIFY(TREEPATH/sloths.tre));
   }
+
+  std::ifstream get_test1_config() {
+    return std::ifstream(STRINGIFY(TREEPATH/test1.conf));
+  }
 };
 
 extern LagrangeEnvironment *env;

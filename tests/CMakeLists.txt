@@ -18,7 +18,9 @@ set(LAGRANGE_TEST_SOURCES
   src/operation.cpp
   src/context.cpp
   src/tree.cpp
-  src/main.cpp)
+  src/configfile.cpp
+  src/main.cpp
+)
 
 add_executable(lagrange-test ${LAGRANGE_TEST_SOURCES} )
 target_link_libraries(lagrange-test GTest::gtest_main lagrange-release-libs
