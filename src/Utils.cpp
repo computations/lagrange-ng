@@ -119,7 +119,7 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
   return static_cast<size_t>(temp);
 }
 
-auto lagrange_convert_dist_string_to_dist(const std::string &dist,
+auto convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
     -> Dist {
   Dist ret = 0;
@@ -141,7 +141,7 @@ auto lagrange_convert_dist_string_to_dist(const std::string &dist,
   return ret;
 }
 
-auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
+auto convert_dist_binary_string_to_dist(const std::string &dist)
     -> Dist {
   Dist d = 0;
   for (size_t i = 0; i < dist.size(); i++) {

@@ -518,6 +518,8 @@ class ReverseSplitOperation {
 
   void setInclAreas(Dist i) { _incl_area_mask = i; }
 
+  void setExclAreas(Dist i) { _excl_area_mask = i; }
+
  private:
   size_t _bot_clv_index;
   size_t _ltop_clv_index;
@@ -594,6 +596,8 @@ class StateLHGoal {
 
   void setInclAreas(Dist dist) { _incl_area_mask = dist; }
 
+  void setExclAreas(Dist dist) { _excl_area_mask = dist; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
@@ -625,6 +629,8 @@ class SplitLHGoal {
   void fixDist(Dist dist) { _fixed_dist = dist; }
 
   void setInclAreas(Dist dist) { _incl_area_mask = dist; }
+
+  void setExclAreas(Dist dist) { _excl_area_mask = dist; }
 
  private:
   size_t _parent_clv_index;

@@ -48,6 +48,9 @@ std::function<void(Node&)> Context::makeStateGoalCB() {
     if (n.getIncludedAreas().hasValue()) {
       _state_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
     }
+    if (n.getExcludedAreas().hasValue()) {
+      _state_lh_goal.back().setExclAreas(n.getExcludedAreas().get());
+    }
     if (n.getFixedDist().hasValue()) {
       _state_lh_goal.back().fixDist(n.getFixedDist().get());
     }
@@ -62,6 +65,9 @@ std::function<void(Node&)> Context::makeSplitGoalCB() {
                                 _workspace->getRightChildCLV(n.getId()));
     if (n.getIncludedAreas().hasValue()) {
       _split_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
+    }
+    if (n.getExcludedAreas().hasValue()) {
+      _split_lh_goal.back().setExclAreas(n.getExcludedAreas().get());
     }
     if (n.getFixedDist().hasValue()) {
       _split_lh_goal.back().fixDist(n.getFixedDist().get());

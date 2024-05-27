@@ -81,6 +81,10 @@ class ConfigLexer {
     return val;
   }
 
+  auto consumeValueAsDist() -> Dist {
+    return convert_dist_binary_string_to_dist(consumeValueAsString());
+  }
+
   auto consumeValueAsSizeT() -> size_t {
     auto f_str = consumeValueAsString();
     size_t pos = 0;
@@ -170,77 +174,52 @@ double parse_double(ConfigLexer &lexer) {
   return lexer.consumeValueAsFloat();
 }
 
-double parse_size_t(ConfigLexer &lexer) {
+size_t parse_size_t(ConfigLexer &lexer) {
   lexer.expect(ConfigLexemeType::VALUE);
 
   return lexer.consumeValueAsSizeT();
 }
 
-Fossil parse_node_fossil(ConfigLexer &lexer) {
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossile_mrca = lexer.consumeValueAsString();
-
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area =
-      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
-
-  return {.mrca_name = fossile_mrca,
-          .clade = {},
-          .age = 0.0,
-          .area = fossil_area,
-          .type = FossilType::NODE};
-}
-
-Fossil parse_branch_fossil(ConfigLexer &lexer) {
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossile_mrca = lexer.consumeValueAsString();
-
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area =
-      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
-
-  lexer.expect(ConfigLexemeType::VALUE);
-  double fossil_age = lexer.consumeValueAsFloat();
-
-  return {.mrca_name = fossile_mrca,
-          .clade = {},
-          .age = fossil_age,
-          .area = fossil_area,
-          .type = FossilType::BRANCH};
-};
-
-Fossil parse_fixed_fossil(ConfigLexer &lexer) {
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossile_mrca = lexer.consumeValueAsString();
-
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_area =
-      lagrange_convert_dist_binary_string_to_dist(lexer.consumeValueAsString());
-
-  return {.mrca_name = fossile_mrca,
-          .clade = {},
-          .age = 0,
-          .area = fossil_area,
-          .type = FossilType::FIXED};
-}
-
-Fossil parse_fossil(ConfigLexer &lexer) {
-  lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_type_string = lexer.consumeValueAsString();
-
+FossilType determine_fossil_type(std::string fossil_type_string) {
   std::transform(fossil_type_string.cbegin(),
                  fossil_type_string.cend(),
                  fossil_type_string.begin(),
                  [](char c) -> char { return std::tolower(c); });
 
   if (fossil_type_string == "n" || fossil_type_string == "node") {
-    return parse_node_fossil(lexer);
+    return FossilType::NODE;
   } else if (fossil_type_string == "b" || fossil_type_string == "branch") {
-    return parse_branch_fossil(lexer);
+    return FossilType::BRANCH;
   } else if (fossil_type_string == "f" || fossil_type_string == "fixed") {
-    return parse_fixed_fossil(lexer);
+    return FossilType::FIXED;
+  } else if (fossil_type_string == "i" || fossil_type_string == "include") {
+    return FossilType::INCLUDE;
+  } else if (fossil_type_string == "e" || fossil_type_string == "exclude") {
+    return FossilType::EXCLUDE;
   }
-  throw std::runtime_error{"Unknown fossile type"};
+  return FossilType::UNKOWN;
+}
+
+Fossil parse_fossil(ConfigLexer &lexer) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto fossil_type_string = lexer.consumeValueAsString();
+
+  FossilType ft = determine_fossil_type(fossil_type_string);
+
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto mrca_name = lexer.consumeValueAsString();
+
+  lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+
+  lexer.expect(ConfigLexemeType::VALUE);
+
+  auto fossil_area = lexer.consumeValueAsDist();
+
+  return {.mrca_name = mrca_name,
+          .clade = {},
+          .age = ft == FossilType::BRANCH ? parse_double(lexer) : 0.0,
+          .area = fossil_area,
+          .type = ft};
 }
 
 ConfigFile parse_config_file(std::istream &instream) {
@@ -297,8 +276,6 @@ ConfigFile parse_config_file(std::istream &instream) {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         config.anc_states = parse_list(lexer);
       } else if (config_value == "fossil") {
-        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
-
         config.fossils.push_back(parse_fossil(lexer));
       } else if (config_value == "calctype") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
@@ -384,13 +361,12 @@ ConfigFile parse_config_file(std::istream &instream) {
         if (align_type_str == "phylip") {
           config.alignment_file_type = AlignmentFileType::PHYLIP;
         }
-      } 
-      else if (config_value == "logfile"){
+      } else if (config_value == "logfile") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         lexer.expect(ConfigLexemeType::VALUE);
 
         config.log_filename = lexer.consumeValueAsString();
-      }else {
+      } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
             << " was not recognized";

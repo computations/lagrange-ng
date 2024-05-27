@@ -146,11 +146,13 @@ class Node {
   std::string getNodeLabel() const;
 
   void assignIncludedAreas(Dist fixed_dist);
+  void assignExcludedAreas(Dist fixed_dist);
   void assignFixedDist(Dist fixed_dist);
 
   Option<Dist> getFixedDist() const;
 
   Option<Dist> getIncludedAreas() const;
+  Option<Dist> getExcludedAreas() const;
 
   void setPeriodSegments(const Periods &periods);
 

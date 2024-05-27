@@ -229,6 +229,10 @@ auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
     split_ops.back()->setInclAreas(_incl_area_mask.get());
   }
 
+  if (_excl_area_mask.hasValue()) {
+    split_ops.back()->setExclAreas(_excl_area_mask.get());
+  }
+
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
 
@@ -275,6 +279,11 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
   if (_incl_area_mask.hasValue()) {
     rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(_incl_area_mask.get());
     rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(_incl_area_mask.get());
+  }
+
+  if (_excl_area_mask.hasValue()) {
+    rsplit_ops[rsplit_ops.size() - 1]->setExclAreas(_excl_area_mask.get());
+    rsplit_ops[rsplit_ops.size() - 2]->setExclAreas(_excl_area_mask.get());
   }
 
   if (_children[0]->isInternal()) {
@@ -414,6 +423,10 @@ void Node::assignIncludedAreas(Dist incl_area_mask) {
   _incl_area_mask = incl_area_mask;
 }
 
+void Node::assignExcludedAreas(Dist excl_area_mask) {
+  _excl_area_mask = excl_area_mask;
+}
+
 void Node::assignFixedDist(Dist fixed_dist) { _fixed_dist = fixed_dist; }
 
 void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
@@ -431,6 +444,8 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
 Option<Dist> Node::getFixedDist() const { return _fixed_dist; }
 
 Option<Dist> Node::getIncludedAreas() const { return _incl_area_mask; }
+
+Option<Dist> Node::getExcludedAreas() const { return _excl_area_mask; }
 
 void Node::setPeriodSegments(const Periods &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);
@@ -518,10 +533,21 @@ auto Node::getMRCALabel() const -> MRCALabel { return _mrca; }
 
 bool Node::assignFossil(const Fossil &f) {
   if (getMRCALabel() == f.mrca_name) {
-    if (f.type == FossilType::NODE) {
-      assignIncludedAreas(f.area);
-    } else if (f.type == FossilType::BRANCH) {
-      assignFixedDist(f.area);
+    switch (f.type) {
+      case FossilType::NODE:
+      case FossilType::INCLUDE:
+        assignIncludedAreas(f.area);
+        break;
+      case FossilType::BRANCH:
+      case FossilType::FIXED:
+        assignFixedDist(f.area);
+        break;
+      case FossilType::EXCLUDE:
+        assignExcludedAreas(f.area);
+        break;
+      case FossilType::UNKOWN:
+        throw std::runtime_error{
+            "unknown fossil type when assigning fossiles to node"};
     }
     return true;
   }

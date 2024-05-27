@@ -2,9 +2,7 @@
 #define CONFIGFILE_H
 
 #include <filesystem>
-#include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "Alignment.hpp"
@@ -28,13 +26,10 @@ struct ConfigFile {
 
   Periods periods;
   MRCAMap mrcas;
-  std::vector<Dist> exclude_dists;
-  std::vector<Dist> include_dists;
   std::vector<std::string> area_names;
   std::vector<std::string> anc_states;
 
   std::vector<Fossil> fossils;
-  std::unordered_map<std::string, Dist> fix_node_with_mrca;
 
   bool marginal = true;  // false means joint
   bool all_splits = false;

@@ -79,11 +79,11 @@ auto lagrange_convert_dist_string(Dist dist,
                                   const std::vector<std::string> &names)
     -> std::string;
 
-auto lagrange_convert_dist_string_to_dist(const std::string &dist,
+auto convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
     -> Dist;
 
-auto lagrange_convert_dist_binary_string_to_dist(const std::string &dist)
+auto convert_dist_binary_string_to_dist(const std::string &dist)
     -> Dist;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;

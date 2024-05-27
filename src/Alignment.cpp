@@ -36,7 +36,7 @@ Alignment read_fasta(std::istream& instream) {
         auto tmp = data_string.str();
         region_count = tmp.size();
         alignment.data[taxa_name] =
-            lagrange_convert_dist_binary_string_to_dist(tmp);
+            convert_dist_binary_string_to_dist(tmp);
 
         taxa_name.clear();
         data_string = std::stringstream();
@@ -50,7 +50,7 @@ Alignment read_fasta(std::istream& instream) {
   }
 
   alignment.data[taxa_name] =
-      lagrange_convert_dist_binary_string_to_dist(data_string.str());
+      convert_dist_binary_string_to_dist(data_string.str());
 
   alignment.region_count = region_count;
   alignment.taxa_count = alignment.data.size();
@@ -69,7 +69,7 @@ Alignment read_phylip(std::istream& instream) {
   while (instream >> taxa_name) {
     instream >> data_string;
     alignment.data[clean_taxa_name(taxa_name)] =
-        lagrange_convert_dist_binary_string_to_dist(data_string);
+        convert_dist_binary_string_to_dist(data_string);
   }
 
   return alignment;
