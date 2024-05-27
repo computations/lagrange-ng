@@ -2,6 +2,7 @@
 #define CONFIGFILE_H
 
 #include <filesystem>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -60,6 +61,16 @@ struct ConfigFile {
 
   bool computeStates() const;
   bool computeSplits() const;
+};
+
+class ConfigFileLexingError : public std::runtime_error {
+ public:
+  ConfigFileLexingError(const std::string& msg) : std::runtime_error{msg} {}
+};
+
+class ConfigFileParsingError : public std::runtime_error {
+ public:
+  ConfigFileParsingError(const std::string& msg) : std::runtime_error{msg} {}
 };
 
 ConfigFile parse_config_file(std::istream& instream);

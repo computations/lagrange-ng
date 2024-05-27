@@ -75,8 +75,8 @@ class ConfigLexer {
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around")
-                               + describePosition()};
+      throw ConfigFileLexingError{std::string("Float conversion failed around")
+                                  + describePosition()};
     }
     return val;
   }
@@ -90,8 +90,8 @@ class ConfigLexer {
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around")
-                               + describePosition()};
+      throw ConfigFileLexingError{std::string("Float conversion failed around")
+                                  + describePosition()};
     }
     return val;
   }
@@ -105,7 +105,7 @@ class ConfigLexer {
   void expect(ConfigLexemeType token_type) {
     auto ret = consumeTokenPos();
     if (ret.first != token_type) {
-      throw std::runtime_error{
+      throw ConfigFileLexingError{
           std::string("Got the wrong token type at position ")
           + std::to_string(ret.second + 1) + " was expecting "
           + describeToken(token_type)};
@@ -161,10 +161,12 @@ std::string parse_filename(ConfigLexer &lexer) {
 
 std::vector<std::string> parse_list(ConfigLexer &lexer) {
   std::vector<std::string> values;
-  while (lexer.peak() != ConfigLexemeType::END) {
+
+  do {
     lexer.expect(ConfigLexemeType::VALUE);
     values.push_back(lexer.consumeValueAsString());
-  }
+  } while (lexer.peak() != ConfigLexemeType::END);
+
   return values;
 }
 
@@ -370,7 +372,7 @@ ConfigFile parse_config_file(std::istream &instream) {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
             << " was not recognized";
-        throw std::runtime_error{oss.str()};
+        throw ConfigFileParsingError{oss.str()};
       }
 
       lexer.expect(ConfigLexemeType::END);
@@ -379,7 +381,7 @@ ConfigFile parse_config_file(std::istream &instream) {
       oss << "There was a problem parsing line " << line_number
           << " of the config file:\n"
           << e.what();
-      throw std::runtime_error{oss.str()};
+      throw ConfigFileParsingError{oss.str()};
     }
 
     line_number++;

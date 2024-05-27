@@ -136,6 +136,10 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 
 ## Control File Options
 
+An important note: filename paths can't have spaces in them. If there are spaces
+in the filenames, the config file parser will fail. The files will need to be
+renamed.
+
 - `treefile`: Path to the newick file containing the phylogeny. Required.
 - `datafile`: Path to the matrix in either PHYLIP or FASTA format. In both
   cases, leading zeros are significant, I.E. `0011` is not the same as `11`.
@@ -147,7 +151,7 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
   small phylogeny), setting the number of workers to the number of available physical cores will give good results.
 - `threads-per-worker`: Number of threads allocated to each worker. Almost always should be left unspecified. If you
   have a large number of cores (over 16), marginally faster runtimes can be obtained by setting this to `2`.
-- `dispersal`/`extinction`: These two should be set together. The function depends on the execution mode. In `optimize`,
+- `dispersion`/`extinction`: These two should be set together. The function depends on the execution mode. In `optimize`,
   this is the starting value for the optimization routine. In `evaluate`, computes the likelihood and (optionally) 
   ancestral states/splits for the given parameter values.
 - `lh-epsilon`: Change the stopping criterion for the optimization step. Default is `1e-9`.
