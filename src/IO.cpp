@@ -94,8 +94,6 @@ auto make_state_results_for_node(
     nlohmann::json tmp;
     tmp["distribution"] = dist;
     double llh = state_distribution.get()[dist_index];
-    tmp["distribution-string"] =
-        lagrange_convert_dist_string(dist, region_names);
     CONVERT_FLOAT_TO_JSON(tmp["llh"], llh);
     double ratio = lwr_distribution.get()[dist_index];
     CONVERT_FLOAT_TO_JSON(tmp["ratio"], ratio);
@@ -120,19 +118,13 @@ auto make_split_results_for_node(SplitReturn &splits,
 
       assert(dist == sp.anc_dist);
       anc_json["distribution"] = dist;
-      anc_json["distribution-string"] =
-          lagrange_convert_dist_string(dist, region_names);
       anc_json["regions"] = lagrange_convert_dist_to_list(dist, region_names);
 
       left_json["distribution"] = sp.l_dist;
-      left_json["distribution-string"] =
-          lagrange_convert_dist_string(sp.l_dist, region_names);
       left_json["regions"] =
           lagrange_convert_dist_to_list(sp.l_dist, region_names);
 
       right_json["distribution"] = sp.r_dist;
-      right_json["distribution-string"] =
-          lagrange_convert_dist_string(sp.r_dist, region_names);
       right_json["regions"] =
           lagrange_convert_dist_to_list(sp.r_dist, region_names);
 
