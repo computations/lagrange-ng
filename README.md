@@ -136,10 +136,6 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 
 ## Control File Options
 
-An important note: filename paths can't have spaces in them. If there are spaces
-in the filenames, the config file parser will fail. The files will need to be
-renamed.
-
 - `treefile`: Path to the newick file containing the phylogeny. Required.
 - `datafile`: Path to the matrix in either PHYLIP or FASTA format. In both
   cases, leading zeros are significant, I.E. `0011` is not the same as `11`.
@@ -150,7 +146,7 @@ renamed.
   phylogeny, and the number of regions in the matrix. However, except for small problems (low number of regions and a
   small phylogeny), setting the number of workers to the number of available physical cores will give good results.
 - `threads-per-worker`: Number of threads allocated to each worker. Almost always should be left unspecified. If you
-  have a large number of cores (over 16), marginally faster runtimes can be obtained by setting this to `2`.
+  have a large number of cores (over 16), marginally faster run times can be obtained by setting this to `2`.
 - `dispersion`/`extinction`: These two should be set together. The function depends on the execution mode. In `optimize`,
   this is the starting value for the optimization routine. In `evaluate`, computes the likelihood and (optionally) 
   ancestral states/splits for the given parameter values.
@@ -167,7 +163,7 @@ renamed.
 - `mrca`: Specify an interior node by a list of tips. The node specified is the MRCA of those tips. For example, when
   using the tree `(a,(b, c)1)2`, `mrca foo = b c` will refer to node `1`, and `mrca bar = a c` will refer to node `2`.
   Use this option to specify interior nodes for other options.
-- `fossil`: Specify constraints on inner nodes. There are currently fourdifferent modes supported:
+- `fossil`: Specify constraints on inner nodes. There are currently four different modes supported:
   - `include`: Constrain a node to contain at least the areas specified. For 
     example, `fossil include foo = 011` will constrain the node `foo` 
     (specified with `mrca`) to the distributions `111` and `011`.
@@ -178,6 +174,15 @@ renamed.
     constrain the node `foo` to the distribution `011`.
   - `node`: This option is an alias for `include`.
 - `logfile`: Specify a file to log the output of the program (the log messages).
+
+If any of the arguments to the options has spaces, then it needs
+to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then
+control file needs to have 
+```
+treefile = 'My Super Awesome Tree.nwk`
+```
+to be able to parse the tree. This holds true for taxa names in the `mrca`
+option, `mrca` names, user specified region names, and filenames.
 
 ## Expm Modes
 

@@ -40,8 +40,23 @@ class ConfigLexer {
     auto token = peak();
     if (token == ConfigLexemeType::VALUE) {
       std::stringstream builder;
+      char quote_char = 0;
       while (char tmp = _input[_current_index]) {
-        if (isPunct(tmp) || std::isspace(tmp)) { break; }
+        /* open the quote */
+        if (!quote_char && (tmp == '"' || tmp == '\'')) {
+          quote_char = tmp;
+          _current_index++;
+          continue;
+        }
+
+        /* close the quote */
+        if (quote_char && tmp == quote_char) {
+          quote_char = 0;
+          _current_index++;
+          continue;
+        }
+
+        if (!quote_char && (isPunct(tmp) || std::isspace(tmp))) { break; }
         builder << tmp;
         _current_index++;
       }
