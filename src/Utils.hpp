@@ -19,29 +19,29 @@
 namespace lagrange {
 
 struct RegionSplit {
-  Dist left;
-  Dist right;
+  Range left;
+  Range right;
 };
 
-inline auto lagrange_bextr(Dist a, size_t i) -> uint64_t {
+inline auto lagrange_bextr(Range a, size_t i) -> uint64_t {
   return (a >> i) & 1ULL;
 }
 
-inline auto lagrange_popcount(Dist a) -> size_t {
+inline auto lagrange_popcount(Range a) -> size_t {
   return static_cast<size_t>(__builtin_popcountll(a));
 }
 
-constexpr inline auto lagrange_clz(Dist a) -> size_t {
+constexpr inline auto lagrange_clz(Range a) -> size_t {
   return static_cast<size_t>(__builtin_clzll(a));
 }
 
 inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
-    -> Dist {
-  Dist ret = 0;
+    -> Range {
+  Range ret = 0;
   size_t area_count = vec_dist.size();
 
   for (size_t i = 0; i < area_count; ++i) {
-    ret |= static_cast<Dist>(vec_dist[i]) << i;
+    ret |= static_cast<Range>(vec_dist[i]) << i;
   }
 
   return ret;
@@ -54,12 +54,12 @@ constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
 }
 
 inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
-                                       size_t states) -> Dist {
-  Dist best_dist = 0;
+                                       size_t states) -> Range {
+  Range best_dist = 0;
 
   double best_lh = dist_lhs[0];
 
-  for (Dist i = 1; i < states; i++) {
+  for (Range i = 1; i < states; i++) {
     double cur_lh = dist_lhs[i];
     if (best_lh < cur_lh) {
       best_dist = i;
@@ -73,22 +73,22 @@ inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
 auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
     -> size_t;
 
-auto compute_index_from_dist(Dist i, size_t max_areas) -> size_t;
+auto compute_index_from_dist(Range i, size_t max_areas) -> size_t;
 
-auto lagrange_convert_dist_string(Dist dist,
+auto lagrange_convert_dist_string(Range dist,
                                   const std::vector<std::string> &names)
     -> std::string;
 
 auto convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
-    -> Dist;
+    -> Range;
 
 auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Dist;
+    -> Range;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-constexpr inline auto next_dist(Dist d, uint32_t n) -> Dist {
+constexpr inline auto next_dist(Range d, uint32_t n) -> Range {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
@@ -96,20 +96,20 @@ constexpr inline auto next_dist(Dist d, uint32_t n) -> Dist {
 
 /* Returns true if the dist "passes" the check. That is, if there are no common
  * bits set */
-constexpr inline auto check_excl_dist(Dist dist, Dist excl_dist) -> bool {
+constexpr inline auto check_excl_dist(Range dist, Range excl_dist) -> bool {
   return !(dist & excl_dist);
 }
 
-constexpr inline auto check_incl_dist(Dist dist, Dist incl_dist) -> bool {
+constexpr inline auto check_incl_dist(Range dist, Range incl_dist) -> bool {
   return (dist & incl_dist) == incl_dist;
 }
 
-constexpr inline auto next_dist(Dist d,
+constexpr inline auto next_dist(Range d,
                                 uint32_t n,
                                 size_t index,
-                                Dist excl_area_mask = 0,
-                                Dist incl_area_mask = 0)
-    -> std::pair<Dist, size_t> {
+                                Range excl_area_mask = 0,
+                                Range incl_area_mask = 0)
+    -> std::pair<Range, size_t> {
   auto next = next_dist(d, n);
   index += 1;
   if (check_excl_dist(next, excl_area_mask)
@@ -120,7 +120,7 @@ constexpr inline auto next_dist(Dist d,
 }
 
 std::vector<std::string> lagrange_convert_dist_to_list(
-    Dist dist, const std::vector<std::string> &names);
+    Range dist, const std::vector<std::string> &names);
 
 std::string get_file_extension(const std::string &filename);
 

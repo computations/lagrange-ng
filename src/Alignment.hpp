@@ -11,7 +11,7 @@
 
 namespace lagrange {
 struct Alignment {
-  std::unordered_map<std::string, Dist> data;
+  std::unordered_map<std::string, Range> data;
   size_t region_count;
   size_t taxa_count;
 };

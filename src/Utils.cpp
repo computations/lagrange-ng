@@ -15,7 +15,7 @@
 
 namespace lagrange {
 
-auto lagrange_convert_dist_string(Dist dist,
+auto lagrange_convert_dist_string(Range dist,
                                   const std::vector<std::string> &names)
     -> std::string {
   if (dist == 0) { return {}; }
@@ -34,7 +34,7 @@ auto lagrange_convert_dist_string(Dist dist,
 }
 
 std::vector<std::string> lagrange_convert_dist_to_list(
-    Dist dist, const std::vector<std::string> &names) {
+    Range dist, const std::vector<std::string> &names) {
   std::vector<std::string> ret;
 
   size_t states = lagrange_clz(dist);
@@ -102,7 +102,7 @@ static auto compute_skips(size_t i, size_t n) -> size_t {
   return skips;
 }
 
-auto compute_index_from_dist(Dist i, size_t max_areas) -> size_t {
+auto compute_index_from_dist(Range i, size_t max_areas) -> size_t {
   if (lagrange_popcount(i) > max_areas) {
     throw UtilDistIndexConversionException{};
   }
@@ -121,8 +121,8 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
 
 auto convert_dist_string_to_dist(const std::string &dist,
                                           const std::vector<std::string> &names)
-    -> Dist {
-  Dist ret = 0;
+    -> Range {
+  Range ret = 0;
   auto start = dist.begin();
   auto end = dist.begin();
   for (start = dist.begin(), end = dist.begin(); end != dist.end(); end++) {
@@ -142,8 +142,8 @@ auto convert_dist_string_to_dist(const std::string &dist,
 }
 
 auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Dist {
-  Dist d = 0;
+    -> Range {
+  Range d = 0;
   for (size_t i = 0; i < dist.size(); i++) {
     if (dist[i] == '1') { d |= 1ull << (dist.size() - i - 1); }
   }

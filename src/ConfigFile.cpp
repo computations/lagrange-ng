@@ -96,7 +96,7 @@ class ConfigLexer {
     return val;
   }
 
-  auto consumeValueAsDist() -> Dist {
+  auto consumeValueAsDist() -> Range {
     return convert_dist_binary_string_to_dist(consumeValueAsString());
   }
 

@@ -407,13 +407,13 @@ class SplitOperation {
     _rbranch_op->emplaceRateMatrixOperations(ret);
   }
 
-  void fixDist(Dist fix_dist) { _fixed_dist = fix_dist; }
+  void fixDist(Range fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> Option<Dist> const { return _fixed_dist; }
+  auto getFixedDist() -> Option<Range> const { return _fixed_dist; }
 
-  void setExclAreas(Dist e) { _excl_area_mask = e; }
+  void setExclAreas(Range e) { _excl_area_mask = e; }
 
-  void setInclAreas(Dist i) { _incl_area_mask = i; }
+  void setInclAreas(Range i) { _incl_area_mask = i; }
 
  private:
   size_t _lbranch_clv_index;
@@ -423,9 +423,9 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _lbranch_op;
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
-  Option<Dist> _fixed_dist;
-  Option<Dist> _excl_area_mask;
-  Option<Dist> _incl_area_mask;
+  Option<Range> _fixed_dist;
+  Option<Range> _excl_area_mask;
+  Option<Range> _incl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   ClockTick _last_execution = 0;
@@ -512,13 +512,13 @@ class ReverseSplitOperation {
     return {};
   }
 
-  void fixDist(Dist fix_dist) { _fixed_dist = fix_dist; }
+  void fixDist(Range fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> Option<Dist> const { return _fixed_dist; }
+  auto getFixedDist() -> Option<Range> const { return _fixed_dist; }
 
-  void setInclAreas(Dist i) { _incl_area_mask = i; }
+  void setInclAreas(Range i) { _incl_area_mask = i; }
 
-  void setExclAreas(Dist i) { _excl_area_mask = i; }
+  void setExclAreas(Range i) { _excl_area_mask = i; }
 
  private:
   size_t _bot_clv_index;
@@ -528,9 +528,9 @@ class ReverseSplitOperation {
 
   std::shared_ptr<DispersionOperation> _branch_op;
 
-  Option<Dist> _fixed_dist;
-  Option<Dist> _incl_area_mask;
-  Option<Dist> _excl_area_mask;
+  Option<Range> _fixed_dist;
+  Option<Range> _incl_area_mask;
+  Option<Range> _excl_area_mask;
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
   ClockTick _last_execution = 0;
@@ -590,22 +590,22 @@ class StateLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
-  void fixDist(Dist dist) { _fixed_dist = dist; }
+  void fixDist(Range dist) { _fixed_dist = dist; }
 
-  Option<Dist> getFixedDist() { return _fixed_dist; }
+  Option<Range> getFixedDist() { return _fixed_dist; }
 
-  void setInclAreas(Dist dist) { _incl_area_mask = dist; }
+  void setInclAreas(Range dist) { _incl_area_mask = dist; }
 
-  void setExclAreas(Dist dist) { _excl_area_mask = dist; }
+  void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  Option<Dist> _fixed_dist;
-  Dist _excl_area_mask = 0;
-  Dist _incl_area_mask = 0;
+  Option<Range> _fixed_dist;
+  Range _excl_area_mask = 0;
+  Range _incl_area_mask = 0;
 
   ClockTick _last_execution = 0;
 
@@ -626,20 +626,20 @@ class SplitLHGoal {
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
-  void fixDist(Dist dist) { _fixed_dist = dist; }
+  void fixDist(Range dist) { _fixed_dist = dist; }
 
-  void setInclAreas(Dist dist) { _incl_area_mask = dist; }
+  void setInclAreas(Range dist) { _incl_area_mask = dist; }
 
-  void setExclAreas(Dist dist) { _excl_area_mask = dist; }
+  void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
 
-  Option<Dist> _fixed_dist;
-  Dist _excl_area_mask = 0;
-  Dist _incl_area_mask = 0;
+  Option<Range> _fixed_dist;
+  Range _excl_area_mask = 0;
+  Range _incl_area_mask = 0;
 
   ClockTick _last_execution = 0;
 

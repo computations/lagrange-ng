@@ -230,7 +230,7 @@ class Workspace {
 
   void registerChildrenCLV(size_t node_id);
 
-  void setTipCLV(size_t index, Dist dist);
+  void setTipCLV(size_t index, Range dist);
 
   inline void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();
@@ -272,13 +272,13 @@ class Workspace {
     return _base_frequencies[index];
   }
 
-  inline void setBaseFrequenciesByDist(size_t index, Dist dist) {
+  inline void setBaseFrequenciesByDist(size_t index, Range dist) {
     for (size_t i = 0; i < CLVSize(); ++i) {
       _base_frequencies[index][i] = 0.0;
     }
 
     size_t tmp_index = 0;
-    Dist tmp_dist = 0;
+    Range tmp_dist = 0;
     while (true) {
       tmp_dist = next_dist(tmp_dist, maxAreas());
       tmp_index += 1;

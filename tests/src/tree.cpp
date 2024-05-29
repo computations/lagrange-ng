@@ -60,7 +60,7 @@ class TreeTest : public ::testing::Test {
 
   std::string _basic_tree_newick;
 
-  std::unordered_map<std::string, Dist> _basic_tree_dist_data;
+  std::unordered_map<std::string, Range> _basic_tree_dist_data;
 
   std::shared_ptr<Workspace> _basic_ws;
 

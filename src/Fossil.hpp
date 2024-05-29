@@ -15,7 +15,7 @@ struct Fossil {
   MRCALabel mrca_name;
   Option<std::shared_ptr<MRCAEntry>> clade;
   double age;
-  Dist area;
+  Range area;
   FossilType type;
 };
 

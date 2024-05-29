@@ -33,7 +33,7 @@ class AncSplit {
   double _lwr;
 
  public:
-  AncSplit(Dist, Dist, Dist, double);
+  AncSplit(Range, Range, Range, double);
   auto getWeight() const -> double;
   auto getLikelihood() const -> double;
   void setLikelihood(double li);
@@ -41,12 +41,12 @@ class AncSplit {
   void setLWR(double lwr);
   auto getLWR() const -> double;
 
-  Dist anc_dist;
-  Dist l_dist;
-  Dist r_dist;
+  Range anc_dist;
+  Range l_dist;
+  Range r_dist;
 };
 
-using SplitReturn = std::unordered_map<Dist, std::vector<AncSplit>>;
+using SplitReturn = std::unordered_map<Range, std::vector<AncSplit>>;
 
 using SplitReturnList = std::vector<SplitReturn>;
 

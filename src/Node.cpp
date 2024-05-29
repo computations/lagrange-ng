@@ -383,7 +383,7 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
 
 void Node::assignTipData(
     Workspace &ws,
-    const std::unordered_map<std::string, Dist> &distrib_data) const {
+    const std::unordered_map<std::string, Range> &distrib_data) const {
   if (_children.empty()) {
     ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
   } else {
@@ -419,15 +419,15 @@ size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
   return count;
 }
 
-void Node::assignIncludedAreas(Dist incl_area_mask) {
+void Node::assignIncludedAreas(Range incl_area_mask) {
   _incl_area_mask = incl_area_mask;
 }
 
-void Node::assignExcludedAreas(Dist excl_area_mask) {
+void Node::assignExcludedAreas(Range excl_area_mask) {
   _excl_area_mask = excl_area_mask;
 }
 
-void Node::assignFixedDist(Dist fixed_dist) { _fixed_dist = fixed_dist; }
+void Node::assignFixedDist(Range fixed_dist) { _fixed_dist = fixed_dist; }
 
 void Node::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
   applyCB(func);
@@ -441,11 +441,11 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-Option<Dist> Node::getFixedDist() const { return _fixed_dist; }
+Option<Range> Node::getFixedDist() const { return _fixed_dist; }
 
-Option<Dist> Node::getIncludedAreas() const { return _incl_area_mask; }
+Option<Range> Node::getIncludedAreas() const { return _incl_area_mask; }
 
-Option<Dist> Node::getExcludedAreas() const { return _excl_area_mask; }
+Option<Range> Node::getExcludedAreas() const { return _excl_area_mask; }
 
 void Node::setPeriodSegments(const Periods &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);

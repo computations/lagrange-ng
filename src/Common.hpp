@@ -32,7 +32,7 @@
 
 namespace lagrange {
 
-using Dist = uint64_t;
+using Range = uint64_t;
 
 using ClockTick = uint64_t;
 using Clock = std::atomic<uint64_t>;

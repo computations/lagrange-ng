@@ -138,21 +138,21 @@ class Node {
 
   void assignTipData(
       Workspace &ws,
-      const std::unordered_map<std::string, Dist> &distrib_data) const;
+      const std::unordered_map<std::string, Range> &distrib_data) const;
 
   size_t checkAlignmentConsistency(const Alignment &align, size_t count);
 
   void assignId();
   std::string getNodeLabel() const;
 
-  void assignIncludedAreas(Dist fixed_dist);
-  void assignExcludedAreas(Dist fixed_dist);
-  void assignFixedDist(Dist fixed_dist);
+  void assignIncludedAreas(Range fixed_dist);
+  void assignExcludedAreas(Range fixed_dist);
+  void assignFixedDist(Range fixed_dist);
 
-  Option<Dist> getFixedDist() const;
+  Option<Range> getFixedDist() const;
 
-  Option<Dist> getIncludedAreas() const;
-  Option<Dist> getExcludedAreas() const;
+  Option<Range> getIncludedAreas() const;
+  Option<Range> getExcludedAreas() const;
 
   void setPeriodSegments(const Periods &periods);
 
@@ -198,9 +198,9 @@ class Node {
   MRCALabel _mrca;
   std::vector<std::shared_ptr<Node>> _children;
 
-  Option<Dist> _fixed_dist;
-  Option<Dist> _incl_area_mask;
-  Option<Dist> _excl_area_mask;
+  Option<Range> _fixed_dist;
+  Option<Range> _incl_area_mask;
+  Option<Range> _excl_area_mask;
 
   std::optional<std::unique_ptr<LagrangeMatrixBase[]>> _ancestral_state;
   std::optional<SplitReturn> _ancestral_split;

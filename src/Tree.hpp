@@ -56,7 +56,7 @@ class Tree {
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
 
   void assignTipData(Workspace &ws,
-                     const std::unordered_map<std::string, Dist> &dist_data);
+                     const std::unordered_map<std::string, Range> &dist_data);
 
   void assignMCRALabels(const MRCAMap& mrca_map);
 

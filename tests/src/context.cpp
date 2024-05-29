@@ -27,7 +27,7 @@ class ContextTest : public ::testing::Test {
 
   std::string _basic_tree_newick;
   std::shared_ptr<Tree> _basic_tree;
-  std::unordered_map<std::string, Dist> _basic_tree_data;
+  std::unordered_map<std::string, Range> _basic_tree_data;
   Periods _basic_periods;
   size_t _basic_tree_data_region_count = 2;
   WorkerState _worker_state;

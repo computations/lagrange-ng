@@ -140,7 +140,7 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
 }
 
 void Tree::assignTipData(
-    Workspace &ws, const std::unordered_map<std::string, Dist> &dist_data) {
+    Workspace &ws, const std::unordered_map<std::string, Range> &dist_data) {
   _root->assignTipData(ws, dist_data);
 }
 
