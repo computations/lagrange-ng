@@ -2,14 +2,17 @@
 
 #include <filesystem>
 #include <fstream>
+#include <logger.hpp>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 #include "Utils.hpp"
 
 namespace lagrange {
 
+/**
+ * Clean the taxa name by removing whitespace from the front and back.
+ */
 std::string clean_taxa_name(const std::string& str) {
   auto start_itr = str.begin();
   auto end_itr = str.end() - 1;
@@ -27,16 +30,23 @@ Alignment read_fasta(std::istream& instream) {
   size_t region_count = 0;
 
   std::string line;
-  std::string taxa_name;
+  TaxaName taxa_name;
   std::stringstream data_string;
 
+  bool good = true;
   while (std::getline(instream, line)) {
     if (line[0] == '>') {
       if (!taxa_name.empty()) {
         auto tmp = data_string.str();
-        region_count = tmp.size();
-        alignment.data[taxa_name] =
-            convert_dist_binary_string_to_dist(tmp);
+        if (region_count == 0) {
+          region_count = tmp.size();
+        } else if (region_count != tmp.size()) {
+          LOG(ERROR,
+              "The range size for taxa '%s' differs in size",
+              taxa_name.c_str());
+          good = false;
+        }
+        alignment.data[taxa_name] = convert_dist_binary_string_to_dist(tmp);
 
         taxa_name.clear();
         data_string = std::stringstream();
@@ -48,6 +58,7 @@ Alignment read_fasta(std::istream& instream) {
     }
     line_number++;
   }
+  if (!good) { throw AlignmentReadError{"Ranges in datafile vary in size"}; }
 
   alignment.data[taxa_name] =
       convert_dist_binary_string_to_dist(data_string.str());
@@ -60,17 +71,26 @@ Alignment read_fasta(std::istream& instream) {
 Alignment read_phylip(std::istream& instream) {
   Alignment alignment;
 
-  std::string taxa_name;
+  TaxaName taxa_name;
   std::string data_string;
 
   instream >> alignment.taxa_count;
   instream >> alignment.region_count;
 
+  bool good = true;
   while (instream >> taxa_name) {
     instream >> data_string;
+    if (data_string.size() != alignment.region_count) {
+      LOG(ERROR,
+          "Range for taxa '%s' has a different size than specified in the "
+          "phylip header",
+          taxa_name.c_str());
+      good = false;
+    }
     alignment.data[clean_taxa_name(taxa_name)] =
         convert_dist_binary_string_to_dist(data_string);
   }
+  if (!good) { throw AlignmentReadError{"Range size differs in phylip file"}; }
 
   return alignment;
 }
@@ -83,21 +103,26 @@ Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
   }
 }
 
+/**
+ * Reads the alignment from the specified file. Guesses the type based on the
+ * file extension.
+ */
 Alignment read_alignment(const std::filesystem::path& filename,
                          Option<AlignmentFileType> type) {
   if (!std::filesystem::exists(filename)) {
-    throw std::runtime_error{"Failed to find the alignment file "
+    throw AlignmentReadError{"Failed to find the alignment file "
                              + filename.string()};
   }
+
   std::ifstream alignment_file(filename);
   if (type.hasValue()) { return read_alignment(alignment_file, type.get()); }
 
-  auto extension = get_file_extension(filename);
-  if (extension == "fasta" || extension == "fas") {
+  auto extension = filename.extension();
+  if (extension == ".fasta" || extension == ".fas") {
     return read_alignment(alignment_file, AlignmentFileType::FASTA);
-  } else if (extension == "phylip" || extension == "phy") {
+  } else if (extension == ".phylip" || extension == ".phy") {
     return read_alignment(alignment_file, AlignmentFileType::PHYLIP);
   }
-  throw std::runtime_error{"Failed to recognize alignment file type"};
+  throw AlignmentFiletypeError{"Failed to recognize alignment file type"};
 }
 }  // namespace lagrange
