@@ -108,21 +108,12 @@ Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
  * file extension.
  */
 Alignment read_alignment(const std::filesystem::path& filename,
-                         Option<AlignmentFileType> type) {
+                         AlignmentFileType type) {
   if (!std::filesystem::exists(filename)) {
     throw AlignmentReadError{"Failed to find the alignment file "
                              + filename.string()};
   }
-
   std::ifstream alignment_file(filename);
-  if (type.hasValue()) { return read_alignment(alignment_file, type.get()); }
-
-  auto extension = filename.extension();
-  if (extension == ".fasta" || extension == ".fas") {
-    return read_alignment(alignment_file, AlignmentFileType::FASTA);
-  } else if (extension == ".phylip" || extension == ".phy") {
-    return read_alignment(alignment_file, AlignmentFileType::PHYLIP);
-  }
-  throw AlignmentFiletypeError{"Failed to recognize alignment file type"};
+  return read_alignment(alignment_file, type);
 }
 }  // namespace lagrange

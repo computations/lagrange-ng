@@ -30,11 +30,10 @@
 using namespace lagrange;
 
 static void set_expm_mode(Context &context, const ConfigFile &config) {
-  auto &expm_mode = config.expm_mode;
-  if (expm_mode.hasValue()) {
-    switch (expm_mode.get()) {
+  if (config.has_expm_mode()) {
+    switch (config.expm_mode()) {
       case LagrangeEXPMComputationMode::ADAPTIVE:
-        if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
+        if (config.region_count() > KRYLOV_RANGE_COUNT_THRESHOLD) {
           MESSAGE(INFO, "Enabling adaptive EXPM mode");
           context.useArnoldi();
         } else {
@@ -55,7 +54,7 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
         throw std::runtime_error{"Unknown Expm Mode"};
     }
   } else {
-    if (config.region_count > KRYLOV_RANGE_COUNT_THRESHOLD) {
+    if (config.region_count() > KRYLOV_RANGE_COUNT_THRESHOLD) {
       MESSAGE(INFO, "Enabling adaptive EXPM mode");
       context.useArnoldi();
     } else {
@@ -68,9 +67,9 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
 static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   tree->setHeightBottomUp();
-  tree->setPeriods(config.periods);
-  tree->assignMCRALabels(config.mrcas);
-  tree->assignFossils(config.fossils);
+  tree->setPeriods(config.periods());
+  tree->assignMCRALabels(config.mrcas());
+  tree->assignFossils(config.fossils());
 }
 
 static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
@@ -78,26 +77,26 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
                                    const Context &context) {
   auto states = context.getStateResults();
   auto inv_map = tree->inverseNodeIdMap();
-  if (config.all_states) {
+  if (config.compute_all_states()) {
     auto cb = [&](Node &n) {
       n.assignAncestralState(std::move(states[inv_map[n.getId()]]));
     };
     tree->applyPreorderInternalOnly(cb);
-  } else if (!config.state_nodes.empty()) {
-    for (size_t iter = 0; iter < config.state_nodes.size(); ++iter) {
+  } else if (!config.state_nodes().empty()) {
+    for (size_t iter = 0; iter < config.state_nodes().size(); ++iter) {
       tree->assignStateResult(std::move(states[iter]),
-                              config.state_nodes[iter]);
+                              config.state_nodes()[iter]);
     }
   }
 
   auto splits = context.getSplitResults();
-  if (config.all_splits) {
+  if (config.compute_all_splits()) {
     auto cb = [&](Node &n) {
       n.assignAncestralSplit(std::move(splits[inv_map[n.getId()]]));
     };
-  } else if (!config.split_nodes.empty()) {
-    for (size_t iter = 0; iter < config.split_nodes.size(); ++iter) {
-      tree->assignSplitResult(splits[iter], config.split_nodes[iter]);
+  } else if (!config.split_nodes().empty()) {
+    for (size_t iter = 0; iter < config.split_nodes().size(); ++iter) {
+      tree->assignSplitResult(splits[iter], config.split_nodes()[iter]);
     }
   }
 }
@@ -109,39 +108,38 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
 
   setup_tree(tree, config);
 
-  Context context(tree, config.region_count, config.maxareas);
+  Context context(tree, config.region_count(), config.max_areas());
   context.registerLHGoal();
-  if (config.all_states) {
+  if (config.compute_all_states()) {
     context.registerStateLHGoal();
-  } else if (!config.state_nodes.empty()) {
-    context.registerStateLHGoal(config.state_nodes, config.mrcas);
+  } else if (!config.state_nodes().empty()) {
+    context.registerStateLHGoal(config.state_nodes(), config.mrcas());
   }
-  if (config.all_splits) {
+  if (config.compute_all_splits()) {
     context.registerSplitLHGoal();
-  } else if (!config.split_nodes.empty()) {
-    context.registerSplitLHGoal(config.split_nodes, config.mrcas);
+  } else if (!config.split_nodes().empty()) {
+    context.registerSplitLHGoal(config.split_nodes(), config.mrcas());
   }
   context.init();
-  context.updateRates(
-      {context.getPeriodCount(), {config.dispersal, config.extinction}});
+  context.updateRates({context.getPeriodCount(), config.period_params()});
   context.registerTipClvs(data.data);
-  context.set_lh_epsilon(config.lh_epsilon);
+  context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
 
   std::vector<WorkerState> worker_states;
-  worker_states.reserve(config.workers.get());
+  worker_states.reserve(config.workers());
   std::vector<std::thread> threads;
   MESSAGE(INFO, "Starting Workers");
-  for (size_t i = 0; i < config.workers.get(); i++) {
+  for (size_t i = 0; i < config.workers(); i++) {
     LOG(INFO, "Making Worker #%lu", i + 1);
     worker_states.emplace_back();
-    worker_states.back().setAssignedThreads(config.threads_per_worker.get());
+    worker_states.back().setAssignedThreads(config.threads_per_worker());
     threads.emplace_back(&Context::optimizeAndComputeValues,
                          std::ref(context),
                          std::ref(worker_states[i]),
                          config.computeStates(),
                          config.computeSplits(),
-                         std::cref(config.run_mode.get()));
+                         std::cref(config.run_mode()));
   }
 
   MESSAGE(INFO, "Waiting for Workers to finish");
@@ -153,14 +151,9 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   write_scaled_tree(tree, config);
 }
 
-static void setThreads(ConfigFile &config) {
-  if (!config.workers.hasValue()) { config.workers = 1; }
-  if (!config.threads_per_worker.hasValue()) { config.threads_per_worker = 1; }
-}
-
 static ConfigFile read_config_file(const std::string &filename) {
   std::ifstream infile(filename);
-  return parse_config_file(infile);
+  return ConfigFile{infile};
 }
 
 static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
@@ -193,20 +186,6 @@ bool check_alignment_against_trees(
   return ok;
 }
 
-bool validate_and_make_prefix(const std::filesystem::path &prefix) {
-  bool ok = true;
-  try {
-    if (!prefix.parent_path().empty()) {
-      std::filesystem::create_directories(prefix.parent_path());
-    }
-  } catch (const std::filesystem::filesystem_error &err) {
-    std::cerr << err.what() << std::endl;
-    ok = false;
-  }
-
-  return ok;
-}
-
 auto main(int argc, char *argv[]) -> int {
 #if MKL_ENABLED
   mkl_set_num_threads(1);
@@ -225,22 +204,14 @@ auto main(int argc, char *argv[]) -> int {
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
-    validate_and_make_prefix(config.prefix);
-    setThreads(config);
 
-    if (!config.log_filename.empty()) {
-      logger::get_log_states().add_file_stream(
-          config.log_filename.c_str(),
-          INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
-    }
-
-    // MESSAGE(INFO, "Reading tree...");
+    MESSAGE(INFO, "Reading tree...");
     std::vector<std::shared_ptr<Tree>> intrees =
-        read_tree_file_line_by_line(config.tree_filename);
+        read_tree_file_line_by_line(config.tree_filename());
 
     MESSAGE(INFO, "Reading data...");
     Alignment data =
-        read_alignment(config.data_filename, config.alignment_file_type);
+        read_alignment(config.data_filename(), config.alignment_file_type());
 
     MESSAGE(INFO, "Checking data...");
     check_alignment_against_trees(data, intrees);
@@ -249,8 +220,8 @@ auto main(int argc, char *argv[]) -> int {
       throw std::runtime_error{"Region count cannot be zero"};
     }
 
-    config.region_count = data.region_count;
-    if (config.maxareas == 0) { config.maxareas = config.region_count; }
+    config.region_count(data.region_count);
+    if (config.max_areas() == 0) { config.max_areas(config.region_count()); }
 
     MESSAGE(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }

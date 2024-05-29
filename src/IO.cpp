@@ -182,7 +182,7 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
   auto states = context.getStateResults();
   auto splits = context.getSplitResults();
   root_json["node-results"] = make_results_for_nodes(
-      tree, config.area_names, context.stateCount(), config.maxareas);
+      tree, config.area_names(), context.stateCount(), config.max_areas());
 
   write_json_file(config, root_json);
 }
@@ -213,8 +213,8 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
   nlohmann::json root_json;
   nlohmann::json attributes_json;
   attributes_json["periods"] =
-      !config.periods.empty() ? static_cast<int>(config.periods.size()) : 1;
-  attributes_json["regions"] = config.region_count;
+      !config.periods().empty() ? static_cast<int>(config.periods().size()) : 1;
+  attributes_json["regions"] = config.region_count();
   attributes_json["taxa"] = tree->getTipCount();
   attributes_json["nodes-tree"] =
       tree->getNewickLambda([](const Node &n) -> std::string {
@@ -224,9 +224,9 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
           return n.getName() + ":" + std::to_string(n.getBL());
         }
       });
-  attributes_json["max-areas"] = config.maxareas;
+  attributes_json["max-areas"] = config.max_areas();
   attributes_json["state-count"] = lagrange_compute_restricted_state_count(
-      config.region_count, config.maxareas);
+      config.region_count(), config.max_areas());
   root_json["attributes"] = attributes_json;
 
   return root_json;

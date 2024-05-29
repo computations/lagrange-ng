@@ -36,8 +36,7 @@ Alignment read_phylip(std::istream& instream);
  */
 Alignment read_alignment(std::istream& instream, AlignmentFileType type);
 Alignment read_alignment(const std::filesystem::path& infile,
-                         Option<AlignmentFileType> type);
-
+                         AlignmentFileType type);
 
 /* Error types */
 class AlignmentReadError : std::runtime_error {

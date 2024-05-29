@@ -10,8 +10,8 @@ using namespace lagrange;
 
 class ConfigFileTest : public ::testing::Test {
  protected:
-  void SetUp() override { 
-    _test1 = env->get_test1_config(); 
+  void SetUp() override {
+    _test1 = env->get_test1_config();
     _test2 = env->get_test2_config();
   }
 
@@ -20,65 +20,63 @@ class ConfigFileTest : public ::testing::Test {
 };
 
 TEST_F(ConfigFileTest, basic) {
-  auto config = parse_config_file(_test1);
-  EXPECT_EQ(config.tree_filename, "foo.nwk");
-  EXPECT_EQ(config.data_filename, "foo.phy");
+  ConfigFile config{_test1};
+  EXPECT_EQ(config.tree_filename(), "foo.nwk");
+  EXPECT_EQ(config.data_filename(), "foo.phy");
 
   std::vector<std::string> expected_area_names = {"RA", "RB", "RC"};
-  ASSERT_EQ(config.area_names.size(), expected_area_names.size());
+  ASSERT_EQ(config.area_names().size(), expected_area_names.size());
 
   for (size_t i = 0; i < expected_area_names.size(); ++i) {
-    EXPECT_EQ(expected_area_names[i], config.area_names[i]);
+    EXPECT_EQ(expected_area_names[i], config.area_names()[i]);
   }
 
-  EXPECT_TRUE(config.all_states);
+  EXPECT_TRUE(config.compute_all_states());
 
-  EXPECT_TRUE(config.workers.hasValue());
-  EXPECT_EQ(config.workers, 1);
+  EXPECT_EQ(config.workers(), 1);
 
-  EXPECT_EQ(config.mrcas.size(), 1);
-  EXPECT_TRUE(config.mrcas.at("bar"));
-  EXPECT_THROW(config.mrcas.at("foo"), std::out_of_range);
+  EXPECT_EQ(config.mrcas().size(), 1);
+  EXPECT_TRUE(config.mrca("bar"));
+  EXPECT_THROW(config.mrca("foo"), std::out_of_range);
 
-  EXPECT_EQ(config.fossils.size(), 1);
+  EXPECT_EQ(config.fossils().size(), 1);
 
-  auto fossil = config.fossils.front();
+  auto fossil = config.fossils().front();
   EXPECT_EQ(fossil.mrca_name, "bar");
   EXPECT_EQ(fossil.type, FossilType::INCLUDE);
   EXPECT_EQ(fossil.area, convert_dist_binary_string_to_dist("100"));
 
-  EXPECT_EQ(config.prefix, "foo");
+  EXPECT_EQ(config.prefix(), "foo");
 }
 
 TEST_F(ConfigFileTest, quoted_values) {
-  auto config = parse_config_file(_test2);
-  EXPECT_EQ(config.tree_filename, "bar foo.nwk");
-  EXPECT_EQ(config.data_filename, "bar foo.phy");
+  ConfigFile config{_test2};
+  EXPECT_EQ(config.tree_filename(), "bar foo.nwk");
+  EXPECT_EQ(config.data_filename(), "bar foo.phy");
 
   std::vector<std::string> expected_area_names = {"R A", "R' B", "R C"};
-  ASSERT_EQ(config.area_names.size(), expected_area_names.size());
+  ASSERT_EQ(config.area_names().size(), expected_area_names.size());
 
   for (size_t i = 0; i < expected_area_names.size(); ++i) {
-    EXPECT_EQ(expected_area_names[i], config.area_names[i]);
+    EXPECT_EQ(expected_area_names[i], config.area_names()[i]);
   }
 
-  EXPECT_TRUE(config.all_states);
+  EXPECT_TRUE(config.compute_all_states());
 
-  EXPECT_TRUE(config.workers.hasValue());
-  EXPECT_EQ(config.workers, 1);
+  EXPECT_EQ(config.workers(), 1);
 
-  EXPECT_EQ(config.mrcas.size(), 1);
-  EXPECT_TRUE(config.mrcas.at("baz.bar"));
-  EXPECT_THROW(config.mrcas.at("foo"), std::out_of_range);
+  EXPECT_EQ(config.mrcas().size(), 1);
+  EXPECT_TRUE(config.mrca("baz.bar"));
+  EXPECT_THROW(config.mrca("foo"), std::out_of_range);
 
-  EXPECT_EQ(config.fossils.size(), 1);
+  EXPECT_EQ(config.fossils().size(), 1);
 
-  auto fossil = config.fossils.front();
+  auto fossil = config.fossils().front();
   EXPECT_EQ(fossil.mrca_name, "baz.bar");
   EXPECT_EQ(fossil.type, FossilType::INCLUDE);
   EXPECT_EQ(fossil.area, convert_dist_binary_string_to_dist("100"));
 
-  EXPECT_EQ(config.prefix, "foo");
+  EXPECT_EQ(config.prefix(), "foo");
 }
 
 TEST_F(ConfigFileTest, lines) {
@@ -100,7 +98,7 @@ TEST_F(ConfigFileTest, lines) {
 
   for (auto line : failure_lines) {
     std::istringstream iss{line};
-    EXPECT_THROW(parse_config_file(iss), ConfigFileParsingError);
+    EXPECT_THROW(ConfigFile{iss}, ConfigFileParsingError);
   }
 
   auto success_lines = {
@@ -134,6 +132,6 @@ TEST_F(ConfigFileTest, lines) {
 
   for (auto line : success_lines) {
     std::istringstream iss{line};
-    EXPECT_NO_THROW(parse_config_file(iss));
+    EXPECT_NO_THROW(ConfigFile{iss});
   }
 }
