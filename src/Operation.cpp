@@ -114,11 +114,12 @@ static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
   return ret;
 }
 
-constexpr auto weighted_combine_check_happy_path(size_t states,
-                                                 size_t max_areas,
-                                                 const Option<Range> &fixed_dist,
-                                                 Range excl_area_mask,
-                                                 Range incl_area_mask) {
+constexpr auto weighted_combine_check_happy_path(
+    size_t states,
+    size_t max_areas,
+    const Option<Range> &fixed_dist,
+    Range excl_area_mask,
+    Range incl_area_mask) {
   return (states == max_areas) && (!fixed_dist.hasValue())
          && (excl_area_mask == 0) && (incl_area_mask == 0);
 }
@@ -190,6 +191,7 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 }
 
 inline void reverse_join_splits(Range i,
+                                size_t states,
                                 size_t regions,
                                 size_t max_areas,
                                 std::vector<RegionSplit> &splits,
@@ -201,19 +203,17 @@ inline void reverse_join_splits(Range i,
   generate_splits(i, regions, max_areas, splits);
   if (splits.empty()) { return; }
 
-  const size_t total_states = 1ULL << regions;
-
   double weight = 1.0 / static_cast<double>(splits.size());
   for (auto &p : splits) {
     size_t l_index = dist_map(p.left);
     size_t r_index = dist_map(p.right);
     size_t i_index = dist_map(i);
-    assert(l_index < total_states);
-    assert(r_index < total_states);
-    assert(i_index < total_states);
+    assert(l_index < states);
+    assert(r_index < states);
+    assert(i_index < states);
     dest[l_index] += c1[i_index] * c2[r_index] * weight;
   }
-  for (size_t i = 0; i < total_states; ++i) {
+  for (size_t i = 0; i < states; ++i) {
     assert(std::isfinite(dest[i]));
     scale &= dest[i] < lagrange_scale_threshold;
   }
@@ -239,8 +239,16 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
   if (max_areas == regions && !fixed_dist.hasValue()) {
     const auto identity_func = [](Range d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
-      reverse_join_splits(
-          i, regions, max_areas, splits, c1, c2, scale, dest, identity_func);
+      reverse_join_splits(i,
+                          states,
+                          regions,
+                          max_areas,
+                          splits,
+                          c1,
+                          c2,
+                          scale,
+                          dest,
+                          identity_func);
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
@@ -261,8 +269,16 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
 
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
-      reverse_join_splits(
-          dist, regions, max_areas, splits, c1, c2, scale, dest, dist_map_func);
+      reverse_join_splits(dist,
+                          states,
+                          regions,
+                          max_areas,
+                          splits,
+                          c1,
+                          c2,
+                          scale,
+                          dest,
+                          dist_map_func);
     }
   }
 
