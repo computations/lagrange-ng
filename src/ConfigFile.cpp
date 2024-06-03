@@ -322,7 +322,7 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
       } else if (config_value == "maxareas") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
-        config._max_areas = parse_size_t(lexer);
+        config.max_areas(parse_size_t(lexer));
       } else if (config_value == "expm-mode") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         lexer.expect(ConfigLexemeType::VALUE);
@@ -525,7 +525,7 @@ void ConfigFile::alignment_file_type(const AlignmentFileType& type) {
   _alignment_file_type = type;
 }
 
-size_t ConfigFile::region_count() const { return _region_count; }
+size_t ConfigFile::region_count() const { return _region_count.get(); }
 
 void ConfigFile::region_count(size_t r) { _region_count = r; }
 
@@ -537,10 +537,11 @@ size_t ConfigFile::threads_per_worker() const { return _threads_per_worker; }
 
 void ConfigFile::threads_per_worker(size_t t) { _threads_per_worker = t; }
 
-const LagrangeOperationMode& ConfigFile::run_mode() const{
+const LagrangeOperationMode& ConfigFile::run_mode() const {
   return _run_mode.get();
 }
-void ConfigFile::run_mode(const LagrangeOperationMode& mode){
+
+void ConfigFile::run_mode(const LagrangeOperationMode& mode) {
   _run_mode = mode;
 }
 

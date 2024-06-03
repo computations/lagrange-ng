@@ -221,7 +221,7 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     config.region_count(data.region_count);
-    if (config.max_areas() == 0) { config.max_areas(config.region_count()); }
+    if (!config.has_max_areas()) { config.max_areas(config.region_count()); }
 
     MESSAGE(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
