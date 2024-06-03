@@ -179,8 +179,6 @@ void write_result_file(const std::shared_ptr<Tree> &tree,
   }
   root_json["params"] = params_json;
 
-  auto states = context.getStateResults();
-  auto splits = context.getSplitResults();
   root_json["node-results"] = make_results_for_nodes(
       tree, config.area_names, context.stateCount(), config.maxareas);
 
