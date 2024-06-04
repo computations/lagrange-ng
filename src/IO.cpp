@@ -366,7 +366,7 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto scaled_tree_filename = config.scaledTreeFilename();
-  LOG(INFO, "Writing node annotated tree to %s", scaled_tree_filename.c_str());
+  LOG(INFO, "Writing scaled tree to %s", scaled_tree_filename.c_str());
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda([](const Node &n) -> std::string {
     return n.getName() + ":" + std::to_string(n.getBL());
