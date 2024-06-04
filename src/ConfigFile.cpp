@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Fossil.hpp"
+#include "IO.hpp"
 #include "logger.hpp"
 
 namespace lagrange {
@@ -65,6 +66,14 @@ class ConfigLexer {
     std::string tmp;
     std::swap(tmp, _value);
     return tmp;
+  }
+
+  auto consumeValueAsLowerString() -> std::string {
+    auto str = consumeValueAsString();
+    std::transform(str.cbegin(), str.cend(), str.begin(), [](char c) -> char {
+      return std::tolower(c);
+    });
+    return str;
   }
 
   auto consumeValueAsFloat() -> double {
@@ -179,12 +188,7 @@ size_t parse_size_t(ConfigLexer& lexer) {
   return lexer.consumeValueAsSizeT();
 }
 
-FossilType determine_fossil_type(std::string fossil_type_string) {
-  std::transform(fossil_type_string.cbegin(),
-                 fossil_type_string.cend(),
-                 fossil_type_string.begin(),
-                 [](char c) -> char { return std::tolower(c); });
-
+FossilType determine_fossil_type(const std::string& fossil_type_string) {
   if (fossil_type_string == "n" || fossil_type_string == "node") {
     return FossilType::NODE;
   } else if (fossil_type_string == "b" || fossil_type_string == "branch") {
@@ -201,7 +205,7 @@ FossilType determine_fossil_type(std::string fossil_type_string) {
 
 Fossil parse_fossil(ConfigLexer& lexer) {
   lexer.expect(ConfigLexemeType::VALUE);
-  auto fossil_type_string = lexer.consumeValueAsString();
+  auto fossil_type_string = lexer.consumeValueAsLowerString();
 
   FossilType ft = determine_fossil_type(fossil_type_string);
 
@@ -219,6 +223,12 @@ Fossil parse_fossil(ConfigLexer& lexer) {
           .age = ft == FossilType::BRANCH ? parse_double(lexer) : 0.0,
           .area = fossil_area,
           .type = ft};
+}
+
+OutputType determine_output_file_type(const std::string& type_string) {
+  if (type_string == "csv") { return OutputType::CSV; }
+  if (type_string == "json") { return OutputType::JSON; }
+  return OutputType::UNKNOWN;
 }
 
 ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
@@ -362,6 +372,12 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
         lexer.expect(ConfigLexemeType::VALUE);
 
         config._log_filename = lexer.consumeValueAsString();
+      } else if (config_value == "output-type") {
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
+
+        auto value = lexer.consumeValueAsLowerString();
+        config.output_file_type(determine_output_file_type(value));
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
@@ -415,6 +431,13 @@ void ConfigFile::prefix(const std::filesystem::path& path) { _prefix = path; }
 bool ConfigFile::has_rate_matrix_filename() const {
   return _rate_matrix_filename.hasValue();
 }
+
+OutputType ConfigFile::output_file_type() const {
+  if (_output_file_type.hasValue()) { return _output_file_type.get(); }
+  return OutputType::JSON;
+}
+
+void ConfigFile::output_file_type(OutputType type) { _output_file_type = type; }
 
 const std::filesystem::path& ConfigFile::rate_matrix_filename() const {
   return _rate_matrix_filename.get();
@@ -545,13 +568,13 @@ void ConfigFile::run_mode(const LagrangeOperationMode& mode) {
   _run_mode = mode;
 }
 
-std::filesystem::path ConfigFile::resultsFilename() const {
+std::filesystem::path ConfigFile::jsonResultsFilename() const {
   auto results_filename = _prefix;
   results_filename += ".results.json";
   return results_filename;
 }
 
-std::filesystem::path ConfigFile::NodeTreeFilename() const {
+std::filesystem::path ConfigFile::nodeTreeFilename() const {
   auto node_tree_filename = _prefix;
   node_tree_filename += ".nodes.tre";
   return node_tree_filename;
@@ -560,6 +583,30 @@ std::filesystem::path ConfigFile::NodeTreeFilename() const {
 std::filesystem::path ConfigFile::scaledTreeFilename() const {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".scaled.tre";
+  return scaled_tree_filename;
+}
+
+std::filesystem::path ConfigFile::splitsCSVResultsFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".splits.csv";
+  return scaled_tree_filename;
+}
+
+std::filesystem::path ConfigFile::statesCSVResultsFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".states.csv";
+  return scaled_tree_filename;
+}
+
+std::filesystem::path ConfigFile::periodsCSVResultsFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".periods.csv";
+  return scaled_tree_filename;
+}
+
+std::filesystem::path ConfigFile::distributionsCSVResultsFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".distributions.csv";
   return scaled_tree_filename;
 }
 

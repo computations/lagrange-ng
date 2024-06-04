@@ -17,6 +17,8 @@
 namespace lagrange {
 constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
 
+enum class OutputType { JSON, CSV, UNKNOWN };
+
 class ConfigFile;
 
 ConfigFile parse_config_file(std::istream& instream);
@@ -46,6 +48,9 @@ class ConfigFile {
 
   const std::filesystem::path& prefix() const;
   void prefix(const std::filesystem::path&);
+
+  OutputType output_file_type() const;
+  void output_file_type(OutputType);
 
   bool has_rate_matrix_filename() const;
   const std::filesystem::path& rate_matrix_filename() const;
@@ -108,9 +113,13 @@ class ConfigFile {
   const LagrangeOperationMode& run_mode() const;
   void run_mode(const LagrangeOperationMode&);
 
-  std::filesystem::path resultsFilename() const;
-  std::filesystem::path NodeTreeFilename() const;
+  std::filesystem::path jsonResultsFilename() const;
+  std::filesystem::path nodeTreeFilename() const;
   std::filesystem::path scaledTreeFilename() const;
+  std::filesystem::path splitsCSVResultsFilename() const;
+  std::filesystem::path statesCSVResultsFilename() const;
+  std::filesystem::path periodsCSVResultsFilename() const;
+  std::filesystem::path distributionsCSVResultsFilename() const;
 
   bool computeStates() const;
   bool computeSplits() const;
@@ -172,6 +181,8 @@ class ConfigFile {
   std::filesystem::path _log_filename;
   std::filesystem::path _prefix;
 
+  Option<OutputType> _output_file_type;
+
   Option<std::filesystem::path> _rate_matrix_filename;
 
   Option<size_t> _max_areas;
@@ -203,6 +214,7 @@ class ConfigFile {
   Option<size_t> _workers;
   Option<size_t> _threads_per_worker;
   Option<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
+
 };
 
 class ConfigFileLexingError : public std::runtime_error {

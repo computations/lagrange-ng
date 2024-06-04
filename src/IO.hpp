@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <nlohmann/thirdparty/hedley/hedley.hpp>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
@@ -8,8 +9,9 @@
 #include "nlohmann/json.hpp"
 
 namespace lagrange {
-auto normalize_split_distribution_by_lwr(SplitReturn &splits)
-    -> void;
+
+
+auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void;
 
 auto normalize_state_distribution_by_lwr(
     const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
@@ -34,7 +36,7 @@ auto make_results_for_node(
     size_t states_len,
     size_t max_areas) -> nlohmann::json;
 
-void write_result_file(const std::shared_ptr<Tree> &tree,
+void write_result_files(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config,
                        const Context &context);
 
@@ -47,6 +49,10 @@ void write_scaled_tree(const std::shared_ptr<Tree> &tree,
 auto init_json(const std::shared_ptr<const Tree> &tree,
                const ConfigFile &config) -> nlohmann::json;
 
-void write_json_file(const ConfigFile &config,
-                     const nlohmann ::json &root_json);
+void write_json_file(const ConfigFile &config, const nlohmann::json &root_json);
+
+nlohmann::json produce_json_file(const std::shared_ptr<Tree> &tree,
+                                 const ConfigFile &config,
+                                 const Context &context);
+
 }  // namespace lagrange

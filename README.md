@@ -174,6 +174,11 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
     constrain the node `foo` to the distribution `011`.
   - `node`: This option is an alias for `include`.
 - `logfile`: Specify a file to log the output of the program (the log messages).
+- `output-type`: One of either `json` or `csv`:
+  - `json`: Compile all the results into one json file, whos contents are 
+    detailed below. If your tree is large, this has a chance of running out of
+    memory, particularly when computing splits.
+  - `csv`: Output results as a set of CSV files.
 
 If any of the arguments to the options has spaces, then it needs
 to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then

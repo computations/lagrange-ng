@@ -147,7 +147,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   for (auto &t : threads) { t.join(); }
 
   assign_results_to_tree(tree, config, context);
-  write_result_file(tree, config, context);
+  write_result_files(tree, config, context);
   write_node_tree(tree, config);
   write_scaled_tree(tree, config);
 }

@@ -162,6 +162,8 @@ class Node {
   bool hasAncestralState() const;
   bool hasAncestralSplit() const;
 
+  const std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState() const;
+  const SplitReturn &getAncestralSplit() const;
   std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState();
   SplitReturn &getAncestralSplit();
 

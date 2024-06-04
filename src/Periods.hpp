@@ -93,6 +93,9 @@ class PeriodSpan {
 
   PeriodSpan() = default;
 
+  PeriodSpan(const Periods &periods) :
+      PeriodSpan(periods, 0.0, periods.max()) {}
+
   PeriodSpan(const Periods &periods, double start, double length) :
       _start_time{start},
       _length{length} {

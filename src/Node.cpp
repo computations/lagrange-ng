@@ -499,9 +499,15 @@ bool Node::hasAncestralState() const { return _ancestral_state.has_value(); }
 
 bool Node::hasAncestralSplit() const { return _ancestral_split.has_value(); }
 
+const std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() const {
+  return _ancestral_state.value();
+}
+
 std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() {
   return _ancestral_state.value();
 }
+
+const SplitReturn &Node::getAncestralSplit() const { return _ancestral_split.value(); }
 
 SplitReturn &Node::getAncestralSplit() { return _ancestral_split.value(); }
 
