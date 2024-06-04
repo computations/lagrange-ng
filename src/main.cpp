@@ -94,6 +94,7 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
     auto cb = [&](Node &n) {
       n.assignAncestralSplit(std::move(splits[inv_map[n.getId()]]));
     };
+    tree->applyPreorderInternalOnly(cb);
   } else if (!config.split_nodes().empty()) {
     for (size_t iter = 0; iter < config.split_nodes().size(); ++iter) {
       tree->assignSplitResult(splits[iter], config.split_nodes()[iter]);
