@@ -552,7 +552,10 @@ size_t ConfigFile::region_count() const { return _region_count.get(); }
 
 void ConfigFile::region_count(size_t r) { _region_count = r; }
 
-size_t ConfigFile::workers() const { return _workers; }
+size_t ConfigFile::workers() const {
+  if (_workers.hasValue()) { return _workers.get(); }
+  return 1;
+}
 
 void ConfigFile::workers(size_t w) { _workers = w; }
 
