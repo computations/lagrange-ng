@@ -1,6 +1,5 @@
 #pragma once
 #include <memory>
-#include <nlohmann/thirdparty/hedley/hedley.hpp>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
