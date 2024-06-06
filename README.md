@@ -123,7 +123,7 @@ If Lagrange-NG has been built correctly, we should see the following output (or 
 [  0.05s] Computing ancestral splits
 [  0.05s] Writing results to example/example.nwk.results.json
 [  0.06s] Writing node annotated tree to example/example.nwk.nodes.tre
-[  0.06s] Writing node annotated tree to example/example.nwk.scaled.tre
+[  0.06s] Writing scaled tree to example/example.nwk.scaled.tre
 [  0.06s] Analysis took 0.056379s
 ```
 
