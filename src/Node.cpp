@@ -507,7 +507,9 @@ std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() {
   return _ancestral_state.value();
 }
 
-const SplitReturn &Node::getAncestralSplit() const { return _ancestral_split.value(); }
+const SplitReturn &Node::getAncestralSplit() const {
+  return _ancestral_split.value();
+}
 
 SplitReturn &Node::getAncestralSplit() { return _ancestral_split.value(); }
 
@@ -565,6 +567,7 @@ bool Node::assignFossil(const Fossil &f) {
 
 std::string Node::getNodeLabel() const {
   if (!_mrca.empty()) { return _mrca; }
+  if (isTip()) { return getName(); }
   return std::to_string(getNumber());
 }
 

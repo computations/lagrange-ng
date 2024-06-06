@@ -1,19 +1,19 @@
 #include "IO.hpp"
 
+#include <cmath>
+#include <fstream>
 #include <initializer_list>
+#include <logger.hpp>
+#include <memory>
+#include <sstream>
 #include <string>
-
-#include "ConfigFile.hpp"
-#include "Periods.hpp"
 
 #undef NDEBUG
 #include <cassert>
-#include <cmath>
-#include <fstream>
-#include <logger.hpp>
-#include <memory>
 
 #include "AncSplit.hpp"
+#include "ConfigFile.hpp"
+#include "Periods.hpp"
 #include "Tree.hpp"
 #include "Utils.hpp"
 
@@ -335,7 +335,7 @@ void write_csv_distribution_file(const ConfigFile &config) {
 }
 
 void write_csv_node_info_file(const std::shared_ptr<Tree> &tree,
-                         const ConfigFile &config) {
+                              const ConfigFile &config) {
   LOG_INFO("Writing node info to %s",
            config.distributionsCSVResultsFilename().c_str());
   auto fields = {"node", "left-child", "right-child"};
@@ -373,15 +373,27 @@ void write_result_files(const std::shared_ptr<Tree> &tree,
   }
 }
 
+inline auto make_annotated_node_newick_lambda() {
+  return [](const Node &n) -> std::string {
+    std::ostringstream oss;
+    oss << n.getNodeLabel();
+    if (n.isInternal()) {
+      oss << "[&&NHX:left-child=" + n.getChild(0)->getNodeLabel()
+                 + ":right-child=" + n.getChild(1)->getNodeLabel() + "]";
+    }
+    oss << ":" + std::to_string(n.getBL());
+    return oss.str();
+  };
+}
+
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config) {
   auto node_tree_filename = config.nodeTreeFilename();
   LOG(INFO, "Writing node annotated tree to %s", node_tree_filename.c_str());
 
   std::ofstream node_tree(node_tree_filename);
-  node_tree << tree->getNewickLambda([](const Node &n) -> std::string {
-    return n.getNodeLabel() + ":" + std::to_string(n.getBL());
-  });
+  node_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
+            << std::endl;
 }
 
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
@@ -389,9 +401,8 @@ void write_scaled_tree(const std::shared_ptr<Tree> &tree,
   auto scaled_tree_filename = config.scaledTreeFilename();
   LOG(INFO, "Writing scaled tree to %s", scaled_tree_filename.c_str());
   std::ofstream anal_tree(scaled_tree_filename);
-  anal_tree << tree->getNewickLambda([](const Node &n) -> std::string {
-    return n.getName() + ":" + std::to_string(n.getBL());
-  }) << std::endl;
+  anal_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
+            << std::endl;
 }
 
 auto init_json(const std::shared_ptr<const Tree> &tree,
@@ -403,13 +414,7 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
   attributes_json["regions"] = config.region_count();
   attributes_json["taxa"] = tree->getTipCount();
   attributes_json["nodes-tree"] =
-      tree->getNewickLambda([](const Node &n) -> std::string {
-        if (n.isInternal()) {
-          return n.getNodeLabel() + ":" + std::to_string(n.getBL());
-        } else {
-          return n.getName() + ":" + std::to_string(n.getBL());
-        }
-      });
+      tree->getNewickLambda(make_annotated_node_newick_lambda());
   attributes_json["max-areas"] = config.max_areas();
   attributes_json["state-count"] = lagrange_compute_restricted_state_count(
       config.region_count(), config.max_areas());
