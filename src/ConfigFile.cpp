@@ -613,6 +613,12 @@ std::filesystem::path ConfigFile::distributionsCSVResultsFilename() const {
   return scaled_tree_filename;
 }
 
+std::filesystem::path ConfigFile::nodeInfoCSVResultsFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".node-info.csv";
+  return scaled_tree_filename;
+}
+
 bool ConfigFile::computeStates() const {
   return _all_states || !_state_nodes.empty();
 }

@@ -120,6 +120,7 @@ class ConfigFile {
   std::filesystem::path statesCSVResultsFilename() const;
   std::filesystem::path periodsCSVResultsFilename() const;
   std::filesystem::path distributionsCSVResultsFilename() const;
+  std::filesystem::path nodeInfoCSVResultsFilename() const;
 
   bool computeStates() const;
   bool computeSplits() const;

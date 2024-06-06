@@ -210,14 +210,21 @@ inline std::string make_csv_row(
          + "\n";
 }
 
+inline std::ofstream init_csv(
+    const std::filesystem::path &filename,
+    const std::initializer_list<const char *> &fields) {
+  std::ofstream csv_file(filename);
+  csv_file << make_csv_header(fields);
+  return csv_file;
+}
+
 void write_csv_state_file(const std::shared_ptr<Tree> &tree,
                           const ConfigFile &config,
                           const Context &context) {
   LOG_INFO("Writing ancestral states to %s",
            config.statesCSVResultsFilename().c_str());
-  std::ofstream outfile(config.statesCSVResultsFilename());
   auto fields = {"node", "dist", "llh", "ratio"};
-  outfile << make_csv_header(fields);
+  auto outfile = init_csv(config.statesCSVResultsFilename(), fields);
 
   auto max_areas = config.max_areas();
   auto total_states = context.stateCount();
@@ -258,9 +265,8 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
                           const ConfigFile &config) {
   LOG_INFO("Writing ancestral splits to %s",
            config.splitsCSVResultsFilename().c_str());
-  std::ofstream outfile(config.splitsCSVResultsFilename());
   auto fields = {"node", "anc-dist", "left-dist", "right-dist", "llh", "ratio"};
-  outfile << make_csv_header(fields);
+  auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
 
   auto cb = [&outfile](const Node &n) {
     auto node_label = n.getNodeLabel();
@@ -285,9 +291,8 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
 void write_csv_periods_file(const ConfigFile &config, const Context &context) {
   LOG_INFO("Writing period parameters to %s",
            config.periodsCSVResultsFilename().c_str());
-  std::ofstream outfile(config.periodsCSVResultsFilename());
   auto fields = {"from", "to", "dispersion", "extinction"};
-  outfile << make_csv_header(fields);
+  auto outfile = init_csv(config.periodsCSVResultsFilename(), fields);
 
   auto p = PeriodSpan(config.periods()).begin();
   double last = 0.0;
@@ -305,9 +310,8 @@ void write_csv_periods_file(const ConfigFile &config, const Context &context) {
 void write_csv_distribution_file(const ConfigFile &config) {
   LOG_INFO("Writing distribution labels to %s",
            config.distributionsCSVResultsFilename().c_str());
-  std::ofstream outfile(config.distributionsCSVResultsFilename());
   auto fields = {"dist", "list"};
-  outfile << make_csv_header(fields);
+  auto outfile = init_csv(config.distributionsCSVResultsFilename(), fields);
 
   size_t total_states = 1ul << config.region_count();
 
@@ -330,11 +334,28 @@ void write_csv_distribution_file(const ConfigFile &config) {
   }
 }
 
+void write_csv_node_info_file(const std::shared_ptr<Tree> &tree,
+                         const ConfigFile &config) {
+  LOG_INFO("Writing node info to %s",
+           config.distributionsCSVResultsFilename().c_str());
+  auto fields = {"node", "left-child", "right-child"};
+  auto outfile = init_csv(config.nodeInfoCSVResultsFilename(), fields);
+
+  auto cb = [&outfile](const Node &n) {
+    outfile << make_csv_row({n.getNodeLabel(),
+                             n.getChild(0)->getNodeLabel(),
+                             n.getChild(1)->getNodeLabel()});
+  };
+
+  tree->applyPreorderInternalOnly(cb);
+}
+
 void write_csv_result_files(const std::shared_ptr<Tree> &tree,
                             const ConfigFile &config,
                             const Context &context) {
   write_csv_distribution_file(config);
   write_csv_periods_file(config, context);
+  write_csv_node_info_file(tree, config);
   if (config.computeStates()) { write_csv_state_file(tree, config, context); }
   if (config.computeSplits()) { write_csv_split_file(tree, config); }
 }
