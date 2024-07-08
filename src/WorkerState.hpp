@@ -153,14 +153,9 @@ class WorkerState {
          w = findWork(work_buffer, workspace)) {
       /* We only lock on greater than 2 here because we have 2 copies of the
        * shared pointer here. One in the vector, and one returned by value from
-       * the find_work function
-       */
-      if (w.use_count() > 2) {
-        std::lock_guard<std::mutex> lock(w->getLock());
-        w->eval(workspace);
-      } else {
-        w->eval(workspace);
-      }
+       * the find_work function */
+      std::lock_guard<std::mutex> lock(w->getLock());
+      w->eval(workspace);
     }
   }
 
@@ -220,14 +215,12 @@ class WorkerState {
 
     size_t local_index = _start_index;
 
-    /* Spin lock until we find a ready operation */
+    /* Spin until we find a ready operation */
     while (true) {
       if (local_index >= work_buffer.size()) { local_index = _start_index; }
 
       if (work_buffer[local_index]->ready(workspace)) {
-        // if (local_index != _start_index) {
         std::swap(work_buffer[local_index], work_buffer[_start_index]);
-        //}
         auto op = work_buffer[_start_index];
         _start_index++;
         /*
