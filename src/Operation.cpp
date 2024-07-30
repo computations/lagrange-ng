@@ -428,6 +428,23 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   assert(rows > 0);
   assert(leading_dim > 0);
 
+  if (_t == 0.0) {
+    _N.reset(new LagrangeMatrixBase[ws->matrixSize()]);
+
+    for (size_t i = 0; i < rows; ++i) {
+      for (size_t j = 0; j < rows; ++j) {
+        _N[ws->computeMatrixIndex(i, j)] = i == j ? 1.0 : 0.0;
+      }
+    }
+
+    ws->updateProbMatrix(_prob_matrix_index, _N.get());
+
+    _last_execution = ws->advanceClock();
+    _execution_count += 1;
+
+    return;
+  }
+
   for (size_t i = 0; i < ws->matrixSize(); i++) {
     _A.get()[i] = ws->rateMatrix(_rate_matrix_index)[i];
   }
