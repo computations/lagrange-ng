@@ -28,6 +28,9 @@ struct MatrixReservation {
 struct CLVReservation {
   LagrangeColVector _clv = nullptr;
   ClockTick _last_update = 0;
+  uint64_t _state_mask;
+
+  size_t vector_size() const { return lagrange_popcount(_state_mask); }
 };
 
 class Workspace {
@@ -43,8 +46,10 @@ class Workspace {
       _max_areas{max_areas},
       _next_free_clv{0},
       _leading_dim{_states},
-      _rate_matrix{1},
-      _prob_matrix{1},
+      _rate_matrix_reserved_count{0},
+      _prob_matrix_reserved_count{0},
+      _rate_matrix{},
+      _prob_matrix{},
       _base_frequencies_count{1},
       _base_frequencies{nullptr},
       _clv_scalars{nullptr},
@@ -94,21 +99,7 @@ class Workspace {
     _rate_matrix[index]._last_update = advanceClock();
   }
 
-  /*
-  inline void update_rate_matrix(size_t index, lagrange_matrix_t &&A) {
-    if (index >= _rate_matrix.size()) {
-      throw std::runtime_error{"Rate matrix access out of range when updating"};
-    }
-
-    if (A != _rate_matrix[index]._matrix) {
-      delete[] _rate_matrix[index]._matrix;
-      _rate_matrix[index]._matrix = A;
-    }
-    _rate_matrix[index]._last_update = advance_clock();
-  }
-  */
-
-  inline void updateRateMatrixAndAdvanceClock(size_t i) {
+  inline void updateRateMatrixClock(size_t i) {
     assert(_reserved);
     _rate_matrix[i]._last_update = advanceClock();
   }
@@ -121,8 +112,8 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline auto updateProbMatrix(size_t index, const LagrangeConstMatrix &A)
-      -> ClockTick {
+  inline auto updateProbMatrix(size_t index,
+                               const LagrangeConstMatrix &A) -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -135,22 +126,6 @@ class Workspace {
 
     return _prob_matrix[index]._last_update = advanceClock();
   }
-
-  /*
-  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
-                                                  lagrange_matrix_t &&A) {
-    if (index >= _prob_matrix.size()) {
-      throw std::runtime_error{"Prob matrix access out of range when updating"};
-    }
-
-    if (A != _prob_matrix[index]._matrix) {
-      delete[] _prob_matrix[index]._matrix;
-      _prob_matrix[index]._matrix = A;
-    }
-
-    return _prob_matrix[index]._last_update = advance_clock();
-  }
-  */
 
   inline auto lastUpdateProbMatrix(size_t i) -> ClockTick {
     assert(_reserved);
@@ -212,13 +187,21 @@ class Workspace {
   inline auto nodeCount() const -> size_t { return _inner_count + _taxa_count; }
 
   inline auto suggestProbMatrixIndex() -> size_t {
-    size_t suggested_index = _prob_matrix.size();
-    _prob_matrix.emplace_back();
+    size_t suggested_index = _prob_matrix_reserved_count;
+    _prob_matrix_reserved_count += 1;
+    //_prob_matrix.emplace_back();
+    return suggested_index;
+  }
+
+  inline auto suggestRateMatrixIndex() -> size_t {
+    size_t suggested_index = _rate_matrix_reserved_count;
+    _rate_matrix_reserved_count += 1;
     return suggested_index;
   }
 
   inline auto reserveRateMatrixIndex(size_t index) -> size_t {
-    if (_rate_matrix.size() <= index) { _rate_matrix.resize(index + 1); }
+    _rate_matrix_reserved_count =
+        std::max(index + 1, _rate_matrix_reserved_count);
     return index;
   }
 
@@ -289,6 +272,8 @@ class Workspace {
   }
 
   void reserve();
+  void clean();
+  void stage();
 
   inline auto advanceClock() -> ClockTick { return _current_clock++; }
 
@@ -360,6 +345,9 @@ class Workspace {
 
   size_t _leading_dim;
 
+  size_t _rate_matrix_reserved_count;
+  size_t _prob_matrix_reserved_count;
+
   std::vector<MatrixReservation> _rate_matrix;
   std::vector<MatrixReservation> _prob_matrix;
 
@@ -374,6 +362,7 @@ class Workspace {
   std::vector<PeriodParams> _periods;
 
   Clock _current_clock;
+  bool _staged;
   bool _reserved;
 
   size_t _expm_count = 0;

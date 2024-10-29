@@ -133,6 +133,7 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
 }
 
 void Context::init() {
+  _workspace->clean();
   _workspace->reserve();
   std::vector<PeriodParams> initial_rates(_workspace->rateMatrixCount(),
                                           {0.01, 0.01});

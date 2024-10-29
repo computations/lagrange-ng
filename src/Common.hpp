@@ -34,6 +34,7 @@
 namespace lagrange {
 
 using Range = uint64_t;
+using RangeMask = uint64_t;
 
 using ClockTick = uint64_t;
 using Clock = std::atomic<uint64_t>;
@@ -49,35 +50,23 @@ struct NodeReservation {
       _bot1_rclv{std::numeric_limits<size_t>::max()},
       _bot2_rclv{std::numeric_limits<size_t>::max()} {}
 
+  size_t rangeCountForComputation() const;
+
   size_t _top_clv;
   size_t _bot1_clv;
   size_t _bot2_clv;
+
+  RangeMask _child_region_mask;
 
   size_t _top_rclv;
   size_t _bot1_rclv;
   size_t _bot2_rclv;
 };
 
-struct PeriodDerivative {
-  double d_dispersion;
-  double d_extinction;
-
-  auto norm() const -> double {
-    return d_dispersion * d_dispersion + d_extinction * d_extinction;
-  }
-};
-
 struct PeriodParams {
   double dispersion_rate;
   double extinction_rate;
   std::shared_ptr<std::vector<std::vector<double>>> adjustment_matrix = nullptr;
-
-  void applyDerivative(const PeriodDerivative &d) {
-    dispersion_rate += d.d_dispersion;
-    extinction_rate += d.d_extinction;
-    if (dispersion_rate < 0) { dispersion_rate = 0.0; }
-    if (extinction_rate < 0) { extinction_rate = 0.0; }
-  }
 
   auto toString() const -> std::string {
     std::ostringstream os;

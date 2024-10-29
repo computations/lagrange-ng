@@ -10,6 +10,9 @@ TEST(Workspace, simple0) {
   constexpr size_t states = 1 << regions;
   Workspace ws(10, regions, regions);
 
+  EXPECT_EQ(ws.suggestProbMatrixIndex(), 0);
+  EXPECT_EQ(ws.reserveRateMatrixIndex(0), 0);
+
   ws.reserve();
 
   EXPECT_EQ(ws.states(), states);

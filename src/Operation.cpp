@@ -371,7 +371,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   _last_execution = ws->advanceClock();
-  ws->updateRateMatrixAndAdvanceClock(_rate_matrix_index);
+  ws->updateRateMatrixClock(_rate_matrix_index);
 }
 
 void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,

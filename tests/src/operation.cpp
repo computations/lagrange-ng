@@ -10,25 +10,25 @@
 using namespace lagrange;
 
 #define lagrange_compute_error_from_matrix(calc_buffer, ref_buffer, workspace) \
-  {                                                                           \
-    double error = 0.0;                                                       \
-    for (size_t i = 0; i < workspace->matrixSize(); i++) {                   \
-      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                \
-      error += cur_error * cur_error;                                         \
-    }                                                                         \
-    error = std::sqrt(error);                                                 \
-    EXPECT_NEAR(error, 0.0, 1e-7);                                            \
+  {                                                                            \
+    double error = 0.0;                                                        \
+    for (size_t i = 0; i < workspace->matrixSize(); i++) {                     \
+      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                 \
+      error += cur_error * cur_error;                                          \
+    }                                                                          \
+    error = std::sqrt(error);                                                  \
+    EXPECT_NEAR(error, 0.0, 1e-7);                                             \
   }
 
 #define lagrange_compute_error_from_vector(calc_buffer, ref_buffer, workspace) \
-  {                                                                           \
-    double error = 0.0;                                                       \
-    for (size_t i = 0; i < workspace->states(); i++) {                        \
-      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                \
-      error += cur_error * cur_error;                                         \
-    }                                                                         \
-    error = std::sqrt(error);                                                 \
-    EXPECT_NEAR(error, 0.0, 1e-7);                                            \
+  {                                                                            \
+    double error = 0.0;                                                        \
+    for (size_t i = 0; i < workspace->states(); i++) {                         \
+      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                 \
+      error += cur_error * cur_error;                                          \
+    }                                                                          \
+    error = std::sqrt(error);                                                  \
+    EXPECT_NEAR(error, 0.0, 1e-7);                                             \
   }
 
 class OperationTest : public ::testing::Test {
@@ -145,9 +145,11 @@ class OperationTest : public ::testing::Test {
     _reverse_ltop_clv = _ws->registerGenericCLV();
     _reverse_lbot_clv = _ws->registerGenericCLV();
 
+    _ws->reserveRateMatrixIndex(_rate_matrix_index);
+    _prob_matrix = _ws->suggestProbMatrixIndex();
     _ws->reserve();
 
-    _ws->updateRateMatrix(_rate_matrix, _arbitrary_rate_matrix.get());
+    _ws->updateRateMatrix(_rate_matrix_index, _arbitrary_rate_matrix.get());
 
     _ws->updateCLV(_arbitrary_clv1.get(), _rbot_clv);
     _ws->updateCLV(_arbitrary_clv2.get(), _lbot_clv);
@@ -156,7 +158,7 @@ class OperationTest : public ::testing::Test {
     _ws->setPeriodParams(0, .3123, 1.1231);
 
     _rate_matrix_op =
-        std::make_shared<MakeRateMatrixOperation>(_rate_matrix, _period);
+        std::make_shared<MakeRateMatrixOperation>(_rate_matrix_index, _period);
   }
 
   size_t _lbot_clv;
@@ -171,7 +173,7 @@ class OperationTest : public ::testing::Test {
   size_t _reverse_lbot_clv;
 
   size_t _prob_matrix = 0;
-  size_t _rate_matrix = 0;
+  size_t _rate_matrix_index = 0;
   size_t _regions = 2;
   size_t _taxa = 2;
 
@@ -237,9 +239,8 @@ TEST_F(OperationTest, DispersionSimple2) {
   lagrange_compute_error_from_vector(
       _ws->probMatrix(_prob_matrix), _correct_prob_matrix, _ws);
 
-  std::unique_ptr<LagrangeMatrixBase[]> correct_clv(
-      new LagrangeMatrixBase[4]{
-          0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931});
+  std::unique_ptr<LagrangeMatrixBase[]> correct_clv(new LagrangeMatrixBase[4]{
+      0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931});
 
   lagrange_compute_error_from_vector(_ws->CLV(_rtop_clv), correct_clv, _ws);
 }
@@ -277,16 +278,18 @@ TEST_F(OperationTest, ReverseSplitSimple0) {
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
-  MakeRateMatrixOperation make_op(_rate_matrix, _period);
+  MakeRateMatrixOperation make_op(_rate_matrix_index, _period);
 
   make_op.eval(_ws);
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
   auto local_ws = std::make_shared<Workspace>(_taxa, 3, 3);
+  size_t rate_matrix_index = local_ws->suggestRateMatrixIndex();
+
   local_ws->reserve();
   local_ws->setPeriodParams(_period, .3123, 1.1231);
-  MakeRateMatrixOperation make_op(_rate_matrix, _period);
+  MakeRateMatrixOperation make_op(rate_matrix_index, _period);
 
   make_op.eval(local_ws);
 }

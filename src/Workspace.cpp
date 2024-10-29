@@ -49,7 +49,17 @@ void Workspace::setTipCLV(size_t index, Range clv_index) {
   _clvs[index]._last_update = std::numeric_limits<size_t>::max();
 }
 
-void Workspace::reserve() {
+/**
+ * Prep for allocation by setting up the various reservations
+*/
+void Workspace::stage() { 
+  _clvs.resize(CLVCount()); 
+  _rate_matrix.resize(_rate_matrix_reserved_count);
+  _prob_matrix.resize(_prob_matrix_reserved_count);
+  _staged = true;
+}
+
+void Workspace::clean() {
   if (_base_frequencies != nullptr) {
     for (size_t i = 0; i < _base_frequencies_count; ++i) {
       delete[] _base_frequencies[i];
@@ -57,6 +67,19 @@ void Workspace::reserve() {
     delete[] _base_frequencies;
   }
 
+  for (auto &c : _clvs) { delete[] c._clv; }
+
+  delete[] _clv_scalars;
+
+  for (auto &rm : _rate_matrix) { delete[] rm._matrix; }
+
+  for (auto &pm : _prob_matrix) { delete[] pm._matrix; }
+  _reserved = false;
+}
+
+void Workspace::reserve() {
+  assert(!_reserved);
+  stage();
   _base_frequencies = new LagrangeColVector[_base_frequencies_count];
 
   for (size_t i = 0; i < _base_frequencies_count; ++i) {
@@ -66,36 +89,21 @@ void Workspace::reserve() {
     }
   }
 
-  _clvs.resize(CLVCount());
-
   for (auto &c : _clvs) {
-    delete[] c._clv;
-
     c._clv = new LagrangeMatrixBase[CLVSize()];
 
     for (size_t j = 0; j < restrictedStateCount(); j++) { c._clv[j] = 0.0; }
   }
-  for (auto &_clv : _clvs) {
-    delete[] _clv._clv;
-
-    _clv._clv = new LagrangeMatrixBase[CLVSize()];
-
-    for (size_t j = 0; j < restrictedStateCount(); j++) { _clv._clv[j] = 0.0; }
-  }
-
-  delete[] _clv_scalars;
 
   _clv_scalars = new size_t[CLVCount()];
 
   for (size_t i = 0; i < CLVCount(); i++) { _clv_scalars[i] = 0; }
 
   for (auto &rm : _rate_matrix) {
-    delete[] rm._matrix;
     rm._matrix = new LagrangeMatrixBase[matrixSize()];
   }
 
   for (auto &pm : _prob_matrix) {
-    delete[] pm._matrix;
     pm._matrix = new LagrangeMatrixBase[matrixSize()];
   }
 
