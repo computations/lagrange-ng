@@ -1,10 +1,12 @@
 #include "Context.hpp"
 
 #include <nlopt.hpp>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
+#include "ConfigFile.hpp"
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
@@ -234,11 +236,10 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
   } oc{*this, tc, ts};
 
   const size_t dims = _workspace->rateMatrixCount() * 2;
-  nlopt::opt opt(nlopt::LN_NELDERMEAD, dims);
+  nlopt::opt opt(_opt_method, dims);
   auto objective = [](const std::vector<double>& x,
                       std::vector<double>& grad,
                       void* f_data) -> double {
-    (void)(grad);
     auto* obj = static_cast<OptContext*>(f_data);
     std::vector<PeriodParams> period_paramters(
         obj->context._workspace->rateMatrixCount());
@@ -248,6 +249,18 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
     obj->context.updateRates(period_paramters);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
+
+    if (!grad.empty()) {
+      constexpr double step = 1e-7;
+
+      for (size_t i = 0; i < grad.size(); ++i) {
+        auto tmp_params = period_paramters;
+        tmp_params[i / 2][i % 2] += step;
+        obj->context.updateRates(tmp_params);
+        grad[i] = (obj->context.computeLLH(obj->ts, obj->tc) - llh) / step;
+      }
+    }
+
     if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: %f", llh); }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
@@ -260,6 +273,9 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   std::vector<double> lower_bounds(dims, 1e-7);
   opt.set_lower_bounds(lower_bounds);
+
+  std::vector<double> upper_bounds(dims, 1e2);
+  opt.set_upper_bounds(upper_bounds);
 
   opt.set_ftol_rel(_lh_epsilon);
 
@@ -356,5 +372,37 @@ void Context::useArnoldi(bool mode_set, bool adaptive) const {
 }
 
 size_t Context::getPeriodCount() const { return _rate_matrix_ops.size(); }
+
+void Context::set_opt_method(const OptimizationMethod& m) {
+  switch (m) {
+    case OptimizationMethod::NELDER_MEAD:
+      _opt_method = nlopt::LN_NELDERMEAD;
+      break;
+    case OptimizationMethod::COBYLA:
+      _opt_method = nlopt::LN_COBYLA;
+      break;
+    case OptimizationMethod::BOBYQA:
+      _opt_method = nlopt::LN_BOBYQA;
+      break;
+    case OptimizationMethod::BFGS:
+      _opt_method = nlopt::LD_LBFGS;
+      break;
+    case OptimizationMethod::DIRECT:
+      _opt_method = nlopt::GN_DIRECT;
+      break;
+    case OptimizationMethod::STOGO:
+      _opt_method = nlopt::GD_STOGO;
+      break;
+    case OptimizationMethod::UNKNOWN:
+    default:
+      throw std::runtime_error{"Unknown optimization method"};
+  }
+  LOG_INFO("Using %s for optimization", nlopt::algorithm_name(_opt_method));
+}
+
+bool Context::computeDerivative() const {
+  if (_opt_method == nlopt::LD_LBFGS) { return true; }
+  return false;
+}
 
 }  // namespace lagrange

@@ -8,6 +8,7 @@
 #define LAGRANGE_CONTEXT_H
 
 #include <memory>
+#include <nlopt.hpp>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -15,6 +16,7 @@
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
+#include "ConfigFile.hpp"
 #include "Operation.hpp"
 #include "Tree.hpp"
 #include "WorkerState.hpp"
@@ -87,6 +89,8 @@ class Context {
 
   size_t getPeriodCount() const;
 
+  void set_opt_method(const OptimizationMethod&);
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();
@@ -108,8 +112,12 @@ class Context {
           mrca_map,
       const std::function<void(Node&)>& func);
 
-  std::function<void (Node &)> makeStateGoalCB();
-  std::function<void (Node &)> makeSplitGoalCB();
+  bool computeDerivative() const;
+
+  std::function<void(Node&)> makeStateGoalCB();
+  std::function<void(Node&)> makeSplitGoalCB();
+
+  nlopt::algorithm _opt_method;
 
   double _lh_epsilon;
 

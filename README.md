@@ -179,6 +179,15 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
     detailed below. If your tree is large, this has a chance of running out of
     memory, particularly when computing splits.
   - `csv`: Output results as a set of CSV files.
+- `opt-method`: Specify the optimization algorithm used to optimize the rates.
+  Available methods are:
+  - `nelder-mead`: Default in the old `lagrange-cpp`. Use this for parity with
+  the old version, but in general it is slow. 
+  - `bfgs`: A quasi-newton method that is in practice quite fast. This is my
+  recommended option when using a large number of periods (more than 4).
+  - `bobyqa`: An alternative to the `nelder-mead` option above that is much
+  faster for a large number of periods. If there are issues with `bfgs` try this
+  instead.
 
 If any of the arguments to the options has spaces, then it needs
 to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then

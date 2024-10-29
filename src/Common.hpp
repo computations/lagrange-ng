@@ -7,6 +7,7 @@
 #define LAGRANGE_COMMON_H
 
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -91,6 +92,18 @@ struct PeriodParams {
   }
 
   inline auto getExtinctionRate() const -> double { return extinction_rate; }
+
+  double operator[](size_t i) const {
+    if (i == 0) { return dispersion_rate; }
+    if (i == 1) { return extinction_rate; }
+    return NAN;
+  }
+
+  double &operator[](size_t i) {
+    assert(i < 2);
+    if (i == 0) { return dispersion_rate; }
+    return extinction_rate;
+  }
 };
 
 using LagrangeFloat = double;

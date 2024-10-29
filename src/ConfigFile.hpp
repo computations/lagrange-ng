@@ -19,6 +19,16 @@ constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
 
 enum class OutputType { JSON, CSV, UNKNOWN };
 
+enum class OptimizationMethod {
+  NELDER_MEAD,
+  BOBYQA,
+  COBYLA,
+  BFGS,
+  DIRECT,
+  STOGO,
+  UNKNOWN,
+};
+
 class ConfigFile;
 
 ConfigFile parse_config_file(std::istream& instream);
@@ -112,6 +122,9 @@ class ConfigFile {
 
   const LagrangeOperationMode& run_mode() const;
   void run_mode(const LagrangeOperationMode&);
+
+  OptimizationMethod opt_method() const;
+  void opt_method(const OptimizationMethod&);
 
   std::filesystem::path jsonResultsFilename() const;
   std::filesystem::path nodeTreeFilename() const;
@@ -215,7 +228,7 @@ class ConfigFile {
   Option<size_t> _workers;
   Option<size_t> _threads_per_worker;
   Option<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
-
+  Option<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
 };
 
 class ConfigFileLexingError : public std::runtime_error {

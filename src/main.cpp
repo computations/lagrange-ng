@@ -121,6 +121,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   } else if (!config.split_nodes().empty()) {
     context.registerSplitLHGoal(config.split_nodes(), config.mrcas());
   }
+  context.set_opt_method(config.opt_method());
   context.init();
   context.updateRates({context.getPeriodCount(), config.period_params()});
   context.registerTipClvs(data.data);

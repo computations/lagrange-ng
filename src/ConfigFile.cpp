@@ -231,6 +231,19 @@ OutputType determine_output_file_type(const std::string& type_string) {
   return OutputType::UNKNOWN;
 }
 
+OptimizationMethod parse_opt_method(const std::string& method_string) {
+  if (method_string == "nelder-mead") {
+    return OptimizationMethod::NELDER_MEAD;
+  }
+  if (method_string == "bobyqa") { return OptimizationMethod::BOBYQA; }
+  if (method_string == "cobyla") { return OptimizationMethod::COBYLA; }
+  if (method_string == "bfgs") {return OptimizationMethod::BFGS;}
+  if (method_string == "direct") {return OptimizationMethod::DIRECT;}
+  if (method_string == "stogo") {return OptimizationMethod::STOGO;}
+
+  return OptimizationMethod::UNKNOWN;
+}
+
 ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
   ConfigFile config;
   std::string line;
@@ -378,6 +391,12 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
 
         auto value = lexer.consumeValueAsLowerString();
         config.output_file_type(determine_output_file_type(value));
+      } else if (config_value == "opt-method") {
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        lexer.expect(ConfigLexemeType::VALUE);
+
+        auto value = lexer.consumeValueAsLowerString();
+        config.opt_method(parse_opt_method(value));
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
@@ -570,6 +589,10 @@ const LagrangeOperationMode& ConfigFile::run_mode() const {
 void ConfigFile::run_mode(const LagrangeOperationMode& mode) {
   _run_mode = mode;
 }
+
+OptimizationMethod ConfigFile::opt_method() const { return _opt_method.get(); }
+
+void ConfigFile::opt_method(const OptimizationMethod& om) { _opt_method = om; }
 
 std::filesystem::path ConfigFile::jsonResultsFilename() const {
   auto results_filename = _prefix;

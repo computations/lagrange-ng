@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "Common.hpp"
+#include "ConfigFile.hpp"
 #include "Periods.hpp"
 #include "TreeReader.hpp"
 #include "WorkerState.hpp"
@@ -65,6 +66,7 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.registerLHGoal();
   context.init();
   context.updateRates({{10.5, 1.5}});
+  context.set_opt_method(OptimizationMethod::BFGS);
   context.registerTipClvs(_basic_tree_data);
 
   double initial_llh = context.computeLLH(_worker_state);
