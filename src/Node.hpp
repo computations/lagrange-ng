@@ -91,21 +91,22 @@ class Node {
                                const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
-  friend auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-      -> std::shared_ptr<Node>;
+  friend auto getNodeById(const std::shared_ptr<Node> &current,
+                          size_t id) -> std::shared_ptr<Node>;
 
-  auto traverseAndGenerateForwardOperations(Workspace &ws,
-                                            PeriodRateMatrixMap &pm_map,
-                                            BranchProbMatrixMap &bm_map) const
-      -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-                   std::shared_ptr<DispersionOperation>>;
+  auto traverseAndGenerateForwardOperations(
+      Workspace &ws,
+      PeriodRateMatrixMap &pm_map,
+      BranchProbMatrixMap &bm_map,
+      std::vector<std::shared_ptr<SplitOperation>> &split_ops) const
+      -> std::shared_ptr<DispersionOperation>;
 
-  auto traverseAndGenerateBackwardOperations(Workspace &ws,
-                                             PeriodRateMatrixMap &rm_map,
-                                             BranchProbMatrixMap &pm_map,
-                                             bool root = false) const
-      -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-                   std::shared_ptr<DispersionOperation>>;
+  auto traverseAndGenerateBackwardOperations(
+      Workspace &ws,
+      PeriodRateMatrixMap &rm_map,
+      BranchProbMatrixMap &pm_map,
+      std::vector<std::shared_ptr<ReverseSplitOperation>> &rsplit_ops,
+      bool root = false) const -> std::shared_ptr<DispersionOperation>;
 
   auto generateDispersionOperations(Workspace &ws,
                                     PeriodRateMatrixMap &rm_map,
@@ -189,6 +190,17 @@ class Node {
                               bool transpose = false) const
       -> std::shared_ptr<ExpmOperation>;
 
+  std::shared_ptr<ReverseSplitOperation> makeRightReverseSplitOpRoot(
+      Workspace &ws) const;
+  std::shared_ptr<ReverseSplitOperation> makeLeftReverseSplitOpRoot(
+      Workspace &ws) const;
+  std::shared_ptr<ReverseSplitOperation> makeRightReverseSplitOp(
+      Workspace &ws, const std::shared_ptr<DispersionOperation> &disp_op) const;
+  std::shared_ptr<ReverseSplitOperation> makeLeftReverseSplitOp(
+      Workspace &ws, const std::shared_ptr<DispersionOperation> &disp_op) const;
+  void setMasksForReverseSplitOp(
+      std::shared_ptr<ReverseSplitOperation> &rsplit_op) const;
+
   double _branch_length;  // branch length
   double _height;         // could be from tip or from root
 
@@ -219,7 +231,7 @@ void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
 auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
                          const MRCALabel &mrca) -> std::shared_ptr<Node>;
 
-auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-    -> std::shared_ptr<Node>;
+auto getNodeById(const std::shared_ptr<Node> &current,
+                 size_t id) -> std::shared_ptr<Node>;
 }  // namespace lagrange
 #endif /* NODE_H_ */

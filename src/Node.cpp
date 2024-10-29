@@ -83,9 +83,8 @@ auto Node::getNewick() const -> std::string {
   return getNewickLambda(newick_lambda);
 }
 
-auto Node::getNewickLambda(
-    const std::function<std::string(const Node &)> &newick_lambda) const
-    -> std::string {
+auto Node::getNewickLambda(const std::function<std::string(const Node &)>
+                               &newick_lambda) const -> std::string {
   std::ostringstream newick_oss;
   for (size_t i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
@@ -163,8 +162,8 @@ auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-    -> std::shared_ptr<Node> {
+auto getNodeById(const std::shared_ptr<Node> &current,
+                 size_t id) -> std::shared_ptr<Node> {
   if (current->getId() == id) { return current; }
   for (const auto &c : current->_children) {
     auto tmp = getNodeById(c, id);
@@ -191,11 +190,12 @@ auto getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
-                                                PeriodRateMatrixMap &pm_map,
-                                                BranchProbMatrixMap &bm_map)
-    const -> std::pair<std::vector<std::shared_ptr<SplitOperation>>,
-                       std::shared_ptr<DispersionOperation>> {
+auto Node::traverseAndGenerateForwardOperations(
+    Workspace &ws,
+    PeriodRateMatrixMap &pm_map,
+    BranchProbMatrixMap &bm_map,
+    std::vector<std::shared_ptr<SplitOperation>> &split_ops) const
+    -> std::shared_ptr<DispersionOperation> {
   if (_children.size() != 2 && !_children.empty()) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
@@ -203,27 +203,21 @@ auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
 
   if (_children.empty()) {
     ws.registerTopCLV(_id);
-    return {{}, generateDispersionOperations(ws, pm_map, bm_map)};
+    return generateDispersionOperations(ws, pm_map, bm_map);
   }
 
-  std::vector<std::shared_ptr<SplitOperation>> split_ops;
-
-  auto lchild =
-      _children[0]->traverseAndGenerateForwardOperations(ws, pm_map, bm_map);
-  auto rchild =
-      _children[1]->traverseAndGenerateForwardOperations(ws, pm_map, bm_map);
-
-  split_ops.reserve(lchild.first.size() + rchild.first.size() + 1);
-  split_ops.insert(split_ops.end(), lchild.first.begin(), lchild.first.end());
-  split_ops.insert(split_ops.end(), rchild.first.begin(), rchild.first.end());
+  auto lchild_disp_op = _children[0]->traverseAndGenerateForwardOperations(
+      ws, pm_map, bm_map, split_ops);
+  auto rchild_disp_op = _children[1]->traverseAndGenerateForwardOperations(
+      ws, pm_map, bm_map, split_ops);
 
   ws.registerTopCLV(_id);
   ws.registerChildrenCLV(_id);
-  lchild.second->terminateTop(ws.getLeftChildCLV(_id));
-  rchild.second->terminateTop(ws.getRightChildCLV(_id));
+  lchild_disp_op->terminateTop(ws.getLeftChildCLV(_id));
+  rchild_disp_op->terminateTop(ws.getRightChildCLV(_id));
 
   split_ops.push_back(std::make_shared<SplitOperation>(
-      ws.getTopCLV(_id), lchild.second, rchild.second));
+      ws.getTopCLV(_id), lchild_disp_op, rchild_disp_op));
 
   if (_incl_area_mask.hasValue()) {
     split_ops.back()->setInclAreas(_incl_area_mask.get());
@@ -233,79 +227,96 @@ auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
     split_ops.back()->setExclAreas(_excl_area_mask.get());
   }
 
-  return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
+  return generateDispersionOperations(ws, pm_map, bm_map);
 }
 
-auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
-                                                 PeriodRateMatrixMap &rm_map,
-                                                 BranchProbMatrixMap &pm_map,
-                                                 bool root) const
-    -> std::pair<std::vector<std::shared_ptr<ReverseSplitOperation>>,
-                 std::shared_ptr<DispersionOperation>> {
+std::shared_ptr<ReverseSplitOperation> Node::makeRightReverseSplitOpRoot(
+    Workspace &ws) const {
+  auto tmp = std::make_shared<ReverseSplitOperation>(ws.getBot1CLVReverse(_id),
+                                                     ws.getTopCLVReverse(_id),
+                                                     ws.getRightChildCLV(_id));
+  setMasksForReverseSplitOp(tmp);
+  return tmp;
+}
+
+std::shared_ptr<ReverseSplitOperation> Node::makeLeftReverseSplitOpRoot(
+    Workspace &ws) const {
+  auto tmp = std::make_shared<ReverseSplitOperation>(ws.getBot2CLVReverse(_id),
+                                                     ws.getTopCLVReverse(_id),
+                                                     ws.getLeftChildCLV(_id));
+  setMasksForReverseSplitOp(tmp);
+  return tmp;
+}
+
+std::shared_ptr<ReverseSplitOperation> Node::makeRightReverseSplitOp(
+    Workspace &ws, const std::shared_ptr<DispersionOperation> &disp_op) const {
+  auto tmp = std::make_shared<ReverseSplitOperation>(
+      ws.getBot1CLVReverse(_id), ws.getRightChildCLV(_id), disp_op);
+  setMasksForReverseSplitOp(tmp);
+  return tmp;
+}
+
+std::shared_ptr<ReverseSplitOperation> Node::makeLeftReverseSplitOp(
+    Workspace &ws, const std::shared_ptr<DispersionOperation> &disp_op) const {
+  auto tmp = std::make_shared<ReverseSplitOperation>(
+      ws.getBot2CLVReverse(_id), ws.getLeftChildCLV(_id), disp_op);
+
+  setMasksForReverseSplitOp(tmp);
+  return tmp;
+}
+
+void Node::setMasksForReverseSplitOp(
+    std::shared_ptr<ReverseSplitOperation> &rsplit_op) const {
+  if (_incl_area_mask.hasValue()) {
+    rsplit_op->setInclAreas(_incl_area_mask.get());
+  }
+  if (_excl_area_mask.hasValue()) {
+    rsplit_op->setExclAreas(_excl_area_mask.get());
+  }
+}
+
+auto Node::traverseAndGenerateBackwardOperations(
+    Workspace &ws,
+    PeriodRateMatrixMap &rm_map,
+    BranchProbMatrixMap &pm_map,
+    std::vector<std::shared_ptr<ReverseSplitOperation>> &rsplit_ops,
+    bool root) const -> std::shared_ptr<DispersionOperation> {
   if (_children.size() != 2 && !_children.empty()) {
     throw std::runtime_error{
         "Tree is not bifircating when generating operations"};
   }
 
-  if (_children.empty()) { return {{}, {}}; }
-
-  std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
+  if (_children.empty()) { return {}; }
 
   ws.registerTopCLVReverse(_id);
 
   auto disp_ops = generateDispersionOperationsReverse(ws, rm_map, pm_map);
 
-  if (root && disp_ops == nullptr) {
-    ws.registerBot1CLVReverse(_id);
-    rsplit_ops.push_back(
-        std::make_shared<ReverseSplitOperation>(ws.getBot1CLVReverse(_id),
-                                                ws.getTopCLVReverse(_id),
-                                                ws.getRightChildCLV(_id)));
+  ws.registerBot1CLVReverse(_id);
+  ws.registerBot2CLVReverse(_id);
 
-    ws.registerBot2CLVReverse(_id);
-    rsplit_ops.push_back(
-        std::make_shared<ReverseSplitOperation>(ws.getBot2CLVReverse(_id),
-                                                ws.getTopCLVReverse(_id),
-                                                ws.getLeftChildCLV(_id)));
+  if (root && !disp_ops) {
+    rsplit_ops.push_back(makeRightReverseSplitOpRoot(ws));
+    rsplit_ops.push_back(makeLeftReverseSplitOpRoot(ws));
   } else {
-    ws.registerBot1CLVReverse(_id);
-    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.getBot1CLVReverse(_id), ws.getRightChildCLV(_id), disp_ops));
-
-    ws.registerBot2CLVReverse(_id);
-    rsplit_ops.push_back(std::make_shared<ReverseSplitOperation>(
-        ws.getBot2CLVReverse(_id), ws.getLeftChildCLV(_id), disp_ops));
-  }
-  if (_incl_area_mask.hasValue()) {
-    rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(_incl_area_mask.get());
-    rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(_incl_area_mask.get());
-  }
-
-  if (_excl_area_mask.hasValue()) {
-    rsplit_ops[rsplit_ops.size() - 1]->setExclAreas(_excl_area_mask.get());
-    rsplit_ops[rsplit_ops.size() - 2]->setExclAreas(_excl_area_mask.get());
+    rsplit_ops.push_back(makeLeftReverseSplitOp(ws, disp_ops));
+    rsplit_ops.push_back(makeRightReverseSplitOp(ws, disp_ops));
   }
 
   if (_children[0]->isInternal()) {
-    auto child_trav =
-        _children[0]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-    auto child_disp_op = child_trav.second;
+    auto child_disp_op = _children[0]->traverseAndGenerateBackwardOperations(
+        ws, rm_map, pm_map, rsplit_ops);
 
     child_disp_op->terminateBot(ws.getBot1CLVReverse(_id));
-    rsplit_ops.insert(
-        rsplit_ops.end(), child_trav.first.begin(), child_trav.first.end());
   }
 
   if (_children[1]->isInternal()) {
-    auto child_trav =
-        _children[1]->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map);
-    auto child_disp_op = child_trav.second;
+    auto child_disp_op = _children[1]->traverseAndGenerateBackwardOperations(
+        ws, rm_map, pm_map, rsplit_ops);
 
     child_disp_op->terminateBot(ws.getBot2CLVReverse(_id));
-    rsplit_ops.insert(
-        rsplit_ops.end(), child_trav.first.begin(), child_trav.first.end());
   }
-  return {rsplit_ops, disp_ops};
+  return disp_ops;
 }
 
 auto Node::generateDispersionOperations(Workspace &ws,

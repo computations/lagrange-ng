@@ -102,7 +102,9 @@ auto Tree::generateForwardOperations(Workspace &ws,
                                      PeriodRateMatrixMap &rm_map,
                                      BranchProbMatrixMap &pm_map)
     -> std::vector<std::shared_ptr<SplitOperation>> {
-  return _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map).first;
+  std::vector<std::shared_ptr<SplitOperation>> split_ops;
+  _root->traverseAndGenerateForwardOperations(ws, rm_map, pm_map, split_ops);
+  return split_ops;
 }
 
 auto Tree::generateBackwardOperations(Workspace &ws)
@@ -116,12 +118,13 @@ auto Tree::generateBackwardOperations(Workspace &ws,
                                       PeriodRateMatrixMap &rm_map,
                                       BranchProbMatrixMap &pm_map)
     -> std::vector<std::shared_ptr<ReverseSplitOperation>> {
-  auto ret =
-      _root->traverseAndGenerateBackwardOperations(ws, rm_map, pm_map, true);
-  (ret.first[0])->makeRootOperation(ws.getBot1CLVReverse(_root->getId()));
-  (ret.first[1])->makeRootOperation(ws.getBot2CLVReverse(_root->getId()));
+  std::vector<std::shared_ptr<ReverseSplitOperation>> rsplit_ops;
+  auto ret = _root->traverseAndGenerateBackwardOperations(
+      ws, rm_map, pm_map, rsplit_ops, true);
+  (rsplit_ops[0])->makeRootOperation(ws.getBot1CLVReverse(_root->getId()));
+  (rsplit_ops[1])->makeRootOperation(ws.getBot2CLVReverse(_root->getId()));
 
-  return ret.first;
+  return rsplit_ops;
 }
 
 auto Tree::traversePreorderInternalNodesOnly() const -> std::vector<size_t> {
@@ -146,9 +149,8 @@ void Tree::assignTipData(
 
 auto Tree::getNewick() const -> std::string { return _root->getNewick() + ";"; }
 
-auto Tree::getNewickLambda(
-    const std::function<std::string(const Node &)> &newick_lambda) const
-    -> std::string {
+auto Tree::getNewickLambda(const std::function<std::string(const Node &)>
+                               &newick_lambda) const -> std::string {
   return _root->getNewickLambda(newick_lambda) + ";";
 }
 
