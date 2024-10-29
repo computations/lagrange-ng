@@ -193,7 +193,7 @@ If any of the arguments to the options has spaces, then it needs
 to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then
 control file needs to have 
 ```
-treefile = 'My Super Awesome Tree.nwk`
+treefile = 'My Super Awesome Tree.nwk'
 ```
 to be able to parse the tree. This holds true for taxa names in the `mrca`
 option, `mrca` names, user specified region names, and filenames.
