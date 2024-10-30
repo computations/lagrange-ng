@@ -21,7 +21,7 @@
 #include <utility>
 
 #include "AncSplit.hpp"
-#include "Arnoldi.hpp"
+#include "Expm.hpp"
 #include "Common.hpp"
 #include "Utils.hpp"
 #include "Workspace.hpp"

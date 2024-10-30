@@ -8,7 +8,7 @@ set(LAGRANGE_SOURCES
         Workspace.cpp
         Operation.cpp
         WorkerState.cpp
-        Arnoldi.cpp
+        Expm.cpp
         Fossil.cpp
         ConfigFile.cpp
         Alignment.cpp

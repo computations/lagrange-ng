@@ -1,6 +1,5 @@
-#include "Arnoldi.hpp"
+#include "Expm.hpp"
 
-#include <mkl.h>
 
 namespace lagrange {
 #define compute_index(A, r, c, lda) ((A)[(r) * (lda) + (c)])
