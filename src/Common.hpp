@@ -20,13 +20,6 @@
 
   #define COMPLEX_DATA_TYPE double
   #define lapack_complex_double std::complex<COMPLEX_DATA_TYPE>
-  #define lapack_complex_double_real(z) \
-    (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[0])
-  #define lapack_complex_double_imag(z) \
-    (reinterpret_cast<COMPLEX_DATA_TYPE *>(&z)[1])
-#else
-  #define lapack_complex_double_real(z) (z.real)
-  #define lapack_complex_double_imag(z) (z.imag)
 #endif
 
 #include "Quarantine.hpp"
@@ -96,7 +89,7 @@ struct PeriodParams {
   double operator[](size_t i) const {
     if (i == 0) { return dispersion_rate; }
     if (i == 1) { return extinction_rate; }
-    return NAN;
+    return std::numeric_limits<double>::quiet_NaN();
   }
 
   double &operator[](size_t i) {

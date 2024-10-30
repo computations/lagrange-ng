@@ -558,6 +558,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     i += 1;
   }
 
+  /* We now have _N and _D setup, so we need to compute _N * _D ^ -1*/
   {
 #ifdef MKL_ENABLED
     long long int *ipiv = (long long int *)malloc(sizeof(long long int)
@@ -593,6 +594,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     free(ipiv);
   }
 
+  /* We now have to rescale the matrix we just computed */
   auto &r1 = _N;
   auto &r2 = _D;
   for (int i = 0; i < scale_exp; ++i) {
@@ -696,12 +698,12 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   if (_expm_op != nullptr) {
     if (_expm_op->isArnoldiMode()) {
-      expm::multiply_arnoldi_chebyshev(ws,
-                                       _expm_op->rateMatrix(),
-                                       _bot_clv,
-                                       _top_clv,
-                                       _expm_op->transposed(),
-                                       _expm_op->getT());
+      expm::arnoldi_chebyshev(ws,
+                              _expm_op->rateMatrix(),
+                              _bot_clv,
+                              _top_clv,
+                              _expm_op->transposed(),
+                              _expm_op->getT());
     } else {
       if (_expm_op.use_count() > 1) {
         std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());

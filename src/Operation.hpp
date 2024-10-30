@@ -15,6 +15,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <unordered_map>
+#include <logger.hpp>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
@@ -267,7 +268,9 @@ class DispersionOperation {
     return _expm_op;
   }
 
-  void fallback() { _expm_op->setArnoldiMode(false); }
+  void fallback() { _expm_op->setArnoldiMode(false); 
+    MESSAGE_WARNING("Falling back to Pade Mode for this branch");
+  }
 
   void setChildOp(const std::shared_ptr<DispersionOperation>& op) {
     if (_child_op != nullptr) {
