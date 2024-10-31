@@ -22,6 +22,10 @@ struct Alignment {
   std::unordered_map<TaxaName, Range> data;
   size_t region_count;
   size_t taxa_count;
+
+  Range rangeUnion() const;
+  size_t usedRanges() const;
+  bool allRegionsValid() const;
 };
 
 enum class AlignmentFileType { FASTA, PHYLIP };

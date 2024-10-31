@@ -215,7 +215,18 @@ auto main(int argc, char *argv[]) -> int {
     Alignment data =
         read_alignment(config.data_filename(), config.alignment_file_type());
 
+    LOG(INFO, "Alignment has %lu regions", data.region_count);
+
     MESSAGE(INFO, "Checking data...");
+
+    if (!data.allRegionsValid()) { MESSAGE_ERROR("Some regions are invalid"); }
+
+    if (data.usedRanges() < data.region_count) {
+      MESSAGE_WARNING(
+          "The number of occupied regions is less than the region count")
+      LOG_WARNING("Occupied Regions: %lu", data.usedRanges());
+    }
+
     check_alignment_against_trees(data, intrees);
 
     if (data.region_count == 0) {

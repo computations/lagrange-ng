@@ -116,4 +116,22 @@ Alignment read_alignment(const std::filesystem::path& filename,
   std::ifstream alignment_file(filename);
   return read_alignment(alignment_file, type);
 }
+
+bool Alignment::allRegionsValid() const{
+  for (auto& kv : data) {
+    if (kv.second == 0){
+      return false;
+
+    }
+  }
+  return true;
+}
+
+Range Alignment::rangeUnion() const {
+  Range range_union = 0;
+  for (auto& kv : data) { range_union |= kv.second; }
+  return range_union;
+}
+
+size_t Alignment::usedRanges() const { return lagrange_popcount(rangeUnion()); }
 }  // namespace lagrange
