@@ -39,6 +39,10 @@ class Periods {
 
   size_t size() const { return _periods.size(); }
 
+  void scale(double s) {
+    for (auto p : _periods) { p *= s; }
+  }
+
  private:
   void terminate() {
     _periods.emplace_back(std::numeric_limits<double>::infinity());

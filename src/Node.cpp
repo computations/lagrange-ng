@@ -83,9 +83,8 @@ auto Node::getNewick() const -> std::string {
   return getNewickLambda(newick_lambda);
 }
 
-auto Node::getNewickLambda(
-    const std::function<std::string(const Node &)> &newick_lambda) const
-    -> std::string {
+auto Node::getNewickLambda(const std::function<std::string(const Node &)>
+                               &newick_lambda) const -> std::string {
   std::ostringstream newick_oss;
   for (size_t i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
@@ -163,8 +162,8 @@ auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-    -> std::shared_ptr<Node> {
+auto getNodeById(const std::shared_ptr<Node> &current,
+                 size_t id) -> std::shared_ptr<Node> {
   if (current->getId() == id) { return current; }
   for (const auto &c : current->_children) {
     auto tmp = getNodeById(c, id);

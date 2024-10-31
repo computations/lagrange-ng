@@ -91,8 +91,8 @@ class Node {
                                const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
-  friend auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-      -> std::shared_ptr<Node>;
+  friend auto getNodeById(const std::shared_ptr<Node> &current,
+                          size_t id) -> std::shared_ptr<Node>;
 
   auto traverseAndGenerateForwardOperations(Workspace &ws,
                                             PeriodRateMatrixMap &pm_map,
@@ -219,7 +219,7 @@ void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
 auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
                          const MRCALabel &mrca) -> std::shared_ptr<Node>;
 
-auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-    -> std::shared_ptr<Node>;
+auto getNodeById(const std::shared_ptr<Node> &current,
+                 size_t id) -> std::shared_ptr<Node>;
 }  // namespace lagrange
 #endif /* NODE_H_ */
