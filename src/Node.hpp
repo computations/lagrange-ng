@@ -49,6 +49,7 @@ class Node {
 
   auto getBL() const -> double;
   void setBL(double bl);
+  void scaleBranchLength(double scale);
 
   auto hasChild(const std::shared_ptr<Node> &test) -> bool;
   auto addChild(const std::shared_ptr<Node> &c) -> bool;

@@ -74,7 +74,8 @@ class Tree {
   auto getParent(const std::shared_ptr<Node> &n) const -> std::shared_ptr<Node>;
 
   void setHeightTopDown();
-  void setHeightBottomUp();
+  auto setHeightBottomUp() -> double;
+  void scaleBranchLengths(double);
   void setPeriods(const Periods &periods);
 
   auto getNewick() const -> std::string;

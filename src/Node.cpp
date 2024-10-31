@@ -43,6 +43,11 @@ auto Node::getBL() const -> double { return _branch_length; }
 
 void Node::setBL(double bl) { _branch_length = bl; }
 
+void Node::scaleBranchLength(double scale) {
+  _branch_length *= scale;
+  for (auto &c : _children) { c->scaleBranchLength(scale); }
+}
+
 auto Node::hasChild(const std::shared_ptr<Node> &test) -> bool {
   return std::any_of(_children.begin(), _children.end(), [&test](auto n) {
     return n == test;
