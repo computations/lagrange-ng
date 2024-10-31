@@ -6,6 +6,8 @@
 
 #include "Operation.hpp"
 
+#include <algorithm>
+
 #undef NDEBUG
 #include <cassert>
 #include <cmath>
@@ -21,8 +23,8 @@
 #include <utility>
 
 #include "AncSplit.hpp"
-#include "Expm.hpp"
 #include "Common.hpp"
+#include "Expm.hpp"
 #include "Utils.hpp"
 #include "Workspace.hpp"
 
@@ -48,9 +50,9 @@ inline void generate_splits(uint64_t state,
                             size_t max_areas,
                             std::vector<RegionSplit> &results) {
   assert(regions > 0);
+  if (state == 0) { return; }
   results.clear();
   uint64_t valid_region_mask = (1ULL << regions) - 1;
-  if (state == 0) { return; }
 
   if (lagrange_popcount(state) == 1) {
     results.push_back({state, state});
@@ -120,7 +122,7 @@ constexpr auto weighted_combine_check_happy_path(
     const Option<Range> &fixed_dist,
     Range excl_area_mask,
     Range incl_area_mask) {
-  return (states == max_areas) && (!fixed_dist.hasValue())
+  return (states == (1ul << max_areas)) && (!fixed_dist.hasValue())
          && (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 
@@ -698,12 +700,12 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   if (_expm_op != nullptr) {
     if (_expm_op->isArnoldiMode()) {
-      expm::arnoldi_chebyshev(ws,
-                              _expm_op->rateMatrix(),
-                              _bot_clv,
-                              _top_clv,
-                              _expm_op->transposed(),
-                              _expm_op->getT());
+      expm::arnoldi_pade(ws,
+                         _expm_op->rateMatrix(),
+                         _bot_clv,
+                         _top_clv,
+                         _expm_op->transposed(),
+                         _expm_op->getT());
     } else {
       if (_expm_op.use_count() > 1) {
         std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());

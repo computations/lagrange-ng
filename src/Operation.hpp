@@ -10,12 +10,12 @@
 #include <cstddef>
 #include <iostream>
 #include <limits>
+#include <logger.hpp>
 #include <memory>
 #include <mutex>
 #include <ostream>
 #include <stdexcept>
 #include <unordered_map>
-#include <logger.hpp>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
@@ -268,8 +268,10 @@ class DispersionOperation {
     return _expm_op;
   }
 
-  void fallback() { _expm_op->setArnoldiMode(false); 
-    MESSAGE_WARNING("Falling back to Pade Mode for this branch");
+  void fallback() {
+    _expm_op->setArnoldiMode(false);
+    LOG_WARNING("Falling back to Pade Mode for prob matrix %lu",
+                _prob_matrix_index);
   }
 
   void setChildOp(const std::shared_ptr<DispersionOperation>& op) {
