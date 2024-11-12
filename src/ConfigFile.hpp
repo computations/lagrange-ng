@@ -76,6 +76,15 @@ class ConfigFile {
   const Periods& periods() const;
   void periods(const Periods&);
 
+  void finalize_periods() {
+    finalize_periods(_region_count.get(), _max_areas.get());
+  }
+
+  void finalize_periods(size_t regions, size_t max_areas) {
+    _periods.setRegionCount(regions);
+    _periods.setMaxAreas(max_areas);
+  }
+
   const std::shared_ptr<MRCAEntry>& mrca(const MRCALabel&) const;
   const MRCAMap& mrcas() const;
   void add_mrca(const MRCALabel&, const std::shared_ptr<MRCAEntry>&);
@@ -129,6 +138,8 @@ class ConfigFile {
   std::filesystem::path jsonResultsFilename() const;
   std::filesystem::path nodeTreeFilename() const;
   std::filesystem::path scaledTreeFilename() const;
+  std::filesystem::path splitsTreeFilename() const;
+  std::filesystem::path statesTreeFilename() const;
   std::filesystem::path splitsCSVResultsFilename() const;
   std::filesystem::path statesCSVResultsFilename() const;
   std::filesystem::path periodsCSVResultsFilename() const;

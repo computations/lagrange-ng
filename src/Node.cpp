@@ -513,6 +513,42 @@ const SplitReturn &Node::getAncestralSplit() const {
 
 SplitReturn &Node::getAncestralSplit() { return _ancestral_split.value(); }
 
+AncSplit Node::getTopAncestralSplit() const {
+  if (_ancestral_split) {
+    auto state = getTopAncestralState();
+    auto &split = _ancestral_split.value().at(state);
+    auto best_split = std::max_element(
+        split.begin(), split.end(), [](const auto &a, const auto &b) {
+          return a.getWeight() > b.getWeight();
+        });
+    return *best_split;
+  }
+  throw std::runtime_error{"No ancestral splits assigned"};
+}
+
+Range Node::getTopAncestralState() const {
+  if (_ancestral_state) {
+    auto period_segment = *_periods.begin();
+
+    Range cur_range;
+    size_t cur_index;
+    Range best_range = 0;
+    double best_lh = -std::numeric_limits<double>::infinity();
+    size_t max_range = 1ul << period_segment.regions;
+    for (cur_range = 0, cur_index = 0; cur_range < max_range; ++cur_index,
+        cur_range = next_dist(cur_range, period_segment.max_areas)) {
+      double cur_lwr = _ancestral_state.value()[cur_index];
+      if (best_lh < cur_lwr) {
+        best_lh = cur_lwr;
+        best_range = cur_range;
+      }
+    }
+
+    return best_range;
+  }
+  throw std::runtime_error{"No ancestral states assigned"};
+}
+
 void Node::assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]> s) {
   _ancestral_state = std::move(s);
 }

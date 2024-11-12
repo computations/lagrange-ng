@@ -612,6 +612,18 @@ std::filesystem::path ConfigFile::scaledTreeFilename() const {
   return scaled_tree_filename;
 }
 
+std::filesystem::path ConfigFile::splitsTreeFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".splits.tre";
+  return scaled_tree_filename;
+}
+
+std::filesystem::path ConfigFile::statesTreeFilename() const {
+  auto scaled_tree_filename = _prefix;
+  scaled_tree_filename += ".states.tre";
+  return scaled_tree_filename;
+}
+
 std::filesystem::path ConfigFile::splitsCSVResultsFilename() const {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".splits.csv";

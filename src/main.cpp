@@ -150,7 +150,8 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   assign_results_to_tree(tree, config, context);
   write_result_files(tree, config, context);
   write_node_tree(tree, config);
-  write_scaled_tree(tree, config);
+  if (config.computeStates()) { write_states_tree(tree, config); }
+  if (config.computeSplits()) { write_splits_tree(tree, config); }
 }
 
 static ConfigFile read_config_file(const std::string &filename) {
@@ -224,6 +225,8 @@ auto main(int argc, char *argv[]) -> int {
 
     config.region_count(data.region_count);
     if (!config.has_max_areas()) { config.max_areas(config.region_count()); }
+
+    config.finalize_periods();
 
     MESSAGE(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
