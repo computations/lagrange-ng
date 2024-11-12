@@ -255,8 +255,8 @@ class DispersionOperation {
   auto printStatus(const std::shared_ptr<Workspace>& ws,
                    size_t tabLevel = 0) const -> std::string;
 
-  auto ready(const std::shared_ptr<Workspace>& ws, ClockTick deadline) const
-      -> bool {
+  auto ready(const std::shared_ptr<Workspace>& ws,
+             ClockTick deadline) const -> bool {
     if (ws->lastUpdateCLV(_bot_clv) > deadline) { return true; }
     return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }

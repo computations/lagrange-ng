@@ -147,9 +147,8 @@ void Tree::assignTipData(
 
 auto Tree::getNewick() const -> std::string { return _root->getNewick() + ";"; }
 
-auto Tree::getNewickLambda(
-    const std::function<std::string(const Node &)> &newick_lambda) const
-    -> std::string {
+auto Tree::getNewickLambda(const std::function<std::string(const Node &)>
+                               &newick_lambda) const -> std::string {
   return _root->getNewickLambda(newick_lambda) + ";";
 }
 

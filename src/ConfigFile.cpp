@@ -241,9 +241,9 @@ OptimizationMethod parse_opt_method(const std::string& method_string) {
   }
   if (method_string == "bobyqa") { return OptimizationMethod::BOBYQA; }
   if (method_string == "cobyla") { return OptimizationMethod::COBYLA; }
-  if (method_string == "bfgs") {return OptimizationMethod::BFGS;}
-  if (method_string == "direct") {return OptimizationMethod::DIRECT;}
-  if (method_string == "stogo") {return OptimizationMethod::STOGO;}
+  if (method_string == "bfgs") { return OptimizationMethod::BFGS; }
+  if (method_string == "direct") { return OptimizationMethod::DIRECT; }
+  if (method_string == "stogo") { return OptimizationMethod::STOGO; }
 
   return OptimizationMethod::UNKNOWN;
 }
