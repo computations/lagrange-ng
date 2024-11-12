@@ -52,9 +52,10 @@ lagrange-ng <CONTROL FILE>
 ```
 
 After computation, there will be 3 results files: `<treefile>.nodes.tre`, `<treefile>.results.json`, and
-`<treefile>.scaled.tre`. The `<treefile>.nodes.tre` contains the input tree with nodes labeled according to the
+`<treefile>.states.tre`. The `<treefile>.nodes.tre` contains the input tree with nodes labeled according to the
 `<treefile.results.json` indices. This is so that the entries in the results file can be matched to the inner nodes of
-the tree. The `<treefile>.results.json` file contains the
+the tree. `<treefile>.states.tre` contains the best states for each node which was specified in the config file (to
+specify individual nodes, see the section "Control File Options").
 
 ## Example
 
@@ -140,8 +141,12 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 - `datafile`: Path to the matrix in either PHYLIP or FASTA format. In both
   cases, leading zeros are significant, I.E. `0011` is not the same as `11`.
 - `areanames`: A space separated list of region names, which will be used for reference in the output. Required.
-- `states`: Compute the ancestral states after fitting model parameters.
-- `splits`: Compute ancestral splits after fitting model parameters.
+- `states`: Compute the ancestral states after fitting model parameters. When this is set, the best ancestral node
+  states will be written to the file `<prefix>.states.tre` as inner node labels.
+- `splits`: Compute ancestral splits after fitting model parameters. When this option is set, the best ancestral split
+  _conditioned on the best ancestral state_ will be written to the file `<prefix>.splits.tre`. Splits are given as node
+  labels on inner nodes, in the form `<left range> | <right range>`, and the range is given as a list of area names with
+  underscores (`_`) between each region.
 - `workers`: Number of workers to use for execution. The optimal number of workers depends on both the size of the
   phylogeny, and the number of regions in the matrix. However, except for small problems (low number of regions and a
   small phylogeny), setting the number of workers to the number of available physical cores will give good results.
