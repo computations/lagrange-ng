@@ -5,6 +5,7 @@
 #include <logger.hpp>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "Alignment.hpp"
@@ -101,11 +102,11 @@ class ConfigFile {
   bool compute_all_states() const;
   void compute_all_states(bool);
 
-  const std::vector<MRCALabel>& state_nodes() const;
-  void state_nodes(const std::vector<MRCALabel>&);
+  const std::unordered_set<MRCALabel>& state_nodes() const;
+  void state_nodes(const std::unordered_set<MRCALabel>&);
 
-  const std::vector<MRCALabel>& split_nodes() const;
-  void split_nodes(const std::vector<MRCALabel>&);
+  const std::unordered_set<MRCALabel>& split_nodes() const;
+  void split_nodes(const std::unordered_set<MRCALabel>&);
 
   PeriodParams period_params() const;
   void period_params(double, double);
@@ -148,6 +149,7 @@ class ConfigFile {
 
   bool computeStates() const;
   bool computeSplits() const;
+  bool computeStatesStrict() const;
 
  private:
   static ConfigFile parse_config_file(std::istream& instream);
@@ -223,8 +225,8 @@ class ConfigFile {
   bool _all_splits = false;
   bool _all_states = false;
 
-  std::vector<MRCALabel> _state_nodes;
-  std::vector<MRCALabel> _split_nodes;
+  std::unordered_set<MRCALabel> _state_nodes;
+  std::unordered_set<MRCALabel> _split_nodes;
 
   double _dispersion = 0.01;
   double _extinction = 0.01;

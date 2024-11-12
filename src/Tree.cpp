@@ -17,6 +17,7 @@
 #include "MRCA.hpp"
 #include "Node.hpp"
 #include "Operation.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -178,6 +179,11 @@ void Tree::setPeriods(const Periods &periods) {
 void Tree::assignMCRALabels(const MRCAMap &mrca_map) {
   for (const auto &kv : mrca_map) {
     auto n = getMRCA(kv.second);
+    if (!n) {
+      LOG_ERROR(
+          "MRCA '%s' not found, please check that the tips exist in the tree",
+          kv.first.c_str());
+    }
     n->setMRCALabel(kv.first);
   }
 }
@@ -190,13 +196,5 @@ void Tree::assignStateResult(std::unique_ptr<LagrangeMatrixBase[]> r,
 void Tree::assignSplitResult(const SplitReturn &r,
                              const MRCALabel &mrca_label) {
   getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
-}
-
-auto Tree::inverseNodeIdMap() const -> std::unordered_map<size_t, size_t> {
-  auto map = traversePreorderInternalNodesOnlyNumbers();
-  std::unordered_map<size_t, size_t> inv_map;
-  for (size_t i = 0; i < map.size(); ++i) { inv_map[map[i]] = i; }
-
-  return inv_map;
 }
 }  // namespace lagrange

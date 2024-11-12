@@ -5,10 +5,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 #include "Fossil.hpp"
-#include "IO.hpp"
-#include "logger.hpp"
 
 namespace lagrange {
 enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
@@ -176,6 +175,11 @@ std::vector<std::string> parse_list(ConfigLexer& lexer) {
   return values;
 }
 
+std::unordered_set<std::string> parse_set(ConfigLexer& lexer) {
+  auto tmp = parse_list(lexer);
+  return {tmp.begin(), tmp.end()};
+}
+
 double parse_double(ConfigLexer& lexer) {
   lexer.expect(ConfigLexemeType::VALUE);
 
@@ -312,13 +316,13 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
         if (report_value != "split") { config._all_splits = false; }
       } else if (config_value == "splits") {
         if (lexer.peak() == ConfigLexemeType::VALUE) {
-          config._split_nodes = parse_list(lexer);
+          config._split_nodes = parse_set(lexer);
         } else {
           config._all_splits = true;
         }
       } else if (config_value == "states") {
         if (lexer.peak() == ConfigLexemeType::VALUE) {
-          config._state_nodes = parse_list(lexer);
+          config._state_nodes = parse_set(lexer);
         } else {
           config._all_states = true;
         }
@@ -512,19 +516,19 @@ bool ConfigFile::compute_all_states() const { return _all_states; }
 
 void ConfigFile::compute_all_states(bool b) { _all_states = b; }
 
-const std::vector<MRCALabel>& ConfigFile::state_nodes() const {
+const std::unordered_set<MRCALabel>& ConfigFile::state_nodes() const {
   return _state_nodes;
 }
 
-void ConfigFile::state_nodes(const std::vector<MRCALabel>& labels) {
+void ConfigFile::state_nodes(const std::unordered_set<MRCALabel>& labels) {
   _state_nodes = labels;
 }
 
-const std::vector<MRCALabel>& ConfigFile::split_nodes() const {
+const std::unordered_set<MRCALabel>& ConfigFile::split_nodes() const {
   return _split_nodes;
 }
 
-void ConfigFile::split_nodes(const std::vector<MRCALabel>& labels) {
+void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
   _split_nodes = labels;
 }
 
@@ -654,8 +658,12 @@ std::filesystem::path ConfigFile::nodeInfoCSVResultsFilename() const {
   return scaled_tree_filename;
 }
 
-bool ConfigFile::computeStates() const {
+bool ConfigFile::computeStatesStrict() const {
   return _all_states || !_state_nodes.empty();
+}
+
+bool ConfigFile::computeStates() const {
+  return _all_states || !_state_nodes.empty() || computeSplits();
 }
 
 bool ConfigFile::computeSplits() const {

@@ -558,10 +558,14 @@ class LLHGoal {
 
 class StateLHGoal {
  public:
-  StateLHGoal(size_t parent_clv, size_t lchild_clv, size_t rchild_clv) :
+  StateLHGoal(size_t node_id,
+              size_t parent_clv,
+              size_t lchild_clv,
+              size_t rchild_clv) :
       _parent_clv_index{parent_clv},
       _lchild_clv_index{lchild_clv},
       _rchild_clv_index{rchild_clv},
+      _node_id{node_id},
       _result{nullptr},
       _states{0} {}
 
@@ -572,6 +576,7 @@ class StateLHGoal {
       _parent_clv_index{other._parent_clv_index},
       _lchild_clv_index{other._lchild_clv_index},
       _rchild_clv_index{other._rchild_clv_index},
+      _node_id{other._node_id},
       _fixed_dist{other._fixed_dist},
       _excl_area_mask{other._excl_area_mask},
       _incl_area_mask{other._incl_area_mask},
@@ -582,9 +587,9 @@ class StateLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline auto result() const {
-    decltype(_result) ret{new decltype(_result)::element_type[_states]};
-    for (size_t i = 0; i < _states; i++) { ret.get()[i] = _result.get()[i]; }
+  inline auto result() const -> std::unique_ptr<LagrangeMatrixBase[]> {
+    std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
+    for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
     return ret;
   }
 
@@ -598,10 +603,14 @@ class StateLHGoal {
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
+  inline size_t node_id() const { return _node_id; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  size_t _node_id;
 
   Option<Range> _fixed_dist;
   Range _excl_area_mask = 0;
@@ -615,10 +624,14 @@ class StateLHGoal {
 
 class SplitLHGoal {
  public:
-  SplitLHGoal(size_t parent_clv, size_t lchild_clv, size_t rchild_clv) :
+  SplitLHGoal(size_t node_id,
+              size_t parent_clv,
+              size_t lchild_clv,
+              size_t rchild_clv) :
       _parent_clv_index{parent_clv},
       _lchild_clv_index{lchild_clv},
-      _rchild_clv_index{rchild_clv} {}
+      _rchild_clv_index{rchild_clv},
+      _node_id{node_id} {}
 
   void eval(const std::shared_ptr<Workspace>&);
 
@@ -632,10 +645,14 @@ class SplitLHGoal {
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
+  inline size_t node_id() const { return _node_id; }
+
  private:
   size_t _parent_clv_index;
   size_t _lchild_clv_index;
   size_t _rchild_clv_index;
+
+  size_t _node_id;
 
   Option<Range> _fixed_dist;
   Range _excl_area_mask = 0;

@@ -3,6 +3,7 @@
 #include <nlopt.hpp>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
@@ -44,7 +45,8 @@ void Context::registerLHGoal() {
 
 std::function<void(Node&)> Context::makeStateGoalCB() {
   auto cb = [&](Node& n) {
-    _state_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
+    _state_lh_goal.emplace_back(n.getId(),
+                                _workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
                                 _workspace->getRightChildCLV(n.getId()));
     if (n.getIncludedAreas().hasValue()) {
@@ -62,7 +64,8 @@ std::function<void(Node&)> Context::makeStateGoalCB() {
 
 std::function<void(Node&)> Context::makeSplitGoalCB() {
   auto cb = [&](Node& n) {
-    _split_lh_goal.emplace_back(_workspace->getTopCLVReverse(n.getId()),
+    _split_lh_goal.emplace_back(n.getId(),
+                                _workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
                                 _workspace->getRightChildCLV(n.getId()));
     if (n.getIncludedAreas().hasValue()) {
@@ -87,7 +90,7 @@ void Context::registerStateLHGoal() {
 }
 
 void Context::registerStateLHGoal(
-    const std::vector<std::string>& mrca_keys,
+    const std::unordered_set<std::string>& mrca_keys,
     const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
         mrca_map) {
   auto cb = makeStateGoalCB();
@@ -100,7 +103,7 @@ void Context::registerSplitLHGoal() {
 }
 
 void Context::registerSplitLHGoal(
-    const std::vector<std::string>& mrca_keys,
+    const std::unordered_set<std::string>& mrca_keys,
     const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
         mrca_map) {
   auto cb = makeSplitGoalCB();
@@ -114,7 +117,7 @@ void Context::registerGoals(const std::function<void(Node&)>& cb) {
 }
 
 void Context::registerGoals(
-    const std::vector<std::string> mrca_keys,
+    const std::unordered_set<std::string> mrca_keys,
     const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>& mrca_map,
     const std::function<void(Node&)>& cb) {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
@@ -292,16 +295,16 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
  * requires that the forward operations be computed first.
  *
  * Returns:
- *   a map (really a vector) from node id to result. The result is a col
+ *   a map from node id to result. The result is a col
  * vector indexed by lagrange_dist_t, where each entry contains the likelihood
  * of that particular distribution at that node.
  */
 auto Context::getStateResults() const
-    -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>> {
-  std::vector<std::unique_ptr<LagrangeMatrixBase[]>> states;
+    -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> {
+  std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> states;
   states.reserve(_state_lh_goal.size());
 
-  for (auto& op : _state_lh_goal) { states.push_back(op.result()); }
+  for (auto& op : _state_lh_goal) { states[op.node_id()] = op.result(); }
 
   return states;
 }
@@ -310,7 +313,7 @@ auto Context::getSplitResults() const -> SplitReturnList {
   SplitReturnList splits;
   splits.reserve(_split_lh_goal.size());
 
-  for (auto& op : _split_lh_goal) { splits.push_back(op.result()); }
+  for (auto& op : _split_lh_goal) { splits[op.node_id()] = op.result(); }
 
   return splits;
 }
@@ -340,7 +343,7 @@ std::string Context::treeCLVStatus() const {
 #endif
 
 auto Context::computeStateGoal(WorkerState& ts)
-    -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>> {
+    -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> {
   auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeStateGoal(ts, tc);

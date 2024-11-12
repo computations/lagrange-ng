@@ -51,8 +51,8 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
 }
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
-    -> std::unique_ptr<LagrangeMatrixBase[]> {
+    const std::unique_ptr<LagrangeMatrixBase[]> &states,
+    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]> {
   std::unique_ptr<LagrangeMatrixBase[]> normalized_states{
       new LagrangeMatrixBase[states_len]};
 
@@ -230,6 +230,7 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
   auto total_states = context.stateCount();
 
   auto cb = [&outfile, max_areas, total_states](const Node &n) {
+    if (!n.hasAncestralState()) { return; }
     auto node_label = n.getNodeLabel();
     const auto &states = n.getAncestralState();
 
@@ -269,6 +270,7 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
   auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
 
   auto cb = [&outfile](const Node &n) {
+    if (!n.hasAncestralSplit()) { return; }
     auto node_label = n.getNodeLabel();
     auto splits = n.getAncestralSplit();
 
@@ -391,7 +393,7 @@ inline auto make_annotated_splits_newick_lambda(
   return [&](const Node &n) -> std::string {
     std::ostringstream oss;
     if (n.isTip()) { oss << n.getNodeLabel(); }
-    if (n.isInternal()) {
+    if (n.isInternal() && n.hasAncestralSplit()) {
       auto anc_split = n.getTopAncestralSplit();
       oss << lagrange_convert_dist_string(anc_split.l_dist, region_names);
       oss << "|";
@@ -407,7 +409,7 @@ inline auto make_annotated_states_newick_lambda(
   return [&](const Node &n) -> std::string {
     std::ostringstream oss;
     if (n.isTip()) { oss << n.getNodeLabel(); }
-    if (n.isInternal()) {
+    if (n.isInternal() && n.hasAncestralState()) {
       oss << lagrange_convert_dist_string(n.getTopAncestralState(),
                                           region_names);
     }
