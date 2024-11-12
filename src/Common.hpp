@@ -96,7 +96,7 @@ struct PeriodParams {
   double operator[](size_t i) const {
     if (i == 0) { return dispersion_rate; }
     if (i == 1) { return extinction_rate; }
-    return NAN;
+    return std::numeric_limits<double>::quiet_NaN();
   }
 
   double &operator[](size_t i) {

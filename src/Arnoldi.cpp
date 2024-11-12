@@ -75,13 +75,8 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                                 bool transposed,
                                 double t) {
   if (t == 0.0) {
-#if MKL_ENABLED
-    mkl_dcopy(
-        ws->CLVSize(), ws->CLV(clv_src_index), 1, ws->CLV(clv_dst_index), 1);
-#else
     cblas_dcopy(
         ws->CLVSize(), ws->CLV(clv_src_index), 1, ws->CLV(clv_dst_index), 1);
-#endif
   }
   // allocate buffers
   constexpr int m = 20;
