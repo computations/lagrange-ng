@@ -37,18 +37,42 @@ constexpr LagrangeComplex ROOT[] = {
 namespace expm {
 
 /**
- * Construct Q and H such that Q * f(H) * v = f(At) * v
+ * Construct $Q$ and $H$ such that $Q  f(H)  v = f(At)v$
+ *
+ * Uses the normal Arnoldi process, with a modified Gram-Schmidt process to
+ * normalize the basis vectors.
+ *
+ * For more information, please see Algorithm 6.2 in [1].
+ *
+ * [1]: Y. Saad, “Iterative Methods for Sparse Linear Systems”.
+ *
+ * @param[in] A The input matrix to factorize/reduce. A should be a square
+ * matrix with dimensions `n*n` entries.
+ *
+ * @param[out] Q Output buffer for the $Q$ portion of the factorized matrix. $Q$
+ * is a dense matrix of orthoganal basis vectors
+ *
+ * @param[out] H Output buffer for the $H$ portion of the factorized matrix. $H$
+ * is an lower Hessenberg matrix (a mostly triangular matrix).
+ *
+ * @param[in] v
+ * @param[in]   t
+ * @param[in]   beta
+ * @param[in]   n
+ * @param[in]   m
+ * @param[in]   leading_dim
+ * @param[in]   transpose
  */
-inline void arnoldi(const double* A,
-                    double* Q,
-                    double* H,
-                    const double* v,
-                    double t,
-                    double beta,
-                    int n,
-                    int m,
-                    int leading_dim,
-                    bool transpose) {
+inline void arnoldi_gs(const double* A,
+                       double* Q,
+                       double* H,
+                       const double* v,
+                       double t,
+                       double beta,
+                       int n,
+                       int m,
+                       int leading_dim,
+                       bool transpose) {
   constexpr double termination_epsilon = 1e-12;
   const size_t matrix_size = n * n;
 
@@ -84,7 +108,11 @@ inline void arnoldi(const double* A,
   cblas_dscal(n, 1.0 / beta, Q, submatrix_dim);
 
   for (int j = 0; j < m; j++) {
-    // candidate for the next basis: w = A * q_j+1
+    double* Q_j = Q + j;
+    double* w = Q + j + 1;
+
+    /* candidate for the next basis: w = A * Q_j
+     * and place w in Q_{j+1} */
     cblas_dgemv(CblasRowMajor,
                 CblasNoTrans,
                 n,
@@ -92,36 +120,96 @@ inline void arnoldi(const double* A,
                 1.0,
                 local_A.get(),
                 n,
-                Q + j,
+                Q_j,
                 submatrix_dim,
                 0.0,
-                Q + j + 1,
+                w,
                 submatrix_dim);
 
-    // remove components in directions of other bases
+    // remove components in directions of other bases using Gram-Schmidt????
     for (int i = 0; i <= j; i++) {
-      /* Compute the dot product between Q_i and Q_j */
-      const double hij =
-          cblas_ddot(n, Q + i, submatrix_dim, Q + j + 1, submatrix_dim);
+      /* Compute the dot product between Q_i and w */
+      const double hij = cblas_ddot(n, Q + i, submatrix_dim, w, submatrix_dim);
 
       /* Place the result in H at i, j */
       compute_index(H, i, j, m) = hij;
 
-      /* Multiply the vector Q_i by the scalar -hij and add it to Q_{j+1} */
-      cblas_daxpy(n, -hij, Q + i, submatrix_dim, Q + j + 1, submatrix_dim);
+      /* Multiply the vector Q_i by the scalar -hij and add it to w
+       * Equivalently,
+       *
+       *   Q_{j+1} += (Q_i, w) * Q_i
+       *
+       * where (.,.) is the dot product.
+       *
+       */
+      cblas_daxpy(n, -hij, Q + i, submatrix_dim, w, submatrix_dim);
     }
 
     // compute next basis
-    const double Q_j1_norm = cblas_dnrm2(n, Q + j + 1, submatrix_dim);
+    const double w_norm = cblas_dnrm2(n, w, submatrix_dim);
     /* Check if the vector is zero. If it is, the rest are also zero, and we
      * can break early. */
-    if (Q_j1_norm < termination_epsilon) { break; }
+    if (w_norm < termination_epsilon) { break; }
 
     /* Basis norm goes on the diagonal */
-    compute_index(H, j + 1, j, m) = Q_j1_norm;
+    compute_index(H, j + 1, j, m) = w_norm;
 
     /* Normalize the basis vector in Q_{j+1} */
-    cblas_dscal(n, 1.0 / Q_j1_norm, Q + j + 1, submatrix_dim);
+    cblas_dscal(n, 1.0 / w_norm, w, submatrix_dim);
+  }
+}
+
+inline void arnoldi_householder(const double* A,
+                                double* Q,
+                                double* H,
+                                const double* v,
+                                double t,
+                                double beta,
+                                int n,
+                                int m,
+                                int leading_dim,
+                                bool transpose) {
+  constexpr double termination_epsilon = 1e-12;
+  const size_t matrix_size = n * n;
+
+  /* Allocate space for At */
+  thread_local auto local_A =
+      std::make_unique<LagrangeMatrixBase[]>(matrix_size);
+
+  /* A := At */
+  for (size_t i = 0; i < n * n; i++) { local_A[i] = A[i] * t; }
+
+  const int submatrix_dim = m + 1;
+
+  // arnoldi iteration
+  std::fill(Q, Q + n * submatrix_dim, 0.0);
+  std::fill(H, H + submatrix_dim * m, 0.0);
+
+  /* The first basis is compuputed outside of the loop */
+  cblas_dcopy(n, v, 1, Q, submatrix_dim);
+  cblas_dscal(n, 1.0 / beta, Q, submatrix_dim);
+
+  for (size_t j = 0; j < m; ++j) {
+    double* Q_j = Q + j;
+    double* w = Q + j + 1;
+
+    /* candidate for the next basis: w = A * Q_j
+     * and place w in Q_{j+1} */
+    cblas_dgemv(CblasRowMajor,
+                CblasNoTrans,
+                n,
+                n,
+                1.0,
+                local_A.get(),
+                n,
+                Q_j,
+                submatrix_dim,
+                0.0,
+                w,
+                submatrix_dim);
+
+    /* Now, we need to orthogonalize Q_{j+1} */
+    for (size_t i = 0; i < n; ++i) { double norm; }
   }
 }
 
@@ -245,12 +333,9 @@ inline void pade(
   double sign = -1.0;
 
   cblas_dcopy(m * m, H, 1, _X_1.get(), 1);
-
-  for (size_t i = 0; i < m * m; i++) {
-    _X_2.get()[i] = 0.0;
-    _N.get()[i] = 0.0;
-    _D.get()[i] = 0.0;
-  }
+  std::fill(_X_2.get(), _X_2.get() + m * m, 0.0);
+  std::fill(_N.get(), _N.get() + m * m, 0.0);
+  std::fill(_D.get(), _D.get() + m * m, 0.0);
 
   for (size_t i = 0; i < static_cast<size_t>(m); i++) {
     _N.get()[i * m + i] = 1.0;
@@ -393,7 +478,8 @@ void arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
   thread_local auto H = std::make_unique<LagrangeMatrixBase[]>((m + 1) * m);
   const double beta = cblas_dnrm2(n, src_clv, 1);
 
-  arnoldi(A, Q.get(), H.get(), src_clv, t, beta, n, m, leading_dim, transpose);
+  arnoldi_gs(
+      A, Q.get(), H.get(), src_clv, t, beta, n, m, leading_dim, transpose);
   chebyshev(Q.get(), H.get(), dst_clv, beta, n, m);
 }
 
@@ -414,15 +500,65 @@ void arnoldi_pade(const std::shared_ptr<Workspace> ws,
   const auto& A = ws->rateMatrix(rate_matrix_index);
 
   int n = static_cast<int>(ws->matrixRows());
-  constexpr int m = 20;
+  constexpr int m = 8;
   int leading_dim = static_cast<int>(ws->leadingDimension());
 
   thread_local auto Q = std::make_unique<LagrangeMatrixBase[]>(n * (m + 1));
   thread_local auto H = std::make_unique<LagrangeMatrixBase[]>((m + 1) * m);
   const double beta = cblas_dnrm2(n, src_clv, 1);
 
-  arnoldi(A, Q.get(), H.get(), src_clv, t, beta, n, m, leading_dim, transpose);
+  arnoldi_gs(
+      A, Q.get(), H.get(), src_clv, t, beta, n, m, leading_dim, transpose);
   pade(Q.get(), H.get(), dst_clv, beta, n, m);
+}
+
+void generate_rate_matrix(
+    double* A,
+    size_t lda,
+    size_t restricted_state_count,
+    size_t max_areas,
+    size_t regions,
+    std::function<double(RangeIndex, RangeIndex)> dispersion_rate,
+    double extinction_rate) {
+  const size_t matrix_size = lda * restricted_state_count;
+
+  size_t source_index;
+  Range source_dist;
+
+  for (source_index = 0, source_dist = 0; source_index < restricted_state_count;
+       source_dist = next_dist(source_dist, static_cast<uint32_t>(max_areas)),
+      ++source_index) {
+    size_t dest_index = 0;
+    Range dest_dist = 0;
+    for (dest_index = 0, dest_dist = 0; dest_index < restricted_state_count;
+         dest_dist = next_dist(dest_dist, static_cast<uint32_t>(max_areas)),
+        ++dest_index) {
+      if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
+
+      if (source_dist < dest_dist && source_dist != 0) {
+        double sum = 0.0;
+        RangeIndex i = lagrange_fast_log2(source_dist ^ dest_dist);
+        for (RangeIndex j = 0; j < regions; ++j) {
+          sum += dispersion_rate(i, j) * lagrange_bextr(source_dist, j);
+        }
+
+        A[source_index * lda + dest_index] = sum;
+      }
+
+      else if (source_dist != 0) {
+        A[source_index * lda + dest_index] = extinction_rate;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < restricted_state_count; i++) {
+    double sum = 0.0;
+    for (size_t j = 0; j < restricted_state_count; j++) {
+      sum += A[i * lda + j];
+    }
+    assert(sum >= 0);
+    A[i * lda + i] = -sum;
+  }
 }
 
 };  // namespace expm

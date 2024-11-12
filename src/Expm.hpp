@@ -6,6 +6,7 @@
 #ifndef LAGRANGE_CPP_ARNOLDI_H
 #define LAGRANGE_CPP_ARNOLDI_H
 
+#include <functional>
 #include <memory>
 
 #include "Workspace.hpp"
@@ -24,10 +25,18 @@ void arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                        double t);
 
 void arnoldi_pade(const std::shared_ptr<Workspace> ws,
-                       size_t rate_matrix_index,
-                       size_t clv_src_index,
-                       size_t clv_dst_index,
-                       bool transpose,
-                       double t);
+                  size_t rate_matrix_index,
+                  size_t clv_src_index,
+                  size_t clv_dst_index,
+                  bool transpose,
+                  double t);
+
+void generate_rate_matrix(double* A,
+                          size_t lda,
+                          size_t restricted_state_count,
+                          size_t max_areas,
+                          size_t regions,
+                          std::function<double(RangeIndex, RangeIndex)> dispersion_rate,
+                          double extinction_rate);
 }}  // namespace lagrange::expm
 #endif  // LAGRANGE_CPP_ARNOLDI_H

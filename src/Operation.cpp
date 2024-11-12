@@ -59,7 +59,6 @@ inline void generate_splits(uint64_t state,
     return;
   }
 
-  // results.reserve(regions);
   for (size_t i = 0; i < regions; i++) {
     uint64_t x = 1ULL << i;
     if ((state & x) == 0) { continue; }
@@ -326,51 +325,17 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   const auto &period = ws->getPeriodParams(_period_index);
 
-  size_t source_index = 0;
-  Range source_dist = 0;
+  auto dsp_l = [&period](Range src, Range dst) {
+    return period.getDispersionRate(src, dst);
+  };
 
-  for (source_index = 0, source_dist = 0;
-       source_index < ws->restrictedStateCount();
-       source_dist =
-           next_dist(source_dist, static_cast<uint32_t>(ws->maxAreas())),
-      ++source_index) {
-    size_t dest_index = 0;
-    Range dest_dist = 0;
-
-    for (dest_index = 0, dest_dist = 0; dest_index < ws->restrictedStateCount();
-         dest_dist =
-             next_dist(dest_dist, static_cast<uint32_t>(ws->maxAreas())),
-        ++dest_index) {
-      if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
-
-      /* Source is "gaining" a region, so we add */
-      if (source_dist < dest_dist && source_dist != 0) {
-        double sum = 0.0;
-        size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
-        for (size_t j = 0; j < ws->regions(); ++j) {
-          sum +=
-              period.getDispersionRate(i, j) * lagrange_bextr(source_dist, j);
-        }
-
-        rm[ws->computeMatrixIndex(source_index, dest_index)] = sum;
-
-      }
-      /* Otherwise, source is loosing a region, so we just set the value */
-      else if (source_dist != 0) {
-        rm[ws->computeMatrixIndex(source_index, dest_index)] =
-            period.getExtinctionRate();
-      }
-    }
-  }
-
-  for (size_t i = 0; i < ws->restrictedStateCount(); i++) {
-    double sum = 0.0;
-    for (size_t j = 0; j < ws->restrictedStateCount(); j++) {
-      sum += rm[ws->computeMatrixIndex(i, j)];
-    }
-    assert(sum >= 0);
-    rm[ws->computeMatrixIndex(i, i)] = -sum;
-  }
+  expm::generate_rate_matrix(rm,
+                             ws->leadingDimension(),
+                             ws->restrictedStateCount(),
+                             ws->maxAreas(),
+                             ws->regions(),
+                             dsp_l,
+                             period.getExtinctionRate());
 
   _last_execution = ws->advanceClock();
   ws->updateRateMatrixAndAdvanceClock(_rate_matrix_index);

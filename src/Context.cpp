@@ -286,7 +286,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
   double obj_val = 0;
 
   opt.optimize(results, obj_val);
-  LOG_INFO("Optimum found in %lu likelhood evaluations evaluations", oc.f_evals);
+  LOG_INFO("Optimum found in %lu likelhood evaluations", oc.f_evals);
 
   return obj_val;
 }
