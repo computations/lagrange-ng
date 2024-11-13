@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "Common.hpp"
 #include "Fossil.hpp"
 
 namespace lagrange {
@@ -95,7 +96,7 @@ class ConfigLexer {
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
-      throw ConfigFileLexingError{std::string("Float conversion failed around")
+      throw ConfigFileLexingError{std::string("Int conversion failed around")
                                   + describePosition()};
     }
     return val;
@@ -472,9 +473,9 @@ void ConfigFile::rate_matrix_filename(const std::filesystem::path& path) {
 
 bool ConfigFile::has_max_areas() const { return _max_areas.hasValue(); }
 
-size_t ConfigFile::max_areas() const { return _max_areas.get(); }
+RangeSize ConfigFile::max_areas() const { return _max_areas.get(); }
 
-void ConfigFile::max_areas(size_t m) { _max_areas = m; }
+void ConfigFile::max_areas(RangeSize m) { _max_areas = m; }
 
 const std::vector<std::string>& ConfigFile::area_names() const {
   return _area_names;
@@ -571,9 +572,9 @@ void ConfigFile::alignment_file_type(const AlignmentFileType& type) {
   _alignment_file_type = type;
 }
 
-size_t ConfigFile::region_count() const { return _region_count.get(); }
+RangeSize ConfigFile::region_count() const { return _region_count.get(); }
 
-void ConfigFile::region_count(size_t r) { _region_count = r; }
+void ConfigFile::region_count(RangeSize r) { _region_count = r; }
 
 size_t ConfigFile::workers() const {
   if (_workers.hasValue()) { return _workers.get(); }

@@ -45,10 +45,10 @@ static auto operator<<(std::ostream &os,
   return os;
 }
 
-inline void generate_splits(uint64_t state,
-                            size_t regions,
-                            size_t max_areas,
-                            std::vector<RegionSplit> &results) {
+inline void generate_splits(Range state,
+                            RangeSize regions,
+                            RangeSize max_areas,
+                            std::vector<RangeSplit> &results) {
   assert(regions > 0);
   if (state == 0) { return; }
   results.clear();
@@ -75,10 +75,10 @@ inline void generate_splits(uint64_t state,
 }
 
 inline void join_splits(Range splitting_dist,
-                        size_t dist_index,
-                        size_t regions,
-                        size_t max_areas,
-                        std::vector<RegionSplit> &splits,
+                        RangeIndex dist_index,
+                        RangeSize regions,
+                        RangeSize max_areas,
+                        std::vector<RangeSplit> &splits,
                         const LagrangeConstColVector &c1,
                         const LagrangeConstColVector &c2,
                         LagrangeColVector dest,
@@ -100,11 +100,13 @@ inline void join_splits(Range splitting_dist,
 }
 
 /* Produces a dist -> index map */
-static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
-  size_t max_state = 1ULL << regions;
-  std::vector<size_t> ret(max_state, std::numeric_limits<size_t>::max());
+static std::vector<RangeIndex> invert_dist_map(RangeSize regions,
+                                               RangeSize max_areas) {
+  Range max_state = 1ULL << regions;
+  std::vector<RangeIndex> ret(max_state,
+                              std::numeric_limits<RangeIndex>::max());
 
-  size_t index = 0;
+  RangeIndex index = 0;
   Range dist = 0;
 
   for (index = 0, dist = 0; dist < max_state;
@@ -117,7 +119,7 @@ static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
 
 constexpr auto weighted_combine_check_happy_path(
     size_t states,
-    size_t max_areas,
+    RangeSize max_areas,
     const Option<Range> &fixed_dist,
     Range excl_area_mask,
     Range incl_area_mask) {
@@ -128,8 +130,8 @@ constexpr auto weighted_combine_check_happy_path(
 inline void weighted_combine(const LagrangeConstColVector &c1,
                              const LagrangeConstColVector &c2,
                              size_t states,
-                             size_t regions,
-                             size_t max_areas,
+                             RangeSize regions,
+                             RangeSize max_areas,
                              LagrangeColVector dest,
                              size_t c1_scale,
                              size_t c2_scale,
@@ -142,7 +144,7 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
   bool scale = true;
 
-  std::vector<RegionSplit> splits;
+  std::vector<RangeSplit> splits;
 
   if (weighted_combine_check_happy_path(
           states, max_areas, fixed_dist, excl_area_mask, incl_area_mask)) {
@@ -153,9 +155,9 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
     }
   } else {
     Range dist = 0;
-    size_t index = 0;
+    RangeIndex index = 0;
     const auto dist_map = invert_dist_map(regions, max_areas);
-    const auto dist_map_func = [&dist_map](Range d) -> size_t {
+    const auto dist_map_func = [&dist_map](Range d) -> RangeIndex {
       return dist_map.at(d);
     };
 
@@ -193,9 +195,9 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
 inline void reverse_join_splits(Range i,
                                 size_t states,
-                                size_t regions,
-                                size_t max_areas,
-                                std::vector<RegionSplit> &splits,
+                                RangeSize regions,
+                                RangeSize max_areas,
+                                std::vector<RangeSplit> &splits,
                                 const LagrangeConstColVector &c1,
                                 const LagrangeConstColVector &c2,
                                 bool &scale,
@@ -206,9 +208,9 @@ inline void reverse_join_splits(Range i,
 
   double weight = 1.0 / static_cast<double>(splits.size());
   for (auto &p : splits) {
-    size_t l_index = dist_map(p.left);
-    size_t r_index = dist_map(p.right);
-    size_t i_index = dist_map(i);
+    RangeIndex l_index = dist_map(p.left);
+    RangeIndex r_index = dist_map(p.right);
+    RangeIndex i_index = dist_map(i);
     assert(l_index < states);
     assert(r_index < states);
     assert(i_index < states);
@@ -223,8 +225,8 @@ inline void reverse_join_splits(Range i,
 inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
                                      const LagrangeConstColVector &c2,
                                      size_t states,
-                                     size_t regions,
-                                     size_t max_areas,
+                                     RangeSize regions,
+                                     RangeSize max_areas,
                                      LagrangeColVector dest,
                                      size_t c1_scale,
                                      size_t c2_scale,
@@ -235,7 +237,7 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
   assert(states != 0);
   bool scale = true;
 
-  std::vector<RegionSplit> splits;
+  std::vector<RangeSplit> splits;
 
   if (max_areas == regions && !fixed_dist.hasValue()) {
     const auto identity_func = [](Range d) -> size_t { return d; };
@@ -253,12 +255,12 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
-    const auto dist_map_func = [&dist_map](Range d) -> size_t {
+    const auto dist_map_func = [&dist_map](Range d) -> RangeIndex {
       return dist_map.at(d);
     };
 
     Range dist = 0;
-    size_t index = 0;
+    RangeIndex index = 0;
 
     while (true) {
       auto next_dist_index =
@@ -299,7 +301,7 @@ inline auto make_tabs(size_t tabLevel) -> std::string {
   return tabs.str();
 }
 
-inline auto boarder_line(const std::string &tabs,
+inline auto border_line(const std::string &tabs,
                          const std::string &corner_char) -> std::string {
   std::ostringstream line;
 
@@ -311,11 +313,11 @@ inline auto boarder_line(const std::string &tabs,
 }
 
 inline auto opening_line(const std::string &tabs) -> std::string {
-  return boarder_line(tabs, "┌");
+  return border_line(tabs, "┌");
 }
 
 inline auto closing_line(const std::string &tabs) -> std::string {
-  return boarder_line(tabs, "└");
+  return border_line(tabs, "└");
 }
 
 void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
@@ -967,7 +969,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   const auto &lchild_clv = ws->CLV(_lchild_clv_index);
   const auto &rchild_clv = ws->CLV(_rchild_clv_index);
 
-  std::vector<RegionSplit> splits;
+  std::vector<RangeSplit> splits;
 
   for (Range index = 0; index < ws->restrictedStateCount(); index++) {
     if (_fixed_dist.hasValue() && _fixed_dist.get() != index) { continue; }

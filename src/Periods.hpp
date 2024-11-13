@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <vector>
+#include "Common.hpp"
 
 namespace lagrange {
 
@@ -44,19 +45,19 @@ class Periods {
   void scale(double s) {
     for (auto p : _periods) { p *= s; }
   }
-  void setMaxAreas(size_t);
-  void setRegionCount(size_t);
+  void setMaxAreas(RangeSize);
+  void setRegionCount(RangeSize);
 
-  size_t regions() const;
-  size_t maxAreas() const;
+  RangeSize regions() const;
+  RangeSize maxAreas() const;
 
  private:
   void terminate() {
     _periods.emplace_back(std::numeric_limits<double>::infinity());
   }
 
-  size_t _regions;
-  size_t _max_areas;
+  RangeSize _regions;
+  RangeSize _max_areas;
 
   std::vector<double> _periods;
 };
@@ -70,8 +71,8 @@ class PeriodSpan {
     Iterator(double start,
              double len,
              size_t index,
-             size_t regions,
-             size_t max_areas,
+             RangeSize regions,
+             RangeSize max_areas,
              Periods::const_iterator period) :
         _time{start},
         _length{len},
@@ -109,8 +110,8 @@ class PeriodSpan {
     double _time;
     double _length;
     size_t _index;
-    size_t _regions;
-    size_t _max_areas;
+    RangeSize _regions;
+    RangeSize _max_areas;
     Periods::const_iterator _period;
   };
 
@@ -150,8 +151,8 @@ class PeriodSpan {
   size_t _start_index;
   double _start_time;
   double _length;
-  size_t _max_areas;
-  size_t _regions;
+  RangeSize _max_areas;
+  RangeSize _regions;
 
   Periods::const_iterator _begin;
   Periods::const_iterator _end;

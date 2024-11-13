@@ -27,7 +27,7 @@ namespace lagrange {
 
 class Context {
  public:
-  Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas) :
+  Context(std::shared_ptr<Tree> tree, RangeSize regions, RangeSize max_areas) :
       _tree{std::move(tree)},
       _workspace{std::make_shared<Workspace>(
           _tree->getTipCount(), regions, max_areas)},

@@ -68,8 +68,8 @@ class ConfigFile {
   void rate_matrix_filename(const std::filesystem::path&);
 
   bool has_max_areas() const;
-  size_t max_areas() const;
-  void max_areas(size_t);
+  RangeSize max_areas() const;
+  void max_areas(RangeSize);
 
   const std::vector<std::string>& area_names() const;
   void area_names(const std::vector<std::string>&);
@@ -121,8 +121,8 @@ class ConfigFile {
   AlignmentFileType alignment_file_type() const;
   void alignment_file_type(const AlignmentFileType&);
 
-  size_t region_count() const;
-  void region_count(size_t);
+  RangeSize region_count() const;
+  void region_count(RangeSize);
 
   size_t workers() const;
   void workers(size_t);
@@ -212,8 +212,6 @@ class ConfigFile {
 
   Option<std::filesystem::path> _rate_matrix_filename;
 
-  Option<size_t> _max_areas;
-
   std::vector<std::string> _area_names;
 
   Periods _periods;
@@ -237,7 +235,8 @@ class ConfigFile {
 
   Option<AlignmentFileType> _alignment_file_type;
 
-  Option<size_t> _region_count;
+  Option<RangeSize> _region_count;
+  Option<RangeSize> _max_areas;
   Option<size_t> _workers;
   Option<size_t> _threads_per_worker;
   Option<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};

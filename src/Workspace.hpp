@@ -34,8 +34,8 @@ class Workspace {
  public:
   Workspace(size_t taxa_count,
             size_t inner_count,
-            size_t regions,
-            size_t max_areas) :
+            RangeSize regions,
+            RangeSize max_areas) :
       _taxa_count{taxa_count},
       _inner_count{inner_count},
       _regions{regions},
@@ -63,7 +63,7 @@ class Workspace {
         lagrange_compute_restricted_state_count(_regions, _max_areas);
   }
 
-  Workspace(size_t taxa_count, size_t regions, size_t max_areas) :
+  Workspace(size_t taxa_count, RangeSize regions, RangeSize max_areas) :
       Workspace(taxa_count, taxa_count - 1, regions, max_areas) {}
 
   ~Workspace();
@@ -121,8 +121,8 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline auto updateProbMatrix(size_t index, const LagrangeConstMatrix &A)
-      -> ClockTick {
+  inline auto updateProbMatrix(size_t index,
+                               const LagrangeConstMatrix &A) -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -197,7 +197,7 @@ class Workspace {
 
   inline auto states() const -> size_t { return _states; }
 
-  inline auto regions() const -> size_t { return _regions; }
+  inline auto regions() const -> RangeSize { return _regions; }
 
   inline auto probMatrixCount() const -> size_t { return _prob_matrix.size(); }
 
@@ -337,7 +337,7 @@ class Workspace {
     return _restricted_state_count;
   }
 
-  inline auto maxAreas() const -> size_t { return _max_areas; }
+  inline auto maxAreas() const -> RangeSize { return _max_areas; }
 
   inline auto matrixRows() const -> size_t { return restrictedStateCount(); }
 
@@ -352,11 +352,12 @@ class Workspace {
 
   size_t _taxa_count;
   size_t _inner_count;
-  size_t _regions;
   size_t _states;
-  size_t _max_areas;
   size_t _restricted_state_count;
   size_t _next_free_clv;
+
+  RangeSize _max_areas;
+  RangeSize _regions;
 
   size_t _leading_dim;
 

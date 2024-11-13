@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <logger.hpp>
 #include <sstream>
 #include <string>
@@ -27,7 +28,7 @@ Alignment read_fasta(std::istream& instream) {
 
   size_t line_number = 1;
 
-  size_t region_count = 0;
+  RangeSize region_count = 0;
 
   std::string line;
   TaxaName taxa_name;
@@ -71,13 +72,22 @@ Alignment read_fasta(std::istream& instream) {
 Alignment read_phylip(std::istream& instream) {
   Alignment alignment;
 
+  bool good = true;
   TaxaName taxa_name;
   std::string data_string;
 
   instream >> alignment.taxa_count;
-  instream >> alignment.region_count;
 
-  bool good = true;
+  size_t tmp_size;
+  instream >> tmp_size;
+  if (tmp_size > std::numeric_limits<RangeSize>::max()) {
+    MESSAGE(
+        ERROR,
+        "The number of regions specified in the phylip header is too large.")
+    good = false;
+  }
+  alignment.region_count = tmp_size;
+
   while (instream >> taxa_name) {
     instream >> data_string;
     if (data_string.size() != alignment.region_count) {
@@ -117,12 +127,9 @@ Alignment read_alignment(const std::filesystem::path& filename,
   return read_alignment(alignment_file, type);
 }
 
-bool Alignment::allRegionsValid() const{
+bool Alignment::allRegionsValid() const {
   for (auto& kv : data) {
-    if (kv.second == 0){
-      return false;
-
-    }
+    if (kv.second == 0) { return false; }
   }
   return true;
 }
@@ -133,5 +140,7 @@ Range Alignment::rangeUnion() const {
   return range_union;
 }
 
-size_t Alignment::usedRanges() const { return lagrange_popcount(rangeUnion()); }
+RangeSize Alignment::usedRanges() const {
+  return lagrange_popcount(rangeUnion());
+}
 }  // namespace lagrange

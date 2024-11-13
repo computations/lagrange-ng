@@ -25,13 +25,13 @@
 
 namespace lagrange {
 
-Node::Node() : _branch_length(0.0), _height(0.0), _id(0) {}
+Node::Node() : _branch_length{0.0}, _height{0.0}, _id{0}, _label{} {}
 
-Node::Node(double bl, std::string inname) :
+Node::Node(double bl, std::string label) :
     _branch_length(bl),
     _height(0.0),
     _id(0),
-    _label(std::move(inname)) {}
+    _label(std::move(label)) {}
 
 auto Node::isTip() const -> bool { return _children.empty(); }
 
@@ -457,13 +457,13 @@ void Node::setPeriodSegments(const Periods &periods) {
 
 auto Node::getRateMatrixOperation(Workspace &ws,
                                   PeriodRateMatrixMap &rm_map,
-                                  size_t period) const
+                                  size_t period_index) const
     -> std::shared_ptr<MakeRateMatrixOperation> {
-  auto it = rm_map.find(period);
+  auto it = rm_map.find(period_index);
   if (it == rm_map.end()) {
     auto rm = std::make_shared<MakeRateMatrixOperation>(
-        ws.reserveRateMatrixIndex(period), period);
-    rm_map.emplace(period, rm);
+        ws.reserveRateMatrixIndex(period_index), period_index);
+    rm_map.emplace(period_index, rm);
     return rm;
   }
   if (it->second == nullptr) {
@@ -537,10 +537,10 @@ Range Node::getTopAncestralState() const {
     auto period_segment = *_periods.begin();
 
     Range cur_range;
-    size_t cur_index;
+    RangeIndex cur_index;
     Range best_range = 0;
     double best_lh = -std::numeric_limits<double>::infinity();
-    size_t max_range = 1ul << period_segment.regions;
+    Range max_range = 1ul << period_segment.regions;
     for (cur_range = 0, cur_index = 0; cur_range < max_range; ++cur_index,
         cur_range = next_dist(cur_range, period_segment.max_areas)) {
       double cur_lwr = state[cur_index];

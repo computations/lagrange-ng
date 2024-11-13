@@ -10,7 +10,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <logger.hpp>
 #include <memory>
 #include <stdexcept>
@@ -24,7 +23,6 @@
 #include "Context.hpp"
 #include "IO.hpp"
 #include "TreeReader.hpp"
-#include "Utils.hpp"
 #include "WorkerState.hpp"
 
 using namespace lagrange;

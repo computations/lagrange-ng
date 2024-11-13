@@ -15,9 +15,8 @@
 
 namespace lagrange {
 
-auto lagrange_convert_dist_string(Range dist,
-                                  const std::vector<std::string> &names)
-    -> std::string {
+auto lagrange_convert_dist_string(
+    Range dist, const std::vector<std::string> &names) -> std::string {
   if (dist == 0) { return {}; }
   std::ostringstream oss;
 
@@ -76,10 +75,12 @@ constexpr inline auto combinations(uint64_t n, uint64_t i) -> size_t {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
-    -> size_t {
-  size_t sum = 0;
-  for (size_t i = 0; i <= max_areas; i++) { sum += combinations(regions, i); }
+auto lagrange_compute_restricted_state_count(RangeSize regions,
+                                             RangeSize max_areas) -> RangeSize {
+  RangeSize sum = 0;
+  for (RangeSize i = 0; i <= max_areas; i++) {
+    sum += combinations(regions, i);
+  }
   return sum;
 }
 
@@ -102,7 +103,7 @@ static auto compute_skips(size_t i, size_t n) -> size_t {
   return skips;
 }
 
-auto compute_index_from_dist(Range i, size_t max_areas) -> size_t {
+auto compute_index_from_dist(Range i, RangeSize max_areas) -> RangeSize {
   if (lagrange_popcount(i) > max_areas) {
     throw UtilDistIndexConversionException{};
   }
@@ -119,9 +120,8 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
   return static_cast<size_t>(temp);
 }
 
-auto convert_dist_string_to_dist(const std::string &dist,
-                                          const std::vector<std::string> &names)
-    -> Range {
+auto convert_dist_string_to_dist(
+    const std::string &dist, const std::vector<std::string> &names) -> Range {
   Range ret = 0;
   auto start = dist.begin();
   auto end = dist.begin();
@@ -141,10 +141,9 @@ auto convert_dist_string_to_dist(const std::string &dist,
   return ret;
 }
 
-auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Range {
+auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range {
   Range d = 0;
-  for (size_t i = 0; i < dist.size(); i++) {
+  for (RangeIndex i = 0; i < dist.size(); i++) {
     if (dist[i] == '1') { d |= 1ull << (dist.size() - i - 1); }
   }
   return d;

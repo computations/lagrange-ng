@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "Common.hpp"
+
 #undef NDEBUG
 #include <cassert>
 
@@ -52,19 +54,19 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
 
 auto normalize_state_distribution_by_lwr(
     const std::unique_ptr<LagrangeMatrixBase[]> &states,
-    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]> {
+    size_t state_count) -> std::unique_ptr<LagrangeMatrixBase[]> {
   std::unique_ptr<LagrangeMatrixBase[]> normalized_states{
-      new LagrangeMatrixBase[states_len]};
+      new LagrangeMatrixBase[state_count]};
 
-  for (size_t i = 0; i < states_len; i++) {
+  for (size_t i = 0; i < state_count; i++) {
     normalized_states.get()[i] = states.get()[i];
   }
 
   double max_llh = -std::numeric_limits<double>::infinity();
 
-  assert(states_len != 1);
+  assert(state_count != 1);
 
-  for (size_t i = 0; i < states_len; ++i) {
+  for (size_t i = 0; i < state_count; ++i) {
     double tmp = normalized_states.get()[i];
 
     max_llh = std::max(max_llh, tmp);
@@ -73,12 +75,12 @@ auto normalize_state_distribution_by_lwr(
   assert(std::isfinite(max_llh));
 
   double total_llh = 0.0;
-  for (size_t i = 1; i < states_len; i++) {
+  for (size_t i = 1; i < state_count; i++) {
     total_llh += std::exp(normalized_states.get()[i] - max_llh);
   }
   assert(std::isfinite(total_llh));
 
-  for (size_t i = 0; i < states_len; i++) {
+  for (size_t i = 0; i < state_count; i++) {
     double tmp = std::exp(normalized_states.get()[i] - max_llh) / total_llh;
 
     normalized_states.get()[i] = tmp;
@@ -90,12 +92,14 @@ auto normalize_state_distribution_by_lwr(
 auto make_state_results_for_node(
     const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
     const std::vector<std::string> &region_names,
-    size_t states_len,
-    size_t max_areas) -> nlohmann::json {
+    size_t state_count,
+    RangeIndex max_areas) -> nlohmann::json {
   nlohmann::json node_json;
   auto lwr_distribution =
-      normalize_state_distribution_by_lwr(state_distribution, states_len);
-  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+      normalize_state_distribution_by_lwr(state_distribution, state_count);
+  Range dist;
+  RangeIndex dist_index;
+  for (dist = 0, dist_index = 0; dist_index < state_count;
        ++dist_index, dist = next_dist(dist, max_areas)) {
     nlohmann::json tmp;
     tmp["distribution"] = dist;
@@ -112,10 +116,12 @@ auto make_state_results_for_node(
 auto make_split_results_for_node(SplitReturn &splits,
                                  const std::vector<std::string> &region_names,
                                  size_t states_len,
-                                 size_t max_areas) -> nlohmann::json {
+                                 RangeIndex max_areas) -> nlohmann::json {
   nlohmann::json node_json;
   normalize_split_distribution_by_lwr(splits);
-  for (size_t dist = 0, dist_index = 0; dist_index < states_len;
+  Range dist;
+  RangeIndex dist_index;
+  for (dist = 0, dist_index = 0; dist_index < states_len;
        ++dist_index, dist = next_dist(dist, max_areas)) {
     for (const auto &sp : splits[dist]) {
       nlohmann::json anc_json;
@@ -149,8 +155,8 @@ auto make_split_results_for_node(SplitReturn &splits,
 
 auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
                             const std::vector<std::string> &region_names,
-                            size_t states_len,
-                            size_t max_areas) -> nlohmann::json {
+                            size_t state_count,
+                            RangeSize max_areas) -> nlohmann::json {
   nlohmann::json root_json;
 
   auto cb = [&](Node &n) {
@@ -159,11 +165,11 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
     node_json["number"] = n.getNodeLabel();
     if (n.hasAncestralSplit()) {
       node_json["splits"] = make_split_results_for_node(
-          n.getAncestralSplit(), region_names, states_len, max_areas);
+          n.getAncestralSplit(), region_names, state_count, max_areas);
     }
     if (n.hasAncestralState()) {
       node_json["states"] = make_state_results_for_node(
-          n.getAncestralState(), region_names, states_len, max_areas);
+          n.getAncestralState(), region_names, state_count, max_areas);
     }
     root_json.push_back(node_json);
   };

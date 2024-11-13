@@ -8,8 +8,11 @@
 #include <vector>
 
 namespace lagrange {
+
+using Clade = std::vector<std::string>;
+
 struct MRCAEntry {
-  std::vector<std::string> clade;
+  Clade clade;
 
   bool in(const std::string &key) const {
     return std::any_of(clade.begin(),

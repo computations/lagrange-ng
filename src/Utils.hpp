@@ -18,7 +18,7 @@
 
 namespace lagrange {
 
-struct RegionSplit {
+struct RangeSplit {
   Range left;
   Range right;
 };
@@ -38,7 +38,7 @@ constexpr inline auto lagrange_clz(Range a) -> size_t {
 inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
     -> Range {
   Range ret = 0;
-  size_t area_count = vec_dist.size();
+  RangeSize area_count = vec_dist.size();
 
   for (size_t i = 0; i < area_count; ++i) {
     ret |= static_cast<Range>(vec_dist[i]) << i;
@@ -70,27 +70,24 @@ inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
   return best_dist;
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
-    -> size_t;
+auto lagrange_compute_restricted_state_count(RangeSize regions,
+                                             RangeSize max_areas) -> RangeSize;
 
-auto compute_index_from_dist(Range i, size_t max_areas) -> size_t;
+auto compute_index_from_dist(Range i, RangeSize max_areas) -> RangeIndex;
 
-auto lagrange_convert_dist_string(Range dist,
-                                  const std::vector<std::string> &names)
-    -> std::string;
+auto lagrange_convert_dist_string(
+    Range dist, const std::vector<std::string> &names) -> std::string;
 
-auto convert_dist_string_to_dist(const std::string &dist,
-                                          const std::vector<std::string> &names)
-    -> Range;
+auto convert_dist_string_to_dist(
+    const std::string &dist, const std::vector<std::string> &names) -> Range;
 
-auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Range;
+auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-constexpr inline auto next_dist(Range d, uint32_t n) -> Range {
+constexpr inline auto next_dist(Range d, RangeSize n) -> Range {
   d += 1;
-  while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
+  while (static_cast<RangeSize>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
 }
 
@@ -105,11 +102,11 @@ constexpr inline auto check_incl_dist(Range dist, Range incl_dist) -> bool {
 }
 
 constexpr inline auto next_dist(Range d,
-                                uint32_t n,
+                                RangeSize n,
                                 size_t index,
                                 Range excl_area_mask = 0,
                                 Range incl_area_mask = 0)
-    -> std::pair<Range, size_t> {
+    -> std::pair<Range, RangeSize> {
   auto next = next_dist(d, n);
   index += 1;
   if (check_excl_dist(next, excl_area_mask)

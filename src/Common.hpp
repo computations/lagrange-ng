@@ -27,7 +27,11 @@
 namespace lagrange {
 
 using Range = uint64_t;
+using RangeMask = Range;
 using RangeIndex = uint8_t;
+using RangeSize = uint8_t;
+
+using Scaler = uint32_t;
 
 using ClockTick = uint64_t;
 using Clock = std::atomic<uint64_t>;
@@ -79,7 +83,8 @@ struct PeriodParams {
     return os.str();
   }
 
-  inline auto getDispersionRate(size_t from, size_t to) const -> double {
+  inline auto getDispersionRate(RangeIndex from,
+                                RangeIndex to) const -> double {
     return dispersion_rate
            * (adjustment_matrix != nullptr ? (*adjustment_matrix)[from][to]
                                            : 1.0);
