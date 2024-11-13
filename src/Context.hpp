@@ -11,6 +11,7 @@
 #include <nlopt.hpp>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -35,17 +36,17 @@ class Context {
   void registerLHGoal();
   void registerStateLHGoal();
   void registerStateLHGoal(
-      const std::vector<std::string>& mrca_keys,
+      const std::unordered_set<std::string>& mrca_keys,
       const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
           mrca_map);
   void registerSplitLHGoal();
   void registerSplitLHGoal(
-      const std::vector<std::string>& mrca_keys,
+      const std::unordered_set<std::string>& mrca_keys,
       const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
           mrca_map);
 
   auto getStateResults() const
-      -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
+      -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   auto getSplitResults() const -> SplitReturnList;
 
   void registerTipClvs(const std::unordered_map<std::string, Range>& dist_data);
@@ -58,7 +59,7 @@ class Context {
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
   auto computeStateGoal(WorkerState& ts)
-      -> std::vector<std::unique_ptr<LagrangeMatrixBase[]>>;
+      -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
 
   auto toString() const -> std::string;
@@ -107,7 +108,7 @@ class Context {
 
   void registerGoals(const std::function<void(Node&)>& func);
   void registerGoals(
-      const std::vector<std::string> mrca_keys,
+      const std::unordered_set<std::string> mrca_keys,
       const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
           mrca_map,
       const std::function<void(Node&)>& func);

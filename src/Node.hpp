@@ -165,6 +165,10 @@ class Node {
 
   const std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState() const;
   const SplitReturn &getAncestralSplit() const;
+
+  AncSplit getTopAncestralSplit() const;
+  Range getTopAncestralState() const;
+
   std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState();
   SplitReturn &getAncestralSplit();
 

@@ -48,7 +48,7 @@ class AncSplit {
 
 using SplitReturn = std::unordered_map<Range, std::vector<AncSplit>>;
 
-using SplitReturnList = std::vector<SplitReturn>;
+using SplitReturnList = std::unordered_map<size_t, SplitReturn>;
 
 }  // namespace lagrange
 #endif /* ANCSPLIT_H_ */

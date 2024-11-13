@@ -51,8 +51,8 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
 }
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
-    -> std::unique_ptr<LagrangeMatrixBase[]> {
+    const std::unique_ptr<LagrangeMatrixBase[]> &states,
+    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]> {
   std::unique_ptr<LagrangeMatrixBase[]> normalized_states{
       new LagrangeMatrixBase[states_len]};
 
@@ -230,6 +230,7 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
   auto total_states = context.stateCount();
 
   auto cb = [&outfile, max_areas, total_states](const Node &n) {
+    if (!n.hasAncestralState()) { return; }
     auto node_label = n.getNodeLabel();
     const auto &states = n.getAncestralState();
 
@@ -269,6 +270,7 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
   auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
 
   auto cb = [&outfile](const Node &n) {
+    if (!n.hasAncestralSplit()) { return; }
     auto node_label = n.getNodeLabel();
     auto splits = n.getAncestralSplit();
 
@@ -386,6 +388,36 @@ inline auto make_annotated_node_newick_lambda() {
   };
 }
 
+inline auto make_annotated_splits_newick_lambda(
+    const std::vector<std::string> &region_names) {
+  return [&](const Node &n) -> std::string {
+    std::ostringstream oss;
+    if (n.isTip()) { oss << n.getNodeLabel(); }
+    if (n.isInternal() && n.hasAncestralSplit()) {
+      auto anc_split = n.getTopAncestralSplit();
+      oss << lagrange_convert_dist_string(anc_split.l_dist, region_names);
+      oss << "|";
+      oss << lagrange_convert_dist_string(anc_split.r_dist, region_names);
+    }
+    oss << ":" + std::to_string(n.getBL());
+    return oss.str();
+  };
+}
+
+inline auto make_annotated_states_newick_lambda(
+    const std::vector<std::string> &region_names) {
+  return [&](const Node &n) -> std::string {
+    std::ostringstream oss;
+    if (n.isTip()) { oss << n.getNodeLabel(); }
+    if (n.isInternal() && n.hasAncestralState()) {
+      oss << lagrange_convert_dist_string(n.getTopAncestralState(),
+                                          region_names);
+    }
+    oss << ":" + std::to_string(n.getBL());
+    return oss.str();
+  };
+}
+
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config) {
   auto node_tree_filename = config.nodeTreeFilename();
@@ -400,9 +432,32 @@ void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto scaled_tree_filename = config.scaledTreeFilename();
   LOG(INFO, "Writing scaled tree to %s", scaled_tree_filename.c_str());
+
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
             << std::endl;
+}
+
+void write_states_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config) {
+  auto states_tree_filename = config.statesTreeFilename();
+  LOG(INFO, "Writing states tree to %s", states_tree_filename.c_str());
+
+  std::ofstream states_tree(states_tree_filename);
+  states_tree << tree->getNewickLambda(
+      make_annotated_states_newick_lambda(config.area_names()))
+              << std::endl;
+}
+
+void write_splits_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config) {
+  auto splits_tree_filename = config.splitsTreeFilename();
+  LOG(INFO, "Writing splits tree to %s", splits_tree_filename.c_str());
+
+  std::ofstream splits_tree(splits_tree_filename);
+  splits_tree << tree->getNewickLambda(
+      make_annotated_splits_newick_lambda(config.area_names()))
+              << std::endl;
 }
 
 auto init_json(const std::shared_ptr<const Tree> &tree,

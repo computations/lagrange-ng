@@ -45,6 +45,12 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config);
 
+void write_states_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config);
+
+void write_splits_tree(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config);
+
 auto init_json(const std::shared_ptr<const Tree> &tree,
                const ConfigFile &config) -> nlohmann::json;
 

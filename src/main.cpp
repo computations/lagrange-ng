@@ -75,30 +75,24 @@ static void setup_tree(const std::shared_ptr<Tree> &tree,
 static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
                                    const ConfigFile &config,
                                    const Context &context) {
-  auto states = context.getStateResults();
-  auto inv_map = tree->inverseNodeIdMap();
-  if (config.compute_all_states()) {
+  if (config.computeStates()) {
+    auto states = context.getStateResults();
     auto cb = [&](Node &n) {
-      n.assignAncestralState(std::move(states[inv_map[n.getId()]]));
+      if (auto result = states.find(n.getId()); result != states.end()) {
+        n.assignAncestralState(std::move(result->second));
+      }
     };
     tree->applyPreorderInternalOnly(cb);
-  } else if (!config.state_nodes().empty()) {
-    for (size_t iter = 0; iter < config.state_nodes().size(); ++iter) {
-      tree->assignStateResult(std::move(states[iter]),
-                              config.state_nodes()[iter]);
-    }
   }
 
-  auto splits = context.getSplitResults();
-  if (config.compute_all_splits()) {
+  if (config.computeSplits()) {
+    auto splits = context.getSplitResults();
     auto cb = [&](Node &n) {
-      n.assignAncestralSplit(std::move(splits[inv_map[n.getId()]]));
+      if (auto result = splits.find(n.getId()); result != splits.end()) {
+        n.assignAncestralSplit(std::move(result->second));
+      }
     };
     tree->applyPreorderInternalOnly(cb);
-  } else if (!config.split_nodes().empty()) {
-    for (size_t iter = 0; iter < config.split_nodes().size(); ++iter) {
-      tree->assignSplitResult(splits[iter], config.split_nodes()[iter]);
-    }
   }
 }
 
@@ -111,14 +105,18 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
 
   Context context(tree, config.region_count(), config.max_areas());
   context.registerLHGoal();
-  if (config.compute_all_states()) {
+  if (config.compute_all_states() || config.compute_all_splits()) {
     context.registerStateLHGoal();
-  } else if (!config.state_nodes().empty()) {
-    context.registerStateLHGoal(config.state_nodes(), config.mrcas());
+  } else if (config.computeStates()) {
+    auto tmp_nodes = config.state_nodes();
+    for (const auto &split_node : config.split_nodes()) {
+      tmp_nodes.insert(split_node);
+    }
+    context.registerStateLHGoal(tmp_nodes, config.mrcas());
   }
   if (config.compute_all_splits()) {
     context.registerSplitLHGoal();
-  } else if (!config.split_nodes().empty()) {
+  } else if (config.computeSplits()) {
     context.registerSplitLHGoal(config.split_nodes(), config.mrcas());
   }
   context.set_opt_method(config.opt_method());
@@ -150,7 +148,8 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   assign_results_to_tree(tree, config, context);
   write_result_files(tree, config, context);
   write_node_tree(tree, config);
-  write_scaled_tree(tree, config);
+  if (config.computeStatesStrict()) { write_states_tree(tree, config); }
+  if (config.computeSplits()) { write_splits_tree(tree, config); }
 }
 
 static ConfigFile read_config_file(const std::string &filename) {
@@ -235,6 +234,8 @@ auto main(int argc, char *argv[]) -> int {
 
     config.region_count(data.region_count);
     if (!config.has_max_areas()) { config.max_areas(config.region_count()); }
+
+    config.finalize_periods();
 
     MESSAGE(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
