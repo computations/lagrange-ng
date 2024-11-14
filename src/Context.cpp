@@ -196,35 +196,35 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
   double initial_lh = computeLLH(ts, tc);
 
   if (mode == LagrangeOperationMode::EVALUATE) {
-    LOG(INFO, "LLH:%f", initial_lh);
+    LOG(INFO, "LLH: {:.7}", initial_lh);
     auto params = currentParams();
     for (const auto& p : params) {
       LOG(INFO,
-          "Dispersion: %f, Extinction: %f",
+          "Dispersion: {:.7}, Extinction: {:.7}",
           p.dispersion_rate,
           p.extinction_rate);
     }
   }
 
   if (mode == LagrangeOperationMode::OPTIMIZE) {
-    LOG(INFO, "Initial LLH: %f", initial_lh);
+    LOG(INFO, "Initial LLH: {:.7}", initial_lh);
 
     double final_lh = optimize(ts, tc);
 
-    LOG(INFO, "Final LLH: %f", final_lh);
+    LOG(INFO, "Final LLH: {:.7}", final_lh);
   }
 
   if (states || splits) {
-    MESSAGE(INFO, "Computing reverse operations");
+    LOG(INFO, "Computing reverse operations");
     computeBackwardOperations(ts, tc);
   }
 
   if (states) {
-    MESSAGE(INFO, "Computing ancestral states");
+    LOG(INFO, "Computing ancestral states");
     computeStateGoal(ts, tc);
   }
   if (splits) {
-    MESSAGE(INFO, "Computing ancestral splits");
+    LOG(INFO, "Computing ancestral splits");
     computeSplitGoal(ts, tc);
   }
   ts.haltThreads();
@@ -264,7 +264,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       }
     }
 
-    if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: %f", llh); }
+    if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: {:.7}", llh); }
     if (std::isnan(llh)) {
       throw std::runtime_error{"Log likelihood is not not a number"};
     }
@@ -400,7 +400,7 @@ void Context::set_opt_method(const OptimizationMethod& m) {
     default:
       throw std::runtime_error{"Unknown optimization method"};
   }
-  LOG_INFO("Using %s for optimization", nlopt::algorithm_name(_opt_method));
+  LOG_INFO("Using {} for optimization", nlopt::algorithm_name(_opt_method));
 }
 
 bool Context::computeDerivative() const {

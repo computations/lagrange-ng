@@ -34,19 +34,19 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
     switch (config.expm_mode()) {
       case LagrangeEXPMComputationMode::ADAPTIVE:
         if (config.region_count() > KRYLOV_RANGE_COUNT_THRESHOLD) {
-          MESSAGE(INFO, "Enabling adaptive EXPM mode");
+          LOG(INFO, "Enabling adaptive EXPM mode");
           context.useArnoldi();
         } else {
-          MESSAGE(INFO, "Using Pade's method for EXPM computation");
+          LOG(INFO, "Using Pade's method for EXPM computation");
           context.useArnoldi(false, false);
         }
         break;
       case LagrangeEXPMComputationMode::PADE:
-        MESSAGE(INFO, "Using Pade's method for EXPM computation");
+        LOG(INFO, "Using Pade's method for EXPM computation");
         context.useArnoldi(false, false);
         break;
       case LagrangeEXPMComputationMode::KRYLOV:
-        MESSAGE(INFO,
+        LOG(INFO,
                 "Using Krylov subspace based method for EXPM computation");
         context.useArnoldi(true, false);
         break;
@@ -55,10 +55,10 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
     }
   } else {
     if (config.region_count() > KRYLOV_RANGE_COUNT_THRESHOLD) {
-      MESSAGE(INFO, "Enabling adaptive EXPM mode");
+      LOG(INFO, "Enabling adaptive EXPM mode");
       context.useArnoldi();
     } else {
-      MESSAGE(INFO, "Using Pade's method for EXPM computation");
+      LOG(INFO, "Using Pade's method for EXPM computation");
       context.useArnoldi(false, false);
     }
   }
@@ -129,9 +129,9 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers());
   std::vector<std::thread> threads;
-  MESSAGE(INFO, "Starting Workers");
+  LOG(INFO, "Starting Workers");
   for (size_t i = 0; i < config.workers(); i++) {
-    LOG(INFO, "Making Worker #%lu", i + 1);
+    LOG(INFO, "Making Worker #{}", i + 1);
     worker_states.emplace_back();
     worker_states.back().setAssignedThreads(config.threads_per_worker());
     threads.emplace_back(&Context::optimizeAndComputeValues,
@@ -142,7 +142,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
                          std::cref(config.run_mode()));
   }
 
-  MESSAGE(INFO, "Waiting for Workers to finish");
+  LOG(INFO, "Waiting for Workers to finish");
   for (auto &t : threads) { t.join(); }
 
   assign_results_to_tree(tree, config, context);
@@ -172,7 +172,7 @@ static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
   while (getline(ifs, temp)) {
     if (temp.size() > 1) {
       auto intree = TreeReader::readTree(temp);
-      LOG(INFO, "Tree number %lu has %lu leaves", count, intree->getTipCount());
+      LOG(INFO, "Tree number {} has {} leaves", count, intree->getTipCount());
       ret.push_back(intree);
       count++;
     }
@@ -199,22 +199,22 @@ auto main(int argc, char *argv[]) -> int {
 
   auto start_time = std::chrono::high_resolution_clock::now();
   if (argc != 2) {
-    MESSAGE(ERROR, "Lagrange-ng needs a config file");
-    MESSAGE(ERROR, "Usage: lagrange configfile");
+    LOG(ERROR, "Lagrange-ng needs a config file");
+    LOG(ERROR, "Usage: lagrange configfile");
     return 1;
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
 
-    MESSAGE(INFO, "Reading tree...");
+    LOG(INFO, "Reading tree...");
     std::vector<std::shared_ptr<Tree>> intrees =
         read_tree_file_line_by_line(config.tree_filename());
 
-    MESSAGE(INFO, "Reading data...");
+    LOG(INFO, "Reading data...");
     Alignment data =
         read_alignment(config.data_filename(), config.alignment_file_type());
 
-    MESSAGE(INFO, "Checking data...");
+    LOG(INFO, "Checking data...");
     check_alignment_against_trees(data, intrees);
 
     if (data.region_count == 0) {
@@ -226,11 +226,11 @@ auto main(int argc, char *argv[]) -> int {
 
     config.finalize_periods();
 
-    MESSAGE(INFO, "Running analysis...");
+    LOG(INFO, "Running analysis...");
     for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end_time - start_time;
-  LOG(INFO, "Analysis took %fs", duration.count());
+  LOG(INFO, "Analysis took {:.2}s", duration.count());
   return 0;
 }

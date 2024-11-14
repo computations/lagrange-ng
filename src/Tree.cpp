@@ -180,8 +180,8 @@ void Tree::assignMCRALabels(const MRCAMap &mrca_map) {
     auto n = getMRCA(kv.second);
     if (!n) {
       LOG_ERROR(
-          "MRCA '%s' not found, please check that the tips exist in the tree",
-          kv.first.c_str());
+          "MRCA '{}' not found, please check that the tips exist in the tree",
+          kv.first);
     }
     n->setMRCALabel(kv.first);
   }

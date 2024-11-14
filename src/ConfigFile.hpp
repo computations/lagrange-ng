@@ -161,7 +161,7 @@ class ConfigFile {
         std::filesystem::create_directories(_prefix.parent_path());
       }
     } catch (const std::filesystem::filesystem_error& err) {
-      MESSAGE(ERROR, err.what());
+      LOG(ERROR, "Failed to create prefix directory: {}", err.what());
       ok = false;
     }
 
@@ -171,8 +171,7 @@ class ConfigFile {
   void check_prefix() {
     if (prefix().empty()) { prefix(tree_filename()); }
     if (prefix().filename().string()[0] == '.') {
-      MESSAGE(
-          WARNING,
+      LOG(WARNING,
           "The current prefix starts with a dot. The results will be hidden "
           "on unix-like systems");
     }

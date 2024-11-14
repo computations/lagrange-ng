@@ -42,7 +42,7 @@ Alignment read_fasta(std::istream& instream) {
           region_count = tmp.size();
         } else if (region_count != tmp.size()) {
           LOG(ERROR,
-              "The range size for taxa '%s' differs in size",
+              "The range size for taxa '{}' differs in size",
               taxa_name.c_str());
           good = false;
         }
@@ -82,7 +82,7 @@ Alignment read_phylip(std::istream& instream) {
     instream >> data_string;
     if (data_string.size() != alignment.region_count) {
       LOG(ERROR,
-          "Range for taxa '%s' has a different size than specified in the "
+          "Range for taxa '{}' has a different size than specified in the "
           "phylip header",
           taxa_name.c_str());
       good = false;

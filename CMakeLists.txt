@@ -3,7 +3,7 @@ cmake_policy(SET CMP0135 NEW)
 
 
 project(lagrange-ng)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -28,8 +28,8 @@ FetchContent_Declare(nlohmann_json
 )
 
 FetchContent_Declare(logger
-  URL https://github.com/computations/logger/archive/refs/tags/v0.1.0.tar.gz
-  URL_HASH SHA256=ee376794107325597db8fe61117ef9b613ef529e4bb681839a453b96161a6a0c
+  URL https://github.com/computations/logger/archive/refs/tags/v0.2.0.tar.gz
+  URL_HASH SHA256=92adc9a8f96c8077f09ac4a97c8c0d28b990579b95b1aad0c16724d4c7fb95bd
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )

@@ -221,8 +221,8 @@ inline std::ofstream init_csv(
 void write_csv_state_file(const std::shared_ptr<Tree> &tree,
                           const ConfigFile &config,
                           const Context &context) {
-  LOG_INFO("Writing ancestral states to %s",
-           config.statesCSVResultsFilename().c_str());
+  LOG_INFO("Writing ancestral states to {}",
+           config.statesCSVResultsFilename().string());
   auto fields = {"node", "dist", "llh", "ratio"};
   auto outfile = init_csv(config.statesCSVResultsFilename(), fields);
 
@@ -264,8 +264,8 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
 
 void write_csv_split_file(const std::shared_ptr<Tree> &tree,
                           const ConfigFile &config) {
-  LOG_INFO("Writing ancestral splits to %s",
-           config.splitsCSVResultsFilename().c_str());
+  LOG_INFO("Writing ancestral splits to {}",
+           config.splitsCSVResultsFilename().string());
   auto fields = {"node", "anc-dist", "left-dist", "right-dist", "llh", "ratio"};
   auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
 
@@ -291,8 +291,8 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
 }
 
 void write_csv_periods_file(const ConfigFile &config, const Context &context) {
-  LOG_INFO("Writing period parameters to %s",
-           config.periodsCSVResultsFilename().c_str());
+  LOG_INFO("Writing period parameters to {}",
+           config.periodsCSVResultsFilename().string());
   auto fields = {"from", "to", "dispersion", "extinction"};
   auto outfile = init_csv(config.periodsCSVResultsFilename(), fields);
 
@@ -310,8 +310,8 @@ void write_csv_periods_file(const ConfigFile &config, const Context &context) {
 }
 
 void write_csv_distribution_file(const ConfigFile &config) {
-  LOG_INFO("Writing distribution labels to %s",
-           config.distributionsCSVResultsFilename().c_str());
+  LOG_INFO("Writing distribution labels to {}",
+           config.distributionsCSVResultsFilename().string());
   auto fields = {"dist", "list"};
   auto outfile = init_csv(config.distributionsCSVResultsFilename(), fields);
 
@@ -338,8 +338,8 @@ void write_csv_distribution_file(const ConfigFile &config) {
 
 void write_csv_node_info_file(const std::shared_ptr<Tree> &tree,
                               const ConfigFile &config) {
-  LOG_INFO("Writing node info to %s",
-           config.distributionsCSVResultsFilename().c_str());
+  LOG_INFO("Writing node info to {}",
+           config.distributionsCSVResultsFilename().string());
   auto fields = {"node", "left-child", "right-child"};
   auto outfile = init_csv(config.nodeInfoCSVResultsFilename(), fields);
 
@@ -421,7 +421,7 @@ inline auto make_annotated_states_newick_lambda(
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config) {
   auto node_tree_filename = config.nodeTreeFilename();
-  LOG(INFO, "Writing node annotated tree to %s", node_tree_filename.c_str());
+  LOG(INFO, "Writing node annotated tree to {}", node_tree_filename.string());
 
   std::ofstream node_tree(node_tree_filename);
   node_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
@@ -431,7 +431,7 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto scaled_tree_filename = config.scaledTreeFilename();
-  LOG(INFO, "Writing scaled tree to %s", scaled_tree_filename.c_str());
+  LOG(INFO, "Writing scaled tree to {}", scaled_tree_filename.string());
 
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
@@ -441,7 +441,7 @@ void write_scaled_tree(const std::shared_ptr<Tree> &tree,
 void write_states_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto states_tree_filename = config.statesTreeFilename();
-  LOG(INFO, "Writing states tree to %s", states_tree_filename.c_str());
+  LOG(INFO, "Writing states tree to {}", states_tree_filename.string());
 
   std::ofstream states_tree(states_tree_filename);
   states_tree << tree->getNewickLambda(
@@ -452,7 +452,7 @@ void write_states_tree(const std::shared_ptr<Tree> &tree,
 void write_splits_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   auto splits_tree_filename = config.splitsTreeFilename();
-  LOG(INFO, "Writing splits tree to %s", splits_tree_filename.c_str());
+  LOG(INFO, "Writing splits tree to {}", splits_tree_filename.string());
 
   std::ofstream splits_tree(splits_tree_filename);
   splits_tree << tree->getNewickLambda(
@@ -482,7 +482,7 @@ void write_json_file(const ConfigFile &config,
                      const nlohmann ::json &root_json) {
   auto json_filename = config.jsonResultsFilename();
 
-  LOG(INFO, "Writing results to %s", json_filename.c_str());
+  LOG(INFO, "Writing results to {}", json_filename.string());
 
   std::ofstream outfile(config.jsonResultsFilename());
   outfile << root_json.dump();
