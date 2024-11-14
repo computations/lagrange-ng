@@ -22,6 +22,8 @@
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
+#include "Workspace.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -474,7 +476,7 @@ auto Node::getRateMatrixOperation(Workspace &ws,
     return rm;
   }
   if (it->second == nullptr) {
-    throw std::runtime_error{"We got an empty expm"};
+    throw std::runtime_error{"We got an empty MakeRateMatrixOperation"};
   }
   return it->second;
 }
@@ -495,7 +497,7 @@ auto Node::getProbMatrixOperation(Workspace &ws,
     return pm;
   }
   if (it->second == nullptr) {
-    throw std::runtime_error{"We got an empty expm"};
+    throw std::runtime_error{"We got an empty ExpmOperation"};
   }
   return it->second;
 }
@@ -580,6 +582,50 @@ std::string Node::getNodeLabel() const {
   if (!_mrca.empty()) { return _mrca; }
   if (isTip()) { return getName(); }
   return std::to_string(getNumber());
+}
+
+RangeMask Node::traverseAndAssignRangeMask(Workspace &ws,
+                                           const Alignment &align) const {
+  if (_children.empty()) { return align.data.at(_label); }
+  RangeMask union_rm = 0;
+  for (auto &c : _children) {
+    auto tmp_rm = c->traverseAndAssignRangeMask(ws, align);
+    union_rm |= tmp_rm;
+  }
+
+  /* Need to check if the data is possible.
+   * There is a case that happens often enough empirically, where we end up
+   * with a subtree like
+   *  (a:0.0, b:0.0);
+   * and a range assignment like
+   *  a 110
+   *  b 110
+   * which is impossible under the DEC model, as a copy event is only valid for
+   * singleton ranges. If we try to compute a likelihood with this data, we
+   * will trigger an assertion. However, this assertion is _truly_ inscrutable,
+   * and so we want to find this case at least, and then tell the user that this
+   * is what is happening.
+   *
+   * To check, we need to check that all of the following are true:
+   *  - All children are tips
+   *  - All children have zero branch lengths
+   *  - The range data is the same for both children
+   */
+
+  if (std::all_of(_children.begin(),
+                  _children.end(),
+                  [&](const std::shared_ptr<Node> &n) {
+                    return n->isTip() && n->getBL() == 0.0
+                           && align.data.at(n->getNodeLabel()) == union_rm;
+                  })) {
+    LOG_ERROR(
+        "The subtree '%s' has data that is impossible under the DEC "
+        "model.",
+        getNewick().c_str());
+  }
+
+  ws.setNodeRegionMask(_id, union_rm);
+  return union_rm;
 }
 
 }  // namespace lagrange

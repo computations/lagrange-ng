@@ -189,7 +189,6 @@ class Workspace {
   inline auto suggestProbMatrixIndex() -> size_t {
     size_t suggested_index = _prob_matrix_reserved_count;
     _prob_matrix_reserved_count += 1;
-    //_prob_matrix.emplace_back();
     return suggested_index;
   }
 
@@ -209,11 +208,20 @@ class Workspace {
 
   inline auto registerGenericCLV() -> size_t { return registerCLV(); }
 
-  void registerTopCLV(size_t node_id);
+  inline void registerTopCLV(size_t node_id) {
+    _node_reservations[node_id]._top_clv = registerCLV();
+  }
 
-  void registerChildrenCLV(size_t node_id);
+  inline void registerChildrenCLV(size_t node_id) {
+    _node_reservations[node_id]._bot1_clv = registerCLV();
+    _node_reservations[node_id]._bot2_clv = registerCLV();
+  }
 
   void setTipCLV(size_t index, Range dist);
+
+  inline void setNodeRegionMask(size_t node_id, RangeMask rm) {
+    _node_reservations[node_id]._child_region_mask = rm;
+  }
 
   inline void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();
@@ -331,6 +339,8 @@ class Workspace {
   inline auto CLVSize() const -> size_t { return restrictedStateCount(); }
 
   auto EXPMExecutionCount() const -> size_t { return _expm_count; }
+
+  auto getAllRangeMask() const -> RangeMask { return (1ul << regions()) - 1; }
 
  private:
   inline auto registerCLV() -> size_t { return _next_free_clv++; }

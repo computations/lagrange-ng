@@ -31,15 +31,6 @@ Workspace::~Workspace() {
   delete[] _clv_scalars;
 }
 
-void Workspace::registerTopCLV(size_t node_id) {
-  _node_reservations[node_id]._top_clv = registerCLV();
-}
-
-void Workspace::registerChildrenCLV(size_t node_id) {
-  _node_reservations[node_id]._bot1_clv = registerCLV();
-  _node_reservations[node_id]._bot2_clv = registerCLV();
-}
-
 void Workspace::setTipCLV(size_t index, Range clv_index) {
   if (clv_index >= restrictedStateCount()) {
     throw std::runtime_error{
@@ -51,9 +42,9 @@ void Workspace::setTipCLV(size_t index, Range clv_index) {
 
 /**
  * Prep for allocation by setting up the various reservations
-*/
-void Workspace::stage() { 
-  _clvs.resize(CLVCount()); 
+ */
+void Workspace::stage() {
+  _clvs.resize(CLVCount());
   _rate_matrix.resize(_rate_matrix_reserved_count);
   _prob_matrix.resize(_prob_matrix_reserved_count);
   _staged = true;

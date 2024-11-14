@@ -3,11 +3,14 @@
 
 #include <limits>
 #include <vector>
+#include <string>
 
 namespace lagrange {
 
 struct PeriodSegment {
+  std::string label;
   size_t index;
+  size_t region_count;
   double duration;
 };
 

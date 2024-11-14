@@ -172,6 +172,8 @@ class Node {
   void assignAncestralSplit(SplitReturn);
 
   bool assignFossil(const Fossil &);
+  RangeMask traverseAndAssignRangeMask(Workspace &ws,
+                                       const Alignment &align) const;
 
  private:
   auto getCount(size_t) -> size_t;

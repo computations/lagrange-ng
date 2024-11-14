@@ -244,6 +244,10 @@ OptimizationMethod parse_opt_method(const std::string& method_string) {
   return OptimizationMethod::UNKNOWN;
 }
 
+PeriodSegment parse_period(ConfigLexer& lexer){
+
+}
+
 ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
   ConfigFile config;
   std::string line;
