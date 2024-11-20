@@ -67,7 +67,7 @@ inline void generate_splits(Range state,
 
     uint64_t y = (x ^ state) & valid_region_mask;
     results.push_back({x, y});
-    if (lagrange_popcount(y) > 1 && lagrange_popcount(y) <= max_areas) {
+    if (lagrange_popcount(y) <= max_areas) {
       results.push_back({y, x});
     }
   }
@@ -119,10 +119,8 @@ inline double fused_join_splits(Range splitting_range,
       sum += split_product(x, y, c1, c2, dist_map);
       split_count += 1;
 
-      if (lagrange_popcount(y) > 1) {
-        sum += split_product(y, x, c1, c2, dist_map);
-        split_count += 1;
-      }
+      sum += split_product(y, x, c1, c2, dist_map);
+      split_count += 1;
     }
   }
   return sum / static_cast<double>(split_count);
