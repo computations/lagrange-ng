@@ -43,7 +43,7 @@ static auto operator<<(std::ostream &os,
   return os;
 }
 
-inline void generate_splits(uint64_t state,
+inline void generate_splits(Range state,
                             size_t regions,
                             size_t max_areas,
                             std::vector<RegionSplit> &results) {
@@ -73,6 +73,61 @@ inline void generate_splits(uint64_t state,
   }
 }
 
+inline double split_product(Range left,
+                            Range right,
+                            const LagrangeConstColVector &c1,
+                            const LagrangeConstColVector &c2,
+                            const std::function<size_t(Range)> &dist_map) {
+  return c1[dist_map(left)] * c2[dist_map(right)];
+}
+
+inline double fused_join_splits(Range splitting_range,
+                                size_t regions,
+                                size_t max_areas,
+                                const LagrangeConstColVector &c1,
+                                const LagrangeConstColVector &c2,
+                                const std::function<size_t(Range)> &dist_map) {
+  assert(regions > 0);
+  uint64_t valid_region_mask = (1ULL << regions) - 1;
+  if (splitting_range == 0) { return 0.0; }
+
+  if (lagrange_popcount(splitting_range) == 1) {
+    return split_product(splitting_range, splitting_range, c1, c2, dist_map);
+  }
+
+  double sum = 0.0;
+  size_t split_count = 0;
+
+  /* Left splits first */
+  for (size_t i = 0; i < regions; i++) {
+    uint64_t x = 1ULL << i;
+    if ((splitting_range & x) == 0) { continue; }
+
+    /* sympatric splits */
+    sum += split_product(x, splitting_range, c1, c2, dist_map);
+    split_count += 1;
+
+    sum += split_product(splitting_range, x, c1, c2, dist_map);
+    split_count += 1;
+
+    /* allopatric splits */
+    /* x is always going to be a singleton. The question is if y is also a
+     * singleton. However, there is a difference between (a,b) and (b,a).
+     */
+    uint64_t y = (x ^ splitting_range) & valid_region_mask;
+    if (lagrange_popcount(y) <= max_areas) {
+      sum += split_product(x, y, c1, c2, dist_map);
+      split_count += 1;
+
+      if (lagrange_popcount(y) > 1) {
+        sum += split_product(y, x, c1, c2, dist_map);
+        split_count += 1;
+      }
+    }
+  }
+  return sum / static_cast<double>(split_count);
+}
+
 inline void join_splits(Range splitting_dist,
                         size_t dist_index,
                         size_t regions,
@@ -83,14 +138,16 @@ inline void join_splits(Range splitting_dist,
                         LagrangeColVector dest,
                         bool &scale,
                         const std::function<size_t(Range)> &dist_map) {
+  /*
   generate_splits(splitting_dist, regions, max_areas, splits);
   double sum = 0.0;
   for (auto &p : splits) {
     sum += c1[dist_map(p.left)] * c2[dist_map(p.right)];
   }
-
   if (!splits.empty()) { sum /= static_cast<double>(splits.size()); }
-
+  */
+  double sum =
+      fused_join_splits(splitting_dist, regions, max_areas, c1, c2, dist_map);
   scale &= sum < lagrange_scale_threshold;
 
   assert(std::isfinite(sum));
@@ -341,7 +398,8 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
 
-      /* Source is "gaining" a region, so we add */
+      /* Source is "gaining" a region, so we add
+       */
       if (source_dist < dest_dist && source_dist != 0) {
         double sum = 0.0;
         size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
@@ -353,7 +411,8 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         rm[ws->computeMatrixIndex(source_index, dest_index)] = sum;
 
       }
-      /* Otherwise, source is loosing a region, so we just set the value */
+      /* Otherwise, source is loosing a region, so
+         we just set the value */
       else if (source_dist != 0) {
         rm[ws->computeMatrixIndex(source_index, dest_index)] =
             period.getExtinctionRate();
@@ -449,8 +508,9 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     _A.get()[i] = ws->rateMatrix(_rate_matrix_index)[i];
   }
 
-  // We place an arbitrary limit on the size of scale exp because if it is too
-  // large we run into numerical issues.
+  // We place an arbitrary limit on the size of
+  // scale exp because if it is too large we run
+  // into numerical issues.
 #ifdef MKL_ENABLED
   double inf_norm =
       LAPACKE_dlange(CblasRowMajor, 'I', rows, rows, _A.get(), leading_dim);
@@ -466,9 +526,11 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   assert(Ascal > 0.0);
   cblas_dscal(ws->matrixSize(), Ascal, _A.get(), 1);
 
-  // q is a magic parameter that controls the number of iterations of the loop
-  // higher is more accurate, with each increase of q decreasing error by 4
-  // orders of magnitude. Anything above 12 is probably snake oil.
+  // q is a magic parameter that controls the
+  // number of iterations of the loop higher is
+  // more accurate, with each increase of q
+  // decreasing error by 4 orders of magnitude.
+  // Anything above 12 is probably snake oil.
   constexpr int q = 3;
   double c = 0.5;
   double sign = -1.0;
@@ -496,9 +558,10 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   cblas_daxpy(ws->matrixSize(), c, _X_1.get(), 1, _N.get(), 1);
   cblas_daxpy(ws->matrixSize(), sign * c, _X_1.get(), 1, _D.get(), 1);
 
-  // Using fortran indexing, and we started an iteration ahead to skip some
-  // setup. Furthermore, we are going to unroll the loop to allow us to skip
-  // some assignments.
+  // Using fortran indexing, and we started an
+  // iteration ahead to skip some setup.
+  // Furthermore, we are going to unroll the loop
+  // to allow us to skip some assignments.
 #if 0
   for (int i = 2; i <= q; i++) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
