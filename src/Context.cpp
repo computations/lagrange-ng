@@ -285,7 +285,12 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
   std::vector<double> results(dims, 0.01);
   double obj_val = 0;
 
-  opt.optimize(results, obj_val);
+  try {
+    opt.optimize(results, obj_val);
+  } catch (nlopt::roundoff_limited& err) {
+    LOG(WARNING,
+        "NLopt finished with limited roundoff, results might be incorrect");
+  }
 
   return obj_val;
 }
