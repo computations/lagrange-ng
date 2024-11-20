@@ -15,9 +15,8 @@
 
 namespace lagrange {
 
-auto lagrange_convert_dist_string(Range dist,
-                                  const std::vector<std::string> &names)
-    -> std::string {
+auto lagrange_convert_dist_string(
+    Range dist, const std::vector<std::string> &names) -> std::string {
   if (dist == 0) { return {}; }
   std::ostringstream oss;
 
@@ -38,8 +37,10 @@ std::vector<std::string> lagrange_convert_dist_to_list(
   std::vector<std::string> ret;
 
   size_t states = lagrange_clz(dist);
+  auto itr = names.rbegin();
   for (size_t i = 0; i < states; ++i) {
-    if (lagrange_bextr(dist, i)) { ret.push_back(names[i]); }
+    if (lagrange_bextr(dist, i)) { ret.push_back(*itr); }
+    itr++;
   }
   return ret;
 }
@@ -76,8 +77,8 @@ constexpr inline auto combinations(uint64_t n, uint64_t i) -> size_t {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
-    -> size_t {
+auto lagrange_compute_restricted_state_count(size_t regions,
+                                             size_t max_areas) -> size_t {
   size_t sum = 0;
   for (size_t i = 0; i <= max_areas; i++) { sum += combinations(regions, i); }
   return sum;
@@ -119,9 +120,8 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
   return static_cast<size_t>(temp);
 }
 
-auto convert_dist_string_to_dist(const std::string &dist,
-                                          const std::vector<std::string> &names)
-    -> Range {
+auto convert_dist_string_to_dist(
+    const std::string &dist, const std::vector<std::string> &names) -> Range {
   Range ret = 0;
   auto start = dist.begin();
   auto end = dist.begin();
@@ -141,8 +141,7 @@ auto convert_dist_string_to_dist(const std::string &dist,
   return ret;
 }
 
-auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Range {
+auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range {
   Range d = 0;
   for (size_t i = 0; i < dist.size(); i++) {
     if (dist[i] == '1') { d |= 1ull << (dist.size() - i - 1); }
