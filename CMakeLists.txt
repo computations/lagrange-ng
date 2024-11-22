@@ -79,6 +79,23 @@ else()
     set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
 
+find_package(Git)
+if(GIT_FOUND)
+    if(EXISTS ${CMAKE_SOURCE_DIR})
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe
+            WORKING_DIRECTORY "${local_dir}"
+            OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+else()
+  SET(LAGRANGE_BUILD_VERSION "v0.5.1-release")
+endif()
+
+set(LAGRANGE_DEFINES ${LAGRANGE_DEFINES} LAGRANGE_BUILD_VERSION=${LAGRANGE_BUILD_VERSION})
+
+
 add_subdirectory(src)
 
 option(BUILD_TESTS "Enable building the tests" OFF)

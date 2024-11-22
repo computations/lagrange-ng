@@ -24,6 +24,10 @@
     y = std::to_string(x);          \
   }
 
+#define STRING(s) #s
+#define STRINGIFY(s) STRING(s)
+#define GIT_REV_STRING STRINGIFY(LAGRANGE_BUILD_VERSION)
+
 namespace lagrange {
 
 auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
@@ -486,5 +490,11 @@ void write_json_file(const ConfigFile &config,
 
   std::ofstream outfile(config.jsonResultsFilename());
   outfile << root_json.dump();
+}
+
+void print_run_header(const ConfigFile &config) {
+  LOG(INFO, "Lagrange-ng version: {}", GIT_REV_STRING)
+  LOG(INFO, "Using tree: {}", config.tree_filename().c_str());
+  LOG(INFO, "Using data: {}", config.data_filename().c_str());
 }
 }  // namespace lagrange

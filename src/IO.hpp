@@ -60,4 +60,6 @@ nlohmann::json produce_json_file(const std::shared_ptr<Tree> &tree,
                                  const ConfigFile &config,
                                  const Context &context);
 
+void print_run_header(const ConfigFile& config);
+
 }  // namespace lagrange

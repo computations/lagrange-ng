@@ -205,6 +205,7 @@ auto main(int argc, char *argv[]) -> int {
   } else {
     std::string config_filename(argv[1]);
     auto config = read_config_file(config_filename);
+    print_run_header(config);
 
     LOG(INFO, "Reading tree...");
     std::vector<std::shared_ptr<Tree>> intrees =
