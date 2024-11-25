@@ -73,20 +73,22 @@ inline void generate_splits(Range state,
   }
 }
 
-inline double split_product(Range left,
-                            Range right,
-                            const LagrangeConstColVector &c1,
-                            const LagrangeConstColVector &c2,
-                            const std::function<size_t(Range)> &dist_map) {
+inline auto split_product(Range left,
+                          Range right,
+                          const LagrangeConstColVector &c1,
+                          const LagrangeConstColVector &c2,
+                          const std::function<size_t(Range)> &dist_map)
+    -> double {
   return c1[dist_map(left)] * c2[dist_map(right)];
 }
 
-inline double fused_join_splits(Range splitting_range,
-                                size_t regions,
-                                size_t max_areas,
-                                const LagrangeConstColVector &c1,
-                                const LagrangeConstColVector &c2,
-                                const std::function<size_t(Range)> &dist_map) {
+inline auto fused_join_splits(Range splitting_range,
+                              size_t regions,
+                              size_t max_areas,
+                              const LagrangeConstColVector &c1,
+                              const LagrangeConstColVector &c2,
+                              const std::function<size_t(Range)> &dist_map)
+    -> double {
   assert(regions > 0);
   uint64_t valid_region_mask = (1ULL << regions) - 1;
   if (splitting_range == 0) { return 0.0; }
@@ -155,7 +157,8 @@ inline void join_splits(Range splitting_dist,
 }
 
 /* Produces a dist -> index map */
-static std::vector<size_t> invert_dist_map(size_t regions, size_t max_areas) {
+static auto invert_dist_map(size_t regions,
+                            size_t max_areas) -> std::vector<size_t> {
   size_t max_state = 1ULL << regions;
   std::vector<size_t> ret(max_state, std::numeric_limits<size_t>::max());
 
@@ -611,8 +614,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
   {
 #ifdef MKL_ENABLED
-    long long int *ipiv = (long long int *)malloc(sizeof(long long int)
-                                                  * static_cast<size_t>(rows));
+    auto *ipiv = (long long int *)malloc(sizeof(long long int)
+                                         * static_cast<size_t>(rows));
 #else
     int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
 #endif

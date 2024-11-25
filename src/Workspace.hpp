@@ -121,8 +121,8 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline auto updateProbMatrix(size_t index, const LagrangeConstMatrix &A)
-      -> ClockTick {
+  inline auto updateProbMatrix(size_t index,
+                               const LagrangeConstMatrix &A) -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -195,21 +195,29 @@ class Workspace {
     return _clvs[index]._last_update;
   }
 
-  inline auto states() const -> size_t { return _states; }
+  [[nodiscard]] inline auto states() const -> size_t { return _states; }
 
-  inline auto regions() const -> size_t { return _regions; }
+  [[nodiscard]] inline auto regions() const -> size_t { return _regions; }
 
-  inline auto probMatrixCount() const -> size_t { return _prob_matrix.size(); }
+  [[nodiscard]] inline auto probMatrixCount() const -> size_t {
+    return _prob_matrix.size();
+  }
 
-  inline auto rateMatrixCount() const -> size_t { return _rate_matrix.size(); }
+  [[nodiscard]] inline auto rateMatrixCount() const -> size_t {
+    return _rate_matrix.size();
+  }
 
-  inline auto CLVCount() const -> size_t { return _next_free_clv; }
+  [[nodiscard]] inline auto CLVCount() const -> size_t {
+    return _next_free_clv;
+  }
 
-  inline auto matrixSize() const -> size_t {
+  [[nodiscard]] inline auto matrixSize() const -> size_t {
     return leadingDimension() * restrictedStateCount();
   }
 
-  inline auto nodeCount() const -> size_t { return _inner_count + _taxa_count; }
+  [[nodiscard]] inline auto nodeCount() const -> size_t {
+    return _inner_count + _taxa_count;
+  }
 
   inline auto suggestProbMatrixIndex() -> size_t {
     size_t suggested_index = _prob_matrix.size();
@@ -294,11 +302,13 @@ class Workspace {
 
   inline auto readClock() -> ClockTick { return _current_clock; }
 
-  auto getPeriodParams() const -> const std::vector<PeriodParams> & {
+  [[nodiscard]] auto getPeriodParams() const
+      -> const std::vector<PeriodParams> & {
     return _periods;
   }
 
-  auto getPeriodParams(size_t period_index) const -> const PeriodParams & {
+  [[nodiscard]] auto getPeriodParams(size_t period_index) const
+      -> const PeriodParams & {
     return _periods[period_index];
   }
 
@@ -306,13 +316,14 @@ class Workspace {
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
 
-  inline auto reserved() const -> bool {
+  [[nodiscard]] inline auto reserved() const -> bool {
     return !(_base_frequencies == nullptr || _clvs.empty());
   }
 
-  auto reportNodeVectors(size_t node_id) const -> std::string;
+  [[nodiscard]] auto reportNodeVectors(size_t node_id) const -> std::string;
 
-  inline auto computeMatrixIndex(size_t i, size_t j) const -> size_t {
+  [[nodiscard]] inline auto computeMatrixIndex(size_t i,
+                                               size_t j) const -> size_t {
     return i * leadingDimension() + j;
   }
 
@@ -331,21 +342,31 @@ class Workspace {
     _clvs[index]._last_update = std::numeric_limits<ClockTick>::max();
   }
 
-  inline auto leadingDimension() const -> size_t { return _leading_dim; }
+  [[nodiscard]] inline auto leadingDimension() const -> size_t {
+    return _leading_dim;
+  }
 
-  inline auto restrictedStateCount() const -> size_t {
+  [[nodiscard]] inline auto restrictedStateCount() const -> size_t {
     return _restricted_state_count;
   }
 
-  inline auto maxAreas() const -> size_t { return _max_areas; }
+  [[nodiscard]] inline auto maxAreas() const -> size_t { return _max_areas; }
 
-  inline auto matrixRows() const -> size_t { return restrictedStateCount(); }
+  [[nodiscard]] inline auto matrixRows() const -> size_t {
+    return restrictedStateCount();
+  }
 
-  inline auto matrixCols() const -> size_t { return matrixRows(); }
+  [[nodiscard]] inline auto matrixCols() const -> size_t {
+    return matrixRows();
+  }
 
-  inline auto CLVSize() const -> size_t { return restrictedStateCount(); }
+  [[nodiscard]] inline auto CLVSize() const -> size_t {
+    return restrictedStateCount();
+  }
 
-  auto EXPMExecutionCount() const -> size_t { return _expm_count; }
+  [[nodiscard]] auto EXPMExecutionCount() const -> size_t {
+    return _expm_count;
+  }
 
  private:
   inline auto registerCLV() -> size_t { return _next_free_clv++; }

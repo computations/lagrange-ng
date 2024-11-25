@@ -152,7 +152,7 @@ auto Tree::getNewickLambda(const std::function<std::string(const Node &)>
   return _root->getNewickLambda(newick_lambda) + ";";
 }
 
-bool Tree::checkAlignmentConsistency(const Alignment &align) const {
+auto Tree::checkAlignmentConsistency(const Alignment &align) const -> bool {
   auto count = _root->checkAlignmentConsistency(align, 0);
   if (count != align.taxa_count) {
     std::ostringstream oss;

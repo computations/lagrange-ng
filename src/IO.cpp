@@ -19,9 +19,9 @@
 
 #define CONVERT_FLOAT_TO_JSON(y, x) \
   if (std::isfinite(x)) {           \
-    (y) = x;                          \
+    (y) = x;                        \
   } else {                          \
-    (y) = std::to_string(x);          \
+    (y) = std::to_string(x);        \
   }
 
 #define STRING(s) #s
@@ -177,9 +177,9 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
   return root_json;
 }
 
-nlohmann::json produce_json_file(const std::shared_ptr<Tree> &tree,
-                                 const ConfigFile &config,
-                                 const Context &context) {
+auto produce_json_file(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config,
+                       const Context &context) -> nlohmann::json {
   auto root_json = init_json(tree, config);
   nlohmann::json params_json;
   auto params = context.currentParams();
@@ -194,8 +194,8 @@ nlohmann::json produce_json_file(const std::shared_ptr<Tree> &tree,
   return root_json;
 }
 
-inline std::string make_csv_header(
-    const std::initializer_list<const char *> &fields) {
+inline auto make_csv_header(const std::initializer_list<const char *> &fields)
+    -> std::string {
   return std::accumulate(std::next(fields.begin()),
                          fields.end(),
                          std::string(*fields.begin()),
@@ -204,8 +204,8 @@ inline std::string make_csv_header(
          + "\n";
 }
 
-inline std::string make_csv_row(
-    const std::initializer_list<std::string> &entries) {
+inline auto make_csv_row(const std::initializer_list<std::string> &entries)
+    -> std::string {
   return std::accumulate(std::next(entries.begin()),
                          entries.end(),
                          std::string(*entries.begin()),
@@ -214,9 +214,9 @@ inline std::string make_csv_row(
          + "\n";
 }
 
-inline std::ofstream init_csv(
-    const std::filesystem::path &filename,
-    const std::initializer_list<const char *> &fields) {
+inline auto init_csv(const std::filesystem::path &filename,
+                     const std::initializer_list<const char *> &fields)
+    -> std::ofstream {
   std::ofstream csv_file(filename);
   csv_file << make_csv_header(fields);
   return csv_file;

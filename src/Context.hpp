@@ -45,9 +45,9 @@ class Context {
       const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
           mrca_map);
 
-  auto getStateResults() const
+  [[nodiscard]] auto getStateResults() const
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
-  auto getSplitResults() const -> SplitReturnList;
+  [[nodiscard]] auto getSplitResults() const -> SplitReturnList;
 
   void registerTipClvs(const std::unordered_map<std::string, Range>& dist_data);
 
@@ -62,18 +62,18 @@ class Context {
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
 
-  auto toString() const -> std::string;
+  [[nodiscard]] auto toString() const -> std::string;
 
   void updateRates(const std::vector<PeriodParams>& p);
   void init();
 
-  auto stateCount() const -> size_t {
+  [[nodiscard]] auto stateCount() const -> size_t {
     return _workspace->restrictedStateCount();
   }
 
   void setParams(double e, double d) { _workspace->setPeriodParams(0, e, d); }
 
-  auto currentParams() const -> std::vector<PeriodParams>;
+  [[nodiscard]] auto currentParams() const -> std::vector<PeriodParams>;
 
   auto makeThreadContext() -> WorkerContext {
     WorkerContext tc{_forward_operations,
@@ -88,7 +88,7 @@ class Context {
 
   void useArnoldi(bool mode_set = true, bool adaptive = true) const;
 
-  size_t getPeriodCount() const;
+  [[nodiscard]] auto getPeriodCount() const -> size_t;
 
   void set_opt_method(const OptimizationMethod&);
 
@@ -113,10 +113,10 @@ class Context {
           mrca_map,
       const std::function<void(Node&)>& func);
 
-  bool computeDerivative() const;
+  [[nodiscard]] auto computeDerivative() const -> bool;
 
-  std::function<void(Node&)> makeStateGoalCB();
-  std::function<void(Node&)> makeSplitGoalCB();
+  auto makeStateGoalCB() -> std::function<void(Node&)>;
+  auto makeSplitGoalCB() -> std::function<void(Node&)>;
 
   nlopt::algorithm _opt_method;
 

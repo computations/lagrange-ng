@@ -34,12 +34,16 @@ class AncSplit {
 
  public:
   AncSplit(Range, Range, Range, double);
-  auto getWeight() const -> double;
-  auto getLikelihood() const -> double;
+
+  [[nodiscard]] auto getWeight() const -> double;
+
+  [[nodiscard]] auto getLikelihood() const -> double;
+
   void setLikelihood(double li);
 
   void setLWR(double lwr);
-  auto getLWR() const -> double;
+
+  [[nodiscard]] auto getLWR() const -> double;
 
   Range anc_dist;
   Range l_dist;

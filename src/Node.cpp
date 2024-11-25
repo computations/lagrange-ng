@@ -103,7 +103,7 @@ auto Node::getNewickLambda(const std::function<std::string(const Node &)>
 
 auto Node::getChildCount() const -> size_t { return _children.size(); }
 
-double Node::setHeight() {
+auto Node::setHeight() -> double {
   double height = 0.0;
   for (const auto &c : _children) { height = std::max(height, c->setHeight()); }
   _height = height;
@@ -402,7 +402,8 @@ void Node::assignId() {
 
 auto Node::getId() const -> size_t { return _id; }
 
-size_t Node::checkAlignmentConsistency(const Alignment &align, size_t count) {
+auto Node::checkAlignmentConsistency(const Alignment &align,
+                                     size_t count) -> size_t {
   if (isTip()) {
     if (align.data.count(_label) == 0) {
       std::ostringstream oss;
@@ -440,11 +441,11 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-Option<Range> Node::getFixedDist() const { return _fixed_dist; }
+auto Node::getFixedDist() const -> Option<Range> { return _fixed_dist; }
 
-Option<Range> Node::getIncludedAreas() const { return _incl_area_mask; }
+auto Node::getIncludedAreas() const -> Option<Range> { return _incl_area_mask; }
 
-Option<Range> Node::getExcludedAreas() const { return _excl_area_mask; }
+auto Node::getExcludedAreas() const -> Option<Range> { return _excl_area_mask; }
 
 void Node::setPeriodSegments(const Periods &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);
@@ -490,29 +491,36 @@ auto Node::getProbMatrixOperation(Workspace &ws,
 
 void Node::applyCB(const std::function<void(Node &)> &func) { func(*this); }
 
-bool Node::hasResults() const {
+auto Node::hasResults() const -> bool {
   return hasAncestralState() || hasAncestralSplit();
 }
 
-bool Node::hasAncestralState() const { return _ancestral_state.has_value(); }
+auto Node::hasAncestralState() const -> bool {
+  return _ancestral_state.has_value();
+}
 
-bool Node::hasAncestralSplit() const { return _ancestral_split.has_value(); }
+auto Node::hasAncestralSplit() const -> bool {
+  return _ancestral_split.has_value();
+}
 
-const std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() const {
+auto Node::getAncestralState() const
+    -> const std::unique_ptr<LagrangeMatrixBase[]> & {
   return _ancestral_state.value();
 }
 
-std::unique_ptr<LagrangeMatrixBase[]> &Node::getAncestralState() {
+auto Node::getAncestralState() -> std::unique_ptr<LagrangeMatrixBase[]> & {
   return _ancestral_state.value();
 }
 
-const SplitReturn &Node::getAncestralSplit() const {
+auto Node::getAncestralSplit() const -> const SplitReturn & {
   return _ancestral_split.value();
 }
 
-SplitReturn &Node::getAncestralSplit() { return _ancestral_split.value(); }
+auto Node::getAncestralSplit() -> SplitReturn & {
+  return _ancestral_split.value();
+}
 
-AncSplit Node::getTopAncestralSplit() const {
+auto Node::getTopAncestralSplit() const -> AncSplit {
   if (_ancestral_split) {
     auto best_state = getTopAncestralState();
     auto split = _ancestral_split.value().at(best_state);
@@ -526,9 +534,9 @@ AncSplit Node::getTopAncestralSplit() const {
   throw std::runtime_error{"No ancestral splits assigned"};
 }
 
-Range Node::getTopAncestralState() const {
+auto Node::getTopAncestralState() const -> Range {
   if (_ancestral_state) {
-    auto& state = _ancestral_state.value();
+    auto &state = _ancestral_state.value();
     auto period_segment = *_periods.begin();
 
     Range cur_range;
@@ -576,7 +584,7 @@ void Node::setMRCALabel(const MRCALabel &l) { _mrca = l; }
 
 auto Node::getMRCALabel() const -> MRCALabel { return _mrca; }
 
-bool Node::assignFossil(const Fossil &f) {
+auto Node::assignFossil(const Fossil &f) -> bool {
   if (getMRCALabel() == f.mrca_name) {
     switch (f.type) {
       case FossilType::NODE:
@@ -602,7 +610,7 @@ bool Node::assignFossil(const Fossil &f) {
   return false;
 }
 
-std::string Node::getNodeLabel() const {
+auto Node::getNodeLabel() const -> std::string {
   if (!_mrca.empty()) { return _mrca; }
   if (isTip()) { return getName(); }
   return std::to_string(getNumber());

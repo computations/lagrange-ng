@@ -26,26 +26,28 @@ class Periods {
   Periods(const Periods &) = default;
   Periods(Periods &&) = default;
 
-  Periods &operator=(const Periods &) = default;
-  Periods &operator=(Periods &&) = default;
+  auto operator=(const Periods &) -> Periods & = default;
+  auto operator=(Periods &&) -> Periods & = default;
 
-  const_iterator begin() const { return _periods.begin(); }
+  [[nodiscard]] auto begin() const -> const_iterator {
+    return _periods.begin();
+  }
 
-  const_iterator end() const { return _periods.end(); }
+  [[nodiscard]] auto end() const -> const_iterator { return _periods.end(); }
 
-  double min() const { return _periods.front(); }
+  [[nodiscard]] auto min() const -> double { return _periods.front(); }
 
-  double max() const { return _periods.back(); }
+  [[nodiscard]] auto max() const -> double { return _periods.back(); }
 
-  bool empty() const { return _periods.empty(); }
+  [[nodiscard]] auto empty() const -> bool { return _periods.empty(); }
 
-  size_t size() const { return _periods.size(); }
+  [[nodiscard]] auto size() const -> size_t { return _periods.size(); }
 
   void setMaxAreas(size_t);
   void setRegionCount(size_t);
 
-  size_t regions() const;
-  size_t maxAreas() const;
+  [[nodiscard]] auto regions() const -> size_t;
+  [[nodiscard]] auto maxAreas() const -> size_t;
 
  private:
   void terminate() {
@@ -77,14 +79,14 @@ class PeriodSpan {
         _max_areas{max_areas},
         _period{period} {}
 
-    value_type operator*() const {
+    auto operator*() const -> value_type {
       return {.index = _index,
               .duration = segmentLength(),
               .regions = _regions,
               .max_areas = _max_areas};
     }
 
-    Iterator &operator++() {
+    auto operator++() -> Iterator & {
       _index += 1;
       _length -= std::max(segmentLength(), 0.0);
       _time = *_period;
@@ -92,16 +94,18 @@ class PeriodSpan {
       return *this;
     }
 
-    friend bool operator==(const Iterator &a, const Iterator &b) {
+    friend auto operator==(const Iterator &a, const Iterator &b) -> bool {
       return a._length == b._length || a._period == b._period;
     }
 
-    friend bool operator!=(const Iterator &a, const Iterator &b) {
+    friend auto operator!=(const Iterator &a, const Iterator &b) -> bool {
       return !(a == b);
     }
 
    private:
-    double segmentLength() const { return std::min(*_period - _time, _length); }
+    [[nodiscard]] auto segmentLength() const -> double {
+      return std::min(*_period - _time, _length);
+    }
 
     double _time;
     double _length;
@@ -134,13 +138,12 @@ class PeriodSpan {
     if (_length == 0.0) { _length = std::numeric_limits<double>::epsilon(); }
   }
 
-  Iterator begin() const {
-    return Iterator(
-        _start_time, _length, _start_index, _regions, _max_areas, _begin);
+  [[nodiscard]] auto begin() const -> Iterator {
+    return {_start_time, _length, _start_index, _regions, _max_areas, _begin};
   }
 
-  Iterator end() const {
-    return Iterator(0.0, 0.0, 0, _regions, _max_areas, _end);
+  [[nodiscard]] auto end() const -> Iterator {
+    return {0.0, 0.0, 0, _regions, _max_areas, _end};
   }
 
  private:

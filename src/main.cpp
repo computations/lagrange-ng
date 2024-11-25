@@ -10,7 +10,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <logger.hpp>
 #include <memory>
 #include <stdexcept>
@@ -46,8 +45,7 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
         context.useArnoldi(false, false);
         break;
       case LagrangeEXPMComputationMode::KRYLOV:
-        LOG(INFO,
-                "Using Krylov subspace based method for EXPM computation");
+        LOG(INFO, "Using Krylov subspace based method for EXPM computation");
         context.useArnoldi(true, false);
         break;
       default:
@@ -152,13 +150,13 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   if (config.computeSplits()) { write_splits_tree(tree, config); }
 }
 
-static ConfigFile read_config_file(const std::string &filename) {
+static auto read_config_file(const std::string &filename) -> ConfigFile {
   std::ifstream infile(filename);
   return ConfigFile{infile};
 }
 
-static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
-    const std::filesystem::path &filename) {
+static auto read_tree_file_line_by_line(const std::filesystem::path &filename)
+    -> std::vector<std::shared_ptr<Tree>> {
   std::vector<std::shared_ptr<Tree>> ret;
 
   if (!std::filesystem::exists(filename)) {
@@ -180,8 +178,9 @@ static std::vector<std::shared_ptr<Tree>> read_tree_file_line_by_line(
   return ret;
 }
 
-bool check_alignment_against_trees(
-    const Alignment &align, const std::vector<std::shared_ptr<Tree>> &trees) {
+auto check_alignment_against_trees(
+    const Alignment &align,
+    const std::vector<std::shared_ptr<Tree>> &trees) -> bool {
   bool ok = true;
   for (const auto &t : trees) { ok &= t->checkAlignmentConsistency(align); }
   return ok;

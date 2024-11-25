@@ -26,17 +26,18 @@ struct Alignment {
 
 enum class AlignmentFileType { FASTA, PHYLIP };
 
-Alignment read_fasta(std::istream& instream);
-Alignment read_phylip(std::istream& instream);
+auto read_fasta(std::istream& instream) -> Alignment;
+auto read_phylip(std::istream& instream) -> Alignment;
 
 /**
  * Parsing functions alignments. There are two versions: the version with a
  * known filetype, and the version with an unknown filetype, which is
  * represented by an Option.
  */
-Alignment read_alignment(std::istream& instream, AlignmentFileType type);
-Alignment read_alignment(const std::filesystem::path& infile,
-                         AlignmentFileType type);
+auto read_alignment(std::istream& instream,
+                    AlignmentFileType type) -> Alignment;
+auto read_alignment(const std::filesystem::path& infile,
+                    AlignmentFileType type) -> Alignment;
 
 /* Error types */
 class AlignmentReadError : std::runtime_error {

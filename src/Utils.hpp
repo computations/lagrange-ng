@@ -119,10 +119,10 @@ constexpr inline auto next_dist(Range d,
   return next_dist(next, n, index, excl_area_mask, incl_area_mask);
 }
 
-std::vector<std::string> lagrange_convert_dist_to_list(
-    Range dist, const std::vector<std::string> &names);
+auto lagrange_convert_dist_to_list(
+    Range dist, const std::vector<std::string> &names) -> std::vector<std::string>;
 
-std::string get_file_extension(const std::string &filename);
+auto get_file_extension(const std::string &filename) -> std::string;
 
 template <typename T>
 class Option {
@@ -154,7 +154,7 @@ class Option {
     return def;
   }
 
-  auto hasValue() const -> bool { return _has_value; }
+  [[nodiscard]] auto hasValue() const -> bool { return _has_value; }
 
   operator bool() const { return hasValue(); }
 

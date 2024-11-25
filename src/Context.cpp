@@ -43,7 +43,7 @@ void Context::registerLHGoal() {
   _llh_goal.emplace_back(root_clv, frequency_index);
 }
 
-std::function<void(Node&)> Context::makeStateGoalCB() {
+auto Context::makeStateGoalCB() -> std::function<void(Node&)> {
   auto cb = [&](Node& n) {
     _state_lh_goal.emplace_back(n.getId(),
                                 _workspace->getTopCLVReverse(n.getId()),
@@ -62,7 +62,7 @@ std::function<void(Node&)> Context::makeStateGoalCB() {
   return cb;
 }
 
-std::function<void(Node&)> Context::makeSplitGoalCB() {
+auto Context::makeSplitGoalCB() -> std::function<void(Node&)> {
   auto cb = [&](Node& n) {
     _split_lh_goal.emplace_back(n.getId(),
                                 _workspace->getTopCLVReverse(n.getId()),
@@ -379,7 +379,9 @@ void Context::useArnoldi(bool mode_set, bool adaptive) const {
   }
 }
 
-size_t Context::getPeriodCount() const { return _rate_matrix_ops.size(); }
+auto Context::getPeriodCount() const -> size_t {
+  return _rate_matrix_ops.size();
+}
 
 void Context::set_opt_method(const OptimizationMethod& m) {
   switch (m) {
@@ -408,7 +410,7 @@ void Context::set_opt_method(const OptimizationMethod& m) {
   LOG_INFO("Using {} for optimization", nlopt::algorithm_name(_opt_method));
 }
 
-bool Context::computeDerivative() const {
+auto Context::computeDerivative() const -> bool {
   if (_opt_method == nlopt::LD_LBFGS) { return true; }
   return false;
 }

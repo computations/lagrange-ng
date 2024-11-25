@@ -27,13 +27,13 @@ class MakeRateMatrixOperation {
  public:
   explicit MakeRateMatrixOperation(size_t index, size_t period_index) :
       _rate_matrix_index{index},
-      _period_index{period_index},
-      _last_execution{0},
-      _last_update{0} {}
+      _period_index{period_index} {}
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  inline auto lastUpdate() const -> ClockTick { return _last_execution; }
+  [[nodiscard]] inline auto lastUpdate() const -> ClockTick {
+    return _last_execution;
+  }
 
   inline void updateRates(const std::shared_ptr<Workspace>& ws,
                           double disp,
@@ -47,16 +47,18 @@ class MakeRateMatrixOperation {
     updateRates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
-  inline auto rateMatrixIndex() const -> size_t { return _rate_matrix_index; }
+  [[nodiscard]] inline auto rateMatrixIndex() const -> size_t {
+    return _rate_matrix_index;
+  }
 
   void printStatus(const std::shared_ptr<Workspace>& ws,
                    std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  auto printStatus(const std::shared_ptr<Workspace>& ws,
-                   size_t tabLevel = 0) const -> std::string;
+  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
+                                 size_t tabLevel = 0) const -> std::string;
 
-  size_t getPeriodIndex() const { return _period_index; }
+  [[nodiscard]] auto getPeriodIndex() const -> size_t { return _period_index; }
 
  private:
   size_t _rate_matrix_index;
@@ -64,8 +66,8 @@ class MakeRateMatrixOperation {
 
   std::unique_ptr<std::mutex> _lock{new std::mutex};
 
-  ClockTick _last_execution;
-  ClockTick _last_update;
+  ClockTick _last_execution{0};
+  ClockTick _last_update{0};
 };
 
 class ExpmOperation {
@@ -90,32 +92,34 @@ class ExpmOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  auto probMatrix() const -> size_t { return _prob_matrix_index; }
+  [[nodiscard]] auto probMatrix() const -> size_t { return _prob_matrix_index; }
 
-  auto rateMatrix() const -> size_t { return _rate_matrix_index; }
+  [[nodiscard]] auto rateMatrix() const -> size_t { return _rate_matrix_index; }
 
-  bool transposed() const { return _transposed; }
+  [[nodiscard]] auto transposed() const -> bool { return _transposed; }
 
-  auto getT() const { return _t; }
+  [[nodiscard]] auto getT() const { return _t; }
 
-  auto lastExecution() const -> ClockTick { return _last_execution; }
+  [[nodiscard]] auto lastExecution() const -> ClockTick {
+    return _last_execution;
+  }
 
   void printStatus(const std::shared_ptr<Workspace>& ws,
                    std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  auto printStatus(const std::shared_ptr<Workspace>& ws,
-                   size_t tabLevel = 0) const -> std::string;
+  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
+                                 size_t tabLevel = 0) const -> std::string;
 
   auto getLock() -> std::mutex& { return *_lock; }
 
   void setArnoldiMode(bool d) { _arnoldi_mode = d; }
 
-  auto isArnoldiMode() const -> bool { return _arnoldi_mode; }
+  [[nodiscard]] auto isArnoldiMode() const -> bool { return _arnoldi_mode; }
 
   void setAdaptive(bool m) { _adaptive_mode = m; }
 
-  auto isAdaptive() const -> bool { return _adaptive_mode; }
+  [[nodiscard]] auto isAdaptive() const -> bool { return _adaptive_mode; }
 
   void emplaceRateMatrixOperations(
       std::unordered_map<size_t, std::shared_ptr<MakeRateMatrixOperation>>&
@@ -244,26 +248,27 @@ class DispersionOperation {
     _bot_clv = std::numeric_limits<size_t>::max();
   }
 
-  auto topCLVIndex() const -> size_t { return _top_clv; }
+  [[nodiscard]] auto topCLVIndex() const -> size_t { return _top_clv; }
 
-  auto botCLVIndex() const -> size_t { return _bot_clv; }
+  [[nodiscard]] auto botCLVIndex() const -> size_t { return _bot_clv; }
 
   void printStatus(const std::shared_ptr<Workspace>& ws,
                    std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  auto printStatus(const std::shared_ptr<Workspace>& ws,
-                   size_t tabLevel = 0) const -> std::string;
+  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
+                                 size_t tabLevel = 0) const -> std::string;
 
-  auto ready(const std::shared_ptr<Workspace>& ws,
-             ClockTick deadline) const -> bool {
+  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws,
+                           ClockTick deadline) const -> bool {
     if (ws->lastUpdateCLV(_bot_clv) > deadline) { return true; }
     return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
 
-  auto getExpmOperation() const -> std::shared_ptr<ExpmOperation> {
+  [[nodiscard]] auto getExpmOperation() const
+      -> std::shared_ptr<ExpmOperation> {
     return _expm_op;
   }
 
@@ -276,7 +281,7 @@ class DispersionOperation {
     _child_op = op;
   }
 
-  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() {
+  auto getExpmOperations() -> std::vector<std::shared_ptr<ExpmOperation>> {
     size_t op_count = countChildOps();
     std::vector<std::shared_ptr<ExpmOperation>> expm_ops;
     expm_ops.reserve(op_count);
@@ -284,7 +289,7 @@ class DispersionOperation {
     return expm_ops;
   }
 
-  size_t countChildOps() {
+  auto countChildOps() -> size_t {
     if (!_child_op) { return 1; }
     return _child_op->countChildOps() + 1;
   }
@@ -374,23 +379,26 @@ class SplitOperation {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  auto getParentCLV() const -> size_t { return _parent_clv_index; }
+  [[nodiscard]] auto getParentCLV() const -> size_t {
+    return _parent_clv_index;
+  }
 
   void printStatus(const std::shared_ptr<Workspace>& ws,
                    std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  auto printStatus(const std::shared_ptr<Workspace>& ws,
-                   size_t tabLevel = 0) const -> std::string;
+  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
+                                 size_t tabLevel = 0) const -> std::string;
 
-  auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
+  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     return _lbranch_op->ready(ws, _last_execution)
            && _rbranch_op->ready(ws, _last_execution);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
 
-  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
+  [[nodiscard]] auto getExpmOperations() const
+      -> std::vector<std::shared_ptr<ExpmOperation>> {
     auto ret = _lbranch_op->getExpmOperations();
     auto tmp = _rbranch_op->getExpmOperations();
 
@@ -483,8 +491,8 @@ class ReverseSplitOperation {
                    std::ostream& os,
                    size_t tabLevel = 0) const;
 
-  auto printStatus(const std::shared_ptr<Workspace>& ws,
-                   size_t tabLevel = 0) const -> std::string;
+  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
+                                 size_t tabLevel = 0) const -> std::string;
 
   void makeRootOperation(size_t clv_index) {
     _branch_op = nullptr;
@@ -496,9 +504,9 @@ class ReverseSplitOperation {
     }
   }
 
-  auto getStableCLV() const -> size_t { return _ltop_clv_index; }
+  [[nodiscard]] auto getStableCLV() const -> size_t { return _ltop_clv_index; }
 
-  auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
+  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     bool branch_op_ready =
         (_branch_op && _branch_op->ready(ws, _last_execution)) || (!_branch_op);
     return branch_op_ready
@@ -507,7 +515,8 @@ class ReverseSplitOperation {
 
   auto getLock() -> std::mutex& { return *_lock; }
 
-  std::vector<std::shared_ptr<ExpmOperation>> getExpmOperations() const {
+  [[nodiscard]] auto getExpmOperations() const
+      -> std::vector<std::shared_ptr<ExpmOperation>> {
     if (_branch_op) { return _branch_op->getExpmOperations(); }
     return {};
   }
@@ -544,13 +553,13 @@ class LLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline auto result() const -> double { return _result; }
+  [[nodiscard]] inline auto result() const -> double { return _result; }
 
   size_t _root_clv_index;
   size_t _prior_index;
   double _result = -std::numeric_limits<double>::infinity();
 
-  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
+  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
  private:
   ClockTick _last_execution = 0;
@@ -566,8 +575,7 @@ class StateLHGoal {
       _lchild_clv_index{lchild_clv},
       _rchild_clv_index{rchild_clv},
       _node_id{node_id},
-      _result{nullptr},
-      _states{0} {}
+      _result{nullptr} {}
 
   StateLHGoal(const StateLHGoal&) = delete;
   auto operator=(const StateLHGoal&) -> StateLHGoal& = delete;
@@ -587,23 +595,24 @@ class StateLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline auto result() const -> std::unique_ptr<LagrangeMatrixBase[]> {
+  [[nodiscard]] inline auto result() const
+      -> std::unique_ptr<LagrangeMatrixBase[]> {
     std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
     for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
     return ret;
   }
 
-  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
+  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
   void fixDist(Range dist) { _fixed_dist = dist; }
 
-  Option<Range> getFixedDist() { return _fixed_dist; }
+  auto getFixedDist() -> Option<Range> { return _fixed_dist; }
 
   void setInclAreas(Range dist) { _incl_area_mask = dist; }
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
-  inline size_t node_id() const { return _node_id; }
+  [[nodiscard]] inline auto node_id() const -> size_t { return _node_id; }
 
  private:
   size_t _parent_clv_index;
@@ -619,7 +628,7 @@ class StateLHGoal {
   ClockTick _last_execution = 0;
 
   std::unique_ptr<LagrangeMatrixBase[]> _result;
-  size_t _states;
+  size_t _states{0};
 };
 
 class SplitLHGoal {
@@ -645,7 +654,7 @@ class SplitLHGoal {
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
-  inline size_t node_id() const { return _node_id; }
+  inline auto node_id() const -> size_t { return _node_id; }
 
  private:
   size_t _parent_clv_index;

@@ -32,7 +32,7 @@ enum class OptimizationMethod {
 
 class ConfigFile;
 
-ConfigFile parse_config_file(std::istream& instream);
+auto parse_config_file(std::istream& instream) -> ConfigFile;
 
 class ConfigFile {
  public:
@@ -45,36 +45,36 @@ class ConfigFile {
   ConfigFile(const ConfigFile&) = default;
   ConfigFile(ConfigFile&&) = default;
 
-  ConfigFile& operator=(const ConfigFile&) = default;
-  ConfigFile& operator=(ConfigFile&&) = default;
+  auto operator=(const ConfigFile&) -> ConfigFile& = default;
+  auto operator=(ConfigFile&&) -> ConfigFile& = default;
 
-  const std::filesystem::path& tree_filename() const;
+  auto tree_filename() const -> const std::filesystem::path&;
   void tree_filename(const std::filesystem::path&);
 
-  const std::filesystem::path& data_filename() const;
+  auto data_filename() const -> const std::filesystem::path&;
   void data_filename(const std::filesystem::path&);
 
-  const std::filesystem::path& log_filename() const;
+  auto log_filename() const -> const std::filesystem::path&;
   void log_filename(const std::filesystem::path&);
 
-  const std::filesystem::path& prefix() const;
+  auto prefix() const -> const std::filesystem::path&;
   void prefix(const std::filesystem::path&);
 
-  OutputType output_file_type() const;
+  auto output_file_type() const -> OutputType;
   void output_file_type(OutputType);
 
-  bool has_rate_matrix_filename() const;
-  const std::filesystem::path& rate_matrix_filename() const;
+  auto has_rate_matrix_filename() const -> bool;
+  auto rate_matrix_filename() const -> const std::filesystem::path&;
   void rate_matrix_filename(const std::filesystem::path&);
 
-  bool has_max_areas() const;
-  size_t max_areas() const;
+  auto has_max_areas() const -> bool;
+  auto max_areas() const -> size_t;
   void max_areas(size_t);
 
-  const std::vector<std::string>& area_names() const;
+  auto area_names() const -> const std::vector<std::string>&;
   void area_names(const std::vector<std::string>&);
 
-  const Periods& periods() const;
+  auto periods() const -> const Periods&;
   void periods(const Periods&);
 
   void finalize_periods() {
@@ -86,75 +86,75 @@ class ConfigFile {
     _periods.setMaxAreas(max_areas);
   }
 
-  const std::shared_ptr<MRCAEntry>& mrca(const MRCALabel&) const;
-  const MRCAMap& mrcas() const;
+  auto mrca(const MRCALabel&) const -> const std::shared_ptr<MRCAEntry>&;
+  auto mrcas() const -> const MRCAMap&;
   void add_mrca(const MRCALabel&, const std::shared_ptr<MRCAEntry>&);
 
-  const std::vector<Fossil>& fossils() const;
+  auto fossils() const -> const std::vector<Fossil>&;
   void add_fossil(const Fossil& f);
 
-  bool marginal() const;
+  auto marginal() const -> bool;
   void marginal(bool);
 
-  bool compute_all_splits() const;
+  auto compute_all_splits() const -> bool;
   void compute_all_splits(bool);
 
-  bool compute_all_states() const;
+  auto compute_all_states() const -> bool;
   void compute_all_states(bool);
 
-  const std::unordered_set<MRCALabel>& state_nodes() const;
+  auto state_nodes() const -> const std::unordered_set<MRCALabel>&;
   void state_nodes(const std::unordered_set<MRCALabel>&);
 
-  const std::unordered_set<MRCALabel>& split_nodes() const;
+  auto split_nodes() const -> const std::unordered_set<MRCALabel>&;
   void split_nodes(const std::unordered_set<MRCALabel>&);
 
-  PeriodParams period_params() const;
+  auto period_params() const -> PeriodParams;
   void period_params(double, double);
 
-  double lh_epsilon() const;
+  auto lh_epsilon() const -> double;
   void lh_epsilon(double);
 
-  bool has_expm_mode() const;
-  const LagrangeEXPMComputationMode& expm_mode() const;
+  auto has_expm_mode() const -> bool;
+  auto expm_mode() const -> const LagrangeEXPMComputationMode&;
   void expm_mode(const LagrangeEXPMComputationMode&);
 
-  AlignmentFileType alignment_file_type() const;
+  auto alignment_file_type() const -> AlignmentFileType;
   void alignment_file_type(const AlignmentFileType&);
 
-  size_t region_count() const;
+  auto region_count() const -> size_t;
   void region_count(size_t);
 
-  size_t workers() const;
+  auto workers() const -> size_t;
   void workers(size_t);
 
-  size_t threads_per_worker() const;
+  auto threads_per_worker() const -> size_t;
   void threads_per_worker(size_t);
 
-  const LagrangeOperationMode& run_mode() const;
+  auto run_mode() const -> const LagrangeOperationMode&;
   void run_mode(const LagrangeOperationMode&);
 
-  OptimizationMethod opt_method() const;
+  auto opt_method() const -> OptimizationMethod;
   void opt_method(const OptimizationMethod&);
 
-  std::filesystem::path jsonResultsFilename() const;
-  std::filesystem::path nodeTreeFilename() const;
-  std::filesystem::path scaledTreeFilename() const;
-  std::filesystem::path splitsTreeFilename() const;
-  std::filesystem::path statesTreeFilename() const;
-  std::filesystem::path splitsCSVResultsFilename() const;
-  std::filesystem::path statesCSVResultsFilename() const;
-  std::filesystem::path periodsCSVResultsFilename() const;
-  std::filesystem::path distributionsCSVResultsFilename() const;
-  std::filesystem::path nodeInfoCSVResultsFilename() const;
+  auto jsonResultsFilename() const -> std::filesystem::path;
+  auto nodeTreeFilename() const -> std::filesystem::path;
+  auto scaledTreeFilename() const -> std::filesystem::path;
+  auto splitsTreeFilename() const -> std::filesystem::path;
+  auto statesTreeFilename() const -> std::filesystem::path;
+  auto splitsCSVResultsFilename() const -> std::filesystem::path;
+  auto statesCSVResultsFilename() const -> std::filesystem::path;
+  auto periodsCSVResultsFilename() const -> std::filesystem::path;
+  auto distributionsCSVResultsFilename() const -> std::filesystem::path;
+  auto nodeInfoCSVResultsFilename() const -> std::filesystem::path;
 
-  bool computeStates() const;
-  bool computeSplits() const;
-  bool computeStatesStrict() const;
+  auto computeStates() const -> bool;
+  auto computeSplits() const -> bool;
+  auto computeStatesStrict() const -> bool;
 
  private:
-  static ConfigFile parse_config_file(std::istream& instream);
+  static auto parse_config_file(std::istream& instream) -> ConfigFile;
 
-  bool validate_and_make_prefix() {
+  auto validate_and_make_prefix() -> bool {
     bool ok = true;
     try {
       if (!_prefix.parent_path().empty()) {

@@ -1,6 +1,6 @@
 #include "Arnoldi.hpp"
 
-namespace lagrange {
+namespace lagrange::expm {
 #define MIDX(A, r, c, lda) ((A)[(r) * (lda) + (c)])
 
 // coefficients are copied from Saad1990.pdf
@@ -67,7 +67,6 @@ constexpr double ROOT_IM[] = {0.119406921611247440E+01,
                               0.166309842834712071E+02};
 #endif
 
-namespace expm {
 void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
                                 size_t rate_matrix_index,
                                 size_t clv_src_index,
@@ -246,5 +245,4 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<Workspace> ws,
               1);
 }
 
-};  // namespace expm
-}  // namespace lagrange
+};  // namespace lagrange::expm

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -13,9 +14,7 @@ enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
 
 class ConfigLexer {
  public:
-  explicit ConfigLexer(std::string input) :
-      _input{std::move(input)},
-      _current_index{0} {};
+  explicit ConfigLexer(std::string input) : _input{std::move(input)} {};
 
   auto consume() -> ConfigLexemeType {
     auto token = peak();
@@ -100,7 +99,7 @@ class ConfigLexer {
     return val;
   }
 
-  auto describePosition() const -> std::string {
+  [[nodiscard]] auto describePosition() const -> std::string {
     std::stringstream builder;
     builder << "position " << _current_index;
     return builder.str();
@@ -123,7 +122,7 @@ class ConfigLexer {
   auto atEnd() -> bool { return _input.size() == _current_index; }
 
  private:
-  bool isPunct(char c) { return c == '='; }
+  auto isPunct(char c) -> bool { return c == '='; }
 
   auto consumeTokenPos() -> std::pair<ConfigLexemeType, size_t> {
     auto start_index = _current_index;
@@ -154,16 +153,16 @@ class ConfigLexer {
 
   std::string _input;
   std::string _value;
-  size_t _current_index;
+  size_t _current_index{0};
 };
 
-std::string parse_filename(ConfigLexer& lexer) {
+auto parse_filename(ConfigLexer& lexer) -> std::string {
   lexer.expect(ConfigLexemeType::VALUE);
   auto filename_value = lexer.consumeValueAsString();
   return filename_value;
 }
 
-std::vector<std::string> parse_list(ConfigLexer& lexer) {
+auto parse_list(ConfigLexer& lexer) -> std::vector<std::string> {
   std::vector<std::string> values;
 
   do {
@@ -174,24 +173,25 @@ std::vector<std::string> parse_list(ConfigLexer& lexer) {
   return values;
 }
 
-std::unordered_set<std::string> parse_set(ConfigLexer& lexer) {
+auto parse_set(ConfigLexer& lexer) -> std::unordered_set<std::string> {
   auto tmp = parse_list(lexer);
   return {tmp.begin(), tmp.end()};
 }
 
-double parse_double(ConfigLexer& lexer) {
+auto parse_double(ConfigLexer& lexer) -> double {
   lexer.expect(ConfigLexemeType::VALUE);
 
   return lexer.consumeValueAsFloat();
 }
 
-size_t parse_size_t(ConfigLexer& lexer) {
+auto parse_size_t(ConfigLexer& lexer) -> size_t {
   lexer.expect(ConfigLexemeType::VALUE);
 
   return lexer.consumeValueAsSizeT();
 }
 
-FossilType determine_fossil_type(const std::string& fossil_type_string) {
+auto determine_fossil_type(const std::string& fossil_type_string)
+    -> FossilType {
   if (fossil_type_string == "n" || fossil_type_string == "node") {
     return FossilType::NODE;
   } else if (fossil_type_string == "b" || fossil_type_string == "branch") {
@@ -206,7 +206,7 @@ FossilType determine_fossil_type(const std::string& fossil_type_string) {
   return FossilType::UNKOWN;
 }
 
-Fossil parse_fossil(ConfigLexer& lexer) {
+auto parse_fossil(ConfigLexer& lexer) -> Fossil {
   lexer.expect(ConfigLexemeType::VALUE);
   auto fossil_type_string = lexer.consumeValueAsLowerString();
 
@@ -228,13 +228,13 @@ Fossil parse_fossil(ConfigLexer& lexer) {
           .type = ft};
 }
 
-OutputType determine_output_file_type(const std::string& type_string) {
+auto determine_output_file_type(const std::string& type_string) -> OutputType {
   if (type_string == "csv") { return OutputType::CSV; }
   if (type_string == "json") { return OutputType::JSON; }
   return OutputType::UNKNOWN;
 }
 
-OptimizationMethod parse_opt_method(const std::string& method_string) {
+auto parse_opt_method(const std::string& method_string) -> OptimizationMethod {
   if (method_string == "nelder-mead") {
     return OptimizationMethod::NELDER_MEAD;
   }
@@ -247,7 +247,7 @@ OptimizationMethod parse_opt_method(const std::string& method_string) {
   return OptimizationMethod::UNKNOWN;
 }
 
-ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
+auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
   ConfigFile config;
   std::string line;
   size_t line_number = 1;
@@ -295,8 +295,8 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
         auto mrca_entries = parse_list(lexer);
-        config._mrcas[mrca_name] = std::shared_ptr<MRCAEntry>(
-            new MRCAEntry{.clade = std::move(mrca_entries)});
+        config._mrcas[mrca_name] = std::make_shared<MRCAEntry>(
+            MRCAEntry{.clade = std::move(mrca_entries)});
       } else if (config_value == "fossil") {
         config._fossils.push_back(parse_fossil(lexer));
       } else if (config_value == "calctype") {
@@ -422,7 +422,7 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
   return config;
 }
 
-const std::filesystem::path& ConfigFile::tree_filename() const {
+auto ConfigFile::tree_filename() const -> const std::filesystem::path& {
   return _tree_filename;
 }
 
@@ -430,7 +430,7 @@ void ConfigFile::tree_filename(const std::filesystem::path& path) {
   _tree_filename = path;
 }
 
-const std::filesystem::path& ConfigFile::data_filename() const {
+auto ConfigFile::data_filename() const -> const std::filesystem::path& {
   return _data_filename;
 }
 
@@ -438,7 +438,7 @@ void ConfigFile::data_filename(const std::filesystem::path& path) {
   _data_filename = path;
 }
 
-const std::filesystem::path& ConfigFile::log_filename() const {
+auto ConfigFile::log_filename() const -> const std::filesystem::path& {
   return _log_filename;
 }
 
@@ -446,22 +446,24 @@ void ConfigFile::log_filename(const std::filesystem::path& path) {
   _log_filename = path;
 }
 
-const std::filesystem::path& ConfigFile::prefix() const { return _prefix; }
+auto ConfigFile::prefix() const -> const std::filesystem::path& {
+  return _prefix;
+}
 
 void ConfigFile::prefix(const std::filesystem::path& path) { _prefix = path; }
 
-bool ConfigFile::has_rate_matrix_filename() const {
+auto ConfigFile::has_rate_matrix_filename() const -> bool {
   return _rate_matrix_filename.hasValue();
 }
 
-OutputType ConfigFile::output_file_type() const {
+auto ConfigFile::output_file_type() const -> OutputType {
   if (_output_file_type.hasValue()) { return _output_file_type.get(); }
   return OutputType::JSON;
 }
 
 void ConfigFile::output_file_type(OutputType type) { _output_file_type = type; }
 
-const std::filesystem::path& ConfigFile::rate_matrix_filename() const {
+auto ConfigFile::rate_matrix_filename() const -> const std::filesystem::path& {
   return _rate_matrix_filename.get();
 }
 
@@ -469,13 +471,13 @@ void ConfigFile::rate_matrix_filename(const std::filesystem::path& path) {
   _rate_matrix_filename = path;
 }
 
-bool ConfigFile::has_max_areas() const { return _max_areas.hasValue(); }
+auto ConfigFile::has_max_areas() const -> bool { return _max_areas.hasValue(); }
 
-size_t ConfigFile::max_areas() const { return _max_areas.get(); }
+auto ConfigFile::max_areas() const -> size_t { return _max_areas.get(); }
 
 void ConfigFile::max_areas(size_t m) { _max_areas = m; }
 
-const std::vector<std::string>& ConfigFile::area_names() const {
+auto ConfigFile::area_names() const -> const std::vector<std::string>& {
   return _area_names;
 }
 
@@ -483,39 +485,41 @@ void ConfigFile::area_names(const std::vector<std::string>& area_names) {
   _area_names = area_names;
 }
 
-const Periods& ConfigFile::periods() const { return _periods; }
+auto ConfigFile::periods() const -> const Periods& { return _periods; }
 
 void ConfigFile::periods(const Periods& periods) { _periods = periods; }
 
-const std::shared_ptr<MRCAEntry>& ConfigFile::mrca(
-    const MRCALabel& label) const {
+auto ConfigFile::mrca(const MRCALabel& label) const
+    -> const std::shared_ptr<MRCAEntry>& {
   return _mrcas.at(label);
 }
 
-const MRCAMap& ConfigFile::mrcas() const { return _mrcas; }
+auto ConfigFile::mrcas() const -> const MRCAMap& { return _mrcas; }
 
 void ConfigFile::add_mrca(const MRCALabel& label,
                           const std::shared_ptr<MRCAEntry>& entry) {
   _mrcas[label] = entry;
 }
 
-const std::vector<Fossil>& ConfigFile::fossils() const { return _fossils; }
+auto ConfigFile::fossils() const -> const std::vector<Fossil>& {
+  return _fossils;
+}
 
 void ConfigFile::add_fossil(const Fossil& f) { _fossils.push_back(f); }
 
-bool ConfigFile::marginal() const { return _marginal; }
+auto ConfigFile::marginal() const -> bool { return _marginal; }
 
 void ConfigFile::marginal(bool m) { _marginal = m; }
 
-bool ConfigFile::compute_all_splits() const { return _all_splits; }
+auto ConfigFile::compute_all_splits() const -> bool { return _all_splits; }
 
 void ConfigFile::compute_all_splits(bool b) { _all_splits = b; }
 
-bool ConfigFile::compute_all_states() const { return _all_states; }
+auto ConfigFile::compute_all_states() const -> bool { return _all_states; }
 
 void ConfigFile::compute_all_states(bool b) { _all_states = b; }
 
-const std::unordered_set<MRCALabel>& ConfigFile::state_nodes() const {
+auto ConfigFile::state_nodes() const -> const std::unordered_set<MRCALabel>& {
   return _state_nodes;
 }
 
@@ -523,7 +527,7 @@ void ConfigFile::state_nodes(const std::unordered_set<MRCALabel>& labels) {
   _state_nodes = labels;
 }
 
-const std::unordered_set<MRCALabel>& ConfigFile::split_nodes() const {
+auto ConfigFile::split_nodes() const -> const std::unordered_set<MRCALabel>& {
   return _split_nodes;
 }
 
@@ -531,7 +535,7 @@ void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
   _split_nodes = labels;
 }
 
-PeriodParams ConfigFile::period_params() const {
+auto ConfigFile::period_params() const -> PeriodParams {
   return {.dispersion_rate = _dispersion, .extinction_rate = _extinction};
 }
 
@@ -540,13 +544,13 @@ void ConfigFile::period_params(double d, double e) {
   _extinction = e;
 }
 
-double ConfigFile::lh_epsilon() const { return _lh_epsilon; }
+auto ConfigFile::lh_epsilon() const -> double { return _lh_epsilon; }
 
 void ConfigFile::lh_epsilon(double e) { _lh_epsilon = e; }
 
-bool ConfigFile::has_expm_mode() const { return _expm_mode.hasValue(); }
+auto ConfigFile::has_expm_mode() const -> bool { return _expm_mode.hasValue(); }
 
-const LagrangeEXPMComputationMode& ConfigFile::expm_mode() const {
+auto ConfigFile::expm_mode() const -> const LagrangeEXPMComputationMode& {
   return _expm_mode.get();
 }
 
@@ -554,7 +558,7 @@ void ConfigFile::expm_mode(const LagrangeEXPMComputationMode& mode) {
   _expm_mode = mode;
 }
 
-AlignmentFileType ConfigFile::alignment_file_type() const {
+auto ConfigFile::alignment_file_type() const -> AlignmentFileType {
   if (_alignment_file_type.hasValue()) { return _alignment_file_type.get(); }
 
   auto extension = data_filename().extension();
@@ -570,22 +574,24 @@ void ConfigFile::alignment_file_type(const AlignmentFileType& type) {
   _alignment_file_type = type;
 }
 
-size_t ConfigFile::region_count() const { return _region_count.get(); }
+auto ConfigFile::region_count() const -> size_t { return _region_count.get(); }
 
 void ConfigFile::region_count(size_t r) { _region_count = r; }
 
-size_t ConfigFile::workers() const {
+auto ConfigFile::workers() const -> size_t {
   if (_workers.hasValue()) { return _workers.get(); }
   return 1;
 }
 
 void ConfigFile::workers(size_t w) { _workers = w; }
 
-size_t ConfigFile::threads_per_worker() const { return _threads_per_worker; }
+auto ConfigFile::threads_per_worker() const -> size_t {
+  return _threads_per_worker;
+}
 
 void ConfigFile::threads_per_worker(size_t t) { _threads_per_worker = t; }
 
-const LagrangeOperationMode& ConfigFile::run_mode() const {
+auto ConfigFile::run_mode() const -> const LagrangeOperationMode& {
   return _run_mode.get();
 }
 
@@ -593,79 +599,82 @@ void ConfigFile::run_mode(const LagrangeOperationMode& mode) {
   _run_mode = mode;
 }
 
-OptimizationMethod ConfigFile::opt_method() const { return _opt_method.get(); }
+auto ConfigFile::opt_method() const -> OptimizationMethod {
+  return _opt_method.get();
+}
 
 void ConfigFile::opt_method(const OptimizationMethod& om) { _opt_method = om; }
 
-std::filesystem::path ConfigFile::jsonResultsFilename() const {
+auto ConfigFile::jsonResultsFilename() const -> std::filesystem::path {
   auto results_filename = _prefix;
   results_filename += ".results.json";
   return results_filename;
 }
 
-std::filesystem::path ConfigFile::nodeTreeFilename() const {
+auto ConfigFile::nodeTreeFilename() const -> std::filesystem::path {
   auto node_tree_filename = _prefix;
   node_tree_filename += ".nodes.tre";
   return node_tree_filename;
 }
 
-std::filesystem::path ConfigFile::scaledTreeFilename() const {
+auto ConfigFile::scaledTreeFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".scaled.tre";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::splitsTreeFilename() const {
+auto ConfigFile::splitsTreeFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".splits.tre";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::statesTreeFilename() const {
+auto ConfigFile::statesTreeFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".states.tre";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::splitsCSVResultsFilename() const {
+auto ConfigFile::splitsCSVResultsFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".splits.csv";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::statesCSVResultsFilename() const {
+auto ConfigFile::statesCSVResultsFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".states.csv";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::periodsCSVResultsFilename() const {
+auto ConfigFile::periodsCSVResultsFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".periods.csv";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::distributionsCSVResultsFilename() const {
+auto ConfigFile::distributionsCSVResultsFilename() const
+    -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".distributions.csv";
   return scaled_tree_filename;
 }
 
-std::filesystem::path ConfigFile::nodeInfoCSVResultsFilename() const {
+auto ConfigFile::nodeInfoCSVResultsFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".node-info.csv";
   return scaled_tree_filename;
 }
 
-bool ConfigFile::computeStatesStrict() const {
+auto ConfigFile::computeStatesStrict() const -> bool {
   return _all_states || !_state_nodes.empty();
 }
 
-bool ConfigFile::computeStates() const {
+auto ConfigFile::computeStates() const -> bool {
   return _all_states || !_state_nodes.empty() || computeSplits();
 }
 
-bool ConfigFile::computeSplits() const {
+auto ConfigFile::computeSplits() const -> bool {
   return _all_splits || !_split_nodes.empty();
 }
 }  // namespace lagrange

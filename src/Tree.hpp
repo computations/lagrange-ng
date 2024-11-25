@@ -82,7 +82,7 @@ class Tree {
       const std::function<std::string(const Node &)> &newick_lambda) const
       -> std::string;
 
-  bool checkAlignmentConsistency(const Alignment &align) const;
+  auto checkAlignmentConsistency(const Alignment &align) const -> bool;
 
   void assignFossils(const std::vector<Fossil> &fossils);
 

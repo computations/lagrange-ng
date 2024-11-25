@@ -32,8 +32,8 @@ auto lagrange_convert_dist_string(
   return oss.str();
 }
 
-std::vector<std::string> lagrange_convert_dist_to_list(
-    Range dist, const std::vector<std::string> &names) {
+auto lagrange_convert_dist_to_list(
+    Range dist, const std::vector<std::string> &names) -> std::vector<std::string> {
   std::vector<std::string> ret;
 
   size_t states = lagrange_clz(dist);

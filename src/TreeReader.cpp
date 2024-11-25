@@ -29,8 +29,8 @@ enum LexemeType {
 class Lexer {
  public:
   explicit Lexer(std::string input) :
-      _input{std::move(input)},
-      _current_index{0} {};
+      _input{std::move(input)}
+      {};
 
   auto consume() -> LexemeType;
   auto peak() -> LexemeType;
@@ -52,7 +52,7 @@ class Lexer {
     return val;
   }
 
-  auto describePosition() const -> std::string {
+  [[nodiscard]] auto describePosition() const -> std::string {
     std::stringstream builder;
     builder << "position " << _current_index;
     return builder.str();
@@ -122,7 +122,7 @@ class Lexer {
 
   std::string _input;
   std::string _value;
-  size_t _current_index;
+  size_t _current_index{0};
 };
 
 auto Lexer::peak() -> LexemeType {

@@ -115,9 +115,9 @@ class WorkerState {
     work(tc, ws);
   }
 
-  auto masterThread() const -> bool { return _tid == 0; }
+  [[nodiscard]] auto masterThread() const -> bool { return _tid == 0; }
 
-  auto threadID() const -> size_t { return _tid; }
+  [[nodiscard]] auto threadID() const -> size_t { return _tid; }
 
   void haltThreads() {
     setRunMode(WorkerMode::Halt);

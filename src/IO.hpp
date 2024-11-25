@@ -9,12 +9,11 @@
 
 namespace lagrange {
 
-
 auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void;
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
-    -> std::unique_ptr<LagrangeMatrixBase[]>;
+    const std::unique_ptr<LagrangeMatrixBase[]> &states,
+    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]>;
 
 auto make_state_results_for_node(
     const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
@@ -36,8 +35,8 @@ auto make_results_for_node(
     size_t max_areas) -> nlohmann::json;
 
 void write_result_files(const std::shared_ptr<Tree> &tree,
-                       const ConfigFile &config,
-                       const Context &context);
+                        const ConfigFile &config,
+                        const Context &context);
 
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config);
@@ -56,10 +55,10 @@ auto init_json(const std::shared_ptr<const Tree> &tree,
 
 void write_json_file(const ConfigFile &config, const nlohmann::json &root_json);
 
-nlohmann::json produce_json_file(const std::shared_ptr<Tree> &tree,
-                                 const ConfigFile &config,
-                                 const Context &context);
+auto produce_json_file(const std::shared_ptr<Tree> &tree,
+                       const ConfigFile &config,
+                       const Context &context) -> nlohmann::json;
 
-void print_run_header(const ConfigFile& config);
+void print_run_header(const ConfigFile &config);
 
 }  // namespace lagrange

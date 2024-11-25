@@ -91,8 +91,8 @@ class Node {
                                const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
-  friend auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-      -> std::shared_ptr<Node>;
+  friend auto getNodeById(const std::shared_ptr<Node> &current,
+                          size_t id) -> std::shared_ptr<Node>;
 
   auto traverseAndGenerateForwardOperations(Workspace &ws,
                                             PeriodRateMatrixMap &pm_map,
@@ -140,41 +140,43 @@ class Node {
       Workspace &ws,
       const std::unordered_map<std::string, Range> &distrib_data) const;
 
-  size_t checkAlignmentConsistency(const Alignment &align, size_t count);
+  auto checkAlignmentConsistency(const Alignment &align,
+                                 size_t count) -> size_t;
 
   void assignId();
-  std::string getNodeLabel() const;
+  auto getNodeLabel() const -> std::string;
 
   void assignIncludedAreas(Range fixed_dist);
   void assignExcludedAreas(Range fixed_dist);
   void assignFixedDist(Range fixed_dist);
 
-  Option<Range> getFixedDist() const;
+  auto getFixedDist() const -> Option<Range>;
 
-  Option<Range> getIncludedAreas() const;
-  Option<Range> getExcludedAreas() const;
+  auto getIncludedAreas() const -> Option<Range>;
+  auto getExcludedAreas() const -> Option<Range>;
 
   void setPeriodSegments(const Periods &periods);
 
   void applyCB(const std::function<void(Node &)> &func);
 
-  bool hasResults() const;
-  bool hasAncestralState() const;
-  bool hasAncestralSplit() const;
+  auto hasResults() const -> bool;
+  auto hasAncestralState() const -> bool;
+  auto hasAncestralSplit() const -> bool;
 
-  const std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState() const;
-  const SplitReturn &getAncestralSplit() const;
+  auto getAncestralState() const
+      -> const std::unique_ptr<LagrangeMatrixBase[]> &;
+  auto getAncestralSplit() const -> const SplitReturn &;
 
-  AncSplit getTopAncestralSplit() const;
-  Range getTopAncestralState() const;
+  auto getTopAncestralSplit() const -> AncSplit;
+  auto getTopAncestralState() const -> Range;
 
-  std::unique_ptr<LagrangeMatrixBase[]> &getAncestralState();
-  SplitReturn &getAncestralSplit();
+  auto getAncestralState() -> std::unique_ptr<LagrangeMatrixBase[]> &;
+  auto getAncestralSplit() -> SplitReturn &;
 
   void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
   void assignAncestralSplit(SplitReturn);
 
-  bool assignFossil(const Fossil &);
+  auto assignFossil(const Fossil &) -> bool;
 
  private:
   auto getCount(size_t) -> size_t;
@@ -223,7 +225,7 @@ void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
 auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
                          const MRCALabel &mrca) -> std::shared_ptr<Node>;
 
-auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
-    -> std::shared_ptr<Node>;
+auto getNodeById(const std::shared_ptr<Node> &current,
+                 size_t id) -> std::shared_ptr<Node>;
 }  // namespace lagrange
 #endif /* NODE_H_ */
