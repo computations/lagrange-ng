@@ -165,7 +165,7 @@ StatementMacros:
 TabWidth:        8
 UseCRLF:         false
 UseTab:          Never
-BreakAfterAttributes: Always
+BreakAfterAttributes: Never
 EmptyLineBeforeAccessModifier: LogicalBlock
 InsertBraces: true
 LambdaBodyIndentation: Signature
