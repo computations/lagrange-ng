@@ -39,7 +39,7 @@ auto lagrange_convert_dist_to_list(
   size_t states = lagrange_clz(dist);
   auto itr = names.rbegin();
   for (size_t i = 0; i < states; ++i) {
-    if (lagrange_bextr(dist, i)) { ret.push_back(*itr); }
+    if (lagrange_bextr(dist, i) != 0u) { ret.push_back(*itr); }
     itr++;
   }
   return ret;
@@ -64,7 +64,7 @@ constexpr std::array<size_t, factorial_table_size> factorial_table = {
     3628800,
 };
 
-constexpr inline auto factorial(uint64_t i) -> size_t {
+constexpr auto factorial(uint64_t i) -> size_t {
   if (i < factorial_table_size) { return factorial_table.at(i); }
   size_t f = factorial_table[factorial_table_size - 1];
   for (size_t k = factorial_table_size; k <= i; ++k) {
@@ -73,7 +73,7 @@ constexpr inline auto factorial(uint64_t i) -> size_t {
   return f;
 }
 
-constexpr inline auto combinations(uint64_t n, uint64_t i) -> size_t {
+constexpr auto combinations(uint64_t n, uint64_t i) -> size_t {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
@@ -133,7 +133,7 @@ auto convert_dist_string_to_dist(
     start = end;
     for (size_t i = 0; i < names.size(); ++i) {
       if (region_name == names[i]) {
-        ret |= 1ull << i;
+        ret |= 1ULL << i;
         break;
       }
     }
@@ -144,7 +144,7 @@ auto convert_dist_string_to_dist(
 auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range {
   Range d = 0;
   for (size_t i = 0; i < dist.size(); i++) {
-    if (dist[i] == '1') { d |= 1ull << (dist.size() - i - 1); }
+    if (dist[i] == '1') { d |= 1ULL << (dist.size() - i - 1); }
   }
   return d;
 }

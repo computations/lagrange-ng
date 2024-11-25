@@ -395,7 +395,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         double sum = 0.0;
         size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
         for (size_t j = 0; j < ws->regions(); ++j) {
-          sum += lagrange_bextr(source_dist, j) ? period.getDispersionRate(i, j)
+          sum += (lagrange_bextr(source_dist, j) != 0U) ? period.getDispersionRate(i, j)
                                                 : 0.0;
         }
 
@@ -782,7 +782,7 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
-    auto &top_clv = ws->CLV(_top_clv);
+    const auto &top_clv = ws->CLV(_top_clv);
     for (size_t i = 0; i < ws->CLVSize(); ++i) {
       if (std::isnan(top_clv[i])
           || ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
@@ -1027,7 +1027,7 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
                    _incl_area_mask);
 
   tmp_scalar += ws->CLVScalar(_parent_clv_index);
-  auto result = _result.get();
+  auto *result = _result.get();
 
   for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
     double tmp_val = result[i];

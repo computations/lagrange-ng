@@ -10,7 +10,7 @@
 #include "Fossil.hpp"
 
 namespace lagrange {
-enum class ConfigLexemeType { VALUE, EQUALS_SIGN, END };
+enum class ConfigLexemeType : uint8_t { VALUE, EQUALS_SIGN, END };
 
 class ConfigLexer {
  public:
@@ -23,20 +23,22 @@ class ConfigLexer {
       char quote_char = 0;
       while (char tmp = _input[_current_index]) {
         /* open the quote */
-        if (!quote_char && (tmp == '"' || tmp == '\'')) {
+        if ((quote_char == 0) && (tmp == '"' || tmp == '\'')) {
           quote_char = tmp;
           _current_index++;
           continue;
         }
 
         /* close the quote */
-        if (quote_char && tmp == quote_char) {
+        if ((quote_char != 0) && tmp == quote_char) {
           quote_char = 0;
           _current_index++;
           continue;
         }
 
-        if (!quote_char && (isPunct(tmp) || std::isspace(tmp))) { break; }
+        if ((quote_char == 0) && (isPunct(tmp) || (std::isspace(tmp) != 0))) {
+          break;
+        }
         builder << tmp;
         _current_index++;
       }
@@ -122,7 +124,7 @@ class ConfigLexer {
   auto atEnd() -> bool { return _input.size() == _current_index; }
 
  private:
-  auto isPunct(char c) -> bool { return c == '='; }
+  static auto isPunct(char c) -> bool { return c == '='; }
 
   auto consumeTokenPos() -> std::pair<ConfigLexemeType, size_t> {
     auto start_index = _current_index;
@@ -132,8 +134,7 @@ class ConfigLexer {
 
   void skipWhitespace() {
     while (_current_index < _input.size()) {
-      char c = _input[_current_index];
-      if (std::isspace(c) == 0) { break; }
+      if (std::isspace(_input[_current_index]) == 0) { break; }
       _current_index++;
     }
   }
@@ -194,7 +195,8 @@ auto determine_fossil_type(const std::string& fossil_type_string)
     -> FossilType {
   if (fossil_type_string == "n" || fossil_type_string == "node") {
     return FossilType::NODE;
-  } else if (fossil_type_string == "b" || fossil_type_string == "branch") {
+  }
+  if (fossil_type_string == "b" || fossil_type_string == "branch") {
     return FossilType::BRANCH;
   } else if (fossil_type_string == "f" || fossil_type_string == "fixed") {
     return FossilType::FIXED;
@@ -304,11 +306,7 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
         lexer.expect(ConfigLexemeType::VALUE);
 
         auto calc_type_value = lexer.consumeValueAsString();
-        if (std::tolower(calc_type_value[0]) == 'm') {
-          config._marginal = true;
-        } else {
-          config._marginal = false;
-        }
+        config._marginal = std::tolower(calc_type_value[0]) == 'm';
       } else if (config_value == "report") {
         lexer.expect(ConfigLexemeType::VALUE);
         auto report_value = lexer.consumeValueAsString();
@@ -564,7 +562,8 @@ auto ConfigFile::alignment_file_type() const -> AlignmentFileType {
   auto extension = data_filename().extension();
   if (extension == ".fasta" || extension == ".fas") {
     return AlignmentFileType::FASTA;
-  } else if (extension == ".phylip" || extension == ".phy") {
+  }
+  if (extension == ".phylip" || extension == ".phy") {
     return AlignmentFileType::PHYLIP;
   }
   throw AlignmentFiletypeError{"Failed to recognize alignment file type"};
@@ -586,7 +585,7 @@ auto ConfigFile::workers() const -> size_t {
 void ConfigFile::workers(size_t w) { _workers = w; }
 
 auto ConfigFile::threads_per_worker() const -> size_t {
-  return _threads_per_worker;
+  return static_cast<size_t>(_threads_per_worker);
 }
 
 void ConfigFile::threads_per_worker(size_t t) { _threads_per_worker = t; }

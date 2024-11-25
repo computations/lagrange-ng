@@ -68,12 +68,12 @@ class Workspace {
 
   ~Workspace();
 
-  inline auto CLVScalar(size_t i) -> size_t & {
+  auto CLVScalar(size_t i) -> size_t & {
     assert(_reserved);
     return _clv_scalars[i];
   }
 
-  inline auto rateMatrix(size_t i) -> LagrangeMatrix & {
+  auto rateMatrix(size_t i) -> LagrangeMatrix & {
     assert(_reserved);
     if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range"};
@@ -81,7 +81,7 @@ class Workspace {
     return _rate_matrix[i]._matrix;
   }
 
-  inline void updateRateMatrix(size_t index, const LagrangeConstMatrix &A) {
+  void updateRateMatrix(size_t index, const LagrangeConstMatrix &A) {
     assert(_reserved);
     if (index >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range when updating"};
@@ -108,12 +108,12 @@ class Workspace {
   }
   */
 
-  inline void updateRateMatrixAndAdvanceClock(size_t i) {
+  void updateRateMatrixAndAdvanceClock(size_t i) {
     assert(_reserved);
     _rate_matrix[i]._last_update = advanceClock();
   }
 
-  inline auto probMatrix(size_t i) -> LagrangeMatrix & {
+  auto probMatrix(size_t i) -> LagrangeMatrix & {
     assert(_reserved);
     if (i >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range"};
@@ -121,7 +121,7 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  inline auto updateProbMatrix(size_t index,
+  auto updateProbMatrix(size_t index,
                                const LagrangeConstMatrix &A) -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
@@ -152,17 +152,17 @@ class Workspace {
   }
   */
 
-  inline auto lastUpdateProbMatrix(size_t i) -> ClockTick {
+  auto lastUpdateProbMatrix(size_t i) -> ClockTick {
     assert(_reserved);
     return _prob_matrix[i]._last_update;
   }
 
-  inline auto lastUpdateRateMatrix(size_t i) -> ClockTick {
+  auto lastUpdateRateMatrix(size_t i) -> ClockTick {
     assert(_reserved);
     return _rate_matrix[i]._last_update;
   }
 
-  inline auto CLV(size_t i) -> const LagrangeColVector & {
+  auto CLV(size_t i) -> const LagrangeColVector & {
     assert(_reserved);
     if (i >= CLVCount()) {
       throw std::runtime_error{"CLV access out of range"};
@@ -170,7 +170,7 @@ class Workspace {
     return _clvs[i]._clv;
   }
 
-  inline void updateCLV(const LagrangeConstColVector &clv, size_t index) {
+  void updateCLV(const LagrangeConstColVector &clv, size_t index) {
     if (index >= CLVCount()) {
       throw std::runtime_error{"CLV access out of range"};
     }
@@ -182,57 +182,57 @@ class Workspace {
     _clvs[index]._last_update = advanceClock();
   }
 
-  inline auto CLVSizeTuple(size_t index)
+  auto CLVSizeTuple(size_t index)
       -> std::tuple<LagrangeColVector, size_t> {
     return std::make_tuple(CLV(index), CLVSize());
   }
 
-  inline void updateCLVClock(size_t index) {
+  void updateCLVClock(size_t index) {
     _clvs[index]._last_update = advanceClock();
   }
 
-  inline auto lastUpdateCLV(size_t index) -> ClockTick {
+  auto lastUpdateCLV(size_t index) -> ClockTick {
     return _clvs[index]._last_update;
   }
 
-  [[nodiscard]] inline auto states() const -> size_t { return _states; }
+  [[nodiscard]] auto states() const -> size_t { return _states; }
 
-  [[nodiscard]] inline auto regions() const -> size_t { return _regions; }
+  [[nodiscard]] auto regions() const -> size_t { return _regions; }
 
-  [[nodiscard]] inline auto probMatrixCount() const -> size_t {
+  [[nodiscard]] auto probMatrixCount() const -> size_t {
     return _prob_matrix.size();
   }
 
-  [[nodiscard]] inline auto rateMatrixCount() const -> size_t {
+  [[nodiscard]] auto rateMatrixCount() const -> size_t {
     return _rate_matrix.size();
   }
 
-  [[nodiscard]] inline auto CLVCount() const -> size_t {
+  [[nodiscard]] auto CLVCount() const -> size_t {
     return _next_free_clv;
   }
 
-  [[nodiscard]] inline auto matrixSize() const -> size_t {
+  [[nodiscard]] auto matrixSize() const -> size_t {
     return leadingDimension() * restrictedStateCount();
   }
 
-  [[nodiscard]] inline auto nodeCount() const -> size_t {
+  [[nodiscard]] auto nodeCount() const -> size_t {
     return _inner_count + _taxa_count;
   }
 
-  inline auto suggestProbMatrixIndex() -> size_t {
+  auto suggestProbMatrixIndex() -> size_t {
     size_t suggested_index = _prob_matrix.size();
     _prob_matrix.emplace_back();
     return suggested_index;
   }
 
-  inline auto reserveRateMatrixIndex(size_t index) -> size_t {
+  auto reserveRateMatrixIndex(size_t index) -> size_t {
     if (_rate_matrix.size() <= index) { _rate_matrix.resize(index + 1); }
     return index;
   }
 
-  static inline auto suggestFreqVectorIndex() -> size_t { return 0; }
+  static auto suggestFreqVectorIndex() -> size_t { return 0; }
 
-  inline auto registerGenericCLV() -> size_t { return registerCLV(); }
+  auto registerGenericCLV() -> size_t { return registerCLV(); }
 
   void registerTopCLV(size_t node_id);
 
@@ -240,47 +240,47 @@ class Workspace {
 
   void setTipCLV(size_t index, Range dist);
 
-  inline void registerTopCLVReverse(size_t node_id) {
+  void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();
   }
 
-  inline void registerBot1CLVReverse(size_t node_id) {
+  void registerBot1CLVReverse(size_t node_id) {
     _node_reservations[node_id]._bot1_rclv = registerCLV();
   }
 
-  inline void registerBot2CLVReverse(size_t node_id) {
+  void registerBot2CLVReverse(size_t node_id) {
     _node_reservations[node_id]._bot2_rclv = registerCLV();
   }
 
-  inline auto getTopCLV(size_t node_id) -> size_t {
+  auto getTopCLV(size_t node_id) -> size_t {
     return _node_reservations[node_id]._top_clv;
   }
 
-  inline auto getTopCLVReverse(size_t node_id) -> size_t {
+  auto getTopCLVReverse(size_t node_id) -> size_t {
     return _node_reservations[node_id]._top_rclv;
   }
 
-  inline auto getLeftChildCLV(size_t node_id) -> size_t {
+  auto getLeftChildCLV(size_t node_id) -> size_t {
     return _node_reservations[node_id]._bot1_clv;
   }
 
-  inline auto getRightChildCLV(size_t node_id) -> size_t {
+  auto getRightChildCLV(size_t node_id) -> size_t {
     return _node_reservations[node_id]._bot2_clv;
   }
 
-  inline auto getBot1CLVReverse(size_t node_id) -> size_t {
+  auto getBot1CLVReverse(size_t node_id) -> size_t {
     return _node_reservations[node_id]._bot1_rclv;
   }
 
-  inline auto getBot2CLVReverse(size_t node_id) -> size_t {
+  auto getBot2CLVReverse(size_t node_id) -> size_t {
     return _node_reservations[node_id]._bot2_rclv;
   }
 
-  inline auto getBaseFrequencies(size_t index) -> LagrangeColVector & {
+  auto getBaseFrequencies(size_t index) -> LagrangeColVector & {
     return _base_frequencies[index];
   }
 
-  inline void setBaseFrequenciesByDist(size_t index, Range dist) {
+  void setBaseFrequenciesByDist(size_t index, Range dist) {
     for (size_t i = 0; i < CLVSize(); ++i) {
       _base_frequencies[index][i] = 0.0;
     }
@@ -298,9 +298,9 @@ class Workspace {
 
   void reserve();
 
-  inline auto advanceClock() -> ClockTick { return _current_clock++; }
+  auto advanceClock() -> ClockTick { return _current_clock++; }
 
-  inline auto readClock() -> ClockTick { return _current_clock; }
+  auto readClock() -> ClockTick { return _current_clock; }
 
   [[nodiscard]] auto getPeriodParams() const
       -> const std::vector<PeriodParams> & {
@@ -316,18 +316,18 @@ class Workspace {
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
 
-  [[nodiscard]] inline auto reserved() const -> bool {
-    return !(_base_frequencies == nullptr || _clvs.empty());
+  [[nodiscard]] auto reserved() const -> bool {
+    return _base_frequencies != nullptr && !_clvs.empty();
   }
 
   [[nodiscard]] auto reportNodeVectors(size_t node_id) const -> std::string;
 
-  [[nodiscard]] inline auto computeMatrixIndex(size_t i,
+  [[nodiscard]] auto computeMatrixIndex(size_t i,
                                                size_t j) const -> size_t {
     return i * leadingDimension() + j;
   }
 
-  inline void setReversePrior(size_t index) {
+  void setReversePrior(size_t index) {
     assert(_reserved);
     if (index >= _clvs.size()) {
       throw std::runtime_error{
@@ -342,25 +342,25 @@ class Workspace {
     _clvs[index]._last_update = std::numeric_limits<ClockTick>::max();
   }
 
-  [[nodiscard]] inline auto leadingDimension() const -> size_t {
+  [[nodiscard]] auto leadingDimension() const -> size_t {
     return _leading_dim;
   }
 
-  [[nodiscard]] inline auto restrictedStateCount() const -> size_t {
+  [[nodiscard]] auto restrictedStateCount() const -> size_t {
     return _restricted_state_count;
   }
 
-  [[nodiscard]] inline auto maxAreas() const -> size_t { return _max_areas; }
+  [[nodiscard]] auto maxAreas() const -> size_t { return _max_areas; }
 
-  [[nodiscard]] inline auto matrixRows() const -> size_t {
+  [[nodiscard]] auto matrixRows() const -> size_t {
     return restrictedStateCount();
   }
 
-  [[nodiscard]] inline auto matrixCols() const -> size_t {
+  [[nodiscard]] auto matrixCols() const -> size_t {
     return matrixRows();
   }
 
-  [[nodiscard]] inline auto CLVSize() const -> size_t {
+  [[nodiscard]] auto CLVSize() const -> size_t {
     return restrictedStateCount();
   }
 
@@ -369,7 +369,7 @@ class Workspace {
   }
 
  private:
-  inline auto registerCLV() -> size_t { return _next_free_clv++; }
+  auto registerCLV() -> size_t { return _next_free_clv++; }
 
   size_t _taxa_count;
   size_t _inner_count;

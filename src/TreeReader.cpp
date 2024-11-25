@@ -14,7 +14,7 @@
 
 namespace lagrange {
 
-enum LexemeType {
+enum LexemeType : uint8_t {
   OPENING_SQUARE_BRACKET,
   CLOSING_SQUARE_BRACKET,
   OPENING_PAREN,
@@ -28,9 +28,7 @@ enum LexemeType {
 
 class Lexer {
  public:
-  explicit Lexer(std::string input) :
-      _input{std::move(input)}
-      {};
+  explicit Lexer(std::string input) : _input{std::move(input)} {};
 
   auto consume() -> LexemeType;
   auto peak() -> LexemeType;

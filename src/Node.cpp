@@ -405,7 +405,7 @@ auto Node::getId() const -> size_t { return _id; }
 auto Node::checkAlignmentConsistency(const Alignment &align,
                                      size_t count) -> size_t {
   if (isTip()) {
-    if (align.data.count(_label) == 0) {
+    if (!align.data.contains(_label)) {
       std::ostringstream oss;
       oss << "Could not find taxa '" << _label
           << "' in alignment file, but taxa is present on the tree";
@@ -453,7 +453,7 @@ void Node::setPeriodSegments(const Periods &periods) {
 
 auto Node::getRateMatrixOperation(Workspace &ws,
                                   PeriodRateMatrixMap &rm_map,
-                                  size_t period) const
+                                  size_t period) 
     -> std::shared_ptr<MakeRateMatrixOperation> {
   auto it = rm_map.find(period);
   if (it == rm_map.end()) {
@@ -536,14 +536,14 @@ auto Node::getTopAncestralSplit() const -> AncSplit {
 
 auto Node::getTopAncestralState() const -> Range {
   if (_ancestral_state) {
-    auto &state = _ancestral_state.value();
+    const auto &state = _ancestral_state.value();
     auto period_segment = *_periods.begin();
 
     Range cur_range;
     size_t cur_index;
     Range best_range = 0;
     double best_lh = -std::numeric_limits<double>::infinity();
-    size_t max_range = 1ul << period_segment.regions;
+    size_t max_range = 1UL << period_segment.regions;
     for (cur_range = 0, cur_index = 0; cur_range < max_range; ++cur_index,
         cur_range = next_dist(cur_range, period_segment.max_areas)) {
       double cur_lwr = state[cur_index];
@@ -562,7 +562,7 @@ void Node::assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]> s) {
   _ancestral_state = std::move(s);
 }
 
-void Node::assignAncestralSplit(SplitReturn s) { _ancestral_split = s; }
+void Node::assignAncestralSplit(const SplitReturn& s) { _ancestral_split = s; }
 
 auto Node::getCount() -> size_t { return getCount(0); }
 

@@ -319,7 +319,7 @@ void write_csv_distribution_file(const ConfigFile &config) {
   auto fields = {"dist", "list"};
   auto outfile = init_csv(config.distributionsCSVResultsFilename(), fields);
 
-  size_t total_states = 1ul << config.region_count();
+  size_t total_states = 1UL << config.region_count();
 
   for (Range dist = 0; dist < total_states; ++dist) {
     outfile << dist << ",";
@@ -332,7 +332,11 @@ void write_csv_distribution_file(const ConfigFile &config) {
           region_list.end(),
           "'" + *region_list.begin() + "'",
           [](const std::string &acc, const std::string &entry) -> std::string {
-            return acc + ", '" + entry + "'";
+            std::string tmp = acc;
+            tmp += ", ";
+            tmp += entry;
+            tmp += "'";
+            return tmp;
           });
       outfile << region_list_string;
     }
@@ -429,7 +433,7 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 
   std::ofstream node_tree(node_tree_filename);
   node_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
-            << std::endl;
+            << '\n';
 }
 
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
@@ -439,7 +443,7 @@ void write_scaled_tree(const std::shared_ptr<Tree> &tree,
 
   std::ofstream anal_tree(scaled_tree_filename);
   anal_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
-            << std::endl;
+            << '\n';
 }
 
 void write_states_tree(const std::shared_ptr<Tree> &tree,
@@ -450,7 +454,7 @@ void write_states_tree(const std::shared_ptr<Tree> &tree,
   std::ofstream states_tree(states_tree_filename);
   states_tree << tree->getNewickLambda(
       make_annotated_states_newick_lambda(config.area_names()))
-              << std::endl;
+              << '\n';
 }
 
 void write_splits_tree(const std::shared_ptr<Tree> &tree,
@@ -461,7 +465,7 @@ void write_splits_tree(const std::shared_ptr<Tree> &tree,
   std::ofstream splits_tree(splits_tree_filename);
   splits_tree << tree->getNewickLambda(
       make_annotated_splits_newick_lambda(config.area_names()))
-              << std::endl;
+              << '\n';
 }
 
 auto init_json(const std::shared_ptr<const Tree> &tree,

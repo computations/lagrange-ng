@@ -11,7 +11,7 @@
 
 namespace lagrange {
 
-enum class WorkerMode {
+enum class WorkerMode : uint8_t {
   ComputeForward,
   ComputeReverse,
   ComputeLH,
@@ -108,7 +108,7 @@ class WorkerState {
     }
   }
 
-  inline void work(WorkerMode tm,
+  void work(WorkerMode tm,
                    WorkerContext& tc,
                    const std::shared_ptr<Workspace>& ws) {
     setRunMode(tm);
@@ -239,7 +239,7 @@ class WorkerState {
     return {};
   }
 
-  static inline auto activeThreads() -> size_t {
+  static auto activeThreads() -> size_t {
     return _total_threads - _finished_threads;
   }
 

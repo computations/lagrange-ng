@@ -9,7 +9,14 @@
 
 namespace lagrange {
 
-enum class FossilType { NODE, BRANCH, FIXED, EXCLUDE, INCLUDE, UNKOWN };
+enum class FossilType : uint8_t {
+  NODE,
+  BRANCH,
+  FIXED,
+  EXCLUDE,
+  INCLUDE,
+  UNKOWN
+};
 
 struct Fossil {
   MRCALabel mrca_name;

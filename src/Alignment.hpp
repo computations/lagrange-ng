@@ -24,7 +24,7 @@ struct Alignment {
   size_t taxa_count;
 };
 
-enum class AlignmentFileType { FASTA, PHYLIP };
+enum class AlignmentFileType : uint8_t { FASTA, PHYLIP };
 
 auto read_fasta(std::istream& instream) -> Alignment;
 auto read_phylip(std::istream& instream) -> Alignment;
@@ -34,9 +34,8 @@ auto read_phylip(std::istream& instream) -> Alignment;
  * known filetype, and the version with an unknown filetype, which is
  * represented by an Option.
  */
-auto read_alignment(std::istream& instream,
-                    AlignmentFileType type) -> Alignment;
-auto read_alignment(const std::filesystem::path& infile,
+auto read_alignment(std::istream& instream, AlignmentFileType type) -> Alignment;
+auto read_alignment(const std::filesystem::path& filename,
                     AlignmentFileType type) -> Alignment;
 
 /* Error types */

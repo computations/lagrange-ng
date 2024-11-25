@@ -31,7 +31,7 @@ inline auto lagrange_popcount(Range a) -> size_t {
   return static_cast<size_t>(__builtin_popcountll(a));
 }
 
-constexpr inline auto lagrange_clz(Range a) -> size_t {
+constexpr auto lagrange_clz(Range a) -> size_t {
   return static_cast<size_t>(__builtin_clzll(a));
 }
 
@@ -48,7 +48,7 @@ inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
 }
 
 /* Computes floor(log2) + 1 actually */
-constexpr inline auto lagrange_fast_log2(size_t x) -> size_t {
+constexpr auto lagrange_fast_log2(size_t x) -> size_t {
   constexpr size_t BITS_IN_BYTE = 8;
   return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
 }
@@ -88,7 +88,7 @@ auto convert_dist_binary_string_to_dist(const std::string &dist)
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
-constexpr inline auto next_dist(Range d, uint32_t n) -> Range {
+constexpr auto next_dist(Range d, uint32_t n) -> Range {
   d += 1;
   while (static_cast<size_t>(__builtin_popcountll(d)) > n) { d += 1; }
   return d;
@@ -96,15 +96,15 @@ constexpr inline auto next_dist(Range d, uint32_t n) -> Range {
 
 /* Returns true if the dist "passes" the check. That is, if there are no common
  * bits set */
-constexpr inline auto check_excl_dist(Range dist, Range excl_dist) -> bool {
-  return !(dist & excl_dist);
+constexpr auto check_excl_dist(Range dist, Range excl_dist) -> bool {
+  return (dist & excl_dist) == 0u;
 }
 
-constexpr inline auto check_incl_dist(Range dist, Range incl_dist) -> bool {
+constexpr auto check_incl_dist(Range dist, Range incl_dist) -> bool {
   return (dist & incl_dist) == incl_dist;
 }
 
-constexpr inline auto next_dist(Range d,
+constexpr auto next_dist(Range d,
                                 uint32_t n,
                                 size_t index,
                                 Range excl_area_mask = 0,

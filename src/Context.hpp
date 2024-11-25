@@ -30,19 +30,19 @@ class Context {
   Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas) :
       _tree{std::move(tree)},
       _workspace{std::make_shared<Workspace>(
-          _tree->getTipCount(), regions, max_areas)},
-      _rate_matrix_ops{} {}
+          _tree->getTipCount(), regions, max_areas)}
+      {}
 
   void registerLHGoal();
   void registerStateLHGoal();
   void registerStateLHGoal(
       const std::unordered_set<std::string>& mrca_keys,
-      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
           mrca_map);
   void registerSplitLHGoal();
   void registerSplitLHGoal(
       const std::unordered_set<std::string>& mrca_keys,
-      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+      const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
           mrca_map);
 
   [[nodiscard]] auto getStateResults() const
@@ -108,7 +108,7 @@ class Context {
 
   void registerGoals(const std::function<void(Node&)>& func);
   void registerGoals(
-      const std::unordered_set<std::string> mrca_keys,
+      const std::unordered_set<std::string>& mrca_keys,
       const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
           mrca_map,
       const std::function<void(Node&)>& func);

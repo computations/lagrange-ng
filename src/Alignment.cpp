@@ -1,5 +1,6 @@
 #include "Alignment.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <logger.hpp>
@@ -13,54 +14,67 @@ namespace lagrange {
 /**
  * Clean the taxa name by removing whitespace from the front and back.
  */
-std::string clean_taxa_name(const std::string& str) {
-  auto start_itr = str.begin();
-  auto end_itr = str.end() - 1;
-  while (std::isspace(*start_itr)) { start_itr += 1; }
-  while (std::isspace(*end_itr)) { end_itr -= 1; }
+template <typename T>
+std::string clean_taxa_name(T start_itr, T end_itr) {
+  while (std::isspace(*start_itr) != 0) { start_itr += 1; }
+  while (std::isspace(*end_itr) != 0) { end_itr -= 1; }
 
-  return {start_itr, end_itr + 1};
+  return {start_itr, end_itr};
+}
+
+std::tuple<TaxaName, Range, size_t> process_fasta_block(
+    const std::string& block) {
+  auto taxa_name_start = std::find(block.begin(), block.end(), '>') + 1;
+  auto taxa_name_end = std::find(taxa_name_start, block.end(), ' ');
+  TaxaName taxa_name = clean_taxa_name(taxa_name_start, taxa_name_end);
+
+  std::string range_string;
+  for (auto cur_itr = taxa_name_end + 1; cur_itr != block.end(); ++cur_itr) {
+    if (std::isspace(*cur_itr) != 0) { continue; }
+    range_string.push_back(*cur_itr);
+  }
+
+  Range range = convert_dist_binary_string_to_dist(range_string);
+
+  return {taxa_name, range, range_string.size()};
+}
+
+std::string get_fasta_block(std::istream& instream) {
+  std::string line;
+  std::stringstream block_string;
+  while (instream) {
+    if (instream.peek() == '>' && !block_string.view().empty()) { break; }
+    std::string line;
+    std::getline(instream, line);
+    block_string << line << " ";
+  }
+  return block_string.str();
 }
 
 Alignment read_fasta(std::istream& instream) {
   Alignment alignment;
 
-  size_t region_count = 0;
+  std::optional<size_t> region_count;
 
   std::string line;
   TaxaName taxa_name;
-  std::stringstream data_string;
 
   bool good = true;
-  while (std::getline(instream, line)) {
-    if (line[0] == '>') {
-      if (!taxa_name.empty()) {
-        auto tmp = data_string.str();
-        if (region_count == 0) {
-          region_count = tmp.size();
-        } else if (region_count != tmp.size()) {
-          LOG(ERROR,
-              "The range size for taxa '{}' differs in size",
-              taxa_name.c_str());
-          good = false;
-        }
-        alignment.data[taxa_name] = convert_dist_binary_string_to_dist(tmp);
-
-        taxa_name.clear();
-        data_string = std::stringstream();
-      }
-
-      taxa_name = clean_taxa_name(std::string(line.begin() + 1, line.end()));
-    } else {
-      data_string << line;
+  while (instream) {
+    auto block = get_fasta_block(instream);
+    auto res = process_fasta_block(block);
+    if (!region_count) { region_count = std::get<2>(res); }
+    if (region_count.value() != std::get<2>(res)) {
+      good = false;
+      LOG(ERROR,
+          "taxa {} has a different range size then the rest of the taxa",
+          std::get<0>(res))  // NOLINT;
     }
+    alignment.data[std::get<0>(res)] = std::get<1>(res);
   }
   if (!good) { throw AlignmentReadError{"Ranges in datafile vary in size"}; }
 
-  alignment.data[taxa_name] =
-      convert_dist_binary_string_to_dist(data_string.str());
-
-  alignment.region_count = region_count;
+  alignment.region_count = region_count.value();
   alignment.taxa_count = alignment.data.size();
   return alignment;
 }
@@ -81,10 +95,12 @@ Alignment read_phylip(std::istream& instream) {
       LOG(ERROR,
           "Range for taxa '{}' has a different size than specified in the "
           "phylip header",
-          taxa_name.c_str());
+          taxa_name)  // NOLINT;
       good = false;
     }
-    alignment.data[clean_taxa_name(taxa_name)] =
+    auto taxa_name_cleaned =
+        clean_taxa_name(taxa_name.begin(), taxa_name.end());
+    alignment.data[taxa_name_cleaned] =
         convert_dist_binary_string_to_dist(data_string);
   }
   if (!good) { throw AlignmentReadError{"Range size differs in phylip file"}; }
@@ -92,12 +108,9 @@ Alignment read_phylip(std::istream& instream) {
   return alignment;
 }
 
-Alignment read_alignment(std::istream& infile, AlignmentFileType type) {
-  if (type == AlignmentFileType::FASTA) {
-    return read_fasta(infile);
-  } else {
-    return read_phylip(infile);
-  }
+Alignment read_alignment(std::istream& instream, AlignmentFileType type) {
+  if (type == AlignmentFileType::FASTA) { return read_fasta(instream); }
+  return read_phylip(instream);
 }
 
 /**

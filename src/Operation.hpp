@@ -31,23 +31,23 @@ class MakeRateMatrixOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  [[nodiscard]] inline auto lastUpdate() const -> ClockTick {
+  [[nodiscard]] auto lastUpdate() const -> ClockTick {
     return _last_execution;
   }
 
-  inline void updateRates(const std::shared_ptr<Workspace>& ws,
+  void updateRates(const std::shared_ptr<Workspace>& ws,
                           double disp,
                           double ext) {
     ws->setPeriodParams(_period_index, disp, ext);
     _last_update = ws->advanceClock();
   }
 
-  inline void updateRates(const std::shared_ptr<Workspace>& ws,
+  void updateRates(const std::shared_ptr<Workspace>& ws,
                           const PeriodParams& p) {
     updateRates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
-  [[nodiscard]] inline auto rateMatrixIndex() const -> size_t {
+  [[nodiscard]] auto rateMatrixIndex() const -> size_t {
     return _rate_matrix_index;
   }
 
@@ -127,7 +127,7 @@ class ExpmOperation {
     if (!_rate_matrix_op) { return; }
 
     size_t period = _rate_matrix_op->getPeriodIndex();
-    if (vec.count(period) == 0) { vec[period] = _rate_matrix_op; }
+    if (!vec.contains(period)) { vec[period] = _rate_matrix_op; }
   }
 
  private:
@@ -369,8 +369,8 @@ class SplitOperation {
                      parent_clv) {}
 
   SplitOperation(size_t parent_clv,
-                 std::shared_ptr<DispersionOperation> l_ops,
-                 std::shared_ptr<DispersionOperation> r_ops) :
+                 const std::shared_ptr<DispersionOperation>& l_ops,
+                 const std::shared_ptr<DispersionOperation>& r_ops) :
       _lbranch_clv_index{l_ops->topCLVIndex()},
       _rbranch_clv_index{r_ops->topCLVIndex()},
       _parent_clv_index{parent_clv},
@@ -461,7 +461,7 @@ class ReverseSplitOperation {
 
   ReverseSplitOperation(size_t bot_clv,
                         size_t rtop_clv,
-                        std::shared_ptr<DispersionOperation> branch_op) :
+                        const std::shared_ptr<DispersionOperation>& branch_op) :
       _bot_clv_index{bot_clv},
       _ltop_clv_index{branch_op->topCLVIndex()},
       _rtop_clv_index{rtop_clv},
@@ -469,7 +469,7 @@ class ReverseSplitOperation {
       _branch_op{{branch_op}} {}
 
   explicit ReverseSplitOperation(
-      std::shared_ptr<DispersionOperation> branch_op) :
+      const std::shared_ptr<DispersionOperation>& branch_op) :
       _bot_clv_index{std::numeric_limits<size_t>::max()},
       _ltop_clv_index{std::numeric_limits<size_t>::max()},
       _rtop_clv_index{std::numeric_limits<size_t>::max()},
@@ -553,7 +553,7 @@ class LLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  [[nodiscard]] inline auto result() const -> double { return _result; }
+  [[nodiscard]] auto result() const -> double { return _result; }
 
   size_t _root_clv_index;
   size_t _prior_index;
@@ -595,7 +595,7 @@ class StateLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  [[nodiscard]] inline auto result() const
+  [[nodiscard]] auto result() const
       -> std::unique_ptr<LagrangeMatrixBase[]> {
     std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
     for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
@@ -612,7 +612,7 @@ class StateLHGoal {
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
-  [[nodiscard]] inline auto node_id() const -> size_t { return _node_id; }
+  [[nodiscard]] auto node_id() const -> size_t { return _node_id; }
 
  private:
   size_t _parent_clv_index;
@@ -644,7 +644,7 @@ class SplitLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  inline auto result() const -> SplitReturn { return _result; }
+  auto result() const -> SplitReturn { return _result; }
 
   auto ready(const std::shared_ptr<Workspace>&) const -> bool;
 
@@ -654,7 +654,7 @@ class SplitLHGoal {
 
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
-  inline auto node_id() const -> size_t { return _node_id; }
+  auto node_id() const -> size_t { return _node_id; }
 
  private:
   size_t _parent_clv_index;

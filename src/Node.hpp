@@ -174,7 +174,7 @@ class Node {
   auto getAncestralSplit() -> SplitReturn &;
 
   void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
-  void assignAncestralSplit(SplitReturn);
+  void assignAncestralSplit(const SplitReturn&);
 
   auto assignFossil(const Fossil &) -> bool;
 
@@ -183,9 +183,9 @@ class Node {
   auto getTipCount(size_t) -> size_t;
   void assignIdRecursive(size_t &id);
 
-  auto getRateMatrixOperation(Workspace &ws,
+  static auto getRateMatrixOperation(Workspace &ws,
                               PeriodRateMatrixMap &rm_map,
-                              size_t period) const
+                              size_t period) 
       -> std::shared_ptr<MakeRateMatrixOperation>;
 
   auto getProbMatrixOperation(Workspace &ws,

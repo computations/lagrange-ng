@@ -18,9 +18,9 @@
 namespace lagrange {
 constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
 
-enum class OutputType { JSON, CSV, UNKNOWN };
+enum class OutputType : uint8_t { JSON, CSV, UNKNOWN };
 
-enum class OptimizationMethod {
+enum class OptimizationMethod : uint8_t {
   NELDER_MEAD,
   BOBYQA,
   COBYLA,
@@ -91,7 +91,7 @@ class ConfigFile {
   void add_mrca(const MRCALabel&, const std::shared_ptr<MRCAEntry>&);
 
   auto fossils() const -> const std::vector<Fossil>&;
-  void add_fossil(const Fossil& f);
+  void add_fossil(const Fossil& fossil);
 
   auto marginal() const -> bool;
   void marginal(bool);
@@ -155,17 +155,17 @@ class ConfigFile {
   static auto parse_config_file(std::istream& instream) -> ConfigFile;
 
   auto validate_and_make_prefix() -> bool {
-    bool ok = true;
+    bool OllKorrect = true;
     try {
       if (!_prefix.parent_path().empty()) {
         std::filesystem::create_directories(_prefix.parent_path());
       }
     } catch (const std::filesystem::filesystem_error& err) {
       LOG(ERROR, "Failed to create prefix directory: {}", err.what());
-      ok = false;
+      OllKorrect = false;
     }
 
-    return ok;
+    return OllKorrect;
   }
 
   void check_prefix() {
@@ -186,7 +186,7 @@ class ConfigFile {
     if (!_threads_per_worker.hasValue()) { _threads_per_worker = 1; }
   }
 
-  void setup_log() {
+  void setup_log() const {
     if (!log_filename().empty()) {
       logger::get_log_states().add_file_stream(
           log_filename().c_str(),

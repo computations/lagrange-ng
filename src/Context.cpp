@@ -91,7 +91,7 @@ void Context::registerStateLHGoal() {
 
 void Context::registerStateLHGoal(
     const std::unordered_set<std::string>& mrca_keys,
-    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
         mrca_map) {
   auto cb = makeStateGoalCB();
   registerGoals(mrca_keys, mrca_map, cb);
@@ -104,7 +104,7 @@ void Context::registerSplitLHGoal() {
 
 void Context::registerSplitLHGoal(
     const std::unordered_set<std::string>& mrca_keys,
-    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>
+    const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
         mrca_map) {
   auto cb = makeSplitGoalCB();
 
@@ -117,7 +117,7 @@ void Context::registerGoals(const std::function<void(Node&)>& cb) {
 }
 
 void Context::registerGoals(
-    const std::unordered_set<std::string> mrca_keys,
+    const std::unordered_set<std::string>& mrca_keys,
     const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>& mrca_map,
     const std::function<void(Node&)>& cb) {
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
@@ -309,7 +309,7 @@ auto Context::getStateResults() const
   std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> states;
   states.reserve(_state_lh_goal.size());
 
-  for (auto& op : _state_lh_goal) { states[op.node_id()] = op.result(); }
+  for (const auto& op : _state_lh_goal) { states[op.node_id()] = op.result(); }
 
   return states;
 }
@@ -318,7 +318,7 @@ auto Context::getSplitResults() const -> SplitReturnList {
   SplitReturnList splits;
   splits.reserve(_split_lh_goal.size());
 
-  for (auto& op : _split_lh_goal) { splits[op.node_id()] = op.result(); }
+  for (const auto& op : _split_lh_goal) { splits[op.node_id()] = op.result(); }
 
   return splits;
 }
@@ -363,14 +363,14 @@ auto Context::computeSplitGoal(WorkerState& ts) -> SplitReturnList {
 }
 
 void Context::useArnoldi(bool mode_set, bool adaptive) const {
-  for (auto& op : _forward_operations) {
+  for (const auto& op : _forward_operations) {
     auto expm_ops = op->getExpmOperations();
     for (auto& eop : expm_ops) {
       eop->setArnoldiMode(mode_set);
       eop->setAdaptive(adaptive);
     }
   }
-  for (auto& op : _reverse_operations) {
+  for (const auto& op : _reverse_operations) {
     auto expm_ops = op->getExpmOperations();
     for (auto& eop : expm_ops) {
       eop->setArnoldiMode(mode_set);
@@ -411,8 +411,7 @@ void Context::set_opt_method(const OptimizationMethod& m) {
 }
 
 auto Context::computeDerivative() const -> bool {
-  if (_opt_method == nlopt::LD_LBFGS) { return true; }
-  return false;
+  return _opt_method == nlopt::LD_LBFGS;
 }
 
 }  // namespace lagrange

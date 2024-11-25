@@ -21,8 +21,8 @@
 #include "Common.hpp"
 
 namespace lagrange {
-AncSplit::AncSplit(Range dist, Range ldesc, Range rdesc, double we) :
-    _weight(we),
+AncSplit::AncSplit(Range dist, Range ldesc, Range rdesc, double weight) :
+    _weight(weight),
     _likelihood(0.0),
     anc_dist(dist),
     l_dist(ldesc),
@@ -30,7 +30,7 @@ AncSplit::AncSplit(Range dist, Range ldesc, Range rdesc, double we) :
 
 auto AncSplit::getWeight() const -> double { return _weight; }
 
-void AncSplit::setLikelihood(double li) { _likelihood = li; }
+void AncSplit::setLikelihood(double likelihood) { _likelihood = likelihood; }
 
 auto AncSplit::getLikelihood() const -> double { return _likelihood; }
 

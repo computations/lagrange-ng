@@ -39,7 +39,7 @@ class AncSplit {
 
   [[nodiscard]] auto getLikelihood() const -> double;
 
-  void setLikelihood(double li);
+  void setLikelihood(double likelihood);
 
   void setLWR(double lwr);
 
