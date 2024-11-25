@@ -68,7 +68,7 @@ constexpr inline auto factorial(uint64_t i) -> size_t {
   if (i < factorial_table_size) { return factorial_table.at(i); }
   size_t f = factorial_table[factorial_table_size - 1];
   for (size_t k = factorial_table_size; k <= i; ++k) {
-    f *= static_cast<double>(k);
+    f *= k;
   }
   return f;
 }

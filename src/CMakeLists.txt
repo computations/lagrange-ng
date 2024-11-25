@@ -29,6 +29,8 @@ endif()
 set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}
   logger)
 
+set(WARNING_FLAGS -Wall -Wextra)
+
 target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_INCLUDES})
 target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread)

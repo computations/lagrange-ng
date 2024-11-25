@@ -132,7 +132,6 @@ inline void join_splits(Range splitting_dist,
                         size_t dist_index,
                         size_t regions,
                         size_t max_areas,
-                        std::vector<RegionSplit> &splits,
                         const LagrangeConstColVector &c1,
                         const LagrangeConstColVector &c2,
                         LagrangeColVector dest,
@@ -198,14 +197,11 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
   bool scale = true;
 
-  std::vector<RegionSplit> splits;
-
   if (weighted_combine_check_happy_path(
           states, max_areas, fixed_dist, excl_area_mask, incl_area_mask)) {
     const auto identity_func = [](Range d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
-      join_splits(
-          i, i, regions, max_areas, splits, c1, c2, dest, scale, identity_func);
+      join_splits(i, i, regions, max_areas, c1, c2, dest, scale, identity_func);
     }
   } else {
     Range dist = 0;
@@ -225,16 +221,8 @@ inline void weighted_combine(const LagrangeConstColVector &c1,
 
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
-      join_splits(dist,
-                  index,
-                  regions,
-                  max_areas,
-                  splits,
-                  c1,
-                  c2,
-                  dest,
-                  scale,
-                  dist_map_func);
+      join_splits(
+          dist, index, regions, max_areas, c1, c2, dest, scale, dist_map_func);
     }
   }
 
@@ -404,8 +392,8 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         double sum = 0.0;
         size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
         for (size_t j = 0; j < ws->regions(); ++j) {
-          sum +=
-              period.getDispersionRate(i, j) * lagrange_bextr(source_dist, j);
+          sum += lagrange_bextr(source_dist, j) ? period.getDispersionRate(i, j)
+                                                : 0.0;
         }
 
         rm[ws->computeMatrixIndex(source_index, dest_index)] = sum;
@@ -490,8 +478,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_t == 0.0) {
     _N.reset(new LagrangeMatrixBase[ws->matrixSize()]);
 
-    for (size_t i = 0; i < rows; ++i) {
-      for (size_t j = 0; j < rows; ++j) {
+    for (int i = 0; i < rows; ++i) {
+      for (int j = 0; j < rows; ++j) {
         _N[ws->computeMatrixIndex(i, j)] = i == j ? 1.0 : 0.0;
       }
     }

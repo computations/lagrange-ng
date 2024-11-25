@@ -19,9 +19,9 @@
 
 #define CONVERT_FLOAT_TO_JSON(y, x) \
   if (std::isfinite(x)) {           \
-    y = x;                          \
+    (y) = x;                          \
   } else {                          \
-    y = std::to_string(x);          \
+    (y) = std::to_string(x);          \
   }
 
 #define STRING(s) #s

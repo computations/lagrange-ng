@@ -73,9 +73,9 @@ class PeriodSpan {
         _time{start},
         _length{len},
         _index{index},
-        _period{period},
+        _regions{regions},
         _max_areas{max_areas},
-        _regions{regions} {}
+        _period{period} {}
 
     value_type operator*() const {
       return {.index = _index,
@@ -119,8 +119,8 @@ class PeriodSpan {
   PeriodSpan(const Periods &periods, double start, double length) :
       _start_time{start},
       _length{length},
-      _regions{periods.regions()},
-      _max_areas{periods.maxAreas()} {
+      _max_areas{periods.maxAreas()},
+      _regions{periods.regions()} {
     _begin = periods.begin();
     _end = periods.end();
 

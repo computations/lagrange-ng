@@ -25,8 +25,6 @@ std::string clean_taxa_name(const std::string& str) {
 Alignment read_fasta(std::istream& instream) {
   Alignment alignment;
 
-  size_t line_number = 1;
-
   size_t region_count = 0;
 
   std::string line;
@@ -56,7 +54,6 @@ Alignment read_fasta(std::istream& instream) {
     } else {
       data_string << line;
     }
-    line_number++;
   }
   if (!good) { throw AlignmentReadError{"Ranges in datafile vary in size"}; }
 

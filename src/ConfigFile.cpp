@@ -69,7 +69,7 @@ class ConfigLexer {
   auto consumeValueAsLowerString() -> std::string {
     auto str = consumeValueAsString();
     std::transform(str.cbegin(), str.cend(), str.begin(), [](char c) -> char {
-      return std::tolower(c);
+      return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     });
     return str;
   }
@@ -336,7 +336,7 @@ ConfigFile ConfigFile::parse_config_file(std::istream& instream) {
       } else if (config_value == "lh-epsilon") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
-        config._extinction = parse_double(lexer);
+        config._lh_epsilon = parse_double(lexer);
       } else if (config_value == "workers") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
 
