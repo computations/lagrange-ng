@@ -10,25 +10,25 @@
 using namespace lagrange;
 
 #define lagrange_compute_error_from_matrix(calc_buffer, ref_buffer, workspace) \
-  {                                                                           \
-    double error = 0.0;                                                       \
-    for (size_t i = 0; i < workspace->matrixSize(); i++) {                   \
-      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                \
-      error += cur_error * cur_error;                                         \
-    }                                                                         \
-    error = std::sqrt(error);                                                 \
-    EXPECT_NEAR(error, 0.0, 1e-7);                                            \
+  {                                                                            \
+    double error = 0.0;                                                        \
+    for (size_t i = 0; i < workspace->matrixSize(); i++) {                     \
+      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                 \
+      error += cur_error * cur_error;                                          \
+    }                                                                          \
+    error = std::sqrt(error);                                                  \
+    EXPECT_NEAR(error, 0.0, 1e-7);                                             \
   }
 
 #define lagrange_compute_error_from_vector(calc_buffer, ref_buffer, workspace) \
-  {                                                                           \
-    double error = 0.0;                                                       \
-    for (size_t i = 0; i < workspace->states(); i++) {                        \
-      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                \
-      error += cur_error * cur_error;                                         \
-    }                                                                         \
-    error = std::sqrt(error);                                                 \
-    EXPECT_NEAR(error, 0.0, 1e-7);                                            \
+  {                                                                            \
+    double error = 0.0;                                                        \
+    for (size_t i = 0; i < workspace->states(); i++) {                         \
+      double cur_error = calc_buffer[i] - ref_buffer.get()[i];                 \
+      error += cur_error * cur_error;                                          \
+    }                                                                          \
+    error = std::sqrt(error);                                                  \
+    EXPECT_NEAR(error, 0.0, 1e-7);                                             \
   }
 
 class OperationTest : public ::testing::Test {
@@ -90,16 +90,24 @@ class OperationTest : public ::testing::Test {
         0.2819789219,
     });
 
-    /* _correct_root_clv = {0, 0.04839594797, 0.06003722477, 0.05381024353}; */
-    _correct_root_clv.reset(new LagrangeMatrixBase[4]{
-        0, 0.04839594797, 0.06003722477, 0.05381024353});
+    /* _correct_root_clv = {
+     *  0, 0.04839594797,        0.06003722477,        0.05381024353};
+        0, 0.048395948120807594, 0.060037224600835798, 0.053855745689636927});
+   */
+    /*_correct_root_clv.reset(new LagrangeMatrixBase[4]{*/
+    /*    0, 0.04839594797, 0.06003722477, 0.05381024353});*/
 
+    _correct_root_clv.reset(new LagrangeMatrixBase[4]{
+        0, 0.048395948120807594, 0.060037224600835798, 0.053855745689636927});
     /* _correct_reverse_bot_clv = {0, 0.04898326741, 0.04287039582,
      * 0.01129551391};
      */
-    _correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{
-        0, 0.04898326741, 0.04287039582, 0.01129551391});
 
+    /*_correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{*/
+    /*    0, 0.04898326741, 0.04287039582, 0.01129551391});*/
+    
+    _correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{
+        0, 0.049699709788676508, 0.044376375604528666, 0.0084716354377575281});
     /*
       _arbitrary_clv1 = {
           0.491885,
@@ -237,9 +245,8 @@ TEST_F(OperationTest, DispersionSimple2) {
   lagrange_compute_error_from_vector(
       _ws->probMatrix(_prob_matrix), _correct_prob_matrix, _ws);
 
-  std::unique_ptr<LagrangeMatrixBase[]> correct_clv(
-      new LagrangeMatrixBase[4]{
-          0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931});
+  std::unique_ptr<LagrangeMatrixBase[]> correct_clv(new LagrangeMatrixBase[4]{
+      0.2305014254, 0.2067903737, 0.2174603189, 0.2142764931});
 
   lagrange_compute_error_from_vector(_ws->CLV(_rtop_clv), correct_clv, _ws);
 }
