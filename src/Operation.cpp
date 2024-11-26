@@ -156,22 +156,6 @@ inline void join_splits(Range splitting_dist,
   dest[dist_index] = sum;
 }
 
-/* Produces a dist -> index map */
-static auto invert_dist_map(size_t regions,
-                            size_t max_areas) -> std::vector<size_t> {
-  size_t max_state = 1ULL << regions;
-  std::vector<size_t> ret(max_state, std::numeric_limits<size_t>::max());
-
-  size_t index = 0;
-  Range dist = 0;
-
-  for (index = 0, dist = 0; dist < max_state;
-       ++index, dist = next_dist(dist, max_areas)) {
-    ret[dist] = index;
-  }
-
-  return ret;
-}
 
 constexpr auto weighted_combine_check_happy_path(
     size_t states,

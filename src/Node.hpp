@@ -136,7 +136,7 @@ class Node {
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
   void applyPreorder(const std::function<void(Node &)> &func);
 
-  void assignTipData(
+  bool assignTipData(
       Workspace &ws,
       const std::unordered_map<std::string, Range> &distrib_data) const;
 
@@ -174,7 +174,7 @@ class Node {
   auto getAncestralSplit() -> SplitReturn &;
 
   void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
-  void assignAncestralSplit(const SplitReturn&);
+  void assignAncestralSplit(const SplitReturn &);
 
   auto assignFossil(const Fossil &) -> bool;
 
@@ -184,8 +184,8 @@ class Node {
   void assignIdRecursive(size_t &id);
 
   static auto getRateMatrixOperation(Workspace &ws,
-                              PeriodRateMatrixMap &rm_map,
-                              size_t period) 
+                                     PeriodRateMatrixMap &rm_map,
+                                     size_t period)
       -> std::shared_ptr<MakeRateMatrixOperation>;
 
   auto getProbMatrixOperation(Workspace &ws,

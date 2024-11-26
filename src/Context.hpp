@@ -30,8 +30,7 @@ class Context {
   Context(std::shared_ptr<Tree> tree, size_t regions, size_t max_areas) :
       _tree{std::move(tree)},
       _workspace{std::make_shared<Workspace>(
-          _tree->getTipCount(), regions, max_areas)}
-      {}
+          _tree->getTipCount(), regions, max_areas)} {}
 
   void registerLHGoal();
   void registerStateLHGoal();
@@ -49,7 +48,8 @@ class Context {
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   [[nodiscard]] auto getSplitResults() const -> SplitReturnList;
 
-  void registerTipClvs(const std::unordered_map<std::string, Range>& dist_data);
+  [[nodiscard]] bool registerTipClvs(
+      const std::unordered_map<std::string, Range>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts,
                                 bool states,

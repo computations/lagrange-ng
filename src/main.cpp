@@ -120,7 +120,10 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   context.set_opt_method(config.opt_method());
   context.init();
   context.updateRates({context.getPeriodCount(), config.period_params()});
-  context.registerTipClvs(data.data);
+  if (!context.registerTipClvs(data.data)) {
+    LOG(ERROR, "Failed to set data, refusing to run");
+    return;
+  }
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
 
@@ -214,6 +217,8 @@ auto main(int argc, char *argv[]) -> int {
     Alignment data =
         read_alignment(config.data_filename(), config.alignment_file_type());
 
+    data.apply_max_areas(config.max_areas());
+
     LOG(INFO, "Checking data...");
     check_alignment_against_trees(data, intrees);
 
@@ -231,6 +236,6 @@ auto main(int argc, char *argv[]) -> int {
   }
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end_time - start_time;
-  LOG(INFO, "Analysis took {:.2}s", duration.count());
+  LOG(INFO, "Analysis took {:.3f}s", duration.count());
   return 0;
 }

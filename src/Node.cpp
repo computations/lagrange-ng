@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <logger.hpp>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -380,13 +381,21 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
   }
 }
 
-void Node::assignTipData(
+bool Node::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, Range> &distrib_data) const {
   if (_children.empty()) {
-    ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
+    if (!ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label))) {
+      LOG(ERROR, "The range data for the taxa {} is invalid", _label);
+      return false;
+    }
+    return true;
   } else {
-    for (const auto &c : _children) { c->assignTipData(ws, distrib_data); }
+    bool good = true;
+    for (const auto &c : _children) {
+      good &= c->assignTipData(ws, distrib_data);
+    }
+    return good;
   }
 }
 
@@ -453,7 +462,7 @@ void Node::setPeriodSegments(const Periods &periods) {
 
 auto Node::getRateMatrixOperation(Workspace &ws,
                                   PeriodRateMatrixMap &rm_map,
-                                  size_t period) 
+                                  size_t period)
     -> std::shared_ptr<MakeRateMatrixOperation> {
   auto it = rm_map.find(period);
   if (it == rm_map.end()) {
@@ -562,7 +571,7 @@ void Node::assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]> s) {
   _ancestral_state = std::move(s);
 }
 
-void Node::assignAncestralSplit(const SplitReturn& s) { _ancestral_split = s; }
+void Node::assignAncestralSplit(const SplitReturn &s) { _ancestral_split = s; }
 
 auto Node::getCount() -> size_t { return getCount(0); }
 

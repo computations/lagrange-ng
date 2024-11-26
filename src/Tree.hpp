@@ -55,10 +55,10 @@ class Tree {
 
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
 
-  void assignTipData(Workspace &ws,
-                     const std::unordered_map<std::string, Range> &dist_data);
+  [[nodiscard]] bool assignTipData(
+      Workspace &ws, const std::unordered_map<std::string, Range> &dist_data);
 
-  void assignMCRALabels(const MRCAMap& mrca_map);
+  void assignMCRALabels(const MRCAMap &mrca_map);
 
   auto getNode(size_t num) -> std::shared_ptr<Node>;
 
@@ -78,16 +78,16 @@ class Tree {
   void setPeriods(const Periods &periods);
 
   auto getNewick() const -> std::string;
-  auto getNewickLambda(
-      const std::function<std::string(const Node &)> &newick_lambda) const
-      -> std::string;
+  auto getNewickLambda(const std::function<std::string(const Node &)>
+                           &newick_lambda) const -> std::string;
 
   auto checkAlignmentConsistency(const Alignment &align) const -> bool;
 
   void assignFossils(const std::vector<Fossil> &fossils);
 
-  void assignStateResult(std::unique_ptr<LagrangeMatrixBase[]>, const MRCALabel&);
-  void assignSplitResult(const SplitReturn&, const MRCALabel&);
+  void assignStateResult(std::unique_ptr<LagrangeMatrixBase[]>,
+                         const MRCALabel &);
+  void assignSplitResult(const SplitReturn &, const MRCALabel &);
 
  private:
   void processReRoot(const std::shared_ptr<Node> &node);

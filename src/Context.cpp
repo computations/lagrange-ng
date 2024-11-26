@@ -154,14 +154,18 @@ void Context::init() {
   }
 }
 
-void Context::registerTipClvs(
+bool Context::registerTipClvs(
     const std::unordered_map<std::string, Range>& dist_data) {
   if (_forward_operations.empty()) {
     throw std::runtime_error{
         "The forward operations need to be generated first"};
   }
   if (!_workspace->reserved()) { _workspace->reserve(); }
-  _tree->assignTipData(*_workspace, dist_data);
+  if (!_tree->assignTipData(*_workspace, dist_data)) {
+    LOG(ERROR, "Failed to assign data");
+    return false;
+  }
+  return true;
 }
 
 void Context::computeBackwardOperations(WorkerState& ts, WorkerContext& tc) {
@@ -266,7 +270,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
     if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: {:.7}", llh); }
     if (std::isnan(llh)) {
-      throw std::runtime_error{"Log likelihood is not not a number"};
+      LOG(ERROR, "Log liklihood is not a number");
+      throw std::runtime_error{"Log likelihood is not a number"};
     }
     obj->iter += 1;
     return llh;
@@ -405,6 +410,7 @@ void Context::set_opt_method(const OptimizationMethod& m) {
       break;
     case OptimizationMethod::UNKNOWN:
     default:
+      LOG(ERROR, "Unknown optimization method");
       throw std::runtime_error{"Unknown optimization method"};
   }
   LOG_INFO("Using {} for optimization", nlopt::algorithm_name(_opt_method));

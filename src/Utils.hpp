@@ -70,21 +70,18 @@ inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
   return best_dist;
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
-    -> size_t;
+auto lagrange_compute_restricted_state_count(size_t regions,
+                                             size_t max_areas) -> size_t;
 
 auto compute_index_from_dist(Range i, size_t max_areas) -> size_t;
 
-auto lagrange_convert_dist_string(Range dist,
-                                  const std::vector<std::string> &names)
-    -> std::string;
+auto lagrange_convert_dist_string(
+    Range dist, const std::vector<std::string> &names) -> std::string;
 
-auto convert_dist_string_to_dist(const std::string &dist,
-                                          const std::vector<std::string> &names)
-    -> Range;
+auto convert_dist_string_to_dist(
+    const std::string &dist, const std::vector<std::string> &names) -> Range;
 
-auto convert_dist_binary_string_to_dist(const std::string &dist)
-    -> Range;
+auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range;
 
 auto lagrange_parse_size_t(const std::string &str) -> size_t;
 
@@ -105,11 +102,10 @@ constexpr auto check_incl_dist(Range dist, Range incl_dist) -> bool {
 }
 
 constexpr auto next_dist(Range d,
-                                uint32_t n,
-                                size_t index,
-                                Range excl_area_mask = 0,
-                                Range incl_area_mask = 0)
-    -> std::pair<Range, size_t> {
+                         uint32_t n,
+                         size_t index,
+                         Range excl_area_mask = 0,
+                         Range incl_area_mask = 0) -> std::pair<Range, size_t> {
   auto next = next_dist(d, n);
   index += 1;
   if (check_excl_dist(next, excl_area_mask)
@@ -119,8 +115,26 @@ constexpr auto next_dist(Range d,
   return next_dist(next, n, index, excl_area_mask, incl_area_mask);
 }
 
-auto lagrange_convert_dist_to_list(
-    Range dist, const std::vector<std::string> &names) -> std::vector<std::string>;
+/* Produces a dist -> index map */
+inline auto invert_dist_map(size_t regions,
+                            size_t max_areas) -> std::vector<size_t> {
+  size_t max_state = 1ULL << regions;
+  std::vector<size_t> ret(max_state, std::numeric_limits<size_t>::max());
+
+  size_t index = 0;
+  Range dist = 0;
+
+  for (index = 0, dist = 0; dist < max_state;
+       ++index, dist = next_dist(dist, max_areas)) {
+    ret[dist] = index;
+  }
+
+  return ret;
+}
+
+auto lagrange_convert_dist_to_list(Range dist,
+                                   const std::vector<std::string> &names)
+    -> std::vector<std::string>;
 
 auto get_file_extension(const std::string &filename) -> std::string;
 

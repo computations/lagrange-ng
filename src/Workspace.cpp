@@ -40,13 +40,11 @@ void Workspace::registerChildrenCLV(size_t node_id) {
   _node_reservations[node_id]._bot2_clv = registerCLV();
 }
 
-void Workspace::setTipCLV(size_t index, Range clv_index) {
-  if (clv_index >= restrictedStateCount()) {
-    throw std::runtime_error{
-        "Attempted to set a state that is too large for this dataset"};
-  }
+bool Workspace::setTipCLV(size_t index, Range clv_index) {
+  if (clv_index >= restrictedStateCount()) { return false; }
   _clvs[index]._clv[clv_index] = 1.0;
   _clvs[index]._last_update = std::numeric_limits<size_t>::max();
+  return true;
 }
 
 void Workspace::reserve() {

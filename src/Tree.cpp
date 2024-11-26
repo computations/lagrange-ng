@@ -140,9 +140,9 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
   return ret;
 }
 
-void Tree::assignTipData(
+bool Tree::assignTipData(
     Workspace &ws, const std::unordered_map<std::string, Range> &dist_data) {
-  _root->assignTipData(ws, dist_data);
+  return _root->assignTipData(ws, dist_data);
 }
 
 auto Tree::getNewick() const -> std::string { return _root->getNewick() + ";"; }

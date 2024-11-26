@@ -18,6 +18,7 @@ template <typename T>
 std::string clean_taxa_name(T start_itr, T end_itr) {
   while (std::isspace(*start_itr) != 0) { start_itr += 1; }
   while (std::isspace(*end_itr) != 0) { end_itr -= 1; }
+  if (*end_itr) { end_itr += 1; }
 
   return {start_itr, end_itr};
 }

@@ -238,7 +238,7 @@ class Workspace {
 
   void registerChildrenCLV(size_t node_id);
 
-  void setTipCLV(size_t index, Range dist);
+  bool setTipCLV(size_t index, Range dist);
 
   void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();

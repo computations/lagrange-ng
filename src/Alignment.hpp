@@ -19,6 +19,11 @@ using TaxaName = std::string;
  * taxa name to extant range.
  */
 struct Alignment {
+  void apply_max_areas(size_t max_areas) {
+    auto dist_map = invert_dist_map(region_count, max_areas);
+    for (auto& kv : data) { kv.second = dist_map[kv.second]; }
+  }
+
   std::unordered_map<TaxaName, Range> data;
   size_t region_count;
   size_t taxa_count;
@@ -34,7 +39,8 @@ auto read_phylip(std::istream& instream) -> Alignment;
  * known filetype, and the version with an unknown filetype, which is
  * represented by an Option.
  */
-auto read_alignment(std::istream& instream, AlignmentFileType type) -> Alignment;
+auto read_alignment(std::istream& instream,
+                    AlignmentFileType type) -> Alignment;
 auto read_alignment(const std::filesystem::path& filename,
                     AlignmentFileType type) -> Alignment;
 

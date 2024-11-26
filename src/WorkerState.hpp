@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <logger.hpp>
 
 #include "Operation.hpp"
 #include "Workspace.hpp"
@@ -101,6 +102,7 @@ class WorkerState {
           return;
 
         default:
+          LOG(ERROR, "Found a mode that doesn't exist");
           throw std::runtime_error{"Found a mode that doesn't exist"};
       }
       _finished_threads += 1;
@@ -109,8 +111,8 @@ class WorkerState {
   }
 
   void work(WorkerMode tm,
-                   WorkerContext& tc,
-                   const std::shared_ptr<Workspace>& ws) {
+            WorkerContext& tc,
+            const std::shared_ptr<Workspace>& ws) {
     setRunMode(tm);
     work(tc, ws);
   }
