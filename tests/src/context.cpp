@@ -37,20 +37,21 @@ class ContextTest : public ::testing::Test {
 TEST_F(ContextTest, simple0) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
-  context.registerTipClvs(_basic_tree_data);
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
   context.init();
 }
 
 TEST_F(ContextTest, error0) {
   Context context(_basic_tree, 2, 2);
-  EXPECT_THROW(context.registerTipClvs(_basic_tree_data), std::runtime_error);
+  EXPECT_THROW(EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)),
+               std::runtime_error);
 }
 
 TEST_F(ContextTest, computelh1) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.init();
-  context.registerTipClvs(_basic_tree_data);
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
 
   double llh = context.computeLLH(_worker_state);
   constexpr double regression_llh = -1.9960966944483829;
@@ -67,7 +68,7 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.init();
   context.updateRates({{10.5, 1.5}});
   context.set_opt_method(OptimizationMethod::BFGS);
-  context.registerTipClvs(_basic_tree_data);
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
 
   double initial_llh = context.computeLLH(_worker_state);
   context.optimizeAndComputeValues(
@@ -83,7 +84,7 @@ TEST_F(ContextTest, StateGoal0) {
   context.registerStateLHGoal();
   context.init();
   context.updateRates({{10.5, 1.5}});
-  context.registerTipClvs(_basic_tree_data);
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
 
   context.computeLLH(_worker_state);
   auto states = context.computeStateGoal(_worker_state);
