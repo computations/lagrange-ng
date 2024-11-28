@@ -240,6 +240,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     WorkerContext& tc;
     WorkerState& ts;
     size_t iter = 0;
+    size_t f_evals = 1;
   } oc{*this, tc, ts};
 
   const size_t dims = _workspace->rateMatrixCount() * 2;
@@ -256,6 +257,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
     obj->context.updateRates(period_paramters);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
+    obj->f_evals += 1;
 
     if (!grad.empty()) {
       constexpr double step = 1e-7;
@@ -265,6 +267,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
         tmp_params[i / 2][i % 2] += step;
         obj->context.updateRates(tmp_params);
         grad[i] = (obj->context.computeLLH(obj->ts, obj->tc) - llh) / step;
+        obj->f_evals += 1;
       }
     }
 
@@ -296,6 +299,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     LOG(WARNING,
         "NLopt finished with limited roundoff, results might be incorrect");
   }
+
+  LOG(INFO, "Finished optimization with {} likelihood evaluations", oc.f_evals);
 
   return obj_val;
 }
