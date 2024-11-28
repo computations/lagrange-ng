@@ -182,8 +182,8 @@ static auto read_tree_file_line_by_line(const std::filesystem::path &filename)
 }
 
 auto check_alignment_against_trees(
-    const Alignment &align,
-    const std::vector<std::shared_ptr<Tree>> &trees) -> bool {
+    const Alignment &align, const std::vector<std::shared_ptr<Tree>> &trees)
+    -> bool {
   bool ok = true;
   for (const auto &t : trees) { ok &= t->checkAlignmentConsistency(align); }
   return ok;
@@ -204,38 +204,40 @@ auto main(int argc, char *argv[]) -> int {
     LOG(ERROR, "Lagrange-ng needs a config file");
     LOG(ERROR, "Usage: lagrange configfile");
     return 1;
-  } else {
-    std::string config_filename(argv[1]);
-    auto config = read_config_file(config_filename);
-    print_run_header(config);
-
-    LOG(INFO, "Reading tree...");
-    std::vector<std::shared_ptr<Tree>> intrees =
-        read_tree_file_line_by_line(config.tree_filename());
-
-    LOG(INFO, "Reading data...");
-    Alignment data =
-        read_alignment(config.data_filename(), config.alignment_file_type());
-
-    data.apply_max_areas(config.max_areas());
-
-    LOG(INFO, "Checking data...");
-    check_alignment_against_trees(data, intrees);
-
-    if (data.region_count == 0) {
-      throw std::runtime_error{"Region count cannot be zero"};
-    }
-
-    config.region_count(data.region_count);
-    if (!config.has_max_areas()) { config.max_areas(config.region_count()); }
-
-    config.finalize_periods();
-
-    LOG(INFO, "Running analysis...");
-    for (auto &intree : intrees) { handle_tree(intree, data, config); }
   }
+
+  std::string config_filename(argv[1]);
+  auto config = read_config_file(config_filename);
+  print_run_header(config);
+
+  LOG(INFO, "Reading tree...");
+  std::vector<std::shared_ptr<Tree>> intrees =
+      read_tree_file_line_by_line(config.tree_filename());
+
+  LOG(INFO, "Reading data...");
+  Alignment data =
+      read_alignment(config.data_filename(), config.alignment_file_type());
+
+  LOG(INFO, "Checking data...");
+  check_alignment_against_trees(data, intrees);
+
+  if (data.region_count == 0) {
+    throw std::runtime_error{"Region count cannot be zero"};
+  }
+
+  config.region_count(data.region_count);
+
+  data.apply_max_areas(config.max_areas());
+
+  config.finalize_periods();
+
+  LOG(INFO, "Running analysis...");
+
+  for (auto &intree : intrees) { handle_tree(intree, data, config); }
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end_time - start_time;
+
   LOG(INFO, "Analysis took {:.3f}s", duration.count());
+
   return 0;
 }

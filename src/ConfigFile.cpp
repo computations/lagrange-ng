@@ -575,7 +575,10 @@ void ConfigFile::alignment_file_type(const AlignmentFileType& type) {
 
 auto ConfigFile::region_count() const -> size_t { return _region_count.get(); }
 
-void ConfigFile::region_count(size_t r) { _region_count = r; }
+void ConfigFile::region_count(size_t r) {
+  _region_count = r;
+  if (!has_max_areas()) { max_areas(_region_count); }
+}
 
 auto ConfigFile::workers() const -> size_t {
   if (_workers.hasValue()) { return _workers.get(); }
