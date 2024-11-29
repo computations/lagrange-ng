@@ -55,8 +55,8 @@ auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void {
 }
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<LagrangeMatrixBase[]> &states,
-    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]> {
+    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
+    -> std::unique_ptr<LagrangeMatrixBase[]> {
   std::unique_ptr<LagrangeMatrixBase[]> normalized_states{
       new LagrangeMatrixBase[states_len]};
 
@@ -194,7 +194,7 @@ auto produce_json_file(const std::shared_ptr<Tree> &tree,
   return root_json;
 }
 
-inline auto make_csv_header(const std::initializer_list<const char *> &fields)
+auto make_csv_header(const std::initializer_list<const char *> &fields)
     -> std::string {
   return std::accumulate(std::next(fields.begin()),
                          fields.end(),
@@ -204,7 +204,7 @@ inline auto make_csv_header(const std::initializer_list<const char *> &fields)
          + "\n";
 }
 
-inline auto make_csv_row(const std::initializer_list<std::string> &entries)
+auto make_csv_row(const std::initializer_list<std::string> &entries)
     -> std::string {
   return std::accumulate(std::next(entries.begin()),
                          entries.end(),
@@ -214,8 +214,8 @@ inline auto make_csv_row(const std::initializer_list<std::string> &entries)
          + "\n";
 }
 
-inline auto init_csv(const std::filesystem::path &filename,
-                     const std::initializer_list<const char *> &fields)
+auto init_csv(const std::filesystem::path &filename,
+              const std::initializer_list<const char *> &fields)
     -> std::ofstream {
   std::ofstream csv_file(filename);
   csv_file << make_csv_header(fields);
@@ -383,7 +383,7 @@ void write_result_files(const std::shared_ptr<Tree> &tree,
   }
 }
 
-inline auto make_annotated_node_newick_lambda() {
+auto make_annotated_node_newick_lambda() {
   return [](const Node &n) -> std::string {
     std::ostringstream oss;
     oss << n.getNodeLabel();
@@ -396,7 +396,7 @@ inline auto make_annotated_node_newick_lambda() {
   };
 }
 
-inline auto make_annotated_splits_newick_lambda(
+auto make_annotated_splits_newick_lambda(
     const std::vector<std::string> &region_names) {
   return [&](const Node &n) -> std::string {
     std::ostringstream oss;
@@ -412,7 +412,7 @@ inline auto make_annotated_splits_newick_lambda(
   };
 }
 
-inline auto make_annotated_states_newick_lambda(
+auto make_annotated_states_newick_lambda(
     const std::vector<std::string> &region_names) {
   return [&](const Node &n) -> std::string {
     std::ostringstream oss;

@@ -73,12 +73,11 @@ void generate_splits(Range state,
   }
 }
 
-inline auto split_product(Range left,
-                          Range right,
-                          const LagrangeConstColVector &c1,
-                          const LagrangeConstColVector &c2,
-                          const std::function<size_t(Range)> &dist_map)
-    -> double {
+auto split_product(Range left,
+                   Range right,
+                   const LagrangeConstColVector &c1,
+                   const LagrangeConstColVector &c2,
+                   const std::function<size_t(Range)> &dist_map) -> double {
   return c1[dist_map(left)] * c2[dist_map(right)];
 }
 
@@ -152,14 +151,14 @@ auto fused_join_splits(Range splitting_range,
   return sum / static_cast<double>(set_regions * 4);
 }
 
-inline void join_splits(Range splitting_dist,
-                        size_t dist_index,
-                        size_t regions,
-                        const LagrangeConstColVector &c1,
-                        const LagrangeConstColVector &c2,
-                        LagrangeColVector dest,
-                        bool &scale,
-                        const std::function<size_t(Range)> &dist_map) {
+void join_splits(Range splitting_dist,
+                 size_t dist_index,
+                 size_t regions,
+                 const LagrangeConstColVector &c1,
+                 const LagrangeConstColVector &c2,
+                 LagrangeColVector dest,
+                 bool &scale,
+                 const std::function<size_t(Range)> &dist_map) {
   double sum = fused_join_splits(splitting_dist, regions, c1, c2, dist_map);
   scale &= sum < lagrange_scale_threshold;
 
@@ -168,13 +167,13 @@ inline void join_splits(Range splitting_dist,
   dest[dist_index] = sum;
 }
 
-inline void join_splits_happy(Range splitting_dist,
-                              size_t dist_index,
-                              size_t regions,
-                              const LagrangeConstColVector &c1,
-                              const LagrangeConstColVector &c2,
-                              LagrangeColVector dest,
-                              bool &scale) {
+void join_splits_happy(Range splitting_dist,
+                       size_t dist_index,
+                       size_t regions,
+                       const LagrangeConstColVector &c1,
+                       const LagrangeConstColVector &c2,
+                       LagrangeColVector dest,
+                       bool &scale) {
   double sum = fused_join_splits_happy(splitting_dist, regions, c1, c2);
   scale &= sum < lagrange_scale_threshold;
 
@@ -295,18 +294,18 @@ void fused_reverse_join_splits(Range splitting_range,
   }
 }
 
-inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
-                                     const LagrangeConstColVector &c2,
-                                     size_t states,
-                                     size_t regions,
-                                     size_t max_areas,
-                                     LagrangeColVector dest,
-                                     size_t c1_scale,
-                                     size_t c2_scale,
-                                     size_t &scale_count,
-                                     const Option<Range> &fixed_dist,
-                                     Range excl_area_mask,
-                                     Range incl_area_mask) {
+void reverse_weighted_combine(const LagrangeConstColVector &c1,
+                              const LagrangeConstColVector &c2,
+                              size_t states,
+                              size_t regions,
+                              size_t max_areas,
+                              LagrangeColVector dest,
+                              size_t c1_scale,
+                              size_t c2_scale,
+                              size_t &scale_count,
+                              const Option<Range> &fixed_dist,
+                              Range excl_area_mask,
+                              Range incl_area_mask) {
   assert(states != 0);
   bool scale = true;
 
@@ -360,7 +359,7 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
   }
 }
 
-inline auto make_tabs(size_t tabLevel) -> std::string {
+auto make_tabs(size_t tabLevel) -> std::string {
   std::ostringstream tabs;
   tabs << "|";
   for (size_t i = 0; i < tabLevel; ++i) { tabs << " |"; }
@@ -368,8 +367,8 @@ inline auto make_tabs(size_t tabLevel) -> std::string {
   return tabs.str();
 }
 
-inline auto boarder_line(const std::string &tabs,
-                         const std::string &corner_char) -> std::string {
+auto boarder_line(const std::string &tabs, const std::string &corner_char)
+    -> std::string {
   std::ostringstream line;
 
   line << tabs.substr(0, tabs.size() - 2) << corner_char;
@@ -379,11 +378,11 @@ inline auto boarder_line(const std::string &tabs,
   return line.str();
 }
 
-inline auto opening_line(const std::string &tabs) -> std::string {
+auto opening_line(const std::string &tabs) -> std::string {
   return boarder_line(tabs, "┌");
 }
 
-inline auto closing_line(const std::string &tabs) -> std::string {
+auto closing_line(const std::string &tabs) -> std::string {
   return boarder_line(tabs, "└");
 }
 
@@ -852,8 +851,8 @@ auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
-static inline void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
-                                  const std::shared_ptr<Workspace> &ws) {
+static void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
+                           const std::shared_ptr<Workspace> &ws) {
   if (!op) { return; }
   if (op.use_count() > 1) {
     std::lock_guard<std::mutex> lock(op->getLock());
