@@ -43,9 +43,13 @@ static auto operator<<(std::ostream &os,
   return os;
 }
 
-inline void generate_splits(Range state,
-                            size_t regions,
-                            std::vector<RegionSplit> &results) {
+/* We need this funtion to make ancestral splits.
+ * However, we should make sure that we use the other functions whenever
+ * possible.
+ * */
+void generate_splits(Range state,
+                     size_t regions,
+                     std::vector<RegionSplit> &results) {
   assert(regions > 0);
   results.clear();
   uint64_t valid_region_mask = (1ULL << regions) - 1;
@@ -78,11 +82,10 @@ inline auto split_product(Range left,
   return c1[dist_map(left)] * c2[dist_map(right)];
 }
 
-inline auto fused_join_splits_happy(Range splitting_range,
-                                    size_t regions,
-                                    const LagrangeConstColVector &c1,
-                                    const LagrangeConstColVector &c2)
-    -> double {
+auto fused_join_splits_happy(Range splitting_range,
+                             size_t regions,
+                             const LagrangeConstColVector &c1,
+                             const LagrangeConstColVector &c2) -> double {
   if (splitting_range == 0) { return 0.0; }
 
   auto set_regions = lagrange_popcount(splitting_range);
@@ -117,32 +120,36 @@ auto fused_join_splits(Range splitting_range,
                        const LagrangeConstColVector &c1,
                        const LagrangeConstColVector &c2,
                        const std::function<size_t(Range)> &dist_map) -> double {
-  assert(regions > 0);
   if (splitting_range == 0) { return 0.0; }
+  auto set_regions = lagrange_popcount(splitting_range);
 
-  if (lagrange_popcount(splitting_range) == 1) {
-    return split_product(splitting_range, splitting_range, c1, c2, dist_map);
+  if (set_regions == 1) {
+    return c1[dist_map(splitting_range)] * c2[dist_map(splitting_range)];
   }
 
   double sum = 0.0;
-  size_t split_count = 0;
+
+  auto splitting_index = dist_map(splitting_range);
+  const double split_c1 = c1[splitting_index];
+  const double split_c2 = c2[splitting_index];
 
   /* Left splits first */
   for (size_t i = 0; i < regions; i++) {
-    uint64_t x = 1ULL << i;
-    if ((splitting_range & x) == 0) { continue; }
+    /* Sympatric split index */
+    Range singleton_range = 1ULL << i;
 
-    /* sympatric splits */
-    sum += split_product(x, splitting_range, c1, c2, dist_map);
-    sum += split_product(splitting_range, x, c1, c2, dist_map);
+    /* Allopatric split index */
+    Range allopatric_range = (singleton_range ^ splitting_range);
 
-    /* allopatric splits */
-    uint64_t y = (x ^ splitting_range);
-    sum += split_product(x, y, c1, c2, dist_map);
-    sum += split_product(y, x, c1, c2, dist_map);
-    split_count += 1;
+    auto singleton_index = dist_map(singleton_range);
+    auto allopatric_index = dist_map(allopatric_range);
+
+    double valid = lagrange_bextr(splitting_range, i);
+    sum += (c1[singleton_index] * (split_c2 + c2[allopatric_index])
+            + c2[singleton_index] * (split_c1 + c1[allopatric_index]))
+           * valid;
   }
-  return sum / static_cast<double>(split_count * 4);
+  return sum / static_cast<double>(set_regions * 4);
 }
 
 inline void join_splits(Range splitting_dist,
@@ -246,31 +253,45 @@ void weighted_combine(const LagrangeConstColVector &c1,
   }
 }
 
-inline void reverse_join_splits(Range splitting_dist,
-                                size_t states,
-                                size_t regions,
-                                std::vector<RegionSplit> &splits,
-                                const LagrangeConstColVector &c1,
-                                const LagrangeConstColVector &c2,
-                                bool &scale,
-                                LagrangeColVector dest,
-                                const std::function<size_t(Range)> &dist_map) {
-  generate_splits(splitting_dist, regions, splits);
-  if (splits.empty()) { return; }
-
-  double weight = 1.0 / static_cast<double>(splits.size());
-  for (auto &p : splits) {
-    size_t l_index = dist_map(p.left);
-    size_t r_index = dist_map(p.right);
-    size_t i_index = dist_map(splitting_dist);
-    assert(l_index < states);
-    assert(r_index < states);
-    assert(i_index < states);
-    dest[l_index] += c1[i_index] * c2[r_index] * weight;
+void fused_reverse_join_splits(Range splitting_range,
+                               size_t regions,
+                               const LagrangeConstColVector &c1,
+                               const LagrangeConstColVector &c2,
+                               LagrangeColVector dest,
+                               const std::function<size_t(Range)> &dist_map) {
+  if (splitting_range == 0) {
+    dest[dist_map(splitting_range)] = 0.0;
+    return;
   }
-  for (size_t i = 0; i < states; ++i) {
-    assert(std::isfinite(dest[i]));
-    scale &= dest[i] < lagrange_scale_threshold;
+  auto set_regions = lagrange_popcount(splitting_range);
+
+  if (set_regions == 1) {
+    dest[dist_map(splitting_range)] +=
+        c1[dist_map(splitting_range)] * c2[dist_map(splitting_range)];
+    return;
+  }
+
+  const double split_c1 = c1[dist_map(splitting_range)];
+  const double weight = 1.0 / (4 * set_regions);
+
+  /* Left splits first */
+  for (size_t i = 0; i < regions; i++) {
+    /* Sympatric split index */
+    Range singleton_range = 1ULL << i;
+
+    Range allopatric_range = (singleton_range ^ splitting_range);
+
+    bool valid = lagrange_bextr(splitting_range, i);
+    if (!valid) { continue; }
+
+    auto splitting_index = dist_map(splitting_range);
+    auto singleton_index = dist_map(singleton_range);
+    auto allopatric_index = dist_map(allopatric_range);
+
+    dest[splitting_index] += split_c1 * c2[singleton_index] * weight;
+    dest[allopatric_index] += split_c1 * c2[singleton_index] * weight;
+    dest[singleton_index] +=
+        (c2[allopatric_index] + c2[splitting_index]) * split_c1 * weight;
   }
 }
 
@@ -294,8 +315,11 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
   if (max_areas == regions && !fixed_dist.hasValue()) {
     const auto identity_func = [](Range d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
+      fused_reverse_join_splits(i, regions, c1, c2, dest, identity_func);
+      /*
       reverse_join_splits(
           i, states, regions, splits, c1, c2, scale, dest, identity_func);
+      */
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
@@ -316,9 +340,16 @@ inline void reverse_weighted_combine(const LagrangeConstColVector &c1,
 
       if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
 
-      reverse_join_splits(
-          dist, states, regions, splits, c1, c2, scale, dest, dist_map_func);
+      fused_reverse_join_splits(dist, regions, c1, c2, dest, dist_map_func);
+      /*reverse_join_splits(*/
+      /*    dist, states, regions, splits, c1, c2, scale, dest,
+       * dist_map_func);*/
     }
+  }
+
+  for (size_t i = 0; i < states; ++i) {
+    assert(std::isfinite(dest[i]));
+    scale &= dest[i] < lagrange_scale_threshold;
   }
 
   scale_count = c1_scale + c2_scale;
