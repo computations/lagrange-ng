@@ -577,7 +577,7 @@ auto ConfigFile::region_count() const -> size_t { return _region_count.get(); }
 
 void ConfigFile::region_count(size_t r) {
   _region_count = r;
-  if (!has_max_areas()) { max_areas(_region_count); }
+  if (!has_max_areas()) { max_areas(_region_count.get()); }
 }
 
 auto ConfigFile::workers() const -> size_t {

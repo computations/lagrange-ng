@@ -226,7 +226,6 @@ auto main(int argc, char *argv[]) -> int {
   }
 
   config.region_count(data.region_count);
-
   data.apply_max_areas(config.max_areas());
 
   config.finalize_periods();
