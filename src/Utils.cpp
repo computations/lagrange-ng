@@ -15,8 +15,9 @@
 
 namespace lagrange {
 
-auto lagrange_convert_dist_string(
-    Range dist, const std::vector<std::string> &names) -> std::string {
+auto lagrange_convert_dist_string(Range dist,
+                                  const std::vector<std::string> &names)
+    -> std::string {
   if (dist == 0) { return {}; }
   std::ostringstream oss;
 
@@ -32,11 +33,12 @@ auto lagrange_convert_dist_string(
   return oss.str();
 }
 
-auto lagrange_convert_dist_to_list(
-    Range dist, const std::vector<std::string> &names) -> std::vector<std::string> {
+auto lagrange_convert_dist_to_list(Range dist,
+                                   const std::vector<std::string> &names)
+    -> std::vector<std::string> {
   std::vector<std::string> ret;
 
-  size_t states = lagrange_clz(dist);
+  size_t states = dist == 0 ? 0 : lagrange_clz(dist);
   auto itr = names.rbegin();
   for (size_t i = 0; i < states; ++i) {
     if (lagrange_bextr(dist, i) != 0u) { ret.push_back(*itr); }
@@ -67,9 +69,7 @@ constexpr std::array<size_t, factorial_table_size> factorial_table = {
 constexpr auto factorial(uint64_t i) -> size_t {
   if (i < factorial_table_size) { return factorial_table.at(i); }
   size_t f = factorial_table[factorial_table_size - 1];
-  for (size_t k = factorial_table_size; k <= i; ++k) {
-    f *= k;
-  }
+  for (size_t k = factorial_table_size; k <= i; ++k) { f *= k; }
   return f;
 }
 
@@ -77,8 +77,8 @@ constexpr auto combinations(uint64_t n, uint64_t i) -> size_t {
   return factorial(n) / (factorial(i) * factorial(n - i));
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions,
-                                             size_t max_areas) -> size_t {
+auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
+    -> size_t {
   size_t sum = 0;
   for (size_t i = 0; i <= max_areas; i++) { sum += combinations(regions, i); }
   return sum;
@@ -120,8 +120,9 @@ auto lagrange_parse_size_t(const std::string &str) -> size_t {
   return static_cast<size_t>(temp);
 }
 
-auto convert_dist_string_to_dist(
-    const std::string &dist, const std::vector<std::string> &names) -> Range {
+auto convert_dist_string_to_dist(const std::string &dist,
+                                 const std::vector<std::string> &names)
+    -> Range {
   Range ret = 0;
   auto start = dist.begin();
   auto end = dist.begin();

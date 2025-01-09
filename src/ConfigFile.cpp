@@ -1,6 +1,7 @@
 #include "ConfigFile.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <memory>
 #include <sstream>
@@ -10,6 +11,7 @@
 #include "Fossil.hpp"
 
 namespace lagrange {
+using namespace std::string_literals;
 enum class ConfigLexemeType : uint8_t { VALUE, EQUALS_SIGN, END };
 
 class ConfigLexer {
@@ -95,10 +97,23 @@ class ConfigLexer {
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
-      throw ConfigFileLexingError{std::string("Float conversion failed around")
+      throw ConfigFileLexingError{std::string("size_t conversion failed around")
                                   + describePosition()};
     }
     return val;
+  }
+
+  auto consumeValueAsBool() -> bool {
+    auto b_str = consumeValueAsString();
+    std::transform(b_str.begin(), b_str.end(), b_str.begin(), [](char c) {
+      return std::tolower(c);
+    });
+
+    if (b_str == "true" || b_str == "1") { return true; }
+    if (b_str == "false" || b_str == "0") { return false; }
+
+    throw ConfigFileLexingError{"bool conversion failed around"s
+                                + describePosition()};
   }
 
   [[nodiscard]] auto describePosition() const -> std::string {
@@ -185,10 +200,16 @@ auto parse_double(ConfigLexer& lexer) -> double {
   return lexer.consumeValueAsFloat();
 }
 
-auto parse_size_t(ConfigLexer& lexer) -> size_t {
+[[nodiscard]] auto parse_size_t(ConfigLexer& lexer) -> size_t {
   lexer.expect(ConfigLexemeType::VALUE);
 
   return lexer.consumeValueAsSizeT();
+}
+
+auto parse_bool(ConfigLexer& lexer) -> bool {
+  lexer.expect(ConfigLexemeType::VALUE);
+
+  return lexer.consumeValueAsBool();
 }
 
 auto determine_fossil_type(const std::string& fossil_type_string)
@@ -398,6 +419,13 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
 
         auto value = lexer.consumeValueAsLowerString();
         config.opt_method(parse_opt_method(value));
+      } else if (config_value == "allow-ambiguous") {
+        if (lexer.peak() == ConfigLexemeType::EQUALS_SIGN) {
+          lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+          config.allow_ambigious(parse_bool(lexer));
+        } else {
+          config.allow_ambigious(true);
+        }
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
@@ -679,4 +707,10 @@ auto ConfigFile::computeStates() const -> bool {
 auto ConfigFile::computeSplits() const -> bool {
   return _all_splits || !_split_nodes.empty();
 }
+
+auto ConfigFile::allow_ambigious() const -> bool {
+  return _allow_ambigious.get(true);
+}
+
+void ConfigFile::allow_ambigious(bool b) { _allow_ambigious = b; }
 }  // namespace lagrange

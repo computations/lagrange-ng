@@ -19,6 +19,9 @@
 
 namespace lagrange {
 
+enum class SetCLVStatus { definite, ambiguous, failed };
+SetCLVStatus &operator&=(SetCLVStatus &lhs, const SetCLVStatus &rhs);
+
 struct MatrixReservation {
   LagrangeMatrix _matrix = nullptr;
   ClockTick _last_update = 0;
@@ -121,8 +124,8 @@ class Workspace {
     return _prob_matrix[i]._matrix;
   }
 
-  auto updateProbMatrix(size_t index,
-                               const LagrangeConstMatrix &A) -> ClockTick {
+  auto updateProbMatrix(size_t index, const LagrangeConstMatrix &A)
+      -> ClockTick {
     if (index >= _prob_matrix.size()) {
       throw std::runtime_error{"Prob matrix access out of range when updating"};
     }
@@ -182,8 +185,7 @@ class Workspace {
     _clvs[index]._last_update = advanceClock();
   }
 
-  auto CLVSizeTuple(size_t index)
-      -> std::tuple<LagrangeColVector, size_t> {
+  auto CLVSizeTuple(size_t index) -> std::tuple<LagrangeColVector, size_t> {
     return std::make_tuple(CLV(index), CLVSize());
   }
 
@@ -207,9 +209,7 @@ class Workspace {
     return _rate_matrix.size();
   }
 
-  [[nodiscard]] auto CLVCount() const -> size_t {
-    return _next_free_clv;
-  }
+  [[nodiscard]] auto CLVCount() const -> size_t { return _next_free_clv; }
 
   [[nodiscard]] auto matrixSize() const -> size_t {
     return leadingDimension() * restrictedStateCount();
@@ -238,7 +238,8 @@ class Workspace {
 
   void registerChildrenCLV(size_t node_id);
 
-  bool setTipCLV(size_t index, Range dist);
+  SetCLVStatus setTipCLVAmbigious(size_t index, Range clv_index);
+  SetCLVStatus setTipCLV(size_t index, Range dist);
 
   void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();
@@ -322,8 +323,7 @@ class Workspace {
 
   [[nodiscard]] auto reportNodeVectors(size_t node_id) const -> std::string;
 
-  [[nodiscard]] auto computeMatrixIndex(size_t i,
-                                               size_t j) const -> size_t {
+  [[nodiscard]] auto computeMatrixIndex(size_t i, size_t j) const -> size_t {
     return i * leadingDimension() + j;
   }
 
@@ -342,9 +342,7 @@ class Workspace {
     _clvs[index]._last_update = std::numeric_limits<ClockTick>::max();
   }
 
-  [[nodiscard]] auto leadingDimension() const -> size_t {
-    return _leading_dim;
-  }
+  [[nodiscard]] auto leadingDimension() const -> size_t { return _leading_dim; }
 
   [[nodiscard]] auto restrictedStateCount() const -> size_t {
     return _restricted_state_count;
@@ -356,9 +354,7 @@ class Workspace {
     return restrictedStateCount();
   }
 
-  [[nodiscard]] auto matrixCols() const -> size_t {
-    return matrixRows();
-  }
+  [[nodiscard]] auto matrixCols() const -> size_t { return matrixRows(); }
 
   [[nodiscard]] auto CLVSize() const -> size_t {
     return restrictedStateCount();

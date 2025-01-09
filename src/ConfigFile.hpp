@@ -136,6 +136,9 @@ class ConfigFile {
   auto opt_method() const -> OptimizationMethod;
   void opt_method(const OptimizationMethod&);
 
+  auto allow_ambigious() const -> bool;
+  void allow_ambigious(bool);
+
   auto jsonResultsFilename() const -> std::filesystem::path;
   auto nodeTreeFilename() const -> std::filesystem::path;
   auto scaledTreeFilename() const -> std::filesystem::path;
@@ -241,6 +244,8 @@ class ConfigFile {
   Option<size_t> _threads_per_worker;
   Option<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
   Option<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
+
+  Option<bool> _allow_ambigious;
 };
 
 class ConfigFileLexingError : public std::runtime_error {

@@ -91,8 +91,8 @@ class Node {
                                const std::vector<std::shared_ptr<Node>> &nodes)
       -> std::shared_ptr<Node>;
 
-  friend auto getNodeById(const std::shared_ptr<Node> &current,
-                          size_t id) -> std::shared_ptr<Node>;
+  friend auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
+      -> std::shared_ptr<Node>;
 
   auto traverseAndGenerateForwardOperations(Workspace &ws,
                                             PeriodRateMatrixMap &pm_map,
@@ -136,12 +136,12 @@ class Node {
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
   void applyPreorder(const std::function<void(Node &)> &func);
 
-  bool assignTipData(
+  SetCLVStatus assignTipData(
       Workspace &ws,
       const std::unordered_map<std::string, Range> &distrib_data) const;
 
-  auto checkAlignmentConsistency(const Alignment &align,
-                                 size_t count) -> size_t;
+  auto checkAlignmentConsistency(const Alignment &align, size_t count)
+      -> size_t;
 
   void assignId();
   auto getNodeLabel() const -> std::string;
@@ -225,7 +225,7 @@ void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,
 auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
                          const MRCALabel &mrca) -> std::shared_ptr<Node>;
 
-auto getNodeById(const std::shared_ptr<Node> &current,
-                 size_t id) -> std::shared_ptr<Node>;
+auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
+    -> std::shared_ptr<Node>;
 }  // namespace lagrange
 #endif /* NODE_H_ */

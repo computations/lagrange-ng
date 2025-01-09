@@ -193,6 +193,9 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
   - `bobyqa`: An alternative to the `nelder-mead` option above that is much
   faster for a large number of periods. If there are issues with `bfgs` try this
   instead.
+- `allow-ambiguous`: Allow coercion to an ambiguous state in the case that the
+  tip range is too large for the specified max areas. By default this is
+  _enabled_. Set this to false to enable it.
 
 If any of the arguments to the options has spaces, then it needs
 to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then

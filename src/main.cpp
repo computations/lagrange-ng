@@ -25,6 +25,7 @@
 #include "TreeReader.hpp"
 #include "Utils.hpp"
 #include "WorkerState.hpp"
+#include "Workspace.hpp"
 
 using namespace lagrange;
 
@@ -94,6 +95,20 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
   }
 }
 
+static void assign_tip_data(Context &context,
+                            const Alignment &data,
+                            const ConfigFile &config) {
+  auto clv_tip_res = context.registerTipClvs(data.data);
+
+  if (clv_tip_res == SetCLVStatus::definite) { return; }
+
+  if (config.allow_ambigious() && clv_tip_res == SetCLVStatus::ambiguous) {
+    return;
+  }
+  LOG(ERROR, "Failed to set data, refusing to run");
+  throw std::runtime_error{"Failed to set data"};
+}
+
 static void handle_tree(std::shared_ptr<Tree> &tree,
                         const Alignment &data,
                         const ConfigFile &config) {
@@ -120,10 +135,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   context.set_opt_method(config.opt_method());
   context.init();
   context.updateRates({context.getPeriodCount(), config.period_params()});
-  if (!context.registerTipClvs(data.data)) {
-    LOG(ERROR, "Failed to set data, refusing to run");
-    return;
-  }
+  assign_tip_data(context, data, config);
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
 
@@ -226,7 +238,6 @@ auto main(int argc, char *argv[]) -> int {
   }
 
   config.region_count(data.region_count);
-  data.apply_max_areas(config.max_areas());
 
   config.finalize_periods();
 

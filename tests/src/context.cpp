@@ -8,6 +8,7 @@
 #include "Periods.hpp"
 #include "TreeReader.hpp"
 #include "WorkerState.hpp"
+#include "Workspace.hpp"
 #include "gtest/gtest.h"
 
 using namespace lagrange;
@@ -37,13 +38,15 @@ class ContextTest : public ::testing::Test {
 TEST_F(ContextTest, simple0) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
-  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+              == SetCLVStatus::definite);
   context.init();
 }
 
 TEST_F(ContextTest, error0) {
   Context context(_basic_tree, 2, 2);
-  EXPECT_THROW(EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)),
+  EXPECT_THROW(EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+                           == SetCLVStatus::definite),
                std::runtime_error);
 }
 
@@ -51,7 +54,8 @@ TEST_F(ContextTest, computelh1) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();
   context.init();
-  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+              == SetCLVStatus::definite);
 
   double llh = context.computeLLH(_worker_state);
   constexpr double regression_llh = -1.9960966944483829;
@@ -68,7 +72,8 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.init();
   context.updateRates({{10.5, 1.5}});
   context.set_opt_method(OptimizationMethod::BFGS);
-  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+              == SetCLVStatus::definite);
 
   double initial_llh = context.computeLLH(_worker_state);
   context.optimizeAndComputeValues(
@@ -84,7 +89,8 @@ TEST_F(ContextTest, StateGoal0) {
   context.registerStateLHGoal();
   context.init();
   context.updateRates({{10.5, 1.5}});
-  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data));
+  EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+              == SetCLVStatus::definite);
 
   context.computeLLH(_worker_state);
   auto states = context.computeStateGoal(_worker_state);

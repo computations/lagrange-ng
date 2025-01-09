@@ -12,6 +12,7 @@
 #include "Operation.hpp"
 #include "Utils.hpp"
 #include "WorkerState.hpp"
+#include "Workspace.hpp"
 #include "logger.hpp"
 
 namespace lagrange {
@@ -154,18 +155,16 @@ void Context::init() {
   }
 }
 
-bool Context::registerTipClvs(
+SetCLVStatus Context::registerTipClvs(
     const std::unordered_map<std::string, Range>& dist_data) {
   if (_forward_operations.empty()) {
     throw std::runtime_error{
         "The forward operations need to be generated first"};
   }
   if (!_workspace->reserved()) { _workspace->reserve(); }
-  if (!_tree->assignTipData(*_workspace, dist_data)) {
-    LOG(ERROR, "Failed to assign data");
-    return false;
-  }
-  return true;
+  auto res = _tree->assignTipData(*_workspace, dist_data);
+  if (res == SetCLVStatus::failed) { LOG(ERROR, "Failed to assign data"); }
+  return res;
 }
 
 void Context::computeBackwardOperations(WorkerState& ts, WorkerContext& tc) {

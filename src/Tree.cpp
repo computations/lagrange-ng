@@ -17,6 +17,7 @@
 #include "MRCA.hpp"
 #include "Node.hpp"
 #include "Operation.hpp"
+#include "Workspace.hpp"
 #include "logger.hpp"
 
 namespace lagrange {
@@ -140,7 +141,7 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
   return ret;
 }
 
-bool Tree::assignTipData(
+SetCLVStatus Tree::assignTipData(
     Workspace &ws, const std::unordered_map<std::string, Range> &dist_data) {
   return _root->assignTipData(ws, dist_data);
 }

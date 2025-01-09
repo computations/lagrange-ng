@@ -23,6 +23,7 @@
 #include "MRCA.hpp"
 #include "Node.hpp"
 #include "Operation.hpp"
+#include "Workspace.hpp"
 
 namespace lagrange {
 
@@ -55,7 +56,7 @@ class Tree {
 
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
 
-  [[nodiscard]] bool assignTipData(
+  [[nodiscard]] SetCLVStatus assignTipData(
       Workspace &ws, const std::unordered_map<std::string, Range> &dist_data);
 
   void assignMCRALabels(const MRCAMap &mrca_map);

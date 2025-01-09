@@ -23,6 +23,7 @@
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
+#include "Workspace.hpp"
 
 namespace lagrange {
 
@@ -84,8 +85,9 @@ auto Node::getNewick() const -> std::string {
   return getNewickLambda(newick_lambda);
 }
 
-auto Node::getNewickLambda(const std::function<std::string(const Node &)>
-                               &newick_lambda) const -> std::string {
+auto Node::getNewickLambda(
+    const std::function<std::string(const Node &)> &newick_lambda) const
+    -> std::string {
   std::ostringstream newick_oss;
   for (size_t i = 0; i < getChildCount(); i++) {
     if (i == 0) { newick_oss << "("; }
@@ -163,8 +165,8 @@ auto getNodesByMRCALabel(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
-auto getNodeById(const std::shared_ptr<Node> &current,
-                 size_t id) -> std::shared_ptr<Node> {
+auto getNodeById(const std::shared_ptr<Node> &current, size_t id)
+    -> std::shared_ptr<Node> {
   if (current->getId() == id) { return current; }
   for (const auto &c : current->_children) {
     auto tmp = getNodeById(c, id);
@@ -381,17 +383,22 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
   }
 }
 
-bool Node::assignTipData(
+SetCLVStatus Node::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, Range> &distrib_data) const {
   if (_children.empty()) {
-    if (!ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label))) {
+    auto res = ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
+    if (res == SetCLVStatus::failed) {
       LOG(ERROR, "The range data for the taxa {} is invalid", _label);
-      return false;
+    } else if (res == SetCLVStatus::ambiguous) {
+      LOG(WARNING,
+          "The range data for the taxa {} is too large, it will be coerced to "
+          "an ambigious state",
+          _label);
     }
-    return true;
+    return res;
   } else {
-    bool good = true;
+    SetCLVStatus good = SetCLVStatus::definite;
     for (const auto &c : _children) {
       good &= c->assignTipData(ws, distrib_data);
     }
@@ -411,8 +418,8 @@ void Node::assignId() {
 
 auto Node::getId() const -> size_t { return _id; }
 
-auto Node::checkAlignmentConsistency(const Alignment &align,
-                                     size_t count) -> size_t {
+auto Node::checkAlignmentConsistency(const Alignment &align, size_t count)
+    -> size_t {
   if (isTip()) {
     if (!align.data.contains(_label)) {
       std::ostringstream oss;

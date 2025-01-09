@@ -134,6 +134,7 @@ auto fused_join_splits(Range splitting_range,
 
   /* Left splits first */
   for (size_t i = 0; i < regions; i++) {
+    if (!lagrange_bextr(splitting_range, i)) { continue; }
     /* Sympatric split index */
     Range singleton_range = 1ULL << i;
 
@@ -143,10 +144,8 @@ auto fused_join_splits(Range splitting_range,
     auto singleton_index = dist_map(singleton_range);
     auto allopatric_index = dist_map(allopatric_range);
 
-    double valid = lagrange_bextr(splitting_range, i);
     sum += (c1[singleton_index] * (split_c2 + c2[allopatric_index])
-            + c2[singleton_index] * (split_c1 + c1[allopatric_index]))
-           * valid;
+            + c2[singleton_index] * (split_c1 + c1[allopatric_index]));
   }
   return sum / static_cast<double>(set_regions * 4);
 }

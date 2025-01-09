@@ -32,8 +32,10 @@ inline auto lagrange_popcount(Range a) -> size_t {
 }
 
 constexpr auto lagrange_clz(Range a) -> size_t {
+  assert(a != 0);
   return static_cast<size_t>(__builtin_clzll(a));
 }
+
 
 inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
     -> Range {
@@ -53,6 +55,10 @@ constexpr auto lagrange_fast_log2(size_t x) -> size_t {
   return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
 }
 
+constexpr auto lagrange_compute_region_mask(Range a) -> Range{
+  return lagrange_fast_log2(a) - 1;
+}
+
 inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
                                        size_t states) -> Range {
   Range best_dist = 0;
@@ -70,16 +76,18 @@ inline auto lagrange_compute_best_dist(const LagrangeConstColVector &dist_lhs,
   return best_dist;
 }
 
-auto lagrange_compute_restricted_state_count(size_t regions,
-                                             size_t max_areas) -> size_t;
+auto lagrange_compute_restricted_state_count(size_t regions, size_t max_areas)
+    -> size_t;
 
 auto compute_index_from_dist(Range i, size_t max_areas) -> size_t;
 
-auto lagrange_convert_dist_string(
-    Range dist, const std::vector<std::string> &names) -> std::string;
+auto lagrange_convert_dist_string(Range dist,
+                                  const std::vector<std::string> &names)
+    -> std::string;
 
-auto convert_dist_string_to_dist(
-    const std::string &dist, const std::vector<std::string> &names) -> Range;
+auto convert_dist_string_to_dist(const std::string &dist,
+                                 const std::vector<std::string> &names)
+    -> Range;
 
 auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range;
 
@@ -116,8 +124,8 @@ constexpr auto next_dist(Range d,
 }
 
 /* Produces a dist -> index map */
-inline auto invert_dist_map(size_t regions,
-                            size_t max_areas) -> std::vector<size_t> {
+inline auto invert_dist_map(size_t regions, size_t max_areas)
+    -> std::vector<size_t> {
   size_t max_state = 1ULL << regions;
   std::vector<size_t> ret(max_state, std::numeric_limits<size_t>::max());
 

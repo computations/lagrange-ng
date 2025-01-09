@@ -9,8 +9,18 @@
 #include <limits>
 
 #include "Common.hpp"
+#include "Utils.hpp"
 
 namespace lagrange {
+
+SetCLVStatus &operator&=(SetCLVStatus &lhs, const SetCLVStatus &rhs) {
+  if (rhs == SetCLVStatus::failed) { lhs = rhs; }
+  if (rhs == SetCLVStatus::ambiguous && lhs != SetCLVStatus::failed) {
+    lhs = rhs;
+  }
+
+  return lhs;
+}
 
 Workspace::~Workspace() {
   for (auto &res : _rate_matrix) { delete[] res._matrix; }
@@ -40,11 +50,31 @@ void Workspace::registerChildrenCLV(size_t node_id) {
   _node_reservations[node_id]._bot2_clv = registerCLV();
 }
 
-bool Workspace::setTipCLV(size_t index, Range clv_index) {
-  if (clv_index >= restrictedStateCount()) { return false; }
-  _clvs[index]._clv[clv_index] = 1.0;
+SetCLVStatus Workspace::setTipCLVAmbigious(size_t index, Range clv_index) {
+  size_t cur_index;
+  Range cur_dist;
+  size_t set_bit_target = lagrange_fast_log2(clv_index);
+  Range mask = (1ul << set_bit_target) - 1;
+  for (cur_index = 0, cur_dist = 0; cur_index < restrictedStateCount();
+       cur_dist = next_dist(cur_dist, maxAreas()), ++cur_index) {
+    if (lagrange_popcount(cur_dist) != maxAreas()) { continue; }
+    auto subset_test = ((~cur_dist & mask) | clv_index);
+    if (lagrange_popcount(subset_test) == set_bit_target) {
+      _clvs[index]._clv[cur_index] = 1.0;
+    }
+  }
   _clvs[index]._last_update = std::numeric_limits<size_t>::max();
-  return true;
+  return SetCLVStatus::ambiguous;
+}
+
+SetCLVStatus Workspace::setTipCLV(size_t index, Range clv_index) {
+  if (lagrange_popcount(clv_index) > maxAreas()) {
+    return setTipCLVAmbigious(index, clv_index);
+  }
+  auto dist_map = invert_dist_map(regions(), maxAreas());
+  _clvs[index]._clv[dist_map[clv_index]] = 1.0;
+  _clvs[index]._last_update = std::numeric_limits<size_t>::max();
+  return SetCLVStatus::definite;
 }
 
 void Workspace::reserve() {
