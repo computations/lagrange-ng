@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_map>
 #include <utility>
 
@@ -148,17 +149,17 @@ SetCLVStatus Tree::assignTipData(
 
 auto Tree::getNewick() const -> std::string { return _root->getNewick() + ";"; }
 
-auto Tree::getNewickLambda(const std::function<std::string(const Node &)>
-                               &newick_lambda) const -> std::string {
+auto Tree::getNewickLambda(
+    const std::function<std::string(const Node &)> &newick_lambda) const
+    -> std::string {
   return _root->getNewickLambda(newick_lambda) + ";";
 }
 
 auto Tree::checkAlignmentConsistency(const Alignment &align) const -> bool {
   auto count = _root->checkAlignmentConsistency(align, 0);
   if (count != align.taxa_count) {
-    std::ostringstream oss;
-    oss << "Taxa present in alignment that are not presesnt on the tree";
-    throw std::runtime_error{oss.str()};
+    throw std::runtime_error{
+        "Taxa present in alignment that are not presesnt on the tree"};
   }
   return true;
 }

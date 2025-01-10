@@ -82,7 +82,7 @@ class ConfigLexer {
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
-      throw ConfigFileLexingError{std::string("Float conversion failed around")
+      throw ConfigFileLexingError{"Float conversion failed around"s
                                   + describePosition()};
     }
     return val;
@@ -97,7 +97,7 @@ class ConfigLexer {
     size_t pos = 0;
     size_t val = std::stoull(f_str, &pos);
     if (pos != f_str.size()) {
-      throw ConfigFileLexingError{std::string("size_t conversion failed around")
+      throw ConfigFileLexingError{"size_t conversion failed around"s
                                   + describePosition()};
     }
     return val;
@@ -125,10 +125,10 @@ class ConfigLexer {
   void expect(ConfigLexemeType token_type) {
     auto ret = consumeTokenPos();
     if (ret.first != token_type) {
-      throw ConfigFileLexingError{
-          std::string("Got the wrong token type at position ")
-          + std::to_string(ret.second + 1) + " was expecting "
-          + describeToken(token_type)};
+      throw ConfigFileLexingError{"Got the wrong token type at position "s
+                                  + std::to_string(ret.second + 1)
+                                  + " was expecting "
+                                  + describeToken(token_type)};
     }
   }
 

@@ -12,6 +12,8 @@
 #include <memory>
 #include <sstream>
 
+using namespace std::string_literals;
+
 namespace lagrange {
 
 enum LexemeType : uint8_t {
@@ -44,7 +46,7 @@ class Lexer {
     size_t pos = 0;
     double val = std::stod(f_str, &pos);
     if (pos != f_str.size()) {
-      throw std::runtime_error{std::string("Float conversion failed around")
+      throw std::runtime_error{"Float conversion failed around"s
                                + describePosition()};
     }
     return val;
@@ -59,10 +61,9 @@ class Lexer {
   void expect(LexemeType token_type) {
     auto ret = consumeTokenPos();
     if (ret.first != token_type) {
-      throw std::runtime_error{
-          std::string("Got the wrong token type at position ")
-          + std::to_string(ret.second + 1) + " was expecting "
-          + describeToken(token_type)};
+      throw std::runtime_error{"Got the wrong token type at position "
+                               + std::to_string(ret.second + 1)
+                               + " was expecting " + describeToken(token_type)};
     }
   }
 
@@ -248,14 +249,14 @@ auto Parser::parseSubtree() -> std::shared_ptr<Node> {
   if (token == OPENING_PAREN) {
     auto tmp = parseInternal();
     if (tmp->getChildCount() < 2) {
-      throw std::runtime_error{std::string("Got a singleton inner node around ")
+      throw std::runtime_error{"Got a singleton inner node around "s
                                + _lexer.describePosition()};
     }
     return tmp;
   }
   auto tmp = parseLeaf();
   if (tmp->getChildCount() != 0) {
-    throw std::runtime_error{std::string("Got a leaf with children around ")
+    throw std::runtime_error{"Got a leaf with children around "s
                              + _lexer.describePosition()};
   }
   return tmp;
@@ -290,9 +291,8 @@ auto Parser::parseLeaf() -> std::shared_ptr<Node> {
   auto current_node = std::make_shared<Node>();
   parseNodeAttributes(current_node);
   if (current_node->getName().empty()) {
-    throw std::runtime_error{
-        std::string("Got a leaf with an empty name around ")
-        + std::string(_lexer.describePosition())};
+    throw std::runtime_error{"Got a leaf with an empty name around "s
+                             + std::string(_lexer.describePosition())};
   }
   return current_node;
 }
