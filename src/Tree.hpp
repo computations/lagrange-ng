@@ -79,8 +79,9 @@ class Tree {
   void setPeriods(const Periods &periods);
 
   auto getNewick() const -> std::string;
-  auto getNewickLambda(const std::function<std::string(const Node &)>
-                           &newick_lambda) const -> std::string;
+  auto getNewickLambda(
+      const std::function<std::string(const Node &)> &newick_lambda) const
+      -> std::string;
 
   auto checkAlignmentConsistency(const Alignment &align) const -> bool;
 

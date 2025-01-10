@@ -39,8 +39,8 @@ auto read_phylip(std::istream& instream) -> Alignment;
  * known filetype, and the version with an unknown filetype, which is
  * represented by an Option.
  */
-auto read_alignment(std::istream& instream,
-                    AlignmentFileType type) -> Alignment;
+auto read_alignment(std::istream& instream, AlignmentFileType type)
+    -> Alignment;
 auto read_alignment(const std::filesystem::path& filename,
                     AlignmentFileType type) -> Alignment;
 

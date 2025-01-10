@@ -12,8 +12,8 @@ namespace lagrange {
 auto normalize_split_distribution_by_lwr(SplitReturn &splits) -> void;
 
 auto normalize_state_distribution_by_lwr(
-    const std::unique_ptr<LagrangeMatrixBase[]> &states,
-    size_t states_len) -> std::unique_ptr<LagrangeMatrixBase[]>;
+    const std::unique_ptr<LagrangeMatrixBase[]> &states, size_t states_len)
+    -> std::unique_ptr<LagrangeMatrixBase[]>;
 
 auto make_state_results_for_node(
     const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,

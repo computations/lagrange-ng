@@ -2,10 +2,10 @@
 #define LAGRANGE_WORKER_STATE_H
 
 #include <atomic>
+#include <logger.hpp>
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <logger.hpp>
 
 #include "Operation.hpp"
 #include "Workspace.hpp"

@@ -36,7 +36,6 @@ constexpr auto lagrange_clz(Range a) -> size_t {
   return static_cast<size_t>(__builtin_clzll(a));
 }
 
-
 inline auto convert_vector_to_lagrange_dist(const std::vector<int> &vec_dist)
     -> Range {
   Range ret = 0;
@@ -55,7 +54,7 @@ constexpr auto lagrange_fast_log2(size_t x) -> size_t {
   return sizeof(x) * BITS_IN_BYTE - lagrange_clz(x | 1);
 }
 
-constexpr auto lagrange_compute_region_mask(Range a) -> Range{
+constexpr auto lagrange_compute_region_mask(Range a) -> Range {
   return lagrange_fast_log2(a) - 1;
 }
 

@@ -21,7 +21,7 @@ class Periods {
     terminate();
   }
 
-  Periods()  { terminate(); }
+  Periods() { terminate(); }
 
   Periods(const Periods &) = default;
   Periods(Periods &&) = default;

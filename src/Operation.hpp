@@ -31,19 +31,17 @@ class MakeRateMatrixOperation {
 
   void eval(const std::shared_ptr<Workspace>& ws);
 
-  [[nodiscard]] auto lastUpdate() const -> ClockTick {
-    return _last_execution;
-  }
+  [[nodiscard]] auto lastUpdate() const -> ClockTick { return _last_execution; }
 
   void updateRates(const std::shared_ptr<Workspace>& ws,
-                          double disp,
-                          double ext) {
+                   double disp,
+                   double ext) {
     ws->setPeriodParams(_period_index, disp, ext);
     _last_update = ws->advanceClock();
   }
 
   void updateRates(const std::shared_ptr<Workspace>& ws,
-                          const PeriodParams& p) {
+                   const PeriodParams& p) {
     updateRates(ws, p.dispersion_rate, p.extinction_rate);
   }
 
@@ -595,8 +593,7 @@ class StateLHGoal {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  [[nodiscard]] auto result() const
-      -> std::unique_ptr<LagrangeMatrixBase[]> {
+  [[nodiscard]] auto result() const -> std::unique_ptr<LagrangeMatrixBase[]> {
     std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
     for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
     return ret;
