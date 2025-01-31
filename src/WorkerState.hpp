@@ -43,7 +43,7 @@ struct WorkerContext {
 
 class WorkerState {
  public:
-  WorkerState() : _tid{_total_threads++} {}
+  WorkerState() : _tid{std::atomic_fetch_add(&_total_threads, 1)} {}
 
   WorkerState(const WorkerState&) = delete;
   auto operator=(const WorkerState&) -> WorkerState& = delete;
