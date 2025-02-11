@@ -139,6 +139,14 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
 
+  if (config.dump_graph()) {
+    std::ofstream forward_graph_file{config.forwardGraphFilename()};
+    context.dumpForwardGraph(forward_graph_file);
+
+    std::ofstream reverse_graph_file{config.reverseGraphFilename()};
+    context.dumpReverseGraph(reverse_graph_file);
+  }
+
   std::vector<WorkerState> worker_states;
   worker_states.reserve(config.workers());
   std::vector<std::thread> threads;

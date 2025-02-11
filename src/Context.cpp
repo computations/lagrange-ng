@@ -1,6 +1,7 @@
 #include "Context.hpp"
 
 #include <nlopt.hpp>
+#include <ostream>
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
@@ -83,6 +84,7 @@ auto Context::makeSplitGoalCB() -> std::function<void(Node&)> {
 }
 
 void Context::registerStateLHGoal() {
+  if (!_state_lh_goal.empty()) { return; }
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
   auto cb = makeStateGoalCB();
@@ -94,6 +96,7 @@ void Context::registerStateLHGoal(
     const std::unordered_set<std::string>& mrca_keys,
     const std::unordered_map<std::string, std::shared_ptr<MRCAEntry>>&
         mrca_map) {
+  if (!_state_lh_goal.empty()) { return; }
   auto cb = makeStateGoalCB();
   registerGoals(mrca_keys, mrca_map, cb);
 }
@@ -182,6 +185,10 @@ auto Context::computeLLH(WorkerState& ts, WorkerContext& tc) -> double {
   return _llh_goal.begin()->result();
 }
 
+void Context::haltThreads(WorkerState& ts, WorkerContext& tc) {
+  ts.work(WorkerMode::Halt, tc, _workspace);
+}
+
 void Context::optimizeAndComputeValues(WorkerState& ts,
                                        bool states,
                                        bool splits,
@@ -230,7 +237,8 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     LOG(INFO, "Computing ancestral splits");
     computeSplitGoal(ts, tc);
   }
-  ts.haltThreads();
+  LOG_INFO("Halting workers");
+  haltThreads(ts, tc);
 }
 
 auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
@@ -422,6 +430,26 @@ void Context::set_opt_method(const OptimizationMethod& m) {
 
 auto Context::computeDerivative() const -> bool {
   return _opt_method == nlopt::LD_LBFGS;
+}
+
+void Context::dumpReverseGraph(std::ostream& os) const {
+  size_t index = 0;
+  os << "digraph g {\n";
+  os << R"(node [shape = box];)" << "\n";
+  os << R"(graph [rankdir = "BT"];)" << "\n";
+  for (const auto& slhg : _state_lh_goal) { slhg.printGraph(os, index); }
+  for (const auto& rop : _reverse_operations) { rop->printGraph(os, index); }
+  os << "}";
+}
+
+void Context::dumpForwardGraph(std::ostream& os) const {
+  size_t index = 0;
+  os << "digraph g {\n";
+  os << R"(node [shape = box];)" << "\n";
+  os << R"(graph [rankdir = "TB"];)" << "\n";
+  for (const auto& lhg : _llh_goal) { lhg.printGraph(os, index); }
+  for (const auto& fop : _forward_operations) { fop->printGraph(os, index); }
+  os << "}";
 }
 
 }  // namespace lagrange

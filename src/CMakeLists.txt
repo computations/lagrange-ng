@@ -20,7 +20,8 @@ add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
 add_executable(lagrange-ng main.cpp)
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
-  set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native -fno-omit-frame-pointer)
+  set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native
+    -fno-omit-frame-pointer -g)
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
     -fsanitize-recover=address -fsanitize=undefined)

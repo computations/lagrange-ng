@@ -139,6 +139,9 @@ class ConfigFile {
   auto allow_ambigious() const -> bool;
   void allow_ambigious(bool);
 
+  auto dump_graph() const -> bool;
+  void dump_graph(bool);
+
   auto jsonResultsFilename() const -> std::filesystem::path;
   auto nodeTreeFilename() const -> std::filesystem::path;
   auto scaledTreeFilename() const -> std::filesystem::path;
@@ -149,6 +152,9 @@ class ConfigFile {
   auto periodsCSVResultsFilename() const -> std::filesystem::path;
   auto distributionsCSVResultsFilename() const -> std::filesystem::path;
   auto nodeInfoCSVResultsFilename() const -> std::filesystem::path;
+
+  auto forwardGraphFilename() const -> std::filesystem::path;
+  auto reverseGraphFilename() const -> std::filesystem::path;
 
   auto computeStates() const -> bool;
   auto computeSplits() const -> bool;
@@ -246,6 +252,7 @@ class ConfigFile {
   Option<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
 
   Option<bool> _allow_ambigious;
+  Option<bool> _dump_graph;
 };
 
 class ConfigFileLexingError : public std::runtime_error {

@@ -61,6 +61,7 @@ class Context {
   auto computeStateGoal(WorkerState& ts)
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
+  void haltThreads(WorkerState& ts, WorkerContext& tc);
 
   [[nodiscard]] auto toString() const -> std::string;
 
@@ -91,6 +92,8 @@ class Context {
   [[nodiscard]] auto getPeriodCount() const -> size_t;
 
   void set_opt_method(const OptimizationMethod&);
+  void dumpForwardGraph(std::ostream& os) const;
+  void dumpReverseGraph(std::ostream& os) const;
 
  private:
   void registerForwardOperations();

@@ -6,6 +6,12 @@
 
 #include "Operation.hpp"
 
+#include <cstdint>
+#include <string_view>
+
+#include "Periods.hpp"
+#include "logger.hpp"
+
 #undef NDEBUG
 #include <cassert>
 #include <cmath>
@@ -765,6 +771,7 @@ auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
+  if (evaluated(ws)) { return; }
   if (_child_op != nullptr && _child_op->ready(ws, _last_execution)) {
     _child_op->eval(ws);
   }
@@ -850,6 +857,17 @@ auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
+void DispersionOperation::printGraph(std::ostream &os, size_t &index) const {
+  auto ptr = (size_t)(static_cast<const void *>(this));
+  os << std::format(R"("{}" [label = "Dispersion {}"];)", ptr, index) << "\n";
+  os << std::format(R"("{}" -> clv{};)", ptr, _top_clv) << "\n";
+  os << std::format(R"(clv{} -> {};)", _bot_clv, ptr) << "\n";
+
+  index++;
+
+  if (_child_op != nullptr) { _child_op->printGraph(os, index); }
+}
+
 static void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
                            const std::shared_ptr<Workspace> &ws) {
   if (!op) { return; }
@@ -927,6 +945,19 @@ auto SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   std::ostringstream os;
   printStatus(ws, os, tabLevel);
   return os.str();
+}
+
+void SplitOperation::printGraph(std::ostream &os, size_t &index) const {
+  os << std::format(R"({} [label = "Split Operation {}"];)", index, index)
+     << "\n";
+  os << std::format("{} -> clv{};\n", index, _parent_clv_index);
+  os << std::format("clv{} -> {};\n", _rbranch_clv_index, index);
+  os << std::format("clv{} -> {};\n", _lbranch_clv_index, index);
+
+  index++;
+
+  _rbranch_op->printGraph(os, index);
+  _lbranch_op->printGraph(os, index);
 }
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
@@ -1008,6 +1039,20 @@ auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
+void ReverseSplitOperation::printGraph(std::ostream &os, size_t &index) const {
+  os << std::format(
+      R"({} [label = "Reverse Split Operation {}"];)", index, index)
+     << "\n";
+
+  os << std::format("{} -> clv{};\n", index, _bot_clv_index);
+  os << std::format("clv{} -> {};\n", _ltop_clv_index, index);
+  os << std::format("clv{} -> {};\n", _rtop_clv_index, index);
+
+  index++;
+
+  if (_branch_op != nullptr) { _branch_op->printGraph(os, index); }
+}
+
 void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   double rho = cblas_ddot(ws->CLVSize(),
                           ws->CLV(_root_clv_index),
@@ -1023,6 +1068,14 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
 
 auto LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
   return ws->lastUpdateCLV(_root_clv_index) > _last_execution;
+}
+
+void LLHGoal::printGraph(std::ostream &os, size_t &index) const {
+  os << std::format(R"({} [label = "LLHGoal {}"];)", index, index) << "\n";
+  os << std::format("clv{} -> {};\n", _root_clv_index, index);
+  os << std::format("bf{} -> {};\n", _prior_index, index);
+
+  index++;
 }
 
 void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
@@ -1064,6 +1117,16 @@ auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
   return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
+}
+
+void StateLHGoal::printGraph(std::ostream &os, size_t &index) const {
+  os << std::format(R"({} [label = "State Goal {}"];)", index, index) << "\n";
+
+  os << std::format("clv{} -> {};\n", _parent_clv_index, index);
+  os << std::format("clv{} -> {};\n", _lchild_clv_index, index);
+  os << std::format("clv{} -> {};\n", _rchild_clv_index, index);
+
+  index++;
 }
 
 void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {

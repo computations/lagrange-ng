@@ -99,6 +99,7 @@ class WorkerState {
           break;
 
         case WorkerMode::Halt:
+          LOG_INFO("Worker {} halting", _tid);
           return;
 
         default:
@@ -120,11 +121,6 @@ class WorkerState {
   [[nodiscard]] auto masterThread() const -> bool { return _tid == 0; }
 
   [[nodiscard]] auto threadID() const -> size_t { return _tid; }
-
-  void haltThreads() {
-    setRunMode(WorkerMode::Halt);
-    barrier();
-  }
 
   void setAssignedThreads(size_t at) { _assigned_threads = at; }
 
@@ -164,7 +160,7 @@ class WorkerState {
   void barrier() const {
     static volatile int wait_flag = 0;
     // static std::atomic<size_t> barrier_threads{0};
-    static size_t barrier_threads = 0;
+    static volatile size_t barrier_threads = 0;
 
     // if (_total_threads == 1) { return; }
 

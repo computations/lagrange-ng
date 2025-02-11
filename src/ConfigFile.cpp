@@ -426,6 +426,13 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
         } else {
           config.allow_ambigious(true);
         }
+      } else if (config_value == "dump-graph") {
+        if (lexer.peak() == ConfigLexemeType::EQUALS_SIGN) {
+          lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+          config.dump_graph(parse_bool(lexer));
+        } else {
+          config.dump_graph(true);
+        }
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
@@ -696,6 +703,18 @@ auto ConfigFile::nodeInfoCSVResultsFilename() const -> std::filesystem::path {
   return scaled_tree_filename;
 }
 
+auto ConfigFile::forwardGraphFilename() const -> std::filesystem::path {
+  auto graphvis_filename = _prefix;
+  graphvis_filename += ".forward-graph.gv";
+  return graphvis_filename;
+}
+
+auto ConfigFile::reverseGraphFilename() const -> std::filesystem::path {
+  auto graphvis_filename = _prefix;
+  graphvis_filename += ".reverse-graph.gv";
+  return graphvis_filename;
+}
+
 auto ConfigFile::computeStatesStrict() const -> bool {
   return _all_states || !_state_nodes.empty();
 }
@@ -713,4 +732,8 @@ auto ConfigFile::allow_ambigious() const -> bool {
 }
 
 void ConfigFile::allow_ambigious(bool b) { _allow_ambigious = b; }
+
+auto ConfigFile::dump_graph() const -> bool { return _dump_graph.get(false); }
+
+void ConfigFile::dump_graph(bool b) { _dump_graph = b; }
 }  // namespace lagrange

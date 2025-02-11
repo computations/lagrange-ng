@@ -224,6 +224,14 @@ class DispersionOperation {
     _top_clv = clv_index;
   }
 
+  void terminateBotChildren(size_t clv_index) {
+    if (_child_op == nullptr) {
+      terminateBot(clv_index);
+    } else {
+      _child_op->terminateBotChildren(clv_index);
+    }
+  }
+
   void unterminateTop() {
     if (_top_clv == std::numeric_limits<size_t>::max()) {
       throw std::runtime_error{"Tried to unterminate an unterminated top"};
@@ -279,6 +287,11 @@ class DispersionOperation {
     _child_op = op;
   }
 
+  void setChildOpAndTerminate(std::shared_ptr<DispersionOperation>& op) {
+    setChildOp(op);
+    terminateBot(op->topCLVIndex());
+  }
+
   auto getExpmOperations() -> std::vector<std::shared_ptr<ExpmOperation>> {
     size_t op_count = countChildOps();
     std::vector<std::shared_ptr<ExpmOperation>> expm_ops;
@@ -297,6 +310,17 @@ class DispersionOperation {
           vec) {
     if (_child_op) { _child_op->emplaceRateMatrixOperations(vec); }
     _expm_op->emplaceRateMatrixOperations(vec);
+  }
+
+  void printGraph(std::ostream& os, size_t& index) const;
+
+  auto evaluated(const std::shared_ptr<Workspace>& ws) const {
+    return ws->lastUpdateCLV(_bot_clv) < ws->lastUpdateCLV(_top_clv);
+  }
+
+  auto getFinalDest() const {
+    if (_child_op == nullptr) { return _top_clv; }
+    return _child_op->getFinalDest();
   }
 
  private:
@@ -421,6 +445,8 @@ class SplitOperation {
 
   void setInclAreas(Range i) { _incl_area_mask = i; }
 
+  void printGraph(std::ostream& os, size_t& index) const;
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -440,7 +466,7 @@ class SplitOperation {
 class ReverseSplitOperation {
  public:
   ReverseSplitOperation(
-      size_t bot_clv,  /* Where the result is stored*/
+      size_t bot_clv,  /* Where the result is stored */
       size_t ltop_clv, /* Where the result of the dispop is stored */
       size_t rtop_clv, /* Should be a _non_ reverse CLV */
       const std::shared_ptr<MakeRateMatrixOperation>& rate_matrix_op,
@@ -464,7 +490,7 @@ class ReverseSplitOperation {
       _ltop_clv_index{branch_op->topCLVIndex()},
       _rtop_clv_index{rtop_clv},
       _eval_clvs{true},
-      _branch_op{{branch_op}} {}
+      _branch_op{branch_op} {}
 
   explicit ReverseSplitOperation(
       const std::shared_ptr<DispersionOperation>& branch_op) :
@@ -472,7 +498,7 @@ class ReverseSplitOperation {
       _ltop_clv_index{std::numeric_limits<size_t>::max()},
       _rtop_clv_index{std::numeric_limits<size_t>::max()},
       _eval_clvs{false},
-      _branch_op{{branch_op}} {}
+      _branch_op{branch_op} {}
 
   explicit ReverseSplitOperation(size_t bot_clv,
                                  size_t ltop_clv,
@@ -492,6 +518,8 @@ class ReverseSplitOperation {
   [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
                                  size_t tabLevel = 0) const -> std::string;
 
+  void printGraph(std::ostream& os, size_t& index) const;
+
   void makeRootOperation(size_t clv_index) {
     _branch_op = nullptr;
     if (_ltop_clv_index == std::numeric_limits<size_t>::max()) {
@@ -505,10 +533,10 @@ class ReverseSplitOperation {
   [[nodiscard]] auto getStableCLV() const -> size_t { return _ltop_clv_index; }
 
   [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
-    bool branch_op_ready =
+    bool ltop_clv_ready =
         (_branch_op && _branch_op->ready(ws, _last_execution)) || (!_branch_op);
-    return branch_op_ready
-           && (ws->lastUpdateCLV(_ltop_clv_index) >= _last_execution);
+    return ltop_clv_ready
+           && (ws->lastUpdateCLV(_rtop_clv_index) > _last_execution);
   }
 
   auto getLock() -> std::mutex& { return *_lock; }
@@ -558,6 +586,7 @@ class LLHGoal {
   double _result = -std::numeric_limits<double>::infinity();
 
   [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
+  void printGraph(std::ostream& os, size_t& index) const;
 
  private:
   ClockTick _last_execution = 0;
@@ -610,6 +639,8 @@ class StateLHGoal {
   void setExclAreas(Range dist) { _excl_area_mask = dist; }
 
   [[nodiscard]] auto node_id() const -> size_t { return _node_id; }
+
+  void printGraph(std::ostream& os, size_t& index) const;
 
  private:
   size_t _parent_clv_index;
