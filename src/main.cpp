@@ -139,6 +139,10 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
 
+  WorkerContext wc = context.makeThreadContext();
+  wc.setTotalThreads(config.workers());
+  wc.initBarrier();
+
   if (config.dump_graph()) {
     std::ofstream forward_graph_file{config.forwardGraphFilename()};
     context.dumpForwardGraph(forward_graph_file);
@@ -153,11 +157,12 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   LOG(INFO, "Starting Workers");
   for (size_t i = 0; i < config.workers(); i++) {
     LOG(INFO, "Making Worker #{}", i + 1);
-    worker_states.emplace_back();
+    worker_states.emplace_back(i);
     worker_states.back().setAssignedThreads(config.threads_per_worker());
     threads.emplace_back(&Context::optimizeAndComputeValues,
                          std::ref(context),
                          std::ref(worker_states[i]),
+                         std::ref(wc),
                          config.computeStates(),
                          config.computeSplits(),
                          std::cref(config.run_mode()));

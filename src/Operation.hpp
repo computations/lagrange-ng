@@ -20,6 +20,7 @@
 #include "Common.hpp"
 #include "Utils.hpp"
 #include "Workspace.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -57,6 +58,8 @@ class MakeRateMatrixOperation {
                                  size_t tabLevel = 0) const -> std::string;
 
   [[nodiscard]] auto getPeriodIndex() const -> size_t { return _period_index; }
+
+  auto evaluated() const -> bool { return _last_execution > _last_update; }
 
  private:
   size_t _rate_matrix_index;
@@ -126,6 +129,14 @@ class ExpmOperation {
 
     size_t period = _rate_matrix_op->getPeriodIndex();
     if (!vec.contains(period)) { vec[period] = _rate_matrix_op; }
+  }
+
+  auto evaluated(const std::shared_ptr<Workspace>& ws) const -> bool {
+    auto rm_eval = _rate_matrix_op ? _rate_matrix_op->evaluated() : true;
+    auto pm_eval =
+        _last_execution > ws->lastUpdateProbMatrix(_rate_matrix_index);
+
+    return rm_eval && pm_eval;
   }
 
  private:
@@ -314,8 +325,13 @@ class DispersionOperation {
 
   void printGraph(std::ostream& os, size_t& index) const;
 
-  auto evaluated(const std::shared_ptr<Workspace>& ws) const {
-    return ws->lastUpdateCLV(_bot_clv) < ws->lastUpdateCLV(_top_clv);
+  auto evaluated(const std::shared_ptr<Workspace>& ws) const -> bool {
+    auto eval = ws->lastUpdateCLV(_bot_clv) < _last_execution
+                && _last_execution < ws->lastUpdateCLV(_top_clv)
+                && _expm_op->evaluated(ws);
+    eval &= _child_op ? _last_execution > _child_op->evaluated(ws) : true;
+
+    return eval;
   }
 
   auto getFinalDest() const {
@@ -417,7 +433,7 @@ class SplitOperation {
            && _rbranch_op->ready(ws, _last_execution);
   }
 
-  auto getLock() -> std::mutex& { return *_lock; }
+  auto getLock() -> std::mutex& { return _lock; }
 
   [[nodiscard]] auto getExpmOperations() const
       -> std::vector<std::shared_ptr<ExpmOperation>> {
@@ -447,6 +463,15 @@ class SplitOperation {
 
   void printGraph(std::ostream& os, size_t& index) const;
 
+  auto evaluated(const std::shared_ptr<Workspace>& ws) const {
+    auto eval = ws->lastUpdateCLV(_rbranch_clv_index) < _last_execution
+                && ws->lastUpdateCLV(_lbranch_clv_index) < _last_execution
+                && _last_execution < ws->lastUpdateCLV(_parent_clv_index);
+    eval &= _lbranch_op ? _lbranch_op->evaluated(ws) : true;
+    eval &= _rbranch_op ? _lbranch_op->evaluated(ws) : true;
+    return eval;
+  }
+
  private:
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
@@ -459,7 +484,7 @@ class SplitOperation {
   Option<Range> _excl_area_mask;
   Option<Range> _incl_area_mask;
 
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  std::mutex _lock;
   ClockTick _last_execution = 0;
 };
 
@@ -534,12 +559,13 @@ class ReverseSplitOperation {
 
   [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     bool ltop_clv_ready =
-        (_branch_op && _branch_op->ready(ws, _last_execution)) || (!_branch_op);
+        (_branch_op != nullptr ? _branch_op->ready(ws, _last_execution) : true)
+        || ws->lastUpdateCLV(_ltop_clv_index) > _last_execution;
     return ltop_clv_ready
            && (ws->lastUpdateCLV(_rtop_clv_index) > _last_execution);
   }
 
-  auto getLock() -> std::mutex& { return *_lock; }
+  auto getLock() -> std::mutex& { return _lock; }
 
   [[nodiscard]] auto getExpmOperations() const
       -> std::vector<std::shared_ptr<ExpmOperation>> {
@@ -555,6 +581,15 @@ class ReverseSplitOperation {
 
   void setExclAreas(Range i) { _excl_area_mask = i; }
 
+  auto evaluated(const std::shared_ptr<Workspace>& ws) const -> bool {
+    return _last_execution > 0;
+    bool eval = _last_execution > ws->lastUpdateCLV(_ltop_clv_index)
+                && _last_execution > ws->lastUpdateCLV(_rtop_clv_index)
+                && ws->lastUpdateCLV(_bot_clv_index) > _last_execution;
+    eval &= _branch_op ? _branch_op->evaluated(ws) : true;
+    return eval;
+  }
+
  private:
   size_t _bot_clv_index;
   size_t _ltop_clv_index;
@@ -567,7 +602,7 @@ class ReverseSplitOperation {
   Option<Range> _incl_area_mask;
   Option<Range> _excl_area_mask;
 
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  std::mutex _lock;
   ClockTick _last_execution = 0;
 };
 

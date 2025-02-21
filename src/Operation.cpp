@@ -964,6 +964,12 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   eval_branch_op(_branch_op, ws);
 
   if (_eval_clvs) {
+    /* TODO: This is a trick to avoid double evaluation of the same operation.
+     * For some reason, there are identical operations. The solution is to just
+     * check if the op has been done, and then skip it. But The better solution
+     * is to only produce one operations. */
+    if (_last_execution < ws->lastUpdateCLV(_bot_clv_index)) { return; }
+
     const auto &ltop_clv = ws->CLV(_ltop_clv_index);
     const auto &rtop_clv = ws->CLV(_rtop_clv_index);
 
@@ -985,6 +991,12 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
       auto val = ws->CLV(_bot_clv_index)[i];
       assert(!std::isnan(val));
       if (std::isfinite(val) && val != 0.0) { valid = true; }
+    }
+    if (!valid) {
+      LOG_ERROR(
+          "Reverse split operation produced and invalid result. Bot clv index: "
+          "{}",
+          _bot_clv_index);
     }
     assert(valid);
 

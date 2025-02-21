@@ -52,6 +52,7 @@ class Context {
       const std::unordered_map<std::string, Range>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts,
+                                WorkerContext& tc,
                                 bool states,
                                 bool splits,
                                 const LagrangeOperationMode& mode);
@@ -77,12 +78,11 @@ class Context {
   [[nodiscard]] auto currentParams() const -> std::vector<PeriodParams>;
 
   auto makeThreadContext() -> WorkerContext {
-    WorkerContext tc{_forward_operations,
-                     _reverse_operations,
-                     _llh_goal,
-                     _state_lh_goal,
-                     _split_lh_goal};
-    return tc;
+    return WorkerContext{_forward_operations,
+                         _reverse_operations,
+                         _llh_goal,
+                         _state_lh_goal,
+                         _split_lh_goal};
   }
 
   void set_lh_epsilon(double lhe) { _lh_epsilon = lhe; }

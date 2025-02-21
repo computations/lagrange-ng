@@ -190,11 +190,11 @@ void Context::haltThreads(WorkerState& ts, WorkerContext& tc) {
 }
 
 void Context::optimizeAndComputeValues(WorkerState& ts,
+                                       WorkerContext& tc,
                                        bool states,
                                        bool splits,
                                        const LagrangeOperationMode& mode) {
   ts.assign_threads();
-  WorkerContext tc = makeThreadContext();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that all further code is only executed by one thread
    */
@@ -233,10 +233,12 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     LOG(INFO, "Computing ancestral states");
     computeStateGoal(ts, tc);
   }
+
   if (splits) {
     LOG(INFO, "Computing ancestral splits");
     computeSplitGoal(ts, tc);
   }
+
   LOG_INFO("Halting workers");
   haltThreads(ts, tc);
 }
