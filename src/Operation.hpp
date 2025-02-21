@@ -289,7 +289,11 @@ class DispersionOperation {
     return _expm_op;
   }
 
-  void fallback() { _expm_op->setArnoldiMode(false); }
+  void fallback() {
+    LOG_WARNING("Falling back to Pade exponentiation for probability matrix {}",
+                _prob_matrix_index);
+    _expm_op->setArnoldiMode(false);
+  }
 
   void setChildOp(const std::shared_ptr<DispersionOperation>& op) {
     if (_child_op != nullptr) {
