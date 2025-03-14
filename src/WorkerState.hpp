@@ -14,6 +14,33 @@
 
 namespace lagrange {
 
+#if !defined _POSIX_BARRIERS || _POSIX_BARRIERS < 0 \
+    || defined LAGRANGE_USER_BARRIER
+  /**
+   * Macos doesn't have posix barriers, so we have to implement them by hand
+   * here. However, when they are available in the kernel, we will prefer those.
+   */
+  #define pthread_barrier_t barrier_t
+  #define pthread_barrier_attr_t barrier_attr_t
+  #define pthread_barrier_init(b, a, n) barrier_init(b, n)
+  #define pthread_barrier_destroy(b) barrier_destroy(b)
+  #define pthread_barrier_wait(b) barrier_wait(b)
+
+typedef struct {
+  int needed;
+  int called;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
+} barrier_t;
+
+int barrier_init(barrier_t* barrier, int needed);
+
+int barrier_destroy(barrier_t* barrier);
+
+int barrier_wait(barrier_t* barrier);
+
+#endif
+
 enum class WorkerMode : uint8_t {
   ComputeForward,
   ComputeReverse,
@@ -215,28 +242,6 @@ class WorkerState {
       if (lock.try_lock()) { w->eval(workspace); }
     }
   }
-
-  /*
-  void barrier() const {
-    static volatile int wait_flag = 0;
-    static std::atomic<size_t> barrier_threads{0};
-
-    // if (_total_threads == 1) { return; }
-
-    barrier_threads++;
-    // __sync_add_and_fetch(&barrier_threads, 1);
-
-    if (masterThread()) {
-      while (barrier_threads < _total_threads) {}
-      barrier_threads = 0;
-      wait_flag = wait_flag == 0 ? 1 : 0;
-    } else {
-      static thread_local volatile int local_wait_flag = 0;
-      while (local_wait_flag == wait_flag) {}
-      local_wait_flag = local_wait_flag == 0 ? 1 : 0;
-    }
-  }
-  */
 
   template <typename T>
   auto findWorkGoal(WorkerContext& tc,

@@ -94,7 +94,6 @@ endif()
 
 set(LAGRANGE_DEFINES ${LAGRANGE_DEFINES} LAGRANGE_BUILD_VERSION=${LAGRANGE_BUILD_VERSION})
 
-
 add_subdirectory(src)
 
 option(BUILD_TESTS "Enable building the tests" OFF)

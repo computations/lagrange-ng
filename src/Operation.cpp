@@ -785,12 +785,8 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
                                        _expm_op->transposed(),
                                        _expm_op->getT());
     } else {
-      if (_expm_op.use_count() > 1) {
-        std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
-        _expm_op->eval(ws);
-      } else {
-        _expm_op->eval(ws);
-      }
+      std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
+      _expm_op->eval(ws);
     }
   }
 
@@ -859,8 +855,8 @@ auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
 void DispersionOperation::printGraph(std::ostream &os, size_t &index) const {
   auto ptr = (size_t)(static_cast<const void *>(this));
-  os << std::format(R"("{}" [label = "Dispersion {}"];)", ptr, index) << "\n";
-  os << std::format(R"("{}" -> clv{};)", ptr, _top_clv) << "\n";
+  os << std::format(R"({} [label = "Dispersion {}"];)", ptr, index) << "\n";
+  os << std::format(R"({} -> clv{};)", ptr, _top_clv) << "\n";
   os << std::format(R"(clv{} -> {};)", _bot_clv, ptr) << "\n";
 
   index++;
@@ -871,12 +867,8 @@ void DispersionOperation::printGraph(std::ostream &os, size_t &index) const {
 static void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
                            const std::shared_ptr<Workspace> &ws) {
   if (!op) { return; }
-  if (op.use_count() > 1) {
-    std::lock_guard<std::mutex> lock(op->getLock());
-    op->eval(ws);
-  } else {
-    op->eval(ws);
-  }
+  std::lock_guard<std::mutex> lock{op->getLock()};
+  op->eval(ws);
 }
 
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
@@ -961,14 +953,12 @@ void SplitOperation::printGraph(std::ostream &os, size_t &index) const {
 }
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
-  eval_branch_op(_branch_op, ws);
-
   if (_eval_clvs) {
-    /* TODO: This is a trick to avoid double evaluation of the same operation.
-     * For some reason, there are identical operations. The solution is to just
-     * check if the op has been done, and then skip it. But The better solution
-     * is to only produce one operations. */
-    if (_last_execution < ws->lastUpdateCLV(_bot_clv_index)) { return; }
+
+    if (_branch_op) {
+      _branch_op->getLock().lock();
+      _branch_op->eval(ws);
+    }
 
     const auto &ltop_clv = ws->CLV(_ltop_clv_index);
     const auto &rtop_clv = ws->CLV(_rtop_clv_index);
@@ -994,7 +984,7 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
     if (!valid) {
       LOG_ERROR(
-          "Reverse split operation produced and invalid result. Bot clv index: "
+          "Reverse split operation produced an invalid result. Bot clv index: "
           "{}",
           _bot_clv_index);
     }
@@ -1002,6 +992,7 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
 
     _last_execution = ws->advanceClock();
     ws->updateCLVClock(_bot_clv_index);
+    if (_branch_op) { _branch_op->getLock().unlock(); }
   }
 }
 
@@ -1052,13 +1043,16 @@ auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 }
 
 void ReverseSplitOperation::printGraph(std::ostream &os, size_t &index) const {
-  os << std::format(
-      R"({} [label = "Reverse Split Operation {}"];)", index, index)
+  auto ptr = (size_t)(static_cast<const void *>(this));
+  os << std::format(R"({} [label = "Reverse Split Operation {}"];)", ptr, index)
      << "\n";
 
-  os << std::format("{} -> clv{};\n", index, _bot_clv_index);
-  os << std::format("clv{} -> {};\n", _ltop_clv_index, index);
-  os << std::format("clv{} -> {};\n", _rtop_clv_index, index);
+  os << std::format("{} -> clv{};\n", ptr, _bot_clv_index);
+  os << std::format("clv{} -> {};\n", _ltop_clv_index, ptr);
+  os << std::format("clv{} -> {};\n", _rtop_clv_index, ptr);
+
+  auto branch_ptr = (size_t)(static_cast<const void *>(_branch_op.get()));
+  os << std::format("{} -> {} [style = dashed];\n", ptr, branch_ptr);
 
   index++;
 

@@ -282,7 +282,7 @@ class DispersionOperation {
     return (_child_op != nullptr && _child_op->ready(ws, deadline));
   }
 
-  auto getLock() -> std::mutex& { return *_lock; }
+  auto getLock() -> std::mutex& { return _lock; }
 
   [[nodiscard]] auto getExpmOperation() const
       -> std::shared_ptr<ExpmOperation> {
@@ -364,7 +364,7 @@ class DispersionOperation {
   std::shared_ptr<ExpmOperation> _expm_op;
   std::shared_ptr<DispersionOperation> _child_op;
 
-  std::unique_ptr<std::mutex> _lock{new std::mutex};
+  std::mutex _lock;
   ClockTick _last_execution = 0;
 };
 
