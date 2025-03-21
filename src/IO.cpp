@@ -396,6 +396,15 @@ auto make_annotated_node_newick_lambda() {
   };
 }
 
+auto make_clean_node_newick_lambda() {
+  return [](const Node &n) -> std::string {
+    std::ostringstream oss;
+    oss << n.getNodeLabel();
+    oss << ":" + std::to_string(n.getBL());
+    return oss.str();
+  };
+}
+
 auto make_annotated_splits_newick_lambda(
     const std::vector<std::string> &region_names) {
   return [&](const Node &n) -> std::string {
@@ -433,6 +442,16 @@ void write_node_tree(const std::shared_ptr<Tree> &tree,
 
   std::ofstream node_tree(node_tree_filename);
   node_tree << tree->getNewickLambda(make_annotated_node_newick_lambda())
+            << '\n';
+}
+
+void write_clean_tree(const std::shared_ptr<Tree> &tree,
+                      const ConfigFile &config) {
+  auto node_tree_filename = config.cleanTreeFilename();
+  LOG(INFO, "Writing clean tree to {}", node_tree_filename.string());
+
+  std::ofstream node_tree(node_tree_filename);
+  node_tree << tree->getNewickLambda(make_clean_node_newick_lambda())
             << '\n';
 }
 

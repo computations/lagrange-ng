@@ -144,6 +144,7 @@ class ConfigFile {
 
   auto jsonResultsFilename() const -> std::filesystem::path;
   auto nodeTreeFilename() const -> std::filesystem::path;
+  auto cleanTreeFilename() const -> std::filesystem::path;
   auto scaledTreeFilename() const -> std::filesystem::path;
   auto splitsTreeFilename() const -> std::filesystem::path;
   auto statesTreeFilename() const -> std::filesystem::path;

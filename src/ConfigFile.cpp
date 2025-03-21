@@ -654,6 +654,12 @@ auto ConfigFile::nodeTreeFilename() const -> std::filesystem::path {
   return node_tree_filename;
 }
 
+auto ConfigFile::cleanTreeFilename() const -> std::filesystem::path {
+  auto node_tree_filename = _prefix;
+  node_tree_filename += ".clean.tre";
+  return node_tree_filename;
+}
+
 auto ConfigFile::scaledTreeFilename() const -> std::filesystem::path {
   auto scaled_tree_filename = _prefix;
   scaled_tree_filename += ".scaled.tre";

@@ -41,6 +41,9 @@ void write_result_files(const std::shared_ptr<Tree> &tree,
 void write_node_tree(const std::shared_ptr<Tree> &tree,
                      const ConfigFile &config);
 
+void write_clean_tree(const std::shared_ptr<Tree> &tree,
+                      const ConfigFile &config);
+
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config);
 

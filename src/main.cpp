@@ -174,6 +174,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
   assign_results_to_tree(tree, config, context);
   write_result_files(tree, config, context);
   write_node_tree(tree, config);
+  write_clean_tree(tree, config);
   if (config.computeStatesStrict()) { write_states_tree(tree, config); }
   if (config.computeSplits()) { write_splits_tree(tree, config); }
 }
