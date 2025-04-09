@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 cmake_policy(SET CMP0135 NEW)
 
 project(lagrange-ng)
@@ -11,8 +11,8 @@ include(FetchContent)
 
 # Find NLopt, otherwise download it
 FetchContent_Declare(NLopt
-  URL https://github.com/stevengj/nlopt/archive/refs/tags/v2.7.1.tar.gz
-  URL_HASH SHA256=db88232fa5cef0ff6e39943fc63ab6074208831dc0031cf1545f6ecd31ae2a1a
+  URL https://github.com/stevengj/nlopt/archive/refs/tags/v2.10.0.tar.gz
+  URL_HASH SHA256=506f83a9e778ad4f204446e99509cb2bdf5539de8beccc260a014bd560237be1
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )
@@ -20,15 +20,15 @@ FetchContent_Declare(NLopt
 
 # Find json lib, otherwise download it
 FetchContent_Declare(nlohmann_json
-  URL https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent/archive/refs/tags/v3.11.2.tar.gz
-  URL_HASH SHA256=8221d9885db8af5c48b472fa2971318443a502c41d8ed6c9bce3a88d6834aa9c
+  URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+  URL_HASH SHA256=d6c65aca6b1ed68e7a182f4757257b107ae403032760ed6ef121c9d55e81757d
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )
 
 FetchContent_Declare(logger
-  URL https://github.com/computations/logger/archive/refs/tags/v0.3.0.tar.gz
-  URL_HASH SHA256=b9b1d79a1735a5064b2c7da27a2a6866be23d1f11bad43c0ae32cc491435fecd
+  URL https://github.com/computations/logger/archive/refs/tags/v0.4.0.tar.gz
+  URL_HASH SHA256=5168374d5acdbf245a9b25f39f029e80e4fa0ab039b0c576a010b5d64314451e
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )
@@ -56,8 +56,8 @@ if (${MKL_FOUND})
   set(LAGRANGE_DEFINES MKL_ENABLED=1)
 else()
     FetchContent_Declare(OpenBLAS
-      URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
-      URL_HASH SHA256=5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
+      URL https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
+      URL_HASH SHA256=38240eee1b29e2bde47ebb5d61160207dc68668a54cac62c076bb5032013b1eb
       EXCLUDE_FROM_ALL
       FIND_PACKAGE_ARGS
     )
