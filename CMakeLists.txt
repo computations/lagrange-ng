@@ -9,6 +9,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(FetchContent)
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+
 # Find NLopt, otherwise download it
 FetchContent_Declare(NLopt
   URL https://github.com/stevengj/nlopt/archive/refs/tags/v2.10.0.tar.gz
