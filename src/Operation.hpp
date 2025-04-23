@@ -147,12 +147,6 @@ class ExpmOperation {
   std::shared_ptr<MakeRateMatrixOperation> _rate_matrix_op;
 
   /* Temp matrices for the computation of the exponential */
-  std::unique_ptr<LagrangeMatrixBase[]> _A = nullptr;
-  std::unique_ptr<LagrangeMatrixBase[]> _X_1 = nullptr;
-  std::unique_ptr<LagrangeMatrixBase[]> _X_2 = nullptr;
-  std::unique_ptr<LagrangeMatrixBase[]> _N = nullptr;
-  std::unique_ptr<LagrangeMatrixBase[]> _D = nullptr;
-  std::unique_ptr<LagrangeMatrixBase[]> _lapack_work_buffer = nullptr;
 
   ClockTick _last_execution = 0;
   std::unique_ptr<std::mutex> _lock{new std::mutex};

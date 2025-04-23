@@ -490,8 +490,16 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     return;
   }
 
-  if (_last_execution == 0) {
-    _A.reset(new LagrangeMatrixBase[ws->matrixSize()]);
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _A;
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _X_1;
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _X_2;
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _N;
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _D;
+  thread_local std::unique_ptr<LagrangeMatrixBase[]> _lapack_work_buffer;
+
+  if (_A == nullptr) { _A.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
+
+  if (_lapack_work_buffer == nullptr) {
     _lapack_work_buffer.reset(
         new LagrangeMatrixBase[ws->restrictedStateCount()]);
   }
@@ -553,12 +561,10 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   double c = 0.5;
   double sign = -1.0;
 
-  if (_last_execution == 0) {
-    _X_1.reset(new LagrangeMatrixBase[ws->matrixSize()]);
-    _X_2.reset(new LagrangeMatrixBase[ws->matrixSize()]);
-    _N.reset(new LagrangeMatrixBase[ws->matrixSize()]);
-    _D.reset(new LagrangeMatrixBase[ws->matrixSize()]);
-  }
+  if (_X_1 == nullptr) { _X_1.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
+  if (_X_2 == nullptr) { _X_2.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
+  if (_N == nullptr) { _N.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
+  if (_D == nullptr) { _D.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
 
   cblas_dcopy(ws->matrixSize(), _A.get(), 1, _X_1.get(), 1);
 
@@ -954,7 +960,6 @@ void SplitOperation::printGraph(std::ostream &os, size_t &index) const {
 
 void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_eval_clvs) {
-
     if (_branch_op) {
       _branch_op->getLock().lock();
       _branch_op->eval(ws);
