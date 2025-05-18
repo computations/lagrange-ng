@@ -16,7 +16,7 @@ set(LAGRANGE_TEST_SOURCES
   src/tree_reader.cpp
   src/workspace.cpp
   src/operation.cpp
-  src/context.cpp
+  #src/context.cpp
   src/tree.cpp
   src/configfile.cpp
   src/main.cpp

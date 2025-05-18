@@ -15,6 +15,7 @@
 #include <tuple>
 
 #include "Common.hpp"
+#include "ModelParams.hpp"
 #include "Utils.hpp"
 
 namespace lagrange {

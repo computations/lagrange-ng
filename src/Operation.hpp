@@ -18,6 +18,7 @@
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
+#include "ModelParams.hpp"
 #include "Utils.hpp"
 #include "Workspace.hpp"
 #include "logger.hpp"

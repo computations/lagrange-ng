@@ -75,9 +75,13 @@ TEST_F(ContextTest, optimizeSimple0) {
   EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
               == SetCLVStatus::definite);
 
+  auto wc = context.makeThreadContext();
   double initial_llh = context.computeLLH(_worker_state);
-  context.optimizeAndComputeValues(
-      _worker_state, false, false, LagrangeOperationMode::OPTIMIZE);
+  context.optimizeAndComputeValues(_worker_state,
+                                   wc,
+                                   false,
+                                   false,
+                                   LagrangeOperationMode::OPTIMIZE);
   double llh = context.computeLLH(_worker_state);
 
   EXPECT_GT(llh, initial_llh);

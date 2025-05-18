@@ -87,6 +87,18 @@ auto split_product(Range left,
   return c1[dist_map(left)] * c2[dist_map(right)];
 }
 
+inline double compute_split_product(double full_c1,
+                                    double full_c2,
+                                    double sympatric_c1,
+                                    double sympatric_c2,
+                                    double allopatric_c1,
+                                    double allopatric_c2,
+                                    double weight) {
+  return (sympatric_c1 * (full_c2 + allopatric_c2)
+          + sympatric_c2 * (full_c1 + allopatric_c1))
+         * weight;
+}
+
 auto fused_join_splits_happy(Range splitting_range,
                              size_t regions,
                              const LagrangeConstColVector &c1,
@@ -113,8 +125,55 @@ auto fused_join_splits_happy(Range splitting_range,
     double valid = lagrange_bextr(splitting_range, i);
 
     sum += (c1[sympatric_index] * (split_c2 + c2[allopatric_index])
-            + c2[sympatric_index] * (split_c1 * c1[allopatric_index]))
+            + c2[sympatric_index] * (split_c1 + c1[allopatric_index]))
            * valid;
+  }
+
+  return sum / static_cast<double>(set_regions * 4);
+}
+
+auto fused_join_splits_happy_with_jump(Range splitting_range,
+                                       size_t regions,
+                                       const LagrangeConstColVector &c1,
+                                       const LagrangeConstColVector &c2,
+                                       double jump_weight) -> double {
+  if (splitting_range == 0) { return 0.0; }
+
+  auto set_regions = lagrange_popcount(splitting_range);
+
+  if (set_regions == 1) { return c1[splitting_range] * c2[splitting_range]; }
+
+  double sum = 0.0;
+
+  /* Grab the values that don't change first */
+  const double split_c1 = c1[splitting_range];
+  const double split_c2 = c2[splitting_range];
+
+  for (size_t i = 0; i < regions; i++) {
+    /* Sympatric split index */
+    uint64_t sympatric_index = 1ULL << i;
+
+    /* Allopatric split index */
+    uint64_t allopatric_index = (sympatric_index ^ splitting_range);
+
+    double valid = lagrange_bextr(splitting_range, i);
+
+    sum += compute_split_product(split_c1,
+                                 split_c2,
+                                 c1[sympatric_index],
+                                 c2[sympatric_index],
+                                 c1[allopatric_index],
+                                 c2[allopatric_index],
+                                 1 - jump_weight / 3)
+           * valid;
+
+    if (!lagrange_bextr(splitting_range, i)) {
+      auto jump_index = sympatric_index;
+      sum += (c1[splitting_range] * c2[jump_index]
+              + c1[jump_index] * c2[splitting_range])
+             * jump_weight;
+      ;
+    }
   }
 
   return sum / static_cast<double>(set_regions * 4);

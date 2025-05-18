@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "Alignment.hpp"
+#include "ModelParams.hpp"
 #include "Common.hpp"
 #include "Fossil.hpp"
 #include "MRCA.hpp"
