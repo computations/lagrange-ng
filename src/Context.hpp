@@ -59,7 +59,7 @@ class Context {
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
-  auto computeStateGoal(WorkerState& ts)
+  auto computeAndGetStateGoals(WorkerState& ts, WorkerContext& tc)
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
   void haltThreads(WorkerState& ts, WorkerContext& tc);

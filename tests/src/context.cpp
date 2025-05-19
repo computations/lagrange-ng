@@ -32,7 +32,7 @@ class ContextTest : public ::testing::Test {
   std::unordered_map<std::string, Range> _basic_tree_data;
   Periods _basic_periods;
   size_t _basic_tree_data_region_count = 2;
-  WorkerState _worker_state;
+  // WorkerState _worker_state;
 };
 
 TEST_F(ContextTest, simple0) {
@@ -57,12 +57,17 @@ TEST_F(ContextTest, computelh1) {
   EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
               == SetCLVStatus::definite);
 
-  double llh = context.computeLLH(_worker_state);
+  auto worker_context = context.makeThreadContext();
+  worker_context.setTotalThreads(1);
+  worker_context.initBarrier();
+
+  WorkerState worker_state(0);
+  double llh = context.computeLLH(worker_state, worker_context);
   constexpr double regression_llh = -1.9960966944483829;
 
   EXPECT_NEAR(llh, regression_llh, 1e-9);
 
-  llh = context.computeLLH(_worker_state);
+  llh = context.computeLLH(worker_state, worker_context);
   EXPECT_NEAR(llh, regression_llh, 1e-9);
 }
 
@@ -72,13 +77,23 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.init();
   context.updateRates({{10.5, 1.5}});
   context.set_opt_method(OptimizationMethod::BFGS);
+
+  auto worker_context = context.makeThreadContext();
+  worker_context.setTotalThreads(1);
+  worker_context.initBarrier();
+
+  WorkerState worker_state(0);
+
   EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
               == SetCLVStatus::definite);
 
-  double initial_llh = context.computeLLH(_worker_state);
-  context.optimizeAndComputeValues(
-      _worker_state, false, false, LagrangeOperationMode::OPTIMIZE);
-  double llh = context.computeLLH(_worker_state);
+  double initial_llh = context.computeLLH(worker_state, worker_context);
+  context.optimizeAndComputeValues(worker_state,
+                                   worker_context,
+                                   false,
+                                   false,
+                                   LagrangeOperationMode::OPTIMIZE);
+  double llh = context.computeLLH(worker_state, worker_context);
 
   EXPECT_GT(llh, initial_llh);
 }
@@ -89,10 +104,17 @@ TEST_F(ContextTest, StateGoal0) {
   context.registerStateLHGoal();
   context.init();
   context.updateRates({{10.5, 1.5}});
+
+  auto worker_context = context.makeThreadContext();
+  worker_context.setTotalThreads(1);
+  worker_context.initBarrier();
+
+  WorkerState worker_state(0);
+
   EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
               == SetCLVStatus::definite);
 
-  context.computeLLH(_worker_state);
-  auto states = context.computeStateGoal(_worker_state);
+  context.computeLLH(worker_state, worker_context);
+  auto states = context.computeAndGetStateGoals(worker_state, worker_context);
   EXPECT_EQ(states.size(), 2);
 }

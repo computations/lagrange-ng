@@ -366,9 +366,8 @@ std::string Context::treeCLVStatus() const {
 }
 #endif
 
-auto Context::computeStateGoal(WorkerState& ts)
+auto Context::computeAndGetStateGoals(WorkerState& ts, WorkerContext& tc)
     -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> {
-  auto tc = makeThreadContext();
   computeBackwardOperations(ts, tc);
   computeStateGoal(ts, tc);
   return getStateResults();
