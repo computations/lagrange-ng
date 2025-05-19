@@ -54,8 +54,8 @@ class Periods {
     _periods.emplace_back(std::numeric_limits<double>::infinity());
   }
 
-  size_t _regions;
-  size_t _max_areas;
+  size_t _regions = 0;
+  size_t _max_areas = 0;
 
   std::vector<double> _periods;
 };
