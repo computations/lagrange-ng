@@ -10,6 +10,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <logger.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -144,6 +145,16 @@ auto lagrange_convert_dist_to_list(Range dist,
     -> std::vector<std::string>;
 
 auto get_file_extension(const std::string &filename) -> std::string;
+
+template <typename... Ts>
+void lagrange_assert(bool condition,
+                     std::basic_format_string<char> msg,
+                     Ts... args) {
+  if (!condition) {
+    LOG_ERROR(msg, args...);
+    abort();
+  }
+}
 
 template <typename T>
 class Option {

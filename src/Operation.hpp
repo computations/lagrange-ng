@@ -347,6 +347,9 @@ class DispersionOperation {
 
   void perform_matvec(const std::shared_ptr<Workspace>& ws);
 
+  void check_for_errors(const std::shared_ptr<Workspace>& ws);
+  bool check_for_fallback(const std::shared_ptr<Workspace>& ws);
+
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
    * is that we just apply the matrix multiplication over and over again to the
@@ -474,6 +477,8 @@ class SplitOperation {
   }
 
  private:
+  bool check_for_errors(const std::shared_ptr<Workspace>& ws);
+
   size_t _lbranch_clv_index;
   size_t _rbranch_clv_index;
   size_t _parent_clv_index;

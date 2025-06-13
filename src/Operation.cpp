@@ -789,6 +789,38 @@ void DispersionOperation::perform_matvec(const std::shared_ptr<Workspace> &ws) {
               1);
 }
 
+void DispersionOperation::check_for_errors(
+    const std::shared_ptr<Workspace> &ws) {
+  bool all_zeros = true;
+
+  for (size_t i = 0; i < ws->CLVSize(); ++i) {
+    all_zeros &= ws->CLV(_top_clv)[i] == 0.0;
+  }
+
+  if (all_zeros) {
+    LOG_ERROR(
+        "Dispersion operation resulted in all zeros. top_clv: {}, bot_clv: {}, "
+        "prob_matrix: {}",
+        _top_clv,
+        _bot_clv,
+        _prob_matrix_index);
+    assert(!all_zeros);
+  }
+}
+
+bool DispersionOperation::check_for_fallback(
+    const std::shared_ptr<Workspace> &ws) {
+  const auto &top_clv = ws->CLV(_top_clv);
+  for (size_t i = 0; i < ws->CLVSize(); ++i) {
+    if (std::isnan(top_clv[i]) || ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
+      fallback();
+      eval(ws);
+      return true;
+    }
+  }
+  return false;
+}
+
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (evaluated(ws)) { return; }
   if (_child_op != nullptr && _child_op->ready(ws, _last_execution)) {
@@ -812,17 +844,12 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
     }
   }
 
-  if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {
-    const auto &top_clv = ws->CLV(_top_clv);
-    for (size_t i = 0; i < ws->CLVSize(); ++i) {
-      if (std::isnan(top_clv[i])
-          || ((top_clv[i] > 1.0) != (top_clv[i] < 0.0))) {
-        fallback();
-        eval(ws);
-        break;
-      }
-    }
+  if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()
+      && check_for_fallback(ws)) {
+    return;
   }
+
+  check_for_errors(ws);
 
   _last_execution = ws->advanceClock();
 
@@ -878,6 +905,25 @@ static void eval_branch_op(std::shared_ptr<DispersionOperation> &op,
   op->eval(ws);
 }
 
+bool SplitOperation::check_for_errors(const std::shared_ptr<Workspace> &ws) {
+  const auto &parent_clv = ws->CLV(_parent_clv_index);
+
+  bool all_zeroes = true;
+  for (size_t i = 0; i < ws->CLVSize(); ++i) {
+    if (std::isnan(parent_clv[i])) {
+      LOG_ERROR("Split operation failed, value is NaN");
+      return false;
+    }
+    if ((parent_clv[i] > 1.0) != (parent_clv[i] < 0.0)) {
+      LOG_ERROR("Split operation failed, value is not between 0.0 and 1.0");
+      return false;
+    }
+    all_zeroes &= (parent_clv[i] == 0.0);
+  }
+  if (all_zeroes) { LOG_ERROR("Split operation resulted in all zeros"); }
+  return !all_zeroes;
+}
+
 void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   eval_branch_op(_lbranch_op, ws);
   eval_branch_op(_rbranch_op, ws);
@@ -898,6 +944,8 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
                    _fixed_dist,
                    _excl_area_mask.get(0),
                    _incl_area_mask.get(0));
+
+  assert(check_for_errors(ws));
 
   _last_execution = ws->advanceClock();
   ws->updateCLVClock(_parent_clv_index);
@@ -1071,7 +1119,8 @@ void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
                           1,
                           ws->getBaseFrequencies(_prior_index),
                           1);
-  assert(rho > 0.0);
+  lagrange_assert(rho > 0.0,
+                  "Likelihood computations failed with an invalid likelihood");
   _result = std::log(rho)
             - lagrange_scaling_factor_log * ws->CLVScalar(_root_clv_index);
 
