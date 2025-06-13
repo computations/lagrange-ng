@@ -415,8 +415,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
 
-      /* Source is "gaining" a region, so we add
-       */
+      /* Source is "gaining" a region, so we add */
       if (source_dist < dest_dist && source_dist != 0) {
         double sum = 0.0;
         size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
@@ -429,8 +428,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         rm[ws->computeMatrixIndex(source_index, dest_index)] = sum;
 
       }
-      /* Otherwise, source is loosing a region, so
-         we just set the value */
+      /* Otherwise, source is loosing a region, so we just set the value */
       else if (source_dist != 0) {
         rm[ws->computeMatrixIndex(source_index, dest_index)] =
             period.getExtinctionRate();
