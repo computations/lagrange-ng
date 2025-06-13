@@ -774,6 +774,21 @@ auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
   return os.str();
 }
 
+void DispersionOperation::perform_matvec(const std::shared_ptr<Workspace> &ws) {
+  cblas_dgemv(CblasRowMajor,
+              CblasNoTrans,
+              ws->restrictedStateCount(),
+              ws->restrictedStateCount(),
+              1.0,
+              ws->probMatrix(_prob_matrix_index),
+              ws->leadingDimension(),
+              ws->CLV(_bot_clv),
+              1,
+              0.0,
+              ws->CLV(_top_clv),
+              1);
+}
+
 void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (evaluated(ws)) { return; }
   if (_child_op != nullptr && _child_op->ready(ws, _last_execution)) {
@@ -788,25 +803,13 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
                                        _top_clv,
                                        _expm_op->transposed(),
                                        _expm_op->getT());
+    } else if (_expm_op->evaluated(ws)) {
+      perform_matvec(ws);
     } else {
       std::lock_guard<std::mutex> expm_guard(_expm_op->getLock());
       _expm_op->eval(ws);
+      perform_matvec(ws);
     }
-  }
-
-  if (_expm_op != nullptr && !_expm_op->isArnoldiMode()) {
-    cblas_dgemv(CblasRowMajor,
-                CblasNoTrans,
-                ws->restrictedStateCount(),
-                ws->restrictedStateCount(),
-                1.0,
-                ws->probMatrix(_prob_matrix_index),
-                ws->leadingDimension(),
-                ws->CLV(_bot_clv),
-                1,
-                0.0,
-                ws->CLV(_top_clv),
-                1);
   }
 
   if (_expm_op->isArnoldiMode() && _expm_op->isAdaptive()) {

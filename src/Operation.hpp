@@ -134,7 +134,7 @@ class ExpmOperation {
   auto evaluated(const std::shared_ptr<Workspace>& ws) const -> bool {
     auto rm_eval = _rate_matrix_op ? _rate_matrix_op->evaluated() : true;
     auto pm_eval =
-        _last_execution > ws->lastUpdateProbMatrix(_rate_matrix_index);
+        _last_execution > ws->lastUpdateRateMatrix(_rate_matrix_index);
 
     return rm_eval && pm_eval;
   }
@@ -284,6 +284,7 @@ class DispersionOperation {
   }
 
   void fallback() {
+    std::scoped_lock lock(_expm_op->getLock());
     LOG_WARNING("Falling back to Pade exponentiation for probability matrix {}",
                 _prob_matrix_index);
     _expm_op->setArnoldiMode(false);
@@ -343,6 +344,8 @@ class DispersionOperation {
     if (_child_op != nullptr) { _child_op->insertExpmOpRecursive(expm_ops); }
     expm_ops.push_back(_expm_op);
   }
+
+  void perform_matvec(const std::shared_ptr<Workspace>& ws);
 
   /* Remember, the top and bottom clv indexes could be the same. This is to save
    * on storage when computing different periods along a single branch. The idea
