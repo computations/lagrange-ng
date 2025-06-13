@@ -141,8 +141,9 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
 
 void Context::init() {
   _workspace->reserve();
-  std::vector<PeriodParams> initial_rates(_workspace->rateMatrixCount(),
-                                          {0.01, 0.01});
+  std::vector<PeriodParams> initial_rates(
+      _workspace->rateMatrixCount(),
+      {0.01, 0.01, nullptr, _workspace->regions()});
   _workspace->setPeriodParamsCount(_workspace->rateMatrixCount());
   updateRates(initial_rates);
 
@@ -261,7 +262,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     std::vector<PeriodParams> period_paramters(
         obj->context._workspace->rateMatrixCount());
     for (size_t i = 0; i < period_paramters.size(); ++i) {
-      period_paramters[i] = {x[2 * i], x[2 * i + 1]};
+      period_paramters[i].dispersion_rate = x[2 * i];
+      period_paramters[i].extinction_rate = x[2 * i + 1];
     }
 
     obj->context.updateRates(period_paramters);

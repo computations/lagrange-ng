@@ -131,7 +131,13 @@ void Workspace::reserve() {
 }
 
 void Workspace::setPeriodParams(size_t period_index, double d, double e) {
-  _periods[period_index] = {d, e};
+  _periods[period_index].dispersion_rate = d;
+  _periods[period_index].extinction_rate = e;
+}
+
+void Workspace::setPeriodAdjustmentMatrix(size_t period_index,
+                                          std::shared_ptr<double[]> adjust) {
+  _periods[period_index].adjustment_matrix = adjust;
 }
 
 #if 0

@@ -109,15 +109,11 @@ static void assign_tip_data(Context &context,
   throw std::runtime_error{"Failed to set data"};
 }
 
-static void handle_tree(std::shared_ptr<Tree> &tree,
-                        const Alignment &data,
-                        const ConfigFile &config) {
-  auto root_json = init_json(tree, config);
-
-  setup_tree(tree, config);
-
-  Context context(tree, config.region_count(), config.max_areas());
+static void setup_context(Context &context,
+                          const Alignment &data,
+                          const ConfigFile &config) {
   context.registerLHGoal();
+
   if (config.compute_all_states() || config.compute_all_splits()) {
     context.registerStateLHGoal();
   } else if (config.computeStates()) {
@@ -127,17 +123,28 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
     }
     context.registerStateLHGoal(tmp_nodes, config.mrcas());
   }
+
   if (config.compute_all_splits()) {
     context.registerSplitLHGoal();
   } else if (config.computeSplits()) {
     context.registerSplitLHGoal(config.split_nodes(), config.mrcas());
   }
+
   context.set_opt_method(config.opt_method());
   context.init();
   context.updateRates({context.getPeriodCount(), config.period_params()});
   assign_tip_data(context, data, config);
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
+}
+
+static void handle_tree(std::shared_ptr<Tree> &tree,
+                        const Alignment &data,
+                        const ConfigFile &config) {
+  setup_tree(tree, config);
+
+  Context context(tree, config.region_count(), config.max_areas());
+  setup_context(context, data, config);
 
   WorkerContext wc = context.makeThreadContext();
   wc.setTotalThreads(config.workers());

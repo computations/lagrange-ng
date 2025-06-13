@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <format>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -270,6 +271,58 @@ auto parse_opt_method(const std::string& method_string) -> OptimizationMethod {
   return OptimizationMethod::UNKNOWN;
 }
 
+void parse_period_include_statement(ConfigLexer& lexer, PeriodMap& period_map) {
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto period_name = lexer.consumeValueAsString();
+
+  lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+
+  lexer.expect(ConfigLexemeType::VALUE);
+  auto area_names = parse_list(lexer);
+}
+
+void parse_period_exclude_statement(ConfigLexer& lexer, PeriodMap& period_map) {
+}
+
+void parse_period_start_statement(ConfigLexer& lexer, PeriodMap& period_map) {}
+
+void parse_period_end_statement(ConfigLexer& lexer, PeriodMap& period_map) {}
+
+void parse_period_matrix_statement(ConfigLexer& lexer, PeriodMap& period_map) {}
+
+void parse_period_statement(ConfigLexer& lexer, PeriodMap& period_map) {
+  try {
+    lexer.expect(ConfigLexemeType::VALUE);
+  } catch (ConfigFileLexingError& err) {
+    throw ConfigFileParsingError{
+        std::string{"Failed to parse period statement.\n"} + err.what()};
+  }
+  auto config_value = lexer.consumeValueAsString();
+
+  if (config_value == "include") {
+    parse_period_include_statement(lexer, period_map);
+  } else if (config_value == "exclude") {
+    parse_period_exclude_statement(lexer, period_map);
+  } else if (config_value == "start") {
+    parse_period_start_statement(lexer, period_map);
+  } else if (config_value == "end") {
+    parse_period_end_statement(lexer, period_map);
+  } else if (config_value == "matrix") {
+    parse_period_matrix_statement(lexer, period_map);
+  } else {
+    if (period_map.contains(config_value)) {
+      throw ConfigFileParsingError{"Period already declared"};
+    }
+
+    period_map.emplace(config_value);
+  }
+
+  lexer.expect(ConfigLexemeType::END);
+
+  throw ConfigFileParsingError{std::format(
+      "Failed to recognize period statement at {}", lexer.describePosition())};
+}
+
 auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
   ConfigFile config;
   std::string line;
@@ -288,9 +341,9 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
       } else if (config_value == "datafile") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         config._data_filename = parse_filename(lexer);
-      } else if (config_value == "ratematrix") {
+      } else if (config_value == "adjustment-matrix") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
-        config._rate_matrix_filename = parse_filename(lexer);
+        config._adjustment_matrix_filename = parse_filename(lexer);
       } else if (config_value == "areanames") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         auto tmp = parse_list(lexer);
@@ -312,6 +365,7 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
             [](const std::string& s) -> double { return std::stof(s); });
 
         config._periods = Periods(time_points);
+      } else if (config_value == "periods") {
       } else if (config_value == "mrca") {
         lexer.expect(ConfigLexemeType::VALUE);
         auto mrca_name = lexer.consumeValueAsString();
@@ -570,7 +624,10 @@ void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
 }
 
 auto ConfigFile::period_params() const -> PeriodParams {
-  return {.dispersion_rate = _dispersion, .extinction_rate = _extinction};
+  return {.dispersion_rate = _dispersion,
+          .extinction_rate = _extinction,
+          .adjustment_matrix = nullptr,
+          .regions = _region_count};
 }
 
 void ConfigFile::period_params(double d, double e) {

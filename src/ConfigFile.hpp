@@ -219,13 +219,16 @@ class ConfigFile {
 
   Option<OutputType> _output_file_type;
 
-  Option<std::filesystem::path> _rate_matrix_filename;
+  Option<std::filesystem::path> _adjustment_matrix_filename;
 
   Option<size_t> _max_areas;
 
   std::vector<std::string> _area_names;
 
   Periods _periods;
+
+  Option<std::unordered_map<std::string, PeriodParams>> _period_map;
+
   MRCAMap _mrcas;
 
   std::vector<Fossil> _fossils;

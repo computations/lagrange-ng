@@ -317,6 +317,8 @@ class Workspace {
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
 
+  void setPeriodAdjustmentMatrix(size_t period_index, std::shared_ptr<double[]>);
+
   [[nodiscard]] auto reserved() const -> bool {
     return _base_frequencies != nullptr && !_clvs.empty();
   }

@@ -13,7 +13,7 @@
 #include <limits>
 #include <memory>
 #include <sstream>
-#include <vector>
+#include <unordered_map>
 
 #ifndef MKL_ENABLED
   #include <complex>
@@ -70,7 +70,8 @@ struct PeriodDerivative {
 struct PeriodParams {
   double dispersion_rate;
   double extinction_rate;
-  std::shared_ptr<std::vector<std::vector<double>>> adjustment_matrix = nullptr;
+  std::shared_ptr<double[]> adjustment_matrix = nullptr;
+  size_t regions;
 
   void applyDerivative(const PeriodDerivative &d) {
     dispersion_rate += d.d_dispersion;
@@ -87,8 +88,9 @@ struct PeriodParams {
 
   inline auto getDispersionRate(size_t from, size_t to) const -> double {
     return dispersion_rate
-           * (adjustment_matrix != nullptr ? (*adjustment_matrix)[from][to]
-                                           : 1.0);
+           * (adjustment_matrix != nullptr
+                  ? adjustment_matrix[from * regions + to]
+                  : 1.0);
   }
 
   inline auto getExtinctionRate() const -> double { return extinction_rate; }
@@ -105,6 +107,8 @@ struct PeriodParams {
     return extinction_rate;
   }
 };
+
+using PeriodMap = std::unordered_map<std::string, PeriodParams>;
 
 using LagrangeFloat = double;
 using LagrangeComplex = lapack_complex_double;
