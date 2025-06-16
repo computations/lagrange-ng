@@ -293,7 +293,8 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
         config._rate_matrix_filename = parse_filename(lexer);
       } else if (config_value == "areanames") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
-        config._area_names = parse_list(lexer);
+        auto tmp = parse_list(lexer);
+        config._area_names = {tmp.rbegin(), tmp.rend()};
       } else if (config_value == "prefix") {
         lexer.expect(ConfigLexemeType::EQUALS_SIGN);
         config._prefix = parse_filename(lexer);

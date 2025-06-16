@@ -22,13 +22,15 @@ auto lagrange_convert_dist_string(Range dist,
   std::ostringstream oss;
 
   size_t states = lagrange_clz(dist);
+  auto itr = names.begin();
   bool first = true;
   for (size_t i = 0; i < states; ++i) {
     if (lagrange_bextr(dist, i) != 0U) {
       if (!first) { oss << "_"; }
-      oss << names[i];
+      oss << *itr;
       first = false;
     }
+    itr++;
   }
   return oss.str();
 }
@@ -39,7 +41,7 @@ auto lagrange_convert_dist_to_list(Range dist,
   std::vector<std::string> ret;
 
   size_t states = dist == 0 ? 0 : lagrange_clz(dist);
-  auto itr = names.rbegin();
+  auto itr = names.begin();
   for (size_t i = 0; i < states; ++i) {
     if (lagrange_bextr(dist, i) != 0u) { ret.push_back(*itr); }
     itr++;
