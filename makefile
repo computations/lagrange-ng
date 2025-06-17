@@ -1,5 +1,5 @@
 deps_dir = $(shell pwd)/deps
-extra_flags = -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
+extra_flags = -DCMAKE_EXPORT_COMPILE_COMMANDS=YES -G Ninja
 
 .PHONY: all clean tests debug-flags release-flags install-prefix-flags build
 
@@ -14,11 +14,11 @@ tests: build
 
 release: extra_flags += -DCMAKE_BUILD_TYPE=Release
 release: build
-	@cd build && $(MAKE)
+	@cd build && ninja
 
 debug: extra_flags += -DCMAKE_BUILD_TYPE=Debug
 debug: build
-	@cd build && $(MAKE)
+	@cd build && ninja
 
 clean:
 	rm -rf build bin
