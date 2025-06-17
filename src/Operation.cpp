@@ -889,7 +889,18 @@ auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
 
 void DispersionOperation::printGraph(std::ostream &os, size_t &index) const {
   auto ptr = (size_t)(static_cast<const void *>(this));
-  os << std::format(R"({} [label = "Dispersion {}"];)", ptr, index) << "\n";
+  if (_expm_op) {
+    os << std::format(
+        R"({} [label = "Dispersion {}\nt = {}\nrate matrix = {}\nprog matrix = {}"];)",
+        ptr,
+        index,
+        _expm_op->getT(),
+        _expm_op->getRateMatrixIndex(),
+        _prob_matrix_index)
+       << "\n";
+  } else {
+    os << std::format(R"({} [label = "Dispersion {}"];)", ptr, index) << "\n";
+  }
   os << std::format(R"({} -> clv{};)", ptr, _top_clv) << "\n";
   os << std::format(R"(clv{} -> {};)", _bot_clv, ptr) << "\n";
 

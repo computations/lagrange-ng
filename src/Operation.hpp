@@ -139,6 +139,8 @@ class ExpmOperation {
     return rm_eval && pm_eval;
   }
 
+  auto getRateMatrixIndex() const { return _rate_matrix_index; }
+
  private:
   size_t _prob_matrix_index;
   size_t _rate_matrix_index;
