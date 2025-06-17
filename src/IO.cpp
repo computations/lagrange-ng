@@ -95,12 +95,14 @@ auto make_state_results_for_node(
     const std::unique_ptr<LagrangeMatrixBase[]> &state_distribution,
     const std::vector<std::string> &region_names,
     size_t states_len,
-    size_t max_areas) -> nlohmann::json {
+    size_t max_areas,
+    double lwr_threshold) -> nlohmann::json {
   nlohmann::json node_json;
   auto lwr_distribution =
       normalize_state_distribution_by_lwr(state_distribution, states_len);
   for (size_t dist = 0, dist_index = 0; dist_index < states_len;
        ++dist_index, dist = next_dist(dist, max_areas)) {
+    if (lwr_distribution.get()[dist_index] < lwr_threshold) { continue; }
     nlohmann::json tmp;
     tmp["distribution"] = dist;
     double llh = state_distribution.get()[dist_index];
@@ -116,12 +118,14 @@ auto make_state_results_for_node(
 auto make_split_results_for_node(SplitReturn &splits,
                                  const std::vector<std::string> &region_names,
                                  size_t states_len,
-                                 size_t max_areas) -> nlohmann::json {
+                                 size_t max_areas,
+                                 double lwr_threshold) -> nlohmann::json {
   nlohmann::json node_json;
   normalize_split_distribution_by_lwr(splits);
   for (size_t dist = 0, dist_index = 0; dist_index < states_len;
        ++dist_index, dist = next_dist(dist, max_areas)) {
     for (const auto &sp : splits[dist]) {
+      if (sp.getLWR() < lwr_threshold) { continue; }
       nlohmann::json anc_json;
       nlohmann::json left_json;
       nlohmann::json right_json;
@@ -154,7 +158,8 @@ auto make_split_results_for_node(SplitReturn &splits,
 auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
                             const std::vector<std::string> &region_names,
                             size_t states_len,
-                            size_t max_areas) -> nlohmann::json {
+                            size_t max_areas,
+                            double lwr_threshold) -> nlohmann::json {
   nlohmann::json root_json;
 
   auto cb = [&](Node &n) {
@@ -162,12 +167,18 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
     nlohmann::json node_json;
     node_json["number"] = n.getNodeLabel();
     if (n.hasAncestralSplit()) {
-      node_json["splits"] = make_split_results_for_node(
-          n.getAncestralSplit(), region_names, states_len, max_areas);
+      node_json["splits"] = make_split_results_for_node(n.getAncestralSplit(),
+                                                        region_names,
+                                                        states_len,
+                                                        max_areas,
+                                                        lwr_threshold);
     }
     if (n.hasAncestralState()) {
-      node_json["states"] = make_state_results_for_node(
-          n.getAncestralState(), region_names, states_len, max_areas);
+      node_json["states"] = make_state_results_for_node(n.getAncestralState(),
+                                                        region_names,
+                                                        states_len,
+                                                        max_areas,
+                                                        lwr_threshold);
     }
     root_json.push_back(node_json);
   };
@@ -189,8 +200,12 @@ auto produce_json_file(const std::shared_ptr<Tree> &tree,
   }
   root_json["params"] = params_json;
 
-  root_json["node-results"] = make_results_for_nodes(
-      tree, config.area_names(), context.stateCount(), config.max_areas());
+  root_json["node-results"] =
+      make_results_for_nodes(tree,
+                             config.area_names(),
+                             context.stateCount(),
+                             config.max_areas(),
+                             config.lwrOutputThreshold());
   return root_json;
 }
 
@@ -232,37 +247,39 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
 
   auto max_areas = config.max_areas();
   auto total_states = context.stateCount();
+  auto output_threshold = config.lwrOutputThreshold();
 
-  auto cb = [&outfile, max_areas, total_states](const Node &n) {
-    if (!n.hasAncestralState()) { return; }
-    auto node_label = n.getNodeLabel();
-    const auto &states = n.getAncestralState();
+  auto cb =
+      [&outfile, max_areas, total_states, output_threshold](const Node &n) {
+        if (!n.hasAncestralState()) { return; }
+        auto node_label = n.getNodeLabel();
+        const auto &states = n.getAncestralState();
 
-    auto lwr_distribution =
-        normalize_state_distribution_by_lwr(states, total_states);
-    Range dist = 0;
-    size_t dist_index = 0;
-    Range incl_areas =
-        n.getIncludedAreas().hasValue() ? n.getIncludedAreas().get() : 0;
-    Range excl_areas =
-        n.getExcludedAreas().hasValue() ? n.getExcludedAreas().get() : 0;
-    while (true) {
-      {
-        auto tmp =
-            next_dist(dist, max_areas, dist_index, excl_areas, incl_areas);
-        dist = tmp.first;
-        dist_index = tmp.second;
-      }
-      if (dist_index >= total_states) { break; }
-      auto lwr = lwr_distribution.get()[dist_index];
-      if (lwr < 1e-6) { continue; }
-      outfile << make_csv_row(
-          {node_label,
-           std::to_string(dist),
-           std::to_string(states.get()[dist_index]),
-           std::to_string(lwr_distribution.get()[dist_index])});
-    }
-  };
+        auto lwr_distribution =
+            normalize_state_distribution_by_lwr(states, total_states);
+        Range dist = 0;
+        size_t dist_index = 0;
+        Range incl_areas =
+            n.getIncludedAreas().hasValue() ? n.getIncludedAreas().get() : 0;
+        Range excl_areas =
+            n.getExcludedAreas().hasValue() ? n.getExcludedAreas().get() : 0;
+        while (true) {
+          {
+            auto tmp =
+                next_dist(dist, max_areas, dist_index, excl_areas, incl_areas);
+            dist = tmp.first;
+            dist_index = tmp.second;
+          }
+          if (dist_index >= total_states) { break; }
+          auto lwr = lwr_distribution.get()[dist_index];
+          if (lwr < output_threshold) { continue; }
+          outfile << make_csv_row(
+              {node_label,
+               std::to_string(dist),
+               std::to_string(states.get()[dist_index]),
+               std::to_string(lwr_distribution.get()[dist_index])});
+        }
+      };
   tree->applyPreorderInternalOnly(cb);
 }
 
@@ -272,8 +289,9 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
            config.splitsCSVResultsFilename().string());
   auto fields = {"node", "anc-dist", "left-dist", "right-dist", "llh", "ratio"};
   auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
+  auto output_threshold = config.lwrOutputThreshold();
 
-  auto cb = [&outfile](const Node &n) {
+  auto cb = [&outfile, output_threshold](const Node &n) {
     if (!n.hasAncestralSplit()) { return; }
     auto node_label = n.getNodeLabel();
     auto splits = n.getAncestralSplit();
@@ -281,7 +299,7 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
     normalize_split_distribution_by_lwr(splits);
     for (const auto &kv : splits) {
       for (const auto &sp : kv.second) {
-        if (sp.getLWR() < 1e-6) { continue; }
+        if (sp.getLWR() < output_threshold) { continue; }
         outfile << make_csv_row({node_label,
                                  std::to_string(sp.anc_dist),
                                  std::to_string(sp.l_dist),
@@ -322,7 +340,7 @@ void write_csv_distribution_file(const ConfigFile &config) {
   size_t total_states = 1UL << config.region_count();
 
   for (Range dist = 1; dist < total_states; ++dist) {
-    if(lagrange_popcount(dist) > config.max_areas()){ continue; }
+    if (lagrange_popcount(dist) > config.max_areas()) { continue; }
     outfile << dist << ",";
     auto region_list = lagrange_convert_dist_to_list(dist, config.area_names());
 
@@ -452,8 +470,7 @@ void write_clean_tree(const std::shared_ptr<Tree> &tree,
   LOG(INFO, "Writing clean tree to {}", node_tree_filename.string());
 
   std::ofstream node_tree(node_tree_filename);
-  node_tree << tree->getNewickLambda(make_clean_node_newick_lambda())
-            << '\n';
+  node_tree << tree->getNewickLambda(make_clean_node_newick_lambda()) << '\n';
 }
 
 void write_scaled_tree(const std::shared_ptr<Tree> &tree,

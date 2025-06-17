@@ -488,6 +488,9 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
         } else {
           config.dump_graph(true);
         }
+      } else if (config_value == "lwr-threshold") {
+        lexer.expect(ConfigLexemeType::EQUALS_SIGN);
+        config.lwrOutputThreshold(parse_double(lexer));
       } else {
         std::stringstream oss;
         oss << "Option '" << config_value << "' on line " << line_number
@@ -800,4 +803,10 @@ void ConfigFile::allow_ambigious(bool b) { _allow_ambigious = b; }
 auto ConfigFile::dump_graph() const -> bool { return _dump_graph.get(false); }
 
 void ConfigFile::dump_graph(bool b) { _dump_graph = b; }
+
+auto ConfigFile::lwrOutputThreshold() const -> double {
+  return _output_threshold;
+}
+
+void ConfigFile::lwrOutputThreshold(double t) { _output_threshold = t; }
 }  // namespace lagrange

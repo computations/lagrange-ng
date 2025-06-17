@@ -161,6 +161,9 @@ class ConfigFile {
   auto computeSplits() const -> bool;
   auto computeStatesStrict() const -> bool;
 
+  auto lwrOutputThreshold() const -> double;
+  void lwrOutputThreshold(double);
+
  private:
   static auto parse_config_file(std::istream& instream) -> ConfigFile;
 
@@ -244,6 +247,7 @@ class ConfigFile {
   double _extinction = 0.01;
 
   double _lh_epsilon = 1e-9;
+  double _output_threshold = 1e-6;
 
   Option<LagrangeEXPMComputationMode> _expm_mode;
 

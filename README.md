@@ -196,6 +196,9 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 - `allow-ambiguous`: Allow coercion to an ambiguous state in the case that the
   tip range is too large for the specified max areas. By default this is
   _enabled_. Set this to false to enable it.
+- `lwr-threshold`: Limit output of states and splits to results which have a
+  LWR above this value. For example `lwr-threshold = 0.5` will only report
+  results with a LWR above `0.5`.
 
 If any of the arguments to the options has spaces, then it needs
 to be quoted. For example, if the tree file is `My Super Awesome Tree.nwk`, then
