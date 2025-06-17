@@ -45,7 +45,7 @@ class Workspace {
       _states{1ULL << regions},
       _max_areas{max_areas},
       _next_free_clv{0},
-      _leading_dim{_states},
+      _leading_dim{lagrange_compute_restricted_state_count(regions, max_areas)},
       _rate_matrix{1},
       _prob_matrix{1},
       _base_frequencies_count{1},

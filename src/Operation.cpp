@@ -1207,28 +1207,39 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   const auto &parent_clv = ws->CLV(_parent_clv_index);
   const auto &lchild_clv = ws->CLV(_lchild_clv_index);
   const auto &rchild_clv = ws->CLV(_rchild_clv_index);
+  const size_t max_areas = ws->maxAreas();
 
   std::vector<RegionSplit> splits;
 
-  for (Range index = 0; index < ws->restrictedStateCount(); index++) {
+  auto inv_dist_map = invert_dist_map(ws->regions(), max_areas);
+
+  size_t index = 0;
+  Range dist = 0;
+  const Range max_dist = 1ULL << ws->regions();
+  for (index = 0, dist = 0; dist < max_dist;
+       index++, dist = next_dist(dist, max_areas)) {
     if (_fixed_dist.hasValue() && _fixed_dist.get() != index) { continue; }
 
     if (!check_excl_dist(index, _excl_area_mask)) { continue; }
     if (!check_incl_dist(index, _incl_area_mask)) { continue; }
 
     std::vector<AncSplit> anc_split_vec;
-    generate_splits(index, ws->regions(), splits);
+    generate_splits(dist, ws->regions(), splits);
     double weight = 1.0 / splits.size();
     for (auto sp : splits) {
-      AncSplit anc_split(index, sp.left, sp.right, weight);
-      double lh = parent_clv[index] * lchild_clv[sp.left] * rchild_clv[sp.right]
-                  * weight;
+      AncSplit anc_split(dist, sp.left, sp.right, weight);
+
+      auto left_index = inv_dist_map[sp.left];
+      auto right_index = inv_dist_map[sp.right];
+
+      double lh = parent_clv[index] * lchild_clv[left_index]
+                  * rchild_clv[right_index] * weight;
       double loglh = std::log(lh);
       assert(!std::isnan(loglh));
       anc_split.setLikelihood(std::log(lh));
       anc_split_vec.push_back(anc_split);
     }
-    ret[index] = anc_split_vec;
+    ret[dist] = anc_split_vec;
   }
   _result = ret;
 }
