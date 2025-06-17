@@ -321,7 +321,8 @@ void write_csv_distribution_file(const ConfigFile &config) {
 
   size_t total_states = 1UL << config.region_count();
 
-  for (Range dist = 0; dist < total_states; ++dist) {
+  for (Range dist = 1; dist < total_states; ++dist) {
+    if(lagrange_popcount(dist) > config.max_areas()){ continue; }
     outfile << dist << ",";
     auto region_list = lagrange_convert_dist_to_list(dist, config.area_names());
 
