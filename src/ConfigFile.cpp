@@ -203,28 +203,38 @@ class ConfigLexer {
 template <>
 auto ConfigLexer::consume<double>() noexcept -> LexerResult<double> {
   return consume<std::string>().and_then(
-      [this](const std::string& f_str) -> LexerResult<double> {
-        size_t pos = 0;
-        double val = std::stod(f_str, &pos);
-        if (pos != f_str.size()) {
-          LOG_ERROR("Float conversion failed around {}", describePosition());
+      [](const std::string& f_str) -> LexerResult<double> {
+        try {
+          size_t pos = 0;
+          double val = std::stod(f_str, &pos);
+          if (pos != f_str.size()) {
+            LOG_ERROR("Float conversion failed");
+            return std::unexpected{LexerError::value_conversion_failed};
+          }
+          return val;
+        } catch (std::invalid_argument& err) {
+          LOG_ERROR("Float conversion failed");
           return std::unexpected{LexerError::value_conversion_failed};
         }
-        return val;
       });
 }
 
 template <>
 auto ConfigLexer::consume<size_t>() noexcept -> LexerResult<size_t> {
   return consume<std::string>().and_then(
-      [this](const std::string& d_str) -> LexerResult<size_t> {
-        size_t pos = 0;
-        size_t val = std::stoull(d_str, &pos);
-        if (pos != d_str.size()) {
-          LOG_ERROR("size_t conversion failed around {}", describePosition());
+      [](const std::string& d_str) -> LexerResult<size_t> {
+        try {
+          size_t pos = 0;
+          size_t val = std::stoull(d_str, &pos);
+          if (pos != d_str.size()) {
+            LOG_ERROR("size_t conversion failed");
+            return std::unexpected{LexerError::value_conversion_failed};
+          }
+          return val;
+        } catch (std::invalid_argument& err) {
+          LOG_ERROR("size_t conversion failed");
           return std::unexpected{LexerError::value_conversion_failed};
         }
-        return val;
       });
 }
 
@@ -236,6 +246,7 @@ auto ConfigLexer::consume<bool>() noexcept -> LexerResult<bool> {
   if (b_str == "true" || b_str == "1") { return true; }
   if (b_str == "false" || b_str == "0") { return false; }
 
+  LOG_ERROR("Bool conversion failed");
   return std::unexpected{LexerError::value_conversion_failed};
 }
 
@@ -653,7 +664,7 @@ auto ConfigFile::parse_line(ConfigLexer& lexer,
       return std::unexpected{align_type_str.error()};
     }
   } else if (config_value == "logfile") {
-    if (auto r = parse_and_assign(config._log_filename, lexer); r) {
+    if (auto r = parse_and_assign(config._log_filename, lexer); !r) {
       return std::unexpected{r.error()};
     }
   } else if (config_value == "output-type") {
@@ -696,8 +707,10 @@ auto ConfigFile::parse_line(ConfigLexer& lexer,
     LOG_ERROR("Option '{}' on line {} was not recognized",
               *config_value,
               line_number);
+    return std::unexpected{ParsingError::invalid_option};
   } else {
     LOG_ERROR("Failed to parse the option on line {}", line_number);
+    return std::unexpected{ParsingError::unknown_error};
   }
 
   if (auto r = lexer.expect(ConfigLexemeType::END); !r) {
@@ -715,7 +728,10 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
     ConfigLexer lexer(line);
     try {
       if (auto r = parse_line(lexer, config, line_number); !r) {
-        LOG_ERROR("Failed to parse config on line '{}'", line_number);
+        LOG_ERROR("Failed to parse config on line {}, {}",
+                  line_number,
+                  lexer.describePosition());
+        throw std::runtime_error{"failed to parse the config file"};
       }
     } catch (const std::exception& e) {
       std::ostringstream oss;

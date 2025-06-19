@@ -58,6 +58,8 @@ enum class ParsingError {
   expected_end,
   conversion_error,
   unknown_expm_type,
+  invalid_option,
+  unknown_error,
 };
 
 template <typename T>
@@ -71,8 +73,9 @@ class ConfigFile {
  public:
   ConfigFile() = default;
 
-  ConfigFile(std::istream& instream) : ConfigFile{parse_config_file(instream)} {
-    finalize();
+  ConfigFile(std::istream& instream, bool testing = false) :
+      ConfigFile{parse_config_file(instream)} {
+    finalize(testing);
   }
 
   ConfigFile(const ConfigFile&) = default;
@@ -243,8 +246,8 @@ class ConfigFile {
     }
   }
 
-  void finalize() {
-    setup_log();
+  void finalize(bool testing = false) {
+    if (!testing) { setup_log(); }
     set_threads();
     set_mrcas_for_fossils();
     check_prefix();
@@ -292,7 +295,8 @@ class ConfigFile {
   std::optional<size_t> _region_count;
   std::optional<size_t> _workers;
   std::optional<size_t> _threads_per_worker;
-  std::optional<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
+  std::optional<LagrangeOperationMode> _run_mode{
+      LagrangeOperationMode::OPTIMIZE};
   std::optional<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
 
   std::optional<bool> _allow_ambigious;

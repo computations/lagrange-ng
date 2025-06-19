@@ -34,7 +34,7 @@ TEST(Workspace, minsize) {
   EXPECT_NO_THROW(Workspace(1, 2, 2));
 }
 
-TEST(Workspace, maxareas) { EXPECT_ANY_THROW(Workspace(2, 2, 12)); }
+TEST(Workspace, maxareas_throws) { EXPECT_ANY_THROW(Workspace(2, 2, 12)); }
 
 /*
 TEST(Workspace, setters) {

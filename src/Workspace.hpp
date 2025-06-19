@@ -45,7 +45,6 @@ class Workspace {
       _states{1ULL << regions},
       _max_areas{max_areas},
       _next_free_clv{0},
-      _leading_dim{lagrange_compute_restricted_state_count(regions, max_areas)},
       _rate_matrix{1},
       _prob_matrix{1},
       _base_frequencies_count{1},
@@ -62,8 +61,14 @@ class Workspace {
       throw std::runtime_error{
           "Max areas cannot be larger than the number of regions"};
     }
-    _restricted_state_count =
-        lagrange_compute_restricted_state_count(_regions, _max_areas);
+    if (_max_areas == _regions) {
+      _restricted_state_count = _states;
+      _leading_dim = _states;
+    } else {
+      _restricted_state_count =
+          lagrange_compute_restricted_state_count(_regions, _max_areas);
+      _leading_dim = _restricted_state_count;
+    }
   }
 
   Workspace(size_t taxa_count, size_t regions, size_t max_areas) :
@@ -317,7 +322,8 @@ class Workspace {
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
 
-  void setPeriodAdjustmentMatrix(size_t period_index, std::shared_ptr<double[]>);
+  void setPeriodAdjustmentMatrix(size_t period_index,
+                                 std::shared_ptr<double[]>);
 
   [[nodiscard]] auto reserved() const -> bool {
     return _base_frequencies != nullptr && !_clvs.empty();
