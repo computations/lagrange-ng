@@ -1,8 +1,10 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
+#include <expected>
 #include <filesystem>
 #include <logger.hpp>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -30,9 +32,40 @@ enum class OptimizationMethod : uint8_t {
   UNKNOWN,
 };
 
+struct PeriodConfig {
+  std::optional<double> dispersion;
+  std::optional<double> extinction;
+
+  std::optional<std::filesystem::path> adjustment_matrix_filename;
+
+  std::optional<double> start;
+  std::optional<double> end;
+
+  std::optional<std::vector<std::string>> include_areas;
+  std::optional<std::vector<std::string>> exclude_areas;
+};
+
+using PeriodMap = std::unordered_map<std::string, PeriodConfig>;
+
 class ConfigFile;
 
-auto parse_config_file(std::istream& instream) -> ConfigFile;
+enum class ParsingError {
+  id_not_found,
+  duplicate_id,
+  lexing_error,
+  expected_value,
+  expected_equals_sign,
+  expected_end,
+  conversion_error,
+  unknown_expm_type,
+};
+
+template <typename T>
+using ParsingResult = std::expected<T, ParsingError>;
+
+class ConfigLexer;
+
+// auto parse_config_file(std::istream& instream) -> ConfigFile;
 
 class ConfigFile {
  public:
@@ -78,7 +111,7 @@ class ConfigFile {
   void periods(const Periods&);
 
   void finalize_periods() {
-    finalize_periods(_region_count.get(), _max_areas.get());
+    finalize_periods(_region_count.value(), _max_areas.value());
   }
 
   void finalize_periods(size_t regions, size_t max_areas) {
@@ -165,6 +198,9 @@ class ConfigFile {
   void lwrOutputThreshold(double);
 
  private:
+  static auto parse_line(ConfigLexer& lexer,
+                         ConfigFile& config,
+                         size_t line_number) -> ParsingResult<void>;
   static auto parse_config_file(std::istream& instream) -> ConfigFile;
 
   auto validate_and_make_prefix() -> bool {
@@ -195,8 +231,8 @@ class ConfigFile {
   }
 
   void set_threads() {
-    if (!_workers.hasValue()) { workers(1); }
-    if (!_threads_per_worker.hasValue()) { _threads_per_worker = 1; }
+    if (!_workers.has_value()) { workers(1); }
+    if (!_threads_per_worker.has_value()) { _threads_per_worker = 1; }
   }
 
   void setup_log() const {
@@ -220,17 +256,17 @@ class ConfigFile {
   std::filesystem::path _log_filename;
   std::filesystem::path _prefix;
 
-  Option<OutputType> _output_file_type;
+  std::optional<OutputType> _output_file_type;
 
-  Option<std::filesystem::path> _adjustment_matrix_filename;
+  std::optional<std::filesystem::path> _adjustment_matrix_filename;
 
-  Option<size_t> _max_areas;
+  std::optional<size_t> _max_areas;
 
   std::vector<std::string> _area_names;
 
   Periods _periods;
 
-  Option<std::unordered_map<std::string, PeriodParams>> _period_map;
+  std::optional<std::unordered_map<std::string, PeriodConfig>> _period_map;
 
   MRCAMap _mrcas;
 
@@ -249,18 +285,18 @@ class ConfigFile {
   double _lh_epsilon = 1e-9;
   double _output_threshold = 1e-6;
 
-  Option<LagrangeEXPMComputationMode> _expm_mode;
+  std::optional<LagrangeEXPMComputationMode> _expm_mode;
 
-  Option<AlignmentFileType> _alignment_file_type;
+  std::optional<AlignmentFileType> _alignment_file_type;
 
-  Option<size_t> _region_count;
-  Option<size_t> _workers;
-  Option<size_t> _threads_per_worker;
-  Option<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
-  Option<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
+  std::optional<size_t> _region_count;
+  std::optional<size_t> _workers;
+  std::optional<size_t> _threads_per_worker;
+  std::optional<LagrangeOperationMode> _run_mode{LagrangeOperationMode::OPTIMIZE};
+  std::optional<OptimizationMethod> _opt_method{OptimizationMethod::BOBYQA};
 
-  Option<bool> _allow_ambigious;
-  Option<bool> _dump_graph;
+  std::optional<bool> _allow_ambigious;
+  std::optional<bool> _dump_graph;
 };
 
 class ConfigFileLexingError : public std::runtime_error {

@@ -164,6 +164,7 @@ class Option {
   explicit Option(const T &val) : _value{val}, _has_value{true} {}
 
   Option(const Option<T> &o) = default;
+  Option& operator=(const Option<T> &o) = default;
 
   auto operator=(const T &v) -> Option<T> & {
     _value = v;

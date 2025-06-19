@@ -27,11 +27,12 @@ endif()
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native
-    -fno-omit-frame-pointer -g -Wall -Wextra)
+    -fno-omit-frame-pointer -g -Wall -Wextra -fdiagnostics-color=always)
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
     -fsanitize-recover=address -fsanitize=undefined)
-  set(LAGRANGE_LINK_FLAGS -fsanitize=address -fsanitize=undefined)
+  set(LAGRANGE_LINK_FLAGS -fsanitize=address -fsanitize=undefined
+    -fdiagnostics-color=always)
 endif()
 
 set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}

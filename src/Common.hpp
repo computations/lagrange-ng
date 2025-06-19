@@ -13,7 +13,6 @@
 #include <limits>
 #include <memory>
 #include <sstream>
-#include <unordered_map>
 
 #ifndef MKL_ENABLED
   #include <complex>
@@ -34,6 +33,7 @@
 namespace lagrange {
 
 using Range = uint64_t;
+using RangeMask = Range;
 
 using ClockTick = uint64_t;
 using Clock = std::atomic<uint64_t>;
@@ -107,8 +107,6 @@ struct PeriodParams {
     return extinction_rate;
   }
 };
-
-using PeriodMap = std::unordered_map<std::string, PeriodParams>;
 
 using LagrangeFloat = double;
 using LagrangeComplex = lapack_complex_double;
