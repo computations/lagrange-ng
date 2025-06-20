@@ -4,18 +4,17 @@
 #include <filesystem>
 #include <logger.hpp>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 #include "Alignment.hpp"
 #include "Common.hpp"
+#include "ConfigFileParser.hpp"
 #include "Fossil.hpp"
 #include "MRCA.hpp"
 #include "Periods.hpp"
 #include "Utils.hpp"
-#include "ConfigFileParser.hpp"
 
 namespace lagrange {
 
@@ -156,8 +155,10 @@ class ConfigFile {
   auto lwrOutputThreshold() const -> double;
   void lwrOutputThreshold(double);
 
+  friend ConfigFileParser;
+
  private:
-  static auto parse_line(ConfigLexer& lexer,
+  static auto parse_line(ConfigFileParser& lexer,
                          ConfigFile& config,
                          size_t line_number) -> ParsingResult<void>;
   static auto parse_config_file(std::istream& instream) -> ConfigFile;
@@ -257,16 +258,6 @@ class ConfigFile {
 
   std::optional<bool> _allow_ambigious;
   std::optional<bool> _dump_graph;
-};
-
-class ConfigFileLexingError : public std::runtime_error {
- public:
-  ConfigFileLexingError(const std::string& msg) : std::runtime_error{msg} {}
-};
-
-class ConfigFileParsingError : public std::runtime_error {
- public:
-  ConfigFileParsingError(const std::string& msg) : std::runtime_error{msg} {}
 };
 
 }  // namespace lagrange

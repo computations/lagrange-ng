@@ -1,10 +1,10 @@
 #pragma once
 
-#include <expected>
 #include <cstdint>
-#include <string>
-#include <sstream>
+#include <expected>
 #include <functional>
+#include <sstream>
+#include <string>
 
 #include "Utils.hpp"
 
@@ -27,7 +27,9 @@ enum class ConfigLexemeType : uint8_t { VALUE, EQUALS_SIGN, END };
 
 class ConfigLexer {
  public:
-  explicit ConfigLexer(std::string input) : _input{std::move(input)} {};
+  explicit ConfigLexer(std::string input, size_t line_number = 0) :
+      _input{std::move(input)},
+      _line_number{line_number} {};
 
   auto readToken() -> ConfigLexemeType {
     auto token = peak();
@@ -111,9 +113,7 @@ class ConfigLexer {
   }
 
   [[nodiscard]] auto describePosition() const -> std::string {
-    std::stringstream builder;
-    builder << "position " << _current_index;
-    return builder.str();
+    return std::format("line {}, position {}", _line_number, _current_index);
   }
 
   auto expect(ConfigLexemeType token_type) -> LexerResult<void> {
@@ -184,6 +184,7 @@ class ConfigLexer {
   std::string _input;
   std::string _value;
   size_t _current_index{0};
+  size_t _line_number;
 };
 
 template <>

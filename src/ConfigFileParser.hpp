@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <expected>
 #include <logger.hpp>
@@ -75,142 +76,159 @@ concept SetLike = requires(T& t, T::value_type i) {
 };
 
 template <typename T>
-auto parse(ConfigLexer& lexer) -> ParsingResult<T> {
-  if (auto r = lexer.expectAndConsume<T>(ConfigLexemeType::VALUE)) {
-    return *r;
-  } else if (r == std::unexpected{LexerError::value_conversion_failed}) {
-    return std::unexpected{ParsingError::conversion_error};
-  } else if (r == std::unexpected{LexerError::expected_wrong_token}) {
-    return std::unexpected{ParsingError::expected_value};
-  } else {
-    return std::unexpected{ParsingError::lexing_error};
+concept IdMapLike = SetLike<T> && requires(T& t) {
+  typename T::key_type;
+  requires std::same_as<typename T::key_type, std::string>;
+};
+
+class ConfigFileParsingError : public std::runtime_error {
+ public:
+  ConfigFileParsingError(const std::string& msg) : std::runtime_error{msg} {}
+};
+
+class ConfigFile;
+
+class ConfigFileParser {
+ public:
+  ConfigFileParser() = delete;
+
+  ConfigFileParser(ConfigLexer&& lexer) : _lexer{lexer} {}
+
+  ConfigFileParser(const std::string& line, size_t line_number) :
+      _lexer{line, line_number} {}
+
+  auto parse_line(ConfigFile& config) -> ParsingResult<void>;
+
+  template <typename T>
+  auto parse() -> ParsingResult<T> {
+    if (auto r = _lexer.expectAndConsume<T>(ConfigLexemeType::VALUE)) {
+      return *r;
+    } else if (r == std::unexpected{LexerError::value_conversion_failed}) {
+      return std::unexpected{ParsingError::conversion_error};
+    } else if (r == std::unexpected{LexerError::expected_wrong_token}) {
+      return std::unexpected{ParsingError::expected_value};
+    } else {
+      return std::unexpected{ParsingError::lexing_error};
+    }
   }
-}
 
-auto parse(ConfigLexer& lexer, ToLowerOption l = ToLowerOption::nolower)
-    -> ParsingResult<std::string>;
+  template <VectorLike T>
+  auto parse() -> ParsingResult<T> {
+    T values;
+    using U = T::value_type;
 
-template <VectorLike T>
-auto parse(ConfigLexer& lexer) -> ParsingResult<T> {
-  T values;
-  using U = T::value_type;
+    do {
+      if (auto r = parse<U>()) {
+        values.push_back(*r);
+      } else {
+        return std::unexpected{r.error()};
+      }
+    } while (_lexer.peak() != ConfigLexemeType::END);
 
-  do {
-    if (auto r = parse<U>(lexer)) {
-      values.push_back(*r);
+    return values;
+  }
+
+  template <SetLike T>
+  auto parse() -> ParsingResult<T> {
+    T values;
+    using U = T::value_type;
+
+    do {
+      if (auto r = parse<U>()) {
+        values.insert(*r);
+      } else {
+        return std::unexpected{r.error()};
+      }
+    } while (_lexer.peak() != ConfigLexemeType::END);
+
+    return values;
+  }
+
+  auto parse(ToLowerOption l = ToLowerOption::nolower)
+      -> ParsingResult<std::string>;
+
+  auto parse_fossil() -> ParsingResult<Fossil>;
+
+  auto parse_opt_method(const std::string& method_string) -> OptimizationMethod;
+
+  auto parse_assignment(ToLowerOption l = ToLowerOption::nolower)
+      -> ParsingResult<std::string>;
+
+  template <typename T>
+  auto parse_assignment() -> ParsingResult<T> {
+    if (auto r = _lexer.expect(ConfigLexemeType::EQUALS_SIGN); !r) {
+      return std::unexpected{ParsingError::expected_equals_sign};
+    }
+
+    return parse<T>();
+  };
+
+  template <typename T>
+  auto parse_id_assignment() -> ParsingResult<AssignmentValue<T>> {
+    auto id_name = parse<std::string>();
+    if (!id_name) { return std::unexpected{id_name.error()}; }
+
+    auto val = parse_assignment<T>();
+    if (!val) { return std::unexpected{val.error()}; }
+
+    return AssignmentValue{.id = *id_name, .value = *val};
+  };
+
+  template <typename T>
+  ParsingResult<AssignmentValue<T>> parse_and_check_id_map(
+      const IdMapLike auto& map) {
+    auto res = parse_id_assignment<T>();
+    if (!res) { return res; }
+    if (!map.contains(res->id)) {
+      LOG_ERROR("The id '{}' was not declared before use at {}",
+                res->id,
+                _lexer.describePosition());
+      return std::unexpected{ParsingError::id_not_found};
+    }
+    return res;
+  }
+
+  template <typename T>
+  auto parse_and_assign(T& dst) -> ParsingResult<void> {
+    if (auto r = parse_assignment<T>()) {
+      dst = *r;
+      return {};
     } else {
       return std::unexpected{r.error()};
     }
-  } while (lexer.peak() != ConfigLexemeType::END);
+  }
 
-  return values;
-}
-
-template <SetLike T>
-auto parse(ConfigLexer& lexer) -> ParsingResult<T> {
-  T values;
-  using U = T::value_type;
-
-  do {
-    if (auto r = parse<U>(lexer)) {
-      values.insert(*r);
+  template <typename T>
+  auto parse_and_assign(std::optional<T>& dst) -> ParsingResult<void> {
+    if (auto r = parse_assignment<T>()) {
+      dst = *r;
+      return {};
     } else {
       return std::unexpected{r.error()};
     }
-  } while (lexer.peak() != ConfigLexemeType::END);
-
-  return values;
-}
-
-auto determine_fossil_type(const std::string& fossil_type_string) -> FossilType;
-
-auto parse_fossil(ConfigLexer& lexer) -> ParsingResult<Fossil>;
-
-auto determine_output_file_type(const std::string& type_string) -> OutputType;
-
-auto parse_opt_method(const std::string& method_string) -> OptimizationMethod;
-
-template <typename T>
-auto parse_assignment(ConfigLexer& lexer) -> ParsingResult<T> {
-  if (auto r = lexer.expect(ConfigLexemeType::EQUALS_SIGN); !r) {
-    return std::unexpected{ParsingError::expected_equals_sign};
   }
 
-  return parse<T>(lexer);
+  ParsingResult<void> parse_period_include_statement(PeriodMap& period_map);
+
+  ParsingResult<void> parse_period_exclude_statement(PeriodMap& period_map);
+
+  ParsingResult<void> parse_period_start_statement(PeriodMap& period_map);
+
+  ParsingResult<void> parse_period_end_statement(PeriodMap& period_map);
+
+  ParsingResult<void> parse_period_matrix_statement(PeriodMap& period_map);
+
+  ParsingResult<void> parse_period_statement(PeriodMap& period_map);
+
+  auto describePosition() const -> std::string;
+
+ private:
+  static auto determine_fossil_type(const std::string& fossil_type_string)
+      -> FossilType;
+  static auto determine_output_file_type(const std::string& type_string)
+      -> OutputType;
+
+  ConfigLexer _lexer;
 };
 
-auto parse_assignment(ConfigLexer& lexer,
-                      ToLowerOption l = ToLowerOption::nolower)
-    -> ParsingResult<std::string>;
-
-template <typename T>
-auto parse_id_assignment(ConfigLexer& lexer)
-    -> ParsingResult<AssignmentValue<T>> {
-  auto id_name = parse<std::string>(lexer);
-  if (!id_name) { return std::unexpected{id_name.error()}; }
-
-  auto val = parse_assignment<T>(lexer);
-  if (!val) { return std::unexpected{val.error()}; }
-
-  return AssignmentValue{.id = *id_name, .value = *val};
-};
-
-template <typename T>
-ParsingResult<AssignmentValue<T>> parse_and_check_period_map(
-    ConfigLexer& lexer, const PeriodMap& map) {
-  auto res = parse_id_assignment<T>(lexer);
-  if (!res) { return res; }
-  if (!map.contains(res->id)) {
-    LOG_ERROR("The period '{}' was not declared before use at {}",
-              res->id,
-              lexer.describePosition());
-    return std::unexpected{ParsingError::id_not_found};
-  }
-  return res;
-}
-
-ParsingResult<void> parse_period_include_statement(ConfigLexer& lexer,
-                                                   PeriodMap& period_map);
-
-ParsingResult<void> parse_period_exclude_statement(ConfigLexer& lexer,
-                                                   PeriodMap& period_map);
-
-ParsingResult<void> parse_period_start_statement(ConfigLexer& lexer,
-                                                 PeriodMap& period_map);
-
-ParsingResult<void> parse_period_end_statement(ConfigLexer& lexer,
-                                               PeriodMap& period_map);
-
-ParsingResult<void> parse_period_matrix_statement(ConfigLexer& lexer,
-                                                  PeriodMap& period_map);
-
-ParsingResult<void> parse_period_statement(ConfigLexer& lexer,
-                                           PeriodMap& period_map);
-
-template <typename T>
-auto parse_and_assign(T& dst, ConfigLexer& lexer) -> ParsingResult<void> {
-  if (auto r = lexer.expect(ConfigLexemeType::EQUALS_SIGN); !r) {
-    return std::unexpected{ParsingError::expected_end};
-  }
-  if (auto r = parse<T>(lexer)) {
-    dst = *r;
-    return {};
-  } else {
-    return std::unexpected{r.error()};
-  }
-}
-
-template <typename T>
-auto parse_and_assign(std::optional<T>& dst, ConfigLexer& lexer)
-    -> ParsingResult<void> {
-  if (auto r = lexer.expect(ConfigLexemeType::EQUALS_SIGN); !r) {
-    return std::unexpected{ParsingError::expected_end};
-  }
-  if (auto r = parse<T>(lexer)) {
-    dst = *r;
-    return {};
-  } else {
-    return std::unexpected{r.error()};
-  }
-};
 }  // namespace lagrange

@@ -1,13 +1,7 @@
 #include "ConfigFile.hpp"
 
-#include <algorithm>
-#include <cctype>
-#include <expected>
 #include <filesystem>
-#include <format>
-#include <functional>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <unordered_set>
 
@@ -16,194 +10,15 @@
 
 namespace lagrange {
 
-auto ConfigFile::parse_line(ConfigLexer& lexer,
-                            ConfigFile& config,
-                            size_t line_number) -> ParsingResult<void> {
-  if (lexer.peak() == ConfigLexemeType::END) { return {}; }
-
-  auto config_value = parse<std::string>(lexer);
-
-  if (config_value == "treefile") {
-    if (auto r = parse_and_assign(config._tree_filename, lexer); !r) {
-      return r;
-    }
-  } else if (config_value == "datafile") {
-    if (auto r = parse_and_assign(config._data_filename, lexer); !r) {
-      return r;
-    }
-  } else if (config_value == "areanames") {
-    if (auto r = parse_and_assign(config._area_names, lexer); !r) { return r; }
-  } else if (config_value == "prefix") {
-    if (auto r = parse_and_assign(config._prefix, lexer); !r) { return r; }
-  } else if (config_value == "periods") {
-    std::vector<double> period_times;
-    if (auto r = parse_and_assign(period_times, lexer)) {
-      config._periods = Periods(period_times);
-    } else {
-      return r;
-    }
-  } else if (config_value == "mrca") {
-    if (auto r = parse_id_assignment<std::vector<std::string>>(lexer)) {
-      auto [mrca_name, mrca_entries] = *r;
-      config._mrcas[mrca_name] = std::make_shared<MRCAEntry>(
-          MRCAEntry{.clade = std::move(mrca_entries)});
-    } else {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value == "fossil") {
-    if (auto r = parse_fossil(lexer)) {
-      config._fossils.push_back(*r);
-    } else {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value == "splits") {
-    if (lexer.peak() == ConfigLexemeType::VALUE) {
-      if (auto r = parse<std::unordered_set<MRCALabel>>(lexer)) {
-        config._split_nodes = *r;
-      } else {
-        return std::unexpected{r.error()};
-      }
-    } else {
-      config._all_splits = true;
-    }
-  } else if (config_value == "states") {
-    if (lexer.peak() == ConfigLexemeType::VALUE) {
-      if (auto r = parse<std::unordered_set<MRCALabel>>(lexer)) {
-        config._state_nodes = *r;
-      } else {
-        return std::unexpected{r.error()};
-      }
-    } else {
-      config._all_states = true;
-    }
-  } else if (config_value == "dispersion") {
-    if (auto r = parse_and_assign(config._dispersion, lexer); !r) { return r; }
-  } else if (config_value == "extinction") {
-    if (auto r = parse_and_assign(config._extinction, lexer); !r) { return r; }
-  } else if (config_value == "lh-epsilon") {
-    if (auto r = parse_and_assign(config._lh_epsilon, lexer); !r) { return r; }
-  } else if (config_value == "workers") {
-    if (auto r = parse_and_assign(config._workers, lexer); !r) { return r; }
-  } else if (config_value == "threads-per-worker") {
-    if (auto r = parse_and_assign(config._threads_per_worker, lexer); !r) {
-      return r;
-    }
-  } else if (config_value == "maxareas") {
-    if (auto r = parse_and_assign(config._max_areas, lexer); !r) { return r; }
-  } else if (config_value == "expm-mode") {
-    auto expm_type = parse_assignment<std::string>(lexer);
-
-    if (expm_type == "krylov") {
-      config._expm_mode = LagrangeEXPMComputationMode::KRYLOV;
-    } else if (expm_type == "pade") {
-      config._expm_mode = LagrangeEXPMComputationMode::PADE;
-    } else if (expm_type == "adaptive") {
-      config._expm_mode = LagrangeEXPMComputationMode::ADAPTIVE;
-    } else if (expm_type) {
-      LOG_ERROR("Unknown expm type '{}'", *expm_type);
-      return std::unexpected{ParsingError::unknown_expm_type};
-    } else {
-      return std::unexpected{expm_type.error()};
-    }
-  } else if (config_value == "mode") {
-    auto mode_type = parse_assignment<std::string>(lexer);
-    if (mode_type == "optimize") {
-      config._run_mode = LagrangeOperationMode::OPTIMIZE;
-    } else if (mode_type == "evaluate") {
-      config._run_mode = LagrangeOperationMode::EVALUATE;
-    } else if (mode_type) {
-      LOG_ERROR("Unknown run mode type '{}'", *mode_type);
-      return std::unexpected{ParsingError::unknown_expm_type};
-    } else {
-      return std::unexpected{mode_type.error()};
-    }
-  } else if (config_value == "alignment-type") {
-    auto align_type_str = parse_assignment<std::string>(lexer);
-    if (align_type_str == "fasta") {
-      config._alignment_file_type = AlignmentFileType::FASTA;
-    } else if (align_type_str == "phylip") {
-      config._alignment_file_type = AlignmentFileType::PHYLIP;
-    } else if (align_type_str) {
-      LOG_ERROR("Unknown alignment type '{}'", *align_type_str);
-    } else {
-      return std::unexpected{align_type_str.error()};
-    }
-  } else if (config_value == "logfile") {
-    if (auto r = parse_and_assign(config._log_filename, lexer); !r) {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value == "output-type") {
-    if (auto r = parse_assignment(lexer, ToLowerOption::lower)) {
-      config.output_file_type(determine_output_file_type(*r));
-    } else {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value == "opt-method") {
-    if (auto r = parse_assignment(lexer, ToLowerOption::lower)) {
-      config.opt_method(parse_opt_method(*r));
-    } else {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value == "allow-ambiguous") {
-    if (lexer.peak() == ConfigLexemeType::EQUALS_SIGN) {
-      if (auto r = parse_assignment<bool>(lexer)) {
-        config.allow_ambigious(*r);
-      } else {
-        return std::unexpected{r.error()};
-      }
-    } else {
-      config.allow_ambigious(true);
-    }
-  } else if (config_value == "dump-graph") {
-    if (lexer.peak() == ConfigLexemeType::EQUALS_SIGN) {
-      if (auto r = parse_assignment<bool>(lexer)) {
-        config.dump_graph(*r);
-      } else {
-        return std::unexpected{r.error()};
-      }
-    } else {
-      config.dump_graph(true);
-    }
-  } else if (config_value == "lwr-threshold") {
-    if (auto r = parse_and_assign(config._lh_epsilon, lexer); !r) {
-      return std::unexpected{r.error()};
-    }
-  } else if (config_value) {
-    LOG_ERROR("Option '{}' on line {} was not recognized",
-              *config_value,
-              line_number);
-    return std::unexpected{ParsingError::invalid_option};
-  } else {
-    LOG_ERROR("Failed to parse the option on line {}", line_number);
-    return std::unexpected{ParsingError::unknown_error};
-  }
-
-  if (auto r = lexer.expect(ConfigLexemeType::END); !r) {
-    return std::unexpected{ParsingError::expected_end};
-  }
-
-  return {};
-}
-
 auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
   ConfigFile config;
   std::string line;
   size_t line_number = 1;
   while (getline(instream, line)) {
-    ConfigLexer lexer(line);
-    try {
-      if (auto r = parse_line(lexer, config, line_number); !r) {
-        LOG_ERROR("Failed to parse config on line {}, {}",
-                  line_number,
-                  lexer.describePosition());
-        throw std::runtime_error{"failed to parse the config file"};
-      }
-    } catch (const std::exception& e) {
-      std::ostringstream oss;
-      oss << "There was a problem parsing line " << line_number
-          << " of the config file:\n"
-          << e.what();
-      throw ConfigFileParsingError{oss.str()};
+    ConfigFileParser parser(line, line_number);
+    if (auto r = parser.parse_line(config); !r) {
+      LOG_ERROR("Failed to parse config file at {}", parser.describePosition())
+      throw ConfigFileParsingError{"Failed to parse config file, giving up"};
     }
 
     line_number++;
