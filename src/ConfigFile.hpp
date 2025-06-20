@@ -15,7 +15,7 @@
 #include "MRCA.hpp"
 #include "Periods.hpp"
 #include "Utils.hpp"
-#include "Parser.hpp"
+#include "ConfigFileParser.hpp"
 
 namespace lagrange {
 

@@ -1,4 +1,4 @@
-#include "Parser.hpp"
+#include "ConfigFileParser.hpp"
 
 namespace lagrange {
 template <>

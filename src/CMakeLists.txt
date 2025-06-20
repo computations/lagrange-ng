@@ -14,7 +14,7 @@ set(LAGRANGE_SOURCES
         Alignment.cpp
         Periods.cpp
         IO.cpp
-        Parser.cpp
+        ConfigFileParser.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
