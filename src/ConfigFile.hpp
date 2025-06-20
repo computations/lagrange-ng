@@ -1,7 +1,6 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
-#include <expected>
 #include <filesystem>
 #include <logger.hpp>
 #include <optional>
@@ -16,54 +15,11 @@
 #include "MRCA.hpp"
 #include "Periods.hpp"
 #include "Utils.hpp"
+#include "Parser.hpp"
 
 namespace lagrange {
-constexpr size_t KRYLOV_RANGE_COUNT_THRESHOLD = 5;
-
-enum class OutputType : uint8_t { JSON, CSV, UNKNOWN };
-
-enum class OptimizationMethod : uint8_t {
-  NELDER_MEAD,
-  BOBYQA,
-  COBYLA,
-  BFGS,
-  DIRECT,
-  STOGO,
-  UNKNOWN,
-};
-
-struct PeriodConfig {
-  std::optional<double> dispersion;
-  std::optional<double> extinction;
-
-  std::optional<std::filesystem::path> adjustment_matrix_filename;
-
-  std::optional<double> start;
-  std::optional<double> end;
-
-  std::optional<std::vector<std::string>> include_areas;
-  std::optional<std::vector<std::string>> exclude_areas;
-};
-
-using PeriodMap = std::unordered_map<std::string, PeriodConfig>;
 
 class ConfigFile;
-
-enum class ParsingError {
-  id_not_found,
-  duplicate_id,
-  lexing_error,
-  expected_value,
-  expected_equals_sign,
-  expected_end,
-  conversion_error,
-  unknown_expm_type,
-  invalid_option,
-  unknown_error,
-};
-
-template <typename T>
-using ParsingResult = std::expected<T, ParsingError>;
 
 class ConfigLexer;
 

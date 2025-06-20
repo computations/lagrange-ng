@@ -14,6 +14,7 @@ set(LAGRANGE_SOURCES
         Alignment.cpp
         Periods.cpp
         IO.cpp
+        Parser.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
@@ -30,7 +31,7 @@ if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
     -fno-omit-frame-pointer -g -Wall -Wextra -fdiagnostics-color=always)
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
-    -fsanitize-recover=address -fsanitize=undefined)
+    -fsanitize-recover=address -fsanitize=undefined -fdiagnostics-color=always)
   set(LAGRANGE_LINK_FLAGS -fsanitize=address -fsanitize=undefined
     -fdiagnostics-color=always)
 endif()
