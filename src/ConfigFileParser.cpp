@@ -161,18 +161,42 @@ ParsingResult<void> ConfigFileParser::parse_period_matrix_statement(
 ParsingResult<void> ConfigFileParser::parse_period_statement(
     PeriodMap& period_map) {
   auto value = parse<std::string>();
-  if (!value) { return std::unexpected{value.error()}; }
+  if (!value) {
+    LOG_ERROR("Expected a value after a period statement at {}",
+              _lexer.describePosition());
+    return std::unexpected{value.error()};
+  }
 
   if (value == "include") {
-    return parse_period_include_statement(period_map);
+    auto r = parse_period_include_statement(period_map);
+    if (!r) {
+      LOG_ERROR("Failed to parse a period include statement at {}",
+                _lexer.describePosition());
+    }
   } else if (value == "exclude") {
-    return parse_period_exclude_statement(period_map);
+    auto r = parse_period_exclude_statement(period_map);
+    if (!r) {
+      LOG_ERROR("Failed to parse a period exclude statement at {}",
+                _lexer.describePosition());
+    }
   } else if (value == "start") {
-    return parse_period_start_statement(period_map);
+    auto r = parse_period_start_statement(period_map);
+    if (!r) {
+      LOG_ERROR("Failed to parse a period start statement at {}",
+                _lexer.describePosition());
+    }
   } else if (value == "end") {
-    return parse_period_end_statement(period_map);
+    auto r = parse_period_end_statement(period_map);
+    if (!r) {
+      LOG_ERROR("Failed to parse a period end statement at {}",
+                _lexer.describePosition());
+    }
   } else if (value == "matrix") {
-    return parse_period_matrix_statement(period_map);
+    auto r = parse_period_matrix_statement(period_map);
+    if (!r) {
+      LOG_ERROR("Failed to parse a period matrix statement at {}",
+                _lexer.describePosition());
+    }
   } else {
     if (period_map.contains(*value)) {
       LOG_ERROR("Duplicate period declaration for period id '{}' at {}",
@@ -181,11 +205,14 @@ ParsingResult<void> ConfigFileParser::parse_period_statement(
       return std::unexpected{ParsingError::duplicate_id};
     } else {
       period_map.insert({*value, {}});
-      return {};
     }
   }
 
   if (!_lexer.expect(ConfigLexemeType::END)) {
+    LOG_ERROR(
+        "Expected end token at {}. There is probably some extra characters on "
+        "this line.",
+        _lexer.describePosition());
     return std::unexpected{ParsingError::expected_end};
   }
   return {};
@@ -265,14 +292,15 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
         },
     },
     {
-        "periods",
+        "period",
         {
             ._action{[](ConfigFileParser& p,
                         ConfigFile& config) -> ParsingResult<void> {
-              std::vector<double> period_times;
-              auto r = p.parse_and_assign(period_times);
-              if (r) { config._periods = {period_times}; }
-              return r;
+              // std::vector<double> period_times;
+              // auto r = p.parse_and_assign(period_times);
+              // if (r) { config._periods = {period_times}; }
+              // return r;
+              return p.parse_period_statement(config._period_map);
             }},
             ._name{"Period list"},
             ._help{
@@ -765,7 +793,6 @@ auto ConfigFileParser::parse_line(ConfigFile& config) -> ParsingResult<void> {
       LOG_ERROR("Failed to parse option {} at {}",
                 config_value,
                 _lexer.describePosition());
-      print_help_short();
     }
     return r;
   } else {

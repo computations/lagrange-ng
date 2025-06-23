@@ -226,7 +226,7 @@ class ConfigFile {
 
   Periods _periods;
 
-  std::optional<std::unordered_map<std::string, PeriodConfig>> _period_map;
+  std::unordered_map<std::string, PeriodConfig> _period_map;
 
   MRCAMap _mrcas;
 
