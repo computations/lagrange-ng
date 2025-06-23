@@ -5,6 +5,8 @@
 #include <expected>
 #include <logger.hpp>
 #include <string>
+#include <string_view>
+#include <map>
 
 #include "ConfigFileLexer.hpp"
 #include "Fossil.hpp"
@@ -149,8 +151,6 @@ class ConfigFileParser {
 
   auto parse_fossil() -> ParsingResult<Fossil>;
 
-  auto parse_opt_method(const std::string& method_string) -> OptimizationMethod;
-
   auto parse_assignment(ToLowerOption l = ToLowerOption::nolower)
       -> ParsingResult<std::string>;
 
@@ -222,11 +222,29 @@ class ConfigFileParser {
 
   auto describePosition() const -> std::string;
 
+  static void print_help_long();
+  static void print_help_short();
+
  private:
   static auto determine_fossil_type(const std::string& fossil_type_string)
       -> FossilType;
   static auto determine_output_file_type(const std::string& type_string)
       -> OutputType;
+  static auto determine_opt_method(const std::string& method_string)
+      -> OptimizationMethod;
+
+  struct ConfigActionMapItem {
+    std::function<ParsingResult<void>(ConfigFileParser&, ConfigFile&)> _action;
+    std::string_view _name;
+    std::string_view _help;
+    std::string_view _usage;
+    std::vector<std::string_view> _examples;
+  };
+
+  using ActionMapType =
+      std::map<std::string_view, ConfigActionMapItem>;
+
+  static ActionMapType _config_action_map;
 
   ConfigLexer _lexer;
 };

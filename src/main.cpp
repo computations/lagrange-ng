@@ -235,12 +235,21 @@ auto main(int argc, char *argv[]) -> int {
   auto start_time = std::chrono::high_resolution_clock::now();
   if (argc != 2) {
     LOG(ERROR, "Lagrange-ng needs a config file");
-    LOG(ERROR, "Usage: lagrange configfile");
+    LOG(ERROR, "Usage:");
+    LOG(ERROR, "    lagrange-ng <CONFIG FILE>");
+    LOG(ERROR, "    lagrange-ng --help (for config file documentation)");
     return 1;
   }
 
-  std::string config_filename(argv[1]);
-  auto config = read_config_file(config_filename);
+  std::string_view config_filename(argv[1]);
+
+  if (config_filename == "help" || config_filename == "--help") {
+    lagrange::ConfigFileParser::print_help_long();
+    return 0;
+  }
+
+  LOG_INFO("Reading config file {}", config_filename);
+  auto config = read_config_file(std::string{config_filename});
   print_run_header(config);
 
   LOG(INFO, "Reading tree...");

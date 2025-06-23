@@ -6,7 +6,6 @@
 #include <unordered_set>
 
 #include "Fossil.hpp"
-#include "logger.hpp"
 
 namespace lagrange {
 
@@ -17,7 +16,6 @@ auto ConfigFile::parse_config_file(std::istream& instream) -> ConfigFile {
   while (getline(instream, line)) {
     ConfigFileParser parser(line, line_number);
     if (auto r = parser.parse_line(config); !r) {
-      LOG_ERROR("Failed to parse config file at {}", parser.describePosition())
       throw ConfigFileParsingError{"Failed to parse config file, giving up"};
     }
 
