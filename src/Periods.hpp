@@ -2,6 +2,7 @@
 #define PERIODS_H
 
 #include <limits>
+#include <ranges>
 #include <vector>
 
 namespace lagrange {
@@ -17,7 +18,8 @@ class Periods {
  public:
   using const_iterator = std::vector<double>::const_iterator;
 
-  Periods(const std::vector<double> &periods) : _periods{periods} {
+  Periods(const std::ranges::range auto &periods) :
+      _periods{periods.begin(), periods.end()} {
     terminate();
   }
 

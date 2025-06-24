@@ -1,9 +1,12 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <logger.hpp>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -68,8 +71,11 @@ class ConfigFile {
   auto periods() const -> const Periods&;
   void periods(const Periods&);
 
-  void finalize_periods() {
+  [[nodiscard]] bool finalize_periods() {
+    bool OllKorrect = true;
+    OllKorrect &= setup_periods();
     finalize_periods(_region_count.value(), _max_areas.value());
+    return OllKorrect;
   }
 
   void finalize_periods(size_t regions, size_t max_areas) {
@@ -203,6 +209,84 @@ class ConfigFile {
     }
   }
 
+  /*
+   * This takes the period map, and turns it into a list of periods. The period
+   * map is from the period name, as given by the user, to a "period map entry".
+   * This period map entry has the following information:
+   *
+   * - start and end times,
+   * - an adjustment matrix, and
+   * - range constraints.
+   *
+   * What I need to check here is that there are no "gaps" in the periods given
+   * by the user. To do this I will need to check that, after ordering by
+   * _start_ time:
+   *
+   * - every end time is _exactly equal_ to an end time;
+   * - that no periods are "contianed" within another period;
+   * - that there is a start period, which has no specified start time; and
+   * - that there is an end period, which has no specified end time.
+   */
+  bool setup_periods() {
+    /* we can't just use value type here, because the key is const........ */
+    using PeriodMapEntry =
+        std::pair<PeriodConfigMap::key_type, PeriodConfigMap::mapped_type>;
+
+    std::vector<PeriodMapEntry> period_buffer{_period_map.begin(),
+                                              _period_map.end()};
+    std::sort(period_buffer.begin(),
+              period_buffer.end(),
+              [](const auto& a, const auto& b) -> bool {
+                return a.second.start < b.second.start;
+              });
+
+    bool OllKorrect = true;
+
+    if (period_buffer.front().second.start != 0.0) { OllKorrect &= false; }
+    if (!std::isinf(period_buffer.back().second.end)) { OllKorrect &= false; }
+
+    for (auto [a, b] : period_buffer | std::views::adjacent<2>) {
+      auto pc_a = a.second;
+      auto pc_b = b.second;
+      if (pc_a.end != pc_b.start) {
+        OllKorrect &= false;
+        LOG_ERROR(
+            "Failed to make periods, end of '{}' does not match start of '{}' "
+            "({} vs {})",
+            a.first,
+            b.first,
+            pc_a.end,
+            pc_b.start);
+      }
+
+      if (std::isinf(a.second.end)) {
+        OllKorrect &= false;
+        LOG_ERROR(
+            "There are several end periods, please specify only one end "
+            "period.");
+      }
+
+      if (b.second.start == 0.0) {
+        OllKorrect &= false;
+        LOG_ERROR(
+            "There are several start periods, please specify only one start "
+            "period.");
+      }
+    }
+
+    if (!OllKorrect) { return false; }
+
+    auto period_times = period_buffer
+                        | std::views::take(period_buffer.size() - 1)
+                        | std::views::transform([](const auto& a) -> double {
+                            return a.second.end;
+                          });
+
+    _periods = Periods(period_times);
+
+    return OllKorrect;
+  }
+
   void finalize(bool testing = false) {
     if (!testing) { setup_log(); }
     set_threads();
@@ -226,7 +310,7 @@ class ConfigFile {
 
   Periods _periods;
 
-  std::unordered_map<std::string, PeriodConfig> _period_map;
+  PeriodConfigMap _period_map;
 
   MRCAMap _mrcas;
 

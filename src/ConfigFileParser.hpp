@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <expected>
 #include <logger.hpp>
+#include <map>
 #include <string>
 #include <string_view>
-#include <map>
 
 #include "ConfigFileLexer.hpp"
 #include "Fossil.hpp"
@@ -53,14 +53,14 @@ struct PeriodConfig {
 
   std::optional<std::filesystem::path> adjustment_matrix_filename;
 
-  std::optional<double> start;
-  std::optional<double> end;
+  double start = 0.0;
+  double end = std::numeric_limits<double>::infinity();
 
   std::optional<std::vector<std::string>> include_areas;
   std::optional<std::vector<std::string>> exclude_areas;
 };
 
-using PeriodMap = std::unordered_map<std::string, PeriodConfig>;
+using PeriodConfigMap = std::unordered_map<std::string, PeriodConfig>;
 
 template <typename T>
 using ParsingResult = std::expected<T, ParsingError>;
@@ -208,17 +208,20 @@ class ConfigFileParser {
     }
   }
 
-  ParsingResult<void> parse_period_include_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_include_statement(
+      PeriodConfigMap& period_map);
 
-  ParsingResult<void> parse_period_exclude_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_exclude_statement(
+      PeriodConfigMap& period_map);
 
-  ParsingResult<void> parse_period_start_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_start_statement(PeriodConfigMap& period_map);
 
-  ParsingResult<void> parse_period_end_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_end_statement(PeriodConfigMap& period_map);
 
-  ParsingResult<void> parse_period_matrix_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_matrix_statement(
+      PeriodConfigMap& period_map);
 
-  ParsingResult<void> parse_period_statement(PeriodMap& period_map);
+  ParsingResult<void> parse_period_statement(PeriodConfigMap& period_map);
 
   auto describePosition() const -> std::string;
 
@@ -241,8 +244,7 @@ class ConfigFileParser {
     std::vector<std::string_view> _examples;
   };
 
-  using ActionMapType =
-      std::map<std::string_view, ConfigActionMapItem>;
+  using ActionMapType = std::map<std::string_view, ConfigActionMapItem>;
 
   static ActionMapType _config_action_map;
 

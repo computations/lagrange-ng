@@ -99,7 +99,7 @@ auto ConfigFileParser::parse_assignment(ToLowerOption l)
 };
 
 ParsingResult<void> ConfigFileParser::parse_period_include_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto res = parse_and_check_id_map<std::vector<std::string>>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
@@ -111,7 +111,7 @@ ParsingResult<void> ConfigFileParser::parse_period_include_statement(
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_exclude_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto res = parse_and_check_id_map<std::vector<std::string>>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
@@ -123,7 +123,7 @@ ParsingResult<void> ConfigFileParser::parse_period_exclude_statement(
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_start_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto res = parse_and_check_id_map<double>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
@@ -135,7 +135,7 @@ ParsingResult<void> ConfigFileParser::parse_period_start_statement(
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_end_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto res = parse_and_check_id_map<double>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
@@ -147,7 +147,7 @@ ParsingResult<void> ConfigFileParser::parse_period_end_statement(
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_matrix_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto res = parse_and_check_id_map<std::filesystem::path>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
@@ -159,7 +159,7 @@ ParsingResult<void> ConfigFileParser::parse_period_matrix_statement(
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_statement(
-    PeriodMap& period_map) {
+    PeriodConfigMap& period_map) {
   auto value = parse<std::string>();
   if (!value) {
     LOG_ERROR("Expected a value after a period statement at {}",
@@ -296,10 +296,6 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
         {
             ._action{[](ConfigFileParser& p,
                         ConfigFile& config) -> ParsingResult<void> {
-              // std::vector<double> period_times;
-              // auto r = p.parse_and_assign(period_times);
-              // if (r) { config._periods = {period_times}; }
-              // return r;
               return p.parse_period_statement(config._period_map);
             }},
             ._name{"Period list"},

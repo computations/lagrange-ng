@@ -269,7 +269,9 @@ auto main(int argc, char *argv[]) -> int {
 
   config.region_count(data.region_count);
 
-  config.finalize_periods();
+  if(!config.finalize_periods()){
+    LOG_ERROR("Failed to setup periods");
+  }
 
   LOG(INFO, "Running analysis...");
 
