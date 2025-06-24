@@ -67,13 +67,16 @@ class Context {
   [[nodiscard]] auto toString() const -> std::string;
 
   void updateRates(const std::vector<PeriodParams>& p);
+  void updateRates(const std::vector<double>& x);
   void init();
 
   [[nodiscard]] auto stateCount() const -> size_t {
     return _workspace->restrictedStateCount();
   }
 
-  void setParams(double e, double d) { _workspace->setPeriodParams(0, e, d); }
+  void setParams(double e, double d) {
+    _workspace->setPeriodParams(0, {e, d, 1.0, nullptr, _workspace->regions()});
+  }
 
   [[nodiscard]] auto currentParams() const -> std::vector<PeriodParams>;
 

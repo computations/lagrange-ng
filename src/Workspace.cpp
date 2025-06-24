@@ -130,9 +130,8 @@ void Workspace::reserve() {
   _reserved = true;
 }
 
-void Workspace::setPeriodParams(size_t period_index, double d, double e) {
-  _periods[period_index].dispersion_rate = d;
-  _periods[period_index].extinction_rate = e;
+void Workspace::setPeriodParams(size_t period_index, const PeriodParams &p) {
+  _periods[period_index].applyParameters(p);
 }
 
 void Workspace::setPeriodAdjustmentMatrix(size_t period_index,

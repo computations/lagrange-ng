@@ -143,6 +143,7 @@ void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
 auto ConfigFile::period_params() const -> PeriodParams {
   return {.dispersion_rate = _dispersion,
           .extinction_rate = _extinction,
+          .distance_penalty = 1.0,
           .adjustment_matrix = nullptr,
           .regions = *_region_count};
 }

@@ -132,7 +132,6 @@ static void setup_context(Context &context,
 
   context.set_opt_method(config.opt_method());
   context.init();
-  context.updateRates({context.getPeriodCount(), config.period_params()});
   assign_tip_data(context, data, config);
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
@@ -271,6 +270,7 @@ auto main(int argc, char *argv[]) -> int {
 
   if(!config.finalize_periods()){
     LOG_ERROR("Failed to setup periods");
+    return 1;
   }
 
   LOG(INFO, "Running analysis...");

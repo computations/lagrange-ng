@@ -1,11 +1,74 @@
 #ifndef PERIODS_H
 #define PERIODS_H
 
+#include <format>
 #include <limits>
+#include <cmath>
+#include <memory>
 #include <ranges>
 #include <vector>
 
 namespace lagrange {
+
+struct PeriodDerivative {
+  double d_dispersion;
+  double d_extinction;
+
+  auto norm() const -> double {
+    return d_dispersion * d_dispersion + d_extinction * d_extinction;
+  }
+};
+
+struct PeriodParams {
+  double dispersion_rate;
+  double extinction_rate;
+  double distance_penalty;
+  std::shared_ptr<double[]> adjustment_matrix = nullptr;
+  size_t regions;
+
+  void applyDerivative(const PeriodDerivative &d) {
+    dispersion_rate += d.d_dispersion;
+    extinction_rate += d.d_extinction;
+    if (dispersion_rate < 0) { dispersion_rate = 0.0; }
+    if (extinction_rate < 0) { extinction_rate = 0.0; }
+  }
+
+  auto toString() const -> std::string {
+    return std::format("(disp: {}, ext: {})", dispersion_rate, extinction_rate);
+  }
+
+  inline auto getDispersionRate(size_t from, size_t to) const -> double {
+    return dispersion_rate
+           * (adjustment_matrix != nullptr
+                  ? std::pow(adjustment_matrix[from * regions + to],
+                             distance_penalty)
+                  : 1.0);
+  }
+
+  inline auto getExtinctionRate() const -> double { return extinction_rate; }
+
+  void applyParameters(const std::vector<double> &x, size_t &index) {
+    dispersion_rate = x[index];
+    index += 1;
+    extinction_rate = x[index];
+    index += 1;
+
+    if (adjustment_matrix != nullptr) {
+      distance_penalty = x[index];
+      index += 1;
+    }
+  }
+
+  void applyParameters(const PeriodParams& other){
+    dispersion_rate = other.dispersion_rate;
+    extinction_rate = other.extinction_rate;
+    distance_penalty = other.distance_penalty;
+  }
+
+  size_t paramCount() const {
+    return 2 + (adjustment_matrix == nullptr ? 0.0 : 1.0);
+  }
+};
 
 struct PeriodSegment {
   size_t index;

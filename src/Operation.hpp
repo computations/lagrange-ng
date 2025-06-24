@@ -35,15 +35,9 @@ class MakeRateMatrixOperation {
   [[nodiscard]] auto lastUpdate() const -> ClockTick { return _last_execution; }
 
   void updateRates(const std::shared_ptr<Workspace>& ws,
-                   double disp,
-                   double ext) {
-    ws->setPeriodParams(_period_index, disp, ext);
-    _last_update = ws->advanceClock();
-  }
-
-  void updateRates(const std::shared_ptr<Workspace>& ws,
                    const PeriodParams& p) {
-    updateRates(ws, p.dispersion_rate, p.extinction_rate);
+    ws->setPeriodParams(_period_index, p);
+    _last_update = ws->advanceClock();
   }
 
   [[nodiscard]] auto rateMatrixIndex() const -> size_t {

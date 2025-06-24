@@ -139,11 +139,18 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
   }
 }
 
+void Context::updateRates(const std::vector<double>& x) {
+  size_t index = 0;
+  for (auto& p : _workspace->getPeriodParams()) { p.applyParameters(x, index); }
+  lagrange_assert(index == x.size(), "There was an issue applying parameters");
+  for (auto& rm : _rate_matrix_ops) { rm->eval(_workspace); }
+}
+
 void Context::init() {
   _workspace->reserve();
   std::vector<PeriodParams> initial_rates(
       _workspace->rateMatrixCount(),
-      {0.01, 0.01, nullptr, _workspace->regions()});
+      {0.01, 0.01, 1.0, nullptr, _workspace->regions()});
   _workspace->setPeriodParamsCount(_workspace->rateMatrixCount());
   updateRates(initial_rates);
 
@@ -253,20 +260,14 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     size_t f_evals = 1;
   } oc{*this, tc, ts};
 
-  const size_t dims = _workspace->rateMatrixCount() * 2;
+  const size_t dims = _workspace->getOptDimsSize();
   nlopt::opt opt(_opt_method, dims);
   auto objective = [](const std::vector<double>& x,
                       std::vector<double>& grad,
                       void* f_data) -> double {
     auto* obj = static_cast<OptContext*>(f_data);
-    std::vector<PeriodParams> period_paramters(
-        obj->context._workspace->rateMatrixCount());
-    for (size_t i = 0; i < period_paramters.size(); ++i) {
-      period_paramters[i].dispersion_rate = x[2 * i];
-      period_paramters[i].extinction_rate = x[2 * i + 1];
-    }
 
-    obj->context.updateRates(period_paramters);
+    obj->context.updateRates(x);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
     obj->f_evals += 1;
 
@@ -274,8 +275,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       constexpr double step = 1e-7;
 
       for (size_t i = 0; i < grad.size(); ++i) {
-        auto tmp_params = period_paramters;
-        tmp_params[i / 2][i % 2] += step;
+        auto tmp_params{x};
+        tmp_params[i] += step;
         obj->context.updateRates(tmp_params);
         grad[i] = (obj->context.computeLLH(obj->ts, obj->tc) - llh) / step;
         obj->f_evals += 1;

@@ -15,12 +15,31 @@
 #include <tuple>
 
 #include "Common.hpp"
+#include "Periods.hpp"
 #include "Utils.hpp"
 
 namespace lagrange {
 
 enum class SetCLVStatus { definite, ambiguous, failed };
 SetCLVStatus &operator&=(SetCLVStatus &lhs, const SetCLVStatus &rhs);
+
+struct NodeReservation {
+  NodeReservation() :
+      _top_clv{std::numeric_limits<size_t>::max()},
+      _bot1_clv{std::numeric_limits<size_t>::max()},
+      _bot2_clv{std::numeric_limits<size_t>::max()},
+      _top_rclv{std::numeric_limits<size_t>::max()},
+      _bot1_rclv{std::numeric_limits<size_t>::max()},
+      _bot2_rclv{std::numeric_limits<size_t>::max()} {}
+
+  size_t _top_clv;
+  size_t _bot1_clv;
+  size_t _bot2_clv;
+
+  size_t _top_rclv;
+  size_t _bot1_rclv;
+  size_t _bot2_rclv;
+};
 
 struct MatrixReservation {
   LagrangeMatrix _matrix = nullptr;
@@ -313,12 +332,16 @@ class Workspace {
     return _periods;
   }
 
+  [[nodiscard]] auto getPeriodParams() -> std::vector<PeriodParams> & {
+    return _periods;
+  }
+
   [[nodiscard]] auto getPeriodParams(size_t period_index) const
       -> const PeriodParams & {
     return _periods[period_index];
   }
 
-  void setPeriodParams(size_t period_index, double d, double e);
+  void setPeriodParams(size_t period_index, const PeriodParams &p);
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
 
@@ -370,6 +393,12 @@ class Workspace {
 
   [[nodiscard]] auto EXPMExecutionCount() const -> size_t {
     return _expm_count;
+  }
+
+  [[nodiscard]] auto getOptDimsSize() const -> size_t {
+    size_t count = 0;
+    for (auto p : _periods) { count += p.paramCount(); }
+    return count;
   }
 
  private:
