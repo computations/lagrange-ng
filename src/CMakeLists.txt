@@ -16,6 +16,8 @@ set(LAGRANGE_SOURCES
         IO.cpp
         ConfigFileParser.cpp
         ConfigFileLexer.cpp
+        AdjustmentMatrix.cpp
+        CSV.cpp
         )
 
 add_library(lagrange-release-libs OBJECT ${LAGRANGE_SOURCES})
