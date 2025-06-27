@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ranges>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -42,6 +43,9 @@ uint64_t CSVRow::get(const std::string_view& key);
 template <>
 double CSVRow::get(const std::string_view& key);
 
+template <>
+long CSVRow::get(const std::string_view& key);
+
 std::vector<std::string> read_row(std::string_view row);
 
 class CSVIter {
@@ -51,9 +55,11 @@ class CSVIter {
   typedef CSVRow* pointer;
   typedef CSVRow& reference;
 
-  CSVIter(std::shared_ptr<std::ifstream> csv_file, CSVHeaderPointer header) :
+  CSVIter(std::shared_ptr<std::istream> csv_file, CSVHeaderPointer header) :
       _csv_file{csv_file},
-      _header{header} {}
+      _header{header} {
+    get_row();
+  }
 
   CSVIter() : _csv_file{nullptr}, _header{nullptr} {}
 
@@ -102,26 +108,39 @@ class CSVIter {
     _row = CSVRow{_header, read_row(row_buffer)};
   }
 
-  std::shared_ptr<std::ifstream> _csv_file;
+  std::shared_ptr<std::istream> _csv_file;
   CSVRow _row;
   CSVHeaderPointer _header;
 };
 
 class CSVReader {
+ public:
   CSVReader(const std::filesystem::path& csv_filename) :
       _csv_file{new std::ifstream{csv_filename}},
-      _header{new std::vector<std::string>} {
-    std::string header_buffer;
-    std::getline(*_csv_file, header_buffer);
-    *_header = read_row(header_buffer);
+      _header{new CSVHeaderType} {
+    read_header();
+  }
+
+  CSVReader(std::istringstream&& istream) :
+      _csv_file{new std::istringstream(std::move(istream))},
+      _header{new CSVHeaderType} {
+    read_header();
   }
 
   CSVIter begin() { return {_csv_file, _header}; }
 
   CSVIter end() { return {nullptr, nullptr}; }
 
+  CSVHeaderType const& header() const { return *_header; }
+
  private:
-  std::shared_ptr<std::ifstream> _csv_file;
+  void read_header() {
+    std::string header_buffer;
+    std::getline(*_csv_file, header_buffer);
+    *_header = read_row(header_buffer);
+  }
+
+  std::shared_ptr<std::istream> _csv_file;
   CSVHeaderPointer _header;
 };
 
