@@ -418,7 +418,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
       /* Source is "gaining" a region, so we add */
       if (source_dist < dest_dist && source_dist != 0) {
         double sum = 0.0;
-        size_t i = lagrange_fast_log2(source_dist ^ dest_dist);
+        size_t i = lagrange_fast_log2(source_dist ^ dest_dist) - 1;
         for (size_t j = 0; j < ws->regions(); ++j) {
           sum += (lagrange_bextr(source_dist, j) != 0U)
                      ? period.getDispersionRate(i, j)

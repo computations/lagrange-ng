@@ -470,7 +470,7 @@ auto Node::getIncludedAreas() const -> Option<Range> { return _incl_area_mask; }
 
 auto Node::getExcludedAreas() const -> Option<Range> { return _excl_area_mask; }
 
-void Node::setPeriodSegments(const Periods &periods) {
+void Node::setPeriodSegments(const PeriodTimes &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);
 }
 

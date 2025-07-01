@@ -68,10 +68,11 @@ class ConfigLexer {
   }
 
   auto peak() -> ConfigLexemeType {
+    if (_current_index >= _input.size()) { return ConfigLexemeType::END; }
+
     size_t tmp_index = _current_index;
     char current_char = _input[tmp_index++];
 
-    if (_current_index == _input.size()) { return ConfigLexemeType::END; }
     if (current_char == '=') { return ConfigLexemeType::EQUALS_SIGN; }
     return ConfigLexemeType::VALUE;
   }

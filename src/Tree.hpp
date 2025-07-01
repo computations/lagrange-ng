@@ -76,7 +76,7 @@ class Tree {
 
   void setHeightTopDown();
   void setHeightBottomUp();
-  void setPeriods(const Periods &periods);
+  void setPeriods(const PeriodTimes &periods);
 
   auto getNewick() const -> std::string;
   auto getNewickLambda(

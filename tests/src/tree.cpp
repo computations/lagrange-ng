@@ -68,7 +68,7 @@ class TreeTest : public ::testing::Test {
 
   std::unique_ptr<LagrangeMatrixBase[]> _arbitrary_rate_matrix;
 
-  Periods _basic_periods;
+  PeriodTimes _basic_periods;
   const size_t _basic_period_index = 0;
 };
 

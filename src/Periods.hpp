@@ -1,23 +1,14 @@
 #ifndef PERIODS_H
 #define PERIODS_H
 
+#include <cmath>
 #include <format>
 #include <limits>
-#include <cmath>
 #include <memory>
 #include <ranges>
 #include <vector>
 
 namespace lagrange {
-
-struct PeriodDerivative {
-  double d_dispersion;
-  double d_extinction;
-
-  auto norm() const -> double {
-    return d_dispersion * d_dispersion + d_extinction * d_extinction;
-  }
-};
 
 struct PeriodParams {
   double dispersion_rate;
@@ -26,22 +17,15 @@ struct PeriodParams {
   std::shared_ptr<double[]> adjustment_matrix = nullptr;
   size_t regions;
 
-  void applyDerivative(const PeriodDerivative &d) {
-    dispersion_rate += d.d_dispersion;
-    extinction_rate += d.d_extinction;
-    if (dispersion_rate < 0) { dispersion_rate = 0.0; }
-    if (extinction_rate < 0) { extinction_rate = 0.0; }
-  }
-
   auto toString() const -> std::string {
     return std::format("(disp: {}, ext: {})", dispersion_rate, extinction_rate);
   }
 
-  inline auto getDispersionRate(size_t from, size_t to) const -> double {
+  auto getDispersionRate(size_t from, size_t to) const -> double {
     return dispersion_rate
-           * (adjustment_matrix != nullptr
+           * (adjustment_matrix.get() != nullptr
                   ? std::pow(adjustment_matrix[from * regions + to],
-                             distance_penalty)
+                             -distance_penalty)
                   : 1.0);
   }
 
@@ -59,7 +43,7 @@ struct PeriodParams {
     }
   }
 
-  void applyParameters(const PeriodParams& other){
+  void applyParameters(const PeriodParams &other) {
     dispersion_rate = other.dispersion_rate;
     extinction_rate = other.extinction_rate;
     distance_penalty = other.distance_penalty;
@@ -68,6 +52,8 @@ struct PeriodParams {
   size_t paramCount() const {
     return 2 + (adjustment_matrix == nullptr ? 0.0 : 1.0);
   }
+
+  bool hasAdjustmentMatrix() const { return adjustment_matrix != nullptr; }
 };
 
 struct PeriodSegment {
@@ -77,36 +63,41 @@ struct PeriodSegment {
   size_t max_areas;
 };
 
-class Periods {
+class PeriodTimes {
  public:
   using const_iterator = std::vector<double>::const_iterator;
 
-  Periods(const std::ranges::range auto &periods) :
-      _periods{periods.begin(), periods.end()} {
+  template <typename R>
+  PeriodTimes(const R &periods)
+    requires(requires(R r) {
+      requires std::ranges::range<R>;
+      { *r.begin() } -> std::same_as<double>;
+    })
+      : _end_points{periods.begin(), periods.end()} {
     terminate();
   }
 
-  Periods() { terminate(); }
+  PeriodTimes() { terminate(); }
 
-  Periods(const Periods &) = default;
-  Periods(Periods &&) = default;
+  PeriodTimes(const PeriodTimes &) = default;
+  PeriodTimes(PeriodTimes &&) = default;
 
-  auto operator=(const Periods &) -> Periods & = default;
-  auto operator=(Periods &&) -> Periods & = default;
+  auto operator=(const PeriodTimes &) -> PeriodTimes & = default;
+  auto operator=(PeriodTimes &&) -> PeriodTimes & = default;
 
   [[nodiscard]] auto begin() const -> const_iterator {
-    return _periods.begin();
+    return _end_points.begin();
   }
 
-  [[nodiscard]] auto end() const -> const_iterator { return _periods.end(); }
+  [[nodiscard]] auto end() const -> const_iterator { return _end_points.end(); }
 
-  [[nodiscard]] auto min() const -> double { return _periods.front(); }
+  [[nodiscard]] auto min() const -> double { return 0.0; }
 
-  [[nodiscard]] auto max() const -> double { return _periods.back(); }
+  [[nodiscard]] auto max() const -> double { return _end_points.back(); }
 
-  [[nodiscard]] auto empty() const -> bool { return _periods.empty(); }
+  [[nodiscard]] auto empty() const -> bool { return _end_points.empty(); }
 
-  [[nodiscard]] auto size() const -> size_t { return _periods.size(); }
+  [[nodiscard]] auto size() const -> size_t { return _end_points.size(); }
 
   void setMaxAreas(size_t);
   void setRegionCount(size_t);
@@ -116,13 +107,13 @@ class Periods {
 
  private:
   void terminate() {
-    _periods.emplace_back(std::numeric_limits<double>::infinity());
+    _end_points.emplace_back(std::numeric_limits<double>::infinity());
   }
 
   size_t _regions = 0;
   size_t _max_areas = 0;
 
-  std::vector<double> _periods;
+  std::vector<double> _end_points;
 };
 
 class PeriodSpan {
@@ -136,7 +127,7 @@ class PeriodSpan {
              size_t index,
              size_t regions,
              size_t max_areas,
-             Periods::const_iterator period) :
+             PeriodTimes::const_iterator period) :
         _time{start},
         _length{len},
         _index{index},
@@ -177,15 +168,15 @@ class PeriodSpan {
     size_t _index;
     size_t _regions;
     size_t _max_areas;
-    Periods::const_iterator _period;
+    PeriodTimes::const_iterator _period;
   };
 
   PeriodSpan() = default;
 
-  PeriodSpan(const Periods &periods) :
+  PeriodSpan(const PeriodTimes &periods) :
       PeriodSpan(periods, 0.0, periods.max()) {}
 
-  PeriodSpan(const Periods &periods, double start, double length) :
+  PeriodSpan(const PeriodTimes &periods, double start, double length) :
       _start_time{start},
       _length{length},
       _max_areas{periods.maxAreas()},
@@ -218,8 +209,8 @@ class PeriodSpan {
   size_t _max_areas;
   size_t _regions;
 
-  Periods::const_iterator _begin;
-  Periods::const_iterator _end;
+  PeriodTimes::const_iterator _begin;
+  PeriodTimes::const_iterator _end;
 };
 
 }  // namespace lagrange

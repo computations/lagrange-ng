@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "AdjustmentMatrix.hpp"
 #include "Alignment.hpp"
 #include "Common.hpp"
 #include "ConfigFileParser.hpp"
@@ -68,19 +69,29 @@ class ConfigFile {
   auto area_names() const -> const std::vector<std::string>&;
   void area_names(const std::vector<std::string>&);
 
-  auto periods() const -> const Periods&;
-  void periods(const Periods&);
+  auto periods() const -> const PeriodTimes&;
+  void periods(const PeriodTimes&);
+
+  void read_period_matrix_files() {
+    for (auto& [_, p] : _period_map) {
+      if (p.adjustment_matrix_filename) {
+        p.adjustment_matrix =
+            AdjustmentMatrix{p.adjustment_matrix_filename.value(), _area_names};
+      }
+    }
+  }
 
   [[nodiscard]] bool finalize_periods() {
     bool OllKorrect = true;
+    read_period_matrix_files();
     OllKorrect &= setup_periods();
     finalize_periods(_region_count.value(), _max_areas.value());
     return OllKorrect;
   }
 
   void finalize_periods(size_t regions, size_t max_areas) {
-    _periods.setRegionCount(regions);
-    _periods.setMaxAreas(max_areas);
+    _periods_times.setRegionCount(regions);
+    _periods_times.setMaxAreas(max_areas);
   }
 
   auto mrca(const MRCALabel&) const -> const std::shared_ptr<MRCAEntry>&;
@@ -105,7 +116,8 @@ class ConfigFile {
   auto split_nodes() const -> const std::unordered_set<MRCALabel>&;
   void split_nodes(const std::unordered_set<MRCALabel>&);
 
-  auto period_params() const -> PeriodParams;
+  auto period_count() const -> size_t;
+  auto period_params() const -> std::vector<PeriodParams>;
   void period_params(double, double);
 
   auto lh_epsilon() const -> double;
@@ -228,6 +240,7 @@ class ConfigFile {
    * - that there is an end period, which has no specified end time.
    */
   bool setup_periods() {
+    if (_period_map.empty()) { return true; }
     /* we can't just use value type here, because the key is const........ */
     using PeriodMapEntry =
         std::pair<PeriodConfigMap::key_type, PeriodConfigMap::mapped_type>;
@@ -276,22 +289,44 @@ class ConfigFile {
 
     if (!OllKorrect) { return false; }
 
+    _period_params =
+        period_buffer
+        | std::views::transform([&](const auto& a) -> PeriodParams {
+            auto [key, p] = a;
+            return {.dispersion_rate = p.dispersion.value_or(0.01),
+                    .extinction_rate = p.extinction.value_or(0.01),
+                    .distance_penalty = 1.0,
+                    .adjustment_matrix = p.adjustment_matrix
+                                             ? p.adjustment_matrix->to_matrix()
+                                             : nullptr,
+                    .regions = _region_count.value_or(0)};
+          })
+        | std::ranges::to<std::vector<PeriodParams>>();
+
     auto period_times = period_buffer
                         | std::views::take(period_buffer.size() - 1)
                         | std::views::transform([](const auto& a) -> double {
                             return a.second.end;
                           });
 
-    _periods = Periods(period_times);
+    _periods_times = PeriodTimes(period_times);
 
     return OllKorrect;
   }
 
+  [[nodiscard]] bool setup_regions() {
+    if (_area_names.empty()) { return false; }
+    _region_count = _area_names.size();
+    return true;
+  }
+
   void finalize(bool testing = false) {
     if (!testing) { setup_log(); }
+    bool ok = setup_regions();
     set_threads();
     set_mrcas_for_fossils();
     check_prefix();
+    ok &= finalize_periods();
     validate_and_make_prefix();
   }
 
@@ -308,9 +343,9 @@ class ConfigFile {
 
   std::vector<std::string> _area_names;
 
-  Periods _periods;
-
   PeriodConfigMap _period_map;
+  std::vector<PeriodParams> _period_params;
+  PeriodTimes _periods_times;
 
   MRCAMap _mrcas;
 

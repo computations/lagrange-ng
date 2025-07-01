@@ -155,7 +155,7 @@ class Node {
   auto getIncludedAreas() const -> Option<Range>;
   auto getExcludedAreas() const -> Option<Range>;
 
-  void setPeriodSegments(const Periods &periods);
+  void setPeriodSegments(const PeriodTimes &periods);
 
   void applyCB(const std::function<void(Node &)> &func);
 

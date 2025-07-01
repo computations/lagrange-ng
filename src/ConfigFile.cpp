@@ -90,9 +90,13 @@ void ConfigFile::area_names(const std::vector<std::string>& area_names) {
   _area_names = area_names;
 }
 
-auto ConfigFile::periods() const -> const Periods& { return _periods; }
+auto ConfigFile::periods() const -> const PeriodTimes& {
+  return _periods_times;
+}
 
-void ConfigFile::periods(const Periods& periods) { _periods = periods; }
+void ConfigFile::periods(const PeriodTimes& periods) {
+  _periods_times = periods;
+}
 
 auto ConfigFile::mrca(const MRCALabel& label) const
     -> const std::shared_ptr<MRCAEntry>& {
@@ -140,12 +144,18 @@ void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
   _split_nodes = labels;
 }
 
-auto ConfigFile::period_params() const -> PeriodParams {
-  return {.dispersion_rate = _dispersion,
-          .extinction_rate = _extinction,
-          .distance_penalty = 1.0,
-          .adjustment_matrix = nullptr,
-          .regions = *_region_count};
+auto ConfigFile::period_count() const -> size_t { return _period_map.size(); }
+
+auto ConfigFile::period_params() const -> std::vector<PeriodParams> {
+  if (_period_params.empty()) {
+    return {1,
+            {.dispersion_rate = _dispersion,
+             .extinction_rate = _extinction,
+             .distance_penalty = 1.0,
+             .adjustment_matrix = nullptr,
+             .regions = *_region_count}};
+  }
+  return _period_params;
 }
 
 void ConfigFile::period_params(double d, double e) {

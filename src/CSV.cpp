@@ -19,16 +19,16 @@ std::vector<std::string> read_row(std::string_view row) {
 }
 
 template <>
-uint64_t CSVRow::get(const std::string_view& key) {
+uint64_t CSVRow::get(const std::string_view& key) const {
   return std::stoul(get_data(key));
 }
 
 template <>
-double CSVRow::get(const std::string_view& key) {
+double CSVRow::get(const std::string_view& key) const {
   return std::stod(get_data(key));
 }
 
 template <>
-long CSVRow::get(const std::string_view& key) {
+long CSVRow::get(const std::string_view& key) const {
   return std::stol(get_data(key));
 }

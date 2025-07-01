@@ -197,6 +197,7 @@ auto produce_json_file(const std::shared_ptr<Tree> &tree,
   for (size_t i = 0; i < params.size(); ++i) {
     params_json[i]["dispersion"] = params[i].dispersion_rate;
     params_json[i]["extinction"] = params[i].extinction_rate;
+    params_json[i]["distance-penalty"] = params[i].distance_penalty;
   }
   root_json["params"] = params_json;
 
@@ -315,17 +316,20 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
 void write_csv_periods_file(const ConfigFile &config, const Context &context) {
   LOG_INFO("Writing period parameters to {}",
            config.periodsCSVResultsFilename().string());
-  auto fields = {"from", "to", "dispersion", "extinction"};
+  auto fields = {"from", "to", "dispersion", "extinction", "distance-penalty"};
   auto outfile = init_csv(config.periodsCSVResultsFilename(), fields);
 
   auto p = PeriodSpan(config.periods()).begin();
   double last = 0.0;
   for (const auto &period : context.currentParams()) {
     auto seg = *p;
-    outfile << make_csv_row({std::to_string(last),
-                             std::to_string(last + seg.duration),
-                             std::to_string(period.dispersion_rate),
-                             std::to_string(period.extinction_rate)});
+    outfile << make_csv_row({
+        std::to_string(last),
+        std::to_string(last + seg.duration),
+        std::to_string(period.dispersion_rate),
+        std::to_string(period.extinction_rate),
+        std::to_string(period.distance_penalty),
+    });
     last += seg.duration;
     ++p;
   }

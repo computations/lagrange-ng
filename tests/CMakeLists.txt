@@ -20,6 +20,8 @@ set(LAGRANGE_TEST_SOURCES
   src/context.cpp
   src/tree.cpp
   src/configfile.cpp
+  src/csv.cpp
+  src/adjustment_matrix.cpp
   src/main.cpp
 )
 

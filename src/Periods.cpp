@@ -1,11 +1,11 @@
 #include "Periods.hpp"
 
 namespace lagrange {
-void Periods::setMaxAreas(size_t m) { _max_areas = m; }
+void PeriodTimes::setMaxAreas(size_t m) { _max_areas = m; }
 
-auto Periods::maxAreas() const -> size_t { return _max_areas; }
+auto PeriodTimes::maxAreas() const -> size_t { return _max_areas; }
 
-void Periods::setRegionCount(size_t r) { _regions = r; }
+void PeriodTimes::setRegionCount(size_t r) { _regions = r; }
 
-auto Periods::regions() const -> size_t { return _regions; }
+auto PeriodTimes::regions() const -> size_t { return _regions; }
 }  // namespace lagrange

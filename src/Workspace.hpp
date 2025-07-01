@@ -233,6 +233,8 @@ class Workspace {
     return _rate_matrix.size();
   }
 
+  [[nodiscard]] auto periodCount() const -> size_t { return _periods.size(); }
+
   [[nodiscard]] auto CLVCount() const -> size_t { return _next_free_clv; }
 
   [[nodiscard]] auto matrixSize() const -> size_t {
@@ -399,6 +401,67 @@ class Workspace {
     size_t count = 0;
     for (auto p : _periods) { count += p.paramCount(); }
     return count;
+  }
+
+  auto makeParameterVector(double rate, double dist) const -> std::vector<double> {
+    std::vector<double> ret(getOptDimsSize());
+    size_t i = 0;
+    for (auto p : _periods) {
+      ret[i++] = rate;
+      ret[i++] = rate;
+      if (p.hasAdjustmentMatrix()) { ret[i++] = dist; }
+    }
+    return ret;
+  }
+
+  [[nodiscard]] auto getDefaultParams() const -> std::vector<double> {
+    constexpr double rate_default = 0.01;
+    constexpr double penalty_default = -1.0;
+    return makeParameterVector(rate_default, penalty_default);
+  }
+
+  [[nodiscard]] auto getParamMins() const -> std::vector<double> {
+    constexpr double rate_min = 1e-7;
+    constexpr double penalty_min = -5;
+    return makeParameterVector(rate_min, penalty_min);
+  }
+
+  [[nodiscard]] auto getParamMaxs() const -> std::vector<double> {
+    constexpr double rate_max = 1e2;
+    constexpr double penalty_max = 5;
+    return makeParameterVector(rate_max, penalty_max);
+  }
+
+  void setAdjustmentMatrix(size_t index, const std::shared_ptr<double[]> adj) {
+    _periods[index].adjustment_matrix = adj;
+  }
+
+  template <typename R>
+  void setAdjustmentMatrices(const R &mats)
+    requires(requires(R r) {
+      requires std::ranges::range<R>;
+      { *r.begin() } -> std::same_as<std::shared_ptr<double[]>>;
+      { r.size() };
+    })
+  {
+    lagrange_assert(_periods.size() == mats.size(),
+                    "Setting adjusment matrices failed");
+    for (auto [a, b] : std::views::zip(_periods, mats)) {
+      a.adjustment_matrix = b;
+    }
+  }
+
+  template <typename R>
+  void setPeriodRangeCounts(const R &ranges)
+    requires(requires(R r) {
+      requires std::ranges::range<R>;
+      { *r.begin() } -> std::same_as<size_t>;
+      { r.size() };
+    })
+  {
+    lagrange_assert(_periods.size() == ranges.size(),
+                    "Setting adjusment matrices failed");
+    for (auto [a, b] : std::views::zip(_periods, ranges)) { a.regions = b; }
   }
 
  private:

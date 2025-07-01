@@ -105,7 +105,7 @@ class OperationTest : public ::testing::Test {
 
     /*_correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{*/
     /*    0, 0.04898326741, 0.04287039582, 0.01129551391});*/
-    
+
     _correct_reverse_bot_clv.reset(new LagrangeMatrixBase[4]{
         0, 0.049699709788676508, 0.044376375604528666, 0.0084716354377575281});
     /*
@@ -161,7 +161,11 @@ class OperationTest : public ::testing::Test {
     _ws->updateCLV(_arbitrary_clv2.get(), _lbot_clv);
 
     _ws->updateCLV(_arbitrary_clv1.get(), _reverse_lbot_clv);
-    _ws->setPeriodParams(0, .3123, 1.1231);
+    _ws->setPeriodParams(0,
+                         {.dispersion_rate = .3123,
+                          .extinction_rate = 1.1231,
+                          .distance_penalty = 1.0,
+                          .regions = _regions});
 
     _rate_matrix_op =
         std::make_shared<MakeRateMatrixOperation>(_rate_matrix, _period);
@@ -290,9 +294,14 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple0) {
 }
 
 TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
-  auto local_ws = std::make_shared<Workspace>(_taxa, 3, 3);
+  constexpr size_t regions = 3;
+  auto local_ws = std::make_shared<Workspace>(_taxa, 3, regions);
   local_ws->reserve();
-  local_ws->setPeriodParams(_period, .3123, 1.1231);
+  local_ws->setPeriodParams(_period,
+                            {.dispersion_rate = .3123,
+                             .extinction_rate = 1.1231,
+                             .distance_penalty = 1.0,
+                             .regions = regions});
   MakeRateMatrixOperation make_op(_rate_matrix, _period);
 
   make_op.eval(local_ws);

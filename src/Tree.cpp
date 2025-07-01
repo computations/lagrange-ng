@@ -172,7 +172,7 @@ void Tree::applyPreorderInternalOnly(const std::function<void(Node &)> &func) {
   _root->applyPreorderInternalOnly(func);
 }
 
-void Tree::setPeriods(const Periods &periods) {
+void Tree::setPeriods(const PeriodTimes &periods) {
   auto period_func = [&](Node &n) { n.setPeriodSegments(periods); };
   _root->applyPreorder(period_func);
 }

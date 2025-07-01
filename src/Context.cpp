@@ -2,6 +2,7 @@
 
 #include <nlopt.hpp>
 #include <ostream>
+#include <ranges>
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
@@ -133,8 +134,12 @@ void Context::registerGoals(
 }
 
 void Context::updateRates(const std::vector<PeriodParams>& params) {
+  for (auto [ws_params, params] :
+       std::views::zip(_workspace->getPeriodParams(), params)) {
+    ws_params.applyParameters(params);
+  }
+
   for (size_t i = 0; i < _rate_matrix_ops.size(); ++i) {
-    _rate_matrix_ops[i]->updateRates(_workspace, params[i]);
     _rate_matrix_ops[i]->eval(_workspace);
   }
 }
@@ -146,13 +151,22 @@ void Context::updateRates(const std::vector<double>& x) {
   for (auto& rm : _rate_matrix_ops) { rm->eval(_workspace); }
 }
 
-void Context::init() {
+void Context::applyAdjustmentMatrices(
+    const std::vector<PeriodParams>& period_params) {
+  _workspace->setPeriodRangeCounts(
+      period_params
+      | std::views::transform([](const auto& a) { return a.regions; }));
+  _workspace->setAdjustmentMatrices(period_params
+                                    | std::views::transform([](const auto& a) {
+                                        return a.adjustment_matrix;
+                                      }));
+}
+
+void Context::init(const std::vector<PeriodParams>& period_params) {
   _workspace->reserve();
-  std::vector<PeriodParams> initial_rates(
-      _workspace->rateMatrixCount(),
-      {0.01, 0.01, 1.0, nullptr, _workspace->regions()});
-  _workspace->setPeriodParamsCount(_workspace->rateMatrixCount());
-  updateRates(initial_rates);
+  _workspace->setPeriodParamsCount(period_params.size());
+  applyAdjustmentMatrices(period_params);
+  updateRates(period_params);
 
   if (!_reverse_operations.empty()) {
     size_t prior_index = _reverse_operations.front()->getStableCLV();
@@ -266,6 +280,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
                       std::vector<double>& grad,
                       void* f_data) -> double {
     auto* obj = static_cast<OptContext*>(f_data);
+    LOG_DEBUG("current params: {}", x);
 
     obj->context.updateRates(x);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
@@ -294,15 +309,12 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   opt.set_max_objective(objective, &oc);
 
-  std::vector<double> lower_bounds(dims, 1e-7);
-  opt.set_lower_bounds(lower_bounds);
-
-  std::vector<double> upper_bounds(dims, 1e2);
-  opt.set_upper_bounds(upper_bounds);
+  opt.set_lower_bounds(_workspace->getParamMins());
+  opt.set_upper_bounds(_workspace->getParamMaxs());
 
   opt.set_ftol_rel(_lh_epsilon);
 
-  std::vector<double> results(dims, 0.01);
+  std::vector<double> results = _workspace->getDefaultParams();
   double obj_val = 0;
 
   try {

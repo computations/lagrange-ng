@@ -789,8 +789,8 @@ auto ConfigFileParser::parse_line(ConfigFile& config) -> ParsingResult<void> {
       LOG_ERROR("Failed to parse option {} at {}",
                 config_value,
                 _lexer.describePosition());
+      return r;
     }
-    return r;
   } else {
     LOG_ERROR("Option '{}' at {} is invalid",
               config_value,

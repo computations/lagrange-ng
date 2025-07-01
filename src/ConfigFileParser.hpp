@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 
+#include "AdjustmentMatrix.hpp"
 #include "ConfigFileLexer.hpp"
 #include "Fossil.hpp"
 
@@ -52,6 +53,7 @@ struct PeriodConfig {
   std::optional<double> extinction;
 
   std::optional<std::filesystem::path> adjustment_matrix_filename;
+  std::optional<AdjustmentMatrix> adjustment_matrix;
 
   double start = 0.0;
   double end = std::numeric_limits<double>::infinity();

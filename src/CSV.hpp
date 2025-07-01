@@ -21,12 +21,12 @@ class CSVRow {
       _data{data} {}
 
   template <typename T>
-  T get(const std::string_view& key) {
+  T get(const std::string_view& key) const {
     return get_data(key);
   }
 
  private:
-  std::string get_data(const std::string_view& key) {
+  std::string get_data(const std::string_view& key) const {
     for (auto [h_key, data] : std::views::zip(*_header, _data)) {
       if (h_key == key) { return data; }
     }
@@ -38,13 +38,13 @@ class CSVRow {
 };
 
 template <>
-uint64_t CSVRow::get(const std::string_view& key);
+uint64_t CSVRow::get(const std::string_view& key) const;
 
 template <>
-double CSVRow::get(const std::string_view& key);
+double CSVRow::get(const std::string_view& key) const;
 
 template <>
-long CSVRow::get(const std::string_view& key);
+long CSVRow::get(const std::string_view& key) const;
 
 std::vector<std::string> read_row(std::string_view row);
 
@@ -97,6 +97,7 @@ class CSVIter {
 
  private:
   void get_row() {
+    if (_csv_file == nullptr) { return; }
     std::string row_buffer;
     std::getline(*_csv_file, row_buffer);
 
