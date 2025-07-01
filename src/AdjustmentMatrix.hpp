@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "CSV.hpp"
+
 namespace lagrange {
 
 enum class AdjustmentMatrixType {
@@ -38,6 +40,8 @@ class AdjustmentMatrix {
  private:
   static AdjustmentMatrixType determine_matrix_symmetry(
       const std::vector<AdjustmentArc>& arcs, size_t region_count);
+
+  void read_arcs(CSVReader&, const std::vector<std::string>&);
 
   size_t _region_count;
   AdjustmentMatrixType _type;

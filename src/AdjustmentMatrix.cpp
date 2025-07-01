@@ -50,15 +50,8 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   return check_duplicates(arcs) && (decreasing != equal);
 }
 
-/*
- * Tasks:
- *  - Load the CSV file
- *  - For each row, make an "arc", a tuple of (from, to, distance)
- *  - After loading the csv, check if it is symmetric or not
- *  - setup the _real_ matrix based on that determination
- */
-AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
-                                   const std::vector<std::string>& area_names) {
+void AdjustmentMatrix::read_arcs(CSVReader& reader,
+                                 const std::vector<std::string>& area_names) {
   _region_count = area_names.size();
   auto reverse_area_name_map =
       area_names | std::views::enumerate
@@ -67,8 +60,6 @@ AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
                                 static_cast<size_t>(std::get<0>(a)));
         })
       | std::ranges::to<std::unordered_map>();
-
-  CSVReader reader(std::move(matstream));
 
   constexpr auto from_key = "from"sv;
   constexpr auto to_key = "to"sv;
@@ -81,10 +72,36 @@ AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
                      .to = reverse_area_name_map.at(to),
                      .dist = row.get<double>(dist_key)});
   }
+
   std::sort(
       _arcs.begin(), _arcs.end(), [](const auto& a, const auto& b) -> bool {
         return a.from < b.from || (a.from == b.from && a.to < b.to);
       });
+}
+
+AdjustmentMatrix::AdjustmentMatrix(const std::filesystem::path& filename,
+                                   const std::vector<std::string>& area_names) {
+  CSVReader reader(filename);
+  read_arcs(reader, area_names);
+
+  _type = determine_matrix_symmetry(_arcs, area_names.size());
+  if (_type == AdjustmentMatrixType::invalid) {
+    throw std::runtime_error{"Adjustment matrix is invalid"};
+  }
+}
+
+/*
+ * Tasks:
+ *  - Load the CSV file
+ *  - For each row, make an "arc", a tuple of (from, to, distance)
+ *  - After loading the csv, check if it is symmetric or not
+ *  - setup the _real_ matrix based on that determination
+ */
+AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
+                                   const std::vector<std::string>& area_names) {
+  CSVReader reader(std::move(matstream));
+  read_arcs(reader, area_names);
+
   _type = determine_matrix_symmetry(_arcs, _region_count);
   if (_type == AdjustmentMatrixType::invalid) {
     throw std::runtime_error{"Adjustment matrix is invalid"};
