@@ -146,16 +146,19 @@ class Node {
   void assignId();
   auto getNodeLabel() const -> std::string;
 
-  void assignIncludedAreas(Range fixed_dist);
-  void assignExcludedAreas(Range fixed_dist);
+  void assignIncludedAreas(RangeMask fixed_dist);
+  void assignExcludedAreas(RangeMask fixed_dist);
   void assignFixedDist(Range fixed_dist);
 
   auto getFixedDist() const -> Option<Range>;
 
-  auto getIncludedAreas() const -> Option<Range>;
-  auto getExcludedAreas() const -> Option<Range>;
+  auto getIncludedAreas() const -> Option<RangeMask>;
+  auto getExcludedAreas() const -> Option<RangeMask>;
+  auto getIncludeAreasMask(const Workspace &ws) const -> RangeMask;
+  auto getExcludeAreasMask(const Workspace &ws) const -> RangeMask;
 
   void setPeriodSegments(const PeriodTimes &periods);
+  auto getSplitPeriodIndex() const -> size_t;
 
   void applyCB(const std::function<void(Node &)> &func);
 
@@ -196,7 +199,7 @@ class Node {
       -> std::shared_ptr<ExpmOperation>;
 
   double _branch_length;  // branch length
-  double _height;         // could be from tip or from root
+  double _height;
 
   size_t _id;
 

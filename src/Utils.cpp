@@ -10,6 +10,7 @@
 #include "Utils.hpp"
 
 #include <array>
+#include <ranges>
 
 #include "Common.hpp"
 
@@ -45,6 +46,21 @@ auto lagrange_convert_dist_to_list(Range dist,
   for (size_t i = 0; i < states; ++i) {
     if (lagrange_bextr(dist, i) != 0u) { ret.push_back(*itr); }
     itr++;
+  }
+  return ret;
+}
+
+auto lagrange_convert_list_to_dist(const std::vector<std::string> &dist,
+                                   const std::vector<std::string> &names)
+    -> Range {
+  Range ret = 0;
+  for (const auto &area : dist) {
+    for (const auto &[i, n] : std::views::enumerate(names)) {
+      if (area == n) {
+        ret |= 1ULL << i;
+        break;
+      }
+    }
   }
   return ret;
 }
@@ -131,7 +147,7 @@ auto convert_dist_string_to_dist(const std::string &dist,
   for (start = dist.begin(), end = dist.begin(); end != dist.end(); end++) {
     if (*end != '_') { continue; }
 
-    std::string region_name(start, end - 1);
+    std::string_view region_name(start, end - 1);
     end++;
     start = end;
     for (size_t i = 0; i < names.size(); ++i) {

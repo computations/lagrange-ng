@@ -415,10 +415,10 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
         ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
 
+      size_t i = lagrange_fast_log2(source_dist ^ dest_dist) - 1;
       /* Source is "gaining" a region, so we add */
       if (source_dist < dest_dist && source_dist != 0) {
         double sum = 0.0;
-        size_t i = lagrange_fast_log2(source_dist ^ dest_dist) - 1;
         for (size_t j = 0; j < ws->regions(); ++j) {
           sum += (lagrange_bextr(source_dist, j) != 0U)
                      ? period.getDispersionRate(i, j)
@@ -431,7 +431,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
       /* Otherwise, source is loosing a region, so we just set the value */
       else if (source_dist != 0) {
         rm[ws->computeMatrixIndex(source_index, dest_index)] =
-            period.getExtinctionRate();
+            period.getExtinctionRate(i);
       }
     }
   }
@@ -953,8 +953,8 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
                    ws->CLVScalar(_rbranch_clv_index),
                    ws->CLVScalar(_parent_clv_index),
                    _fixed_dist,
-                   _excl_area_mask.get(0),
-                   _incl_area_mask.get(0));
+                   _excl_area_mask,
+                   _incl_area_mask);
 
   assert(check_for_errors(ws));
 
@@ -1038,8 +1038,8 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
                              ws->CLVScalar(_rtop_clv_index),
                              ws->CLVScalar(_bot_clv_index),
                              _fixed_dist,
-                             _excl_area_mask.get(0),
-                             _incl_area_mask.get(0));
+                             _excl_area_mask,
+                             _incl_area_mask);
 
     bool valid = false;
     for (size_t i = 0; i < ws->CLVSize(); ++i) {

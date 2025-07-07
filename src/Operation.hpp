@@ -483,8 +483,8 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
   Option<Range> _fixed_dist;
-  Option<Range> _excl_area_mask;
-  Option<Range> _incl_area_mask;
+  RangeMask _excl_area_mask = 0;
+  RangeMask _incl_area_mask = 0;
 
   std::mutex _lock;
   ClockTick _last_execution = 0;
@@ -601,8 +601,8 @@ class ReverseSplitOperation {
   std::shared_ptr<DispersionOperation> _branch_op;
 
   Option<Range> _fixed_dist;
-  Option<Range> _incl_area_mask;
-  Option<Range> _excl_area_mask;
+  RangeMask _incl_area_mask = 0;
+  RangeMask _excl_area_mask = 0;
 
   std::mutex _lock;
   ClockTick _last_execution = 0;

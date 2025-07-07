@@ -144,6 +144,10 @@ auto lagrange_convert_dist_to_list(Range dist,
                                    const std::vector<std::string> &names)
     -> std::vector<std::string>;
 
+auto lagrange_convert_list_to_dist(const std::vector<std::string> &dist,
+                                   const std::vector<std::string> &names)
+    -> Range;
+
 auto get_file_extension(const std::string &filename) -> std::string;
 
 template <typename... Ts>
@@ -164,7 +168,7 @@ class Option {
   explicit Option(const T &val) : _value{val}, _has_value{true} {}
 
   Option(const Option<T> &o) = default;
-  Option& operator=(const Option<T> &o) = default;
+  Option &operator=(const Option<T> &o) = default;
 
   auto operator=(const T &v) -> Option<T> & {
     _value = v;
@@ -182,9 +186,9 @@ class Option {
     throw std::runtime_error{"lagrange_option_t has no value when used"};
   }
 
-  auto get(const T &def) const -> T {
+  auto get(const T &user_default) const -> T {
     if (_has_value) { return _value; }
-    return def;
+    return user_default;
   }
 
   [[nodiscard]] auto hasValue() const -> bool { return _has_value; }

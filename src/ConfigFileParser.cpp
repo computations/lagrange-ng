@@ -1,13 +1,11 @@
 #include "ConfigFileParser.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <functional>
 #include <generator>
 #include <string_view>
 
 #include "ConfigFile.hpp"
-#include "Periods.hpp"
 #include "logger.hpp"
 
 namespace lagrange {

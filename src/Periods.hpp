@@ -8,6 +8,9 @@
 #include <ranges>
 #include <vector>
 
+#include "Common.hpp"
+#include "Utils.hpp"
+
 namespace lagrange {
 
 struct PeriodParams {
@@ -16,12 +19,19 @@ struct PeriodParams {
   double distance_penalty;
   std::shared_ptr<double[]> adjustment_matrix = nullptr;
   size_t regions;
+  RangeMask include_area_mask = 0;
+  RangeMask exclude_area_mask = 0;
 
   auto toString() const -> std::string {
     return std::format("(disp: {}, ext: {})", dispersion_rate, extinction_rate);
   }
 
   auto getDispersionRate(size_t from, size_t to) const -> double {
+    if (exclude_area_mask
+        && (lagrange_bextr(exclude_area_mask, from)
+            || lagrange_bextr(exclude_area_mask, to))) {
+      return 0.0;
+    }
     return dispersion_rate
            * (adjustment_matrix.get() != nullptr
                   ? std::pow(adjustment_matrix[from * regions + to],
@@ -29,7 +39,12 @@ struct PeriodParams {
                   : 1.0);
   }
 
-  inline auto getExtinctionRate() const -> double { return extinction_rate; }
+  inline auto getExtinctionRate(size_t to) const -> double {
+    if (include_area_mask && lagrange_bextr(include_area_mask, to)) {
+      return 0.0;
+    }
+    return extinction_rate;
+  }
 
   void applyParameters(const std::vector<double> &x, size_t &index) {
     dispersion_rate = x[index];

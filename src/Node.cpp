@@ -193,6 +193,16 @@ auto getParentWithNode(const std::shared_ptr<Node> &current,
   return {nullptr};
 }
 
+auto Node::getIncludeAreasMask(const Workspace &ws) const -> RangeMask {
+  auto params = ws.getPeriodParams(getSplitPeriodIndex());
+  return params.include_area_mask | _incl_area_mask.get(0);
+}
+
+auto Node::getExcludeAreasMask(const Workspace &ws) const -> Range {
+  auto params = ws.getPeriodParams(getSplitPeriodIndex());
+  return params.exclude_area_mask | _excl_area_mask.get(0);
+}
+
 auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
                                                 PeriodRateMatrixMap &pm_map,
                                                 BranchProbMatrixMap &bm_map)
@@ -227,13 +237,8 @@ auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
   split_ops.push_back(std::make_shared<SplitOperation>(
       ws.getTopCLV(_id), lchild.second, rchild.second));
 
-  if (_incl_area_mask.hasValue()) {
-    split_ops.back()->setInclAreas(_incl_area_mask.get());
-  }
-
-  if (_excl_area_mask.hasValue()) {
-    split_ops.back()->setExclAreas(_excl_area_mask.get());
-  }
+  split_ops.back()->setInclAreas(getIncludeAreasMask(ws));
+  split_ops.back()->setExclAreas(getExcludeAreasMask(ws));
 
   return {split_ops, generateDispersionOperations(ws, pm_map, bm_map)};
 }
@@ -279,15 +284,13 @@ auto Node::traverseAndGenerateBackwardOperations(Workspace &ws,
         ws.getBot2CLVReverse(_id), ws.getLeftChildCLV(_id), bot_op));
   }
 
-  if (_incl_area_mask.hasValue()) {
-    rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(_incl_area_mask.get());
-    rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(_incl_area_mask.get());
-  }
+  auto incl_areas_mask = getIncludeAreasMask(ws);
+  rsplit_ops[rsplit_ops.size() - 1]->setInclAreas(incl_areas_mask);
+  rsplit_ops[rsplit_ops.size() - 2]->setInclAreas(incl_areas_mask);
 
-  if (_excl_area_mask.hasValue()) {
-    rsplit_ops[rsplit_ops.size() - 1]->setExclAreas(_excl_area_mask.get());
-    rsplit_ops[rsplit_ops.size() - 2]->setExclAreas(_excl_area_mask.get());
-  }
+  auto excl_areas_mask = getExcludeAreasMask(ws);
+  rsplit_ops[rsplit_ops.size() - 1]->setExclAreas(excl_areas_mask);
+  rsplit_ops[rsplit_ops.size() - 2]->setExclAreas(excl_areas_mask);
 
   if (_children[0]->isInternal()) {
     auto child_trav =
@@ -637,6 +640,10 @@ auto Node::getNodeLabel() const -> std::string {
   if (!_mrca.empty()) { return _mrca; }
   if (isTip()) { return getName(); }
   return std::to_string(getNumber());
+}
+
+auto Node::getSplitPeriodIndex() const -> size_t {
+  return (*_periods.begin()).index;
 }
 
 }  // namespace lagrange
