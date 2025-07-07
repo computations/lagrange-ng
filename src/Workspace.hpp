@@ -121,20 +121,6 @@ class Workspace {
     _rate_matrix[index]._last_update = advanceClock();
   }
 
-  /*
-  inline void update_rate_matrix(size_t index, lagrange_matrix_t &&A) {
-    if (index >= _rate_matrix.size()) {
-      throw std::runtime_error{"Rate matrix access out of range when updating"};
-    }
-
-    if (A != _rate_matrix[index]._matrix) {
-      delete[] _rate_matrix[index]._matrix;
-      _rate_matrix[index]._matrix = A;
-    }
-    _rate_matrix[index]._last_update = advance_clock();
-  }
-  */
-
   void updateRateMatrixAndAdvanceClock(size_t i) {
     assert(_reserved);
     _rate_matrix[i]._last_update = advanceClock();
@@ -162,22 +148,6 @@ class Workspace {
 
     return _prob_matrix[index]._last_update = advanceClock();
   }
-
-  /*
-  inline lagrange_clock_tick_t update_prob_matrix(size_t index,
-                                                  lagrange_matrix_t &&A) {
-    if (index >= _prob_matrix.size()) {
-      throw std::runtime_error{"Prob matrix access out of range when updating"};
-    }
-
-    if (A != _prob_matrix[index]._matrix) {
-      delete[] _prob_matrix[index]._matrix;
-      _prob_matrix[index]._matrix = A;
-    }
-
-    return _prob_matrix[index]._last_update = advance_clock();
-  }
-  */
 
   auto lastUpdateProbMatrix(size_t i) -> ClockTick {
     assert(_reserved);
