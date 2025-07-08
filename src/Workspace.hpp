@@ -313,6 +313,8 @@ class Workspace {
     return _periods[period_index];
   }
 
+  void initPeriodParams(const std::vector<PeriodParams> &p) { _periods = p; }
+
   void setPeriodParams(size_t period_index, const PeriodParams &p);
 
   void setPeriodParamsCount(size_t periods) { _periods.resize(periods); }
@@ -373,7 +375,8 @@ class Workspace {
     return count;
   }
 
-  auto makeParameterVector(double rate, double dist) const -> std::vector<double> {
+  auto makeParameterVector(double rate, double dist) const
+      -> std::vector<double> {
     std::vector<double> ret(getOptDimsSize());
     size_t i = 0;
     for (auto p : _periods) {

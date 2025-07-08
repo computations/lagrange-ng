@@ -162,10 +162,14 @@ void Context::applyAdjustmentMatrices(
                                       }));
 }
 
+void Context::setupPeriods(const std::vector<PeriodParams>& period_params) {
+  _workspace->setPeriodParamsCount(period_params.size());
+  _workspace->initPeriodParams(period_params);
+  applyAdjustmentMatrices(period_params);
+}
+
 void Context::init(const std::vector<PeriodParams>& period_params) {
   _workspace->reserve();
-  _workspace->setPeriodParamsCount(period_params.size());
-  applyAdjustmentMatrices(period_params);
   updateRates(period_params);
 
   if (!_reverse_operations.empty()) {

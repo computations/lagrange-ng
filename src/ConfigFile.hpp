@@ -85,7 +85,7 @@ class ConfigFile {
     bool OllKorrect = true;
     read_period_matrix_files();
     OllKorrect &= setup_periods();
-    finalize_periods(_region_count.value_or(0), _max_areas.value_or(0));
+    finalize_periods(region_count(), max_areas());
     return OllKorrect;
   }
 
@@ -301,14 +301,14 @@ class ConfigFile {
                                          ? p.adjustment_matrix->to_matrix()
                                          : nullptr,
                 .regions = _region_count.value_or(0),
-                .include_area_mask = p.include_areas
-                                         ? lagrange_convert_list_to_dist(
-                                               *p.include_areas, area_names())
-                                         : 0,
-                .exclude_area_mask = p.exclude_areas
-                                         ? lagrange_convert_list_to_dist(
-                                               *p.exclude_areas, area_names())
-                                         : 0,
+                .include_area_mask =
+                    p.include_areas
+                        ? convert_dist_binary_string_to_dist(*p.include_areas)
+                        : 0,
+                .exclude_area_mask =
+                    p.exclude_areas
+                        ? convert_dist_binary_string_to_dist(*p.exclude_areas)
+                        : 0,
             };
           })
         | std::ranges::to<std::vector<PeriodParams>>();

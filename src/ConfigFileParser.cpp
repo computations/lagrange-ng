@@ -98,7 +98,7 @@ auto ConfigFileParser::parse_assignment(ToLowerOption l)
 
 ParsingResult<void> ConfigFileParser::parse_period_include_statement(
     PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<std::vector<std::string>>(period_map);
+  auto res = parse_and_check_id_map<std::string>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
 
@@ -110,7 +110,7 @@ ParsingResult<void> ConfigFileParser::parse_period_include_statement(
 
 ParsingResult<void> ConfigFileParser::parse_period_exclude_statement(
     PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<std::vector<std::string>>(period_map);
+  auto res = parse_and_check_id_map<std::string>(period_map);
 
   if (!res) { return std::unexpected{res.error()}; }
 

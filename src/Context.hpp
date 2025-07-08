@@ -69,6 +69,7 @@ class Context {
   void updateRates(const std::vector<PeriodParams>& p);
   void updateRates(const std::vector<double>& x);
   void applyAdjustmentMatrices(const std::vector<PeriodParams>& period_params);
+  void setupPeriods(const std::vector<PeriodParams>& period_params);
   void init(const std::vector<PeriodParams>& period_params);
 
   [[nodiscard]] auto stateCount() const -> size_t {

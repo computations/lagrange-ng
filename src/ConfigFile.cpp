@@ -78,7 +78,9 @@ auto ConfigFile::has_max_areas() const -> bool {
   return _max_areas.has_value();
 }
 
-auto ConfigFile::max_areas() const -> size_t { return _max_areas.value(); }
+auto ConfigFile::max_areas() const -> size_t {
+  return _max_areas ? _max_areas.value() : region_count();
+}
 
 void ConfigFile::max_areas(size_t m) { _max_areas = m; }
 

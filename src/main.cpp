@@ -113,6 +113,7 @@ static void setup_context(Context &context,
                           const Alignment &data,
                           const ConfigFile &config) {
   context.registerLHGoal();
+  context.setupPeriods(config.period_params());
 
   if (config.compute_all_states() || config.compute_all_splits()) {
     context.registerStateLHGoal();

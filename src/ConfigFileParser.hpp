@@ -58,8 +58,8 @@ struct PeriodConfig {
   double start = 0.0;
   double end = std::numeric_limits<double>::infinity();
 
-  std::optional<std::vector<std::string>> include_areas;
-  std::optional<std::vector<std::string>> exclude_areas;
+  std::optional<std::string> include_areas;
+  std::optional<std::string> exclude_areas;
 };
 
 using PeriodConfigMap = std::unordered_map<std::string, PeriodConfig>;
