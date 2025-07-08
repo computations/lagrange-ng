@@ -191,7 +191,7 @@ constexpr auto weighted_combine_check_happy_path(
     const Option<Range> &fixed_dist,
     Range excl_area_mask,
     Range incl_area_mask) {
-  return (states == max_areas) && (!fixed_dist.hasValue())
+  return (states == (1ul << max_areas)) && (!fixed_dist.hasValue())
          && (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 
@@ -406,6 +406,7 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
        source_dist =
            next_dist(source_dist, static_cast<uint32_t>(ws->maxAreas())),
       ++source_index) {
+    if (source_dist == 0) { continue; }
     size_t dest_index = 0;
     Range dest_dist = 0;
 
