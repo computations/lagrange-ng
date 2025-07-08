@@ -397,7 +397,15 @@ SetCLVStatus Node::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, Range> &distrib_data) const {
   if (_children.empty()) {
-    auto res = ws.setTipCLV(ws.getTopCLV(_id), distrib_data.at(_label));
+    auto range = distrib_data.at(_label);
+    if ((range & getExcludeAreasMask(ws))
+        || (~range & getIncludeAreasMask(ws))) {
+      LOG_WARNING(
+          "The range data for taxa {} is not compatible with the region area "
+          "masks",
+          _label);
+    }
+    auto res = ws.setTipCLV(ws.getTopCLV(_id), range);
     if (res == SetCLVStatus::failed) {
       LOG(ERROR, "The range data for the taxa {} is invalid", _label);
     } else if (res == SetCLVStatus::ambiguous) {
