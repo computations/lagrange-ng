@@ -142,7 +142,7 @@ auto Tree::traversePreorderInternalNodesOnlyNumbers() const
   return ret;
 }
 
-SetCLVStatus Tree::assignTipData(
+SetCLVResult Tree::assignTipData(
     Workspace &ws, const std::unordered_map<std::string, Range> &dist_data) {
   return _root->assignTipData(ws, dist_data);
 }

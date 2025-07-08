@@ -136,7 +136,7 @@ class Node {
   void applyPreorderInternalOnly(const std::function<void(Node &)> &func);
   void applyPreorder(const std::function<void(Node &)> &func);
 
-  SetCLVStatus assignTipData(
+  SetCLVResult assignTipData(
       Workspace &ws,
       const std::unordered_map<std::string, Range> &distrib_data) const;
 

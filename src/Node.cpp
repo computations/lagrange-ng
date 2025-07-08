@@ -393,7 +393,7 @@ void Node::traverseAndGenerateBackwardNodeNumbersInternalOnly(
   }
 }
 
-SetCLVStatus Node::assignTipData(
+SetCLVResult Node::assignTipData(
     Workspace &ws,
     const std::unordered_map<std::string, Range> &distrib_data) const {
   if (_children.empty()) {
@@ -406,7 +406,7 @@ SetCLVStatus Node::assignTipData(
           _label);
     }
     auto res = ws.setTipCLV(ws.getTopCLV(_id), range);
-    if (res == SetCLVStatus::failed) {
+    if (!res) {
       LOG(ERROR, "The range data for the taxa {} is invalid", _label);
     } else if (res == SetCLVStatus::ambiguous) {
       LOG(WARNING,
@@ -416,11 +416,21 @@ SetCLVStatus Node::assignTipData(
     }
     return res;
   } else {
-    SetCLVStatus good = SetCLVStatus::definite;
+    bool good = true;
+    SetCLVStatus status = SetCLVStatus::definite;
     for (const auto &c : _children) {
-      good &= c->assignTipData(ws, distrib_data);
+      auto res = c->assignTipData(ws, distrib_data);
+      if (!res) {
+        good &= false;
+      } else if (*res == SetCLVStatus::ambiguous) {
+        status = SetCLVStatus::ambiguous;
+      }
     }
-    return good;
+    if (good) {
+      return status;
+    } else {
+      return std::unexpected{SetCLVError::failed};
+    }
   }
 }
 

@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <expected>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -20,8 +21,11 @@
 
 namespace lagrange {
 
-enum class SetCLVStatus { definite, ambiguous, failed };
+enum class SetCLVStatus { definite, ambiguous };
+enum class SetCLVError { failed };
 SetCLVStatus &operator&=(SetCLVStatus &lhs, const SetCLVStatus &rhs);
+
+using SetCLVResult = std::expected<SetCLVStatus, SetCLVError>;
 
 struct NodeReservation {
   NodeReservation() :
@@ -234,8 +238,8 @@ class Workspace {
 
   void registerChildrenCLV(size_t node_id);
 
-  SetCLVStatus setTipCLVAmbigious(size_t index, Range clv_index);
-  SetCLVStatus setTipCLV(size_t index, Range dist);
+  SetCLVResult setTipCLVAmbigious(size_t index, Range clv_index);
+  SetCLVResult setTipCLV(size_t index, Range dist);
 
   void registerTopCLVReverse(size_t node_id) {
     _node_reservations[node_id]._top_rclv = registerCLV();

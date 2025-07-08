@@ -48,7 +48,7 @@ class Context {
       -> std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>>;
   [[nodiscard]] auto getSplitResults() const -> SplitReturnList;
 
-  [[nodiscard]] SetCLVStatus registerTipClvs(
+  [[nodiscard]] SetCLVResult registerTipClvs(
       const std::unordered_map<std::string, Range>& dist_data);
 
   void optimizeAndComputeValues(WorkerState& ts,

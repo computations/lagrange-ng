@@ -184,7 +184,7 @@ void Context::init(const std::vector<PeriodParams>& period_params) {
   }
 }
 
-SetCLVStatus Context::registerTipClvs(
+SetCLVResult Context::registerTipClvs(
     const std::unordered_map<std::string, Range>& dist_data) {
   if (_forward_operations.empty()) {
     throw std::runtime_error{
@@ -192,7 +192,7 @@ SetCLVStatus Context::registerTipClvs(
   }
   if (!_workspace->reserved()) { _workspace->reserve(); }
   auto res = _tree->assignTipData(*_workspace, dist_data);
-  if (res == SetCLVStatus::failed) { LOG(ERROR, "Failed to assign data"); }
+  if (!res) { LOG(ERROR, "Failed to assign data"); }
   return res;
 }
 

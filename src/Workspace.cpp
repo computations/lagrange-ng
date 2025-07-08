@@ -13,15 +13,6 @@
 
 namespace lagrange {
 
-SetCLVStatus &operator&=(SetCLVStatus &lhs, const SetCLVStatus &rhs) {
-  if (rhs == SetCLVStatus::failed) { lhs = rhs; }
-  if (rhs == SetCLVStatus::ambiguous && lhs != SetCLVStatus::failed) {
-    lhs = rhs;
-  }
-
-  return lhs;
-}
-
 Workspace::~Workspace() {
   for (auto &res : _rate_matrix) { delete[] res._matrix; }
 
@@ -50,7 +41,7 @@ void Workspace::registerChildrenCLV(size_t node_id) {
   _node_reservations[node_id]._bot2_clv = registerCLV();
 }
 
-SetCLVStatus Workspace::setTipCLVAmbigious(size_t index, Range clv_index) {
+SetCLVResult Workspace::setTipCLVAmbigious(size_t index, Range clv_index) {
   size_t cur_index;
   Range cur_dist;
   size_t set_bit_target = lagrange_fast_log2(clv_index);
@@ -67,7 +58,7 @@ SetCLVStatus Workspace::setTipCLVAmbigious(size_t index, Range clv_index) {
   return SetCLVStatus::ambiguous;
 }
 
-SetCLVStatus Workspace::setTipCLV(size_t index, Range clv_index) {
+SetCLVResult Workspace::setTipCLV(size_t index, Range clv_index) {
   if (lagrange_popcount(clv_index) > maxAreas()) {
     return setTipCLVAmbigious(index, clv_index);
   }
