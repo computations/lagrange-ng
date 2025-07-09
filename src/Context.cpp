@@ -52,12 +52,9 @@ auto Context::makeStateGoalCB() -> std::function<void(Node&)> {
                                 _workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
                                 _workspace->getRightChildCLV(n.getId()));
-    if (n.getIncludedAreas().hasValue()) {
-      _state_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
-    }
-    if (n.getExcludedAreas().hasValue()) {
-      _state_lh_goal.back().setExclAreas(n.getExcludedAreas().get());
-    }
+
+    _state_lh_goal.back().setInclAreas(n.getIncludeAreasMask(*_workspace));
+    _state_lh_goal.back().setExclAreas(n.getExcludeAreasMask(*_workspace));
     if (n.getFixedDist().hasValue()) {
       _state_lh_goal.back().fixDist(n.getFixedDist().get());
     }
@@ -71,12 +68,8 @@ auto Context::makeSplitGoalCB() -> std::function<void(Node&)> {
                                 _workspace->getTopCLVReverse(n.getId()),
                                 _workspace->getLeftChildCLV(n.getId()),
                                 _workspace->getRightChildCLV(n.getId()));
-    if (n.getIncludedAreas().hasValue()) {
-      _split_lh_goal.back().setInclAreas(n.getIncludedAreas().get());
-    }
-    if (n.getExcludedAreas().hasValue()) {
-      _split_lh_goal.back().setExclAreas(n.getExcludedAreas().get());
-    }
+    _split_lh_goal.back().setInclAreas(n.getIncludeAreasMask(*_workspace));
+    _split_lh_goal.back().setExclAreas(n.getExcludeAreasMask(*_workspace));
     if (n.getFixedDist().hasValue()) {
       _split_lh_goal.back().fixDist(n.getFixedDist().get());
     }

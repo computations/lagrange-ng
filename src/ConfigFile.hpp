@@ -117,6 +117,7 @@ class ConfigFile {
   void split_nodes(const std::unordered_set<MRCALabel>&);
 
   auto period_count() const -> size_t;
+  auto period_params() -> std::vector<PeriodParams>;
   auto period_params() const -> std::vector<PeriodParams>;
   void period_params(double, double);
 
@@ -324,19 +325,14 @@ class ConfigFile {
     return OllKorrect;
   }
 
-  [[nodiscard]] bool setup_regions() {
-    if (_area_names.empty()) { return false; }
-    _region_count = _area_names.size();
-    return true;
-  }
+  void setup_regions() { _region_count = _area_names.size(); }
 
   void finalize(bool testing = false) {
     if (!testing) { setup_log(); }
-    bool ok = setup_regions();
+    setup_regions();
     set_threads();
     set_mrcas_for_fossils();
     check_prefix();
-    ok &= finalize_periods();
     validate_and_make_prefix();
   }
 

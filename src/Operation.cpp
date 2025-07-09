@@ -191,7 +191,7 @@ constexpr auto weighted_combine_check_happy_path(
     const Option<Range> &fixed_dist,
     Range excl_area_mask,
     Range incl_area_mask) {
-  return (states == (1ul << max_areas)) && (!fixed_dist.hasValue())
+  return (states == (max_areas)) && (!fixed_dist.hasValue())
          && (excl_area_mask == 0) && (incl_area_mask == 0);
 }
 

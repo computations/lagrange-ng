@@ -148,14 +148,32 @@ void ConfigFile::split_nodes(const std::unordered_set<MRCALabel>& labels) {
 
 auto ConfigFile::period_count() const -> size_t { return _period_map.size(); }
 
-auto ConfigFile::period_params() const -> std::vector<PeriodParams> {
-  if (_period_params.empty()) {
+auto ConfigFile::period_params() -> std::vector<PeriodParams> {
+  if (_period_params.empty() && _period_map.empty()) {
     return {1,
             {.dispersion_rate = _dispersion,
              .extinction_rate = _extinction,
              .distance_penalty = 1.0,
              .adjustment_matrix = nullptr,
              .regions = *_region_count}};
+  } else if (!_period_map.empty()) {
+    if (!finalize_periods()) {
+      throw std::runtime_error{"Failed to setup periods"};
+    }
+  }
+  return _period_params;
+}
+
+auto ConfigFile::period_params() const -> std::vector<PeriodParams> {
+  if (_period_params.empty() && _period_map.empty()) {
+    return {1,
+            {.dispersion_rate = _dispersion,
+             .extinction_rate = _extinction,
+             .distance_penalty = 1.0,
+             .adjustment_matrix = nullptr,
+             .regions = *_region_count}};
+  } else if (_period_params.empty() && !_period_map.empty()) {
+    throw std::runtime_error{"Failed to setup periods"};
   }
   return _period_params;
 }

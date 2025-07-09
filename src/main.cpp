@@ -263,6 +263,8 @@ auto main(int argc, char *argv[]) -> int {
   LOG(INFO, "Checking data...");
   check_alignment_against_trees(data, intrees);
 
+  logger::LOG_ASSERT(config.finalize_periods(), "Failed to setup periods");
+
   if (data.region_count == 0) {
     throw std::runtime_error{"Region count cannot be zero"};
   }

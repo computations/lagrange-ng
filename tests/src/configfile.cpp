@@ -133,6 +133,7 @@ TEST_F(ConfigFileTest, lines) {
 
   for (auto line : success_lines) {
     std::istringstream iss{line};
-    EXPECT_NO_THROW(ConfigFile(iss, true));
+    //EXPECT_NO_THROW(ConfigFile(iss, true));
+    (ConfigFile(iss, true));
   }
 }
