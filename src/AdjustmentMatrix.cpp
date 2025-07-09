@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "CSV.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -85,9 +86,8 @@ AdjustmentMatrix::AdjustmentMatrix(const std::filesystem::path& filename,
   read_arcs(reader, area_names);
 
   _type = determine_matrix_symmetry(_arcs, area_names.size());
-  if (_type == AdjustmentMatrixType::invalid) {
-    throw std::runtime_error{"Adjustment matrix is invalid"};
-  }
+  LOG_ASSERT(_type != AdjustmentMatrixType::invalid,
+             "Adjustment matrix is invalid");
 }
 
 /*
@@ -103,9 +103,8 @@ AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
   read_arcs(reader, area_names);
 
   _type = determine_matrix_symmetry(_arcs, _region_count);
-  if (_type == AdjustmentMatrixType::invalid) {
-    throw std::runtime_error{"Adjustment matrix is invalid"};
-  }
+  LOG_ASSERT(_type != AdjustmentMatrixType::invalid,
+             "Adjustment matrix is invalid");
 }
 
 std::shared_ptr<double[]> AdjustmentMatrix::to_matrix() const {
