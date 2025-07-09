@@ -29,8 +29,8 @@ FetchContent_Declare(nlohmann_json
 )
 
 FetchContent_Declare(logger
-  URL https://github.com/computations/logger/archive/refs/tags/v0.4.1.tar.gz
-  URL_HASH SHA256=0b5d13d271627585b1767fe8fdd9455ee3e0a773eec43512261dbe7b86a572e0
+  URL https://github.com/computations/logger/archive/refs/tags/v0.4.2.2.tar.gz
+  URL_HASH SHA256=771e56674b73d013825273c300e19417f3b33944ce94589529cca3ebce581c7f
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )

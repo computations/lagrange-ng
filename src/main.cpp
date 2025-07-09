@@ -23,7 +23,6 @@
 #include "Context.hpp"
 #include "IO.hpp"
 #include "TreeReader.hpp"
-#include "Utils.hpp"
 #include "WorkerState.hpp"
 #include "Workspace.hpp"
 
@@ -50,7 +49,7 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
         context.useArnoldi(true, false);
         break;
       default:
-        throw std::runtime_error{"Unknown Expm Mode"};
+        LOG_ASSERT(false, "Unknown Expm Mode");
     }
   } else {
     if (config.region_count() > KRYLOV_RANGE_COUNT_THRESHOLD) {
@@ -102,11 +101,8 @@ static void assign_tip_data(Context &context,
 
   if (clv_tip_res == SetCLVStatus::definite) { return; }
 
-  if (config.allow_ambigious() && clv_tip_res == SetCLVStatus::ambiguous) {
-    return;
-  }
-  LOG(ERROR, "Failed to set data, refusing to run");
-  throw std::runtime_error{"Failed to set data"};
+  LOG_ASSERT(config.allow_ambigious() && clv_tip_res == SetCLVStatus::ambiguous,
+             "Failed to set data, refusing to run");
 }
 
 static void setup_context(Context &context,
@@ -195,10 +191,9 @@ static auto read_tree_file_line_by_line(const std::filesystem::path &filename)
     -> std::vector<std::shared_ptr<Tree>> {
   std::vector<std::shared_ptr<Tree>> ret;
 
-  if (!std::filesystem::exists(filename)) {
-    throw std::runtime_error{"Failed to find the tree file "
-                             + filename.string()};
-  }
+  LOG_ASSERT(std::filesystem::exists(filename),
+             "Failed to find the tree file {}",
+             filename.c_str());
 
   std::ifstream ifs(filename);
   std::string temp;
@@ -263,11 +258,8 @@ auto main(int argc, char *argv[]) -> int {
   LOG(INFO, "Checking data...");
   check_alignment_against_trees(data, intrees);
 
-  logger::LOG_ASSERT(config.finalize_periods(), "Failed to setup periods");
-
-  if (data.region_count == 0) {
-    throw std::runtime_error{"Region count cannot be zero"};
-  }
+  LOG_ASSERT(config.finalize_periods(), "Failed to setup periods");
+  LOG_ASSERT(data.region_count != 0, "Region count cannot be zero");
 
   LOG(INFO, "Running analysis...");
 
