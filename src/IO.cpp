@@ -197,7 +197,10 @@ auto produce_json_file(const std::shared_ptr<Tree> &tree,
   for (size_t i = 0; i < params.size(); ++i) {
     params_json[i]["dispersion"] = params[i].dispersion_rate;
     params_json[i]["extinction"] = params[i].extinction_rate;
-    params_json[i]["distance-penalty"] = params[i].distance_penalty;
+    params_json[i]["distance-penalty"] =
+        params[i].adjustment_matrix != nullptr
+            ? params[i].distance_penalty
+            : std::numeric_limits<double>::quiet_NaN();
   }
   root_json["params"] = params_json;
 
@@ -328,7 +331,9 @@ void write_csv_periods_file(const ConfigFile &config, const Context &context) {
         std::to_string(last + seg.duration),
         std::to_string(period.dispersion_rate),
         std::to_string(period.extinction_rate),
-        std::to_string(period.distance_penalty),
+        std::to_string(period.adjustment_matrix != nullptr
+                           ? period.distance_penalty
+                           : std::numeric_limits<double>::quiet_NaN()),
     });
     last += seg.duration;
     ++p;
