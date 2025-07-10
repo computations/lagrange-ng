@@ -126,9 +126,9 @@ ParsingResult<void> ConfigFileParser::parse_period_start_statement(
 
   if (!res) { return std::unexpected{res.error()}; }
 
-  auto [period_name, list] = *res;
+  auto [period_name, start_time] = *res;
 
-  period_map.at(period_name).start = list;
+  period_map.at(period_name).start = start_time;
   return {};
 }
 
@@ -138,9 +138,9 @@ ParsingResult<void> ConfigFileParser::parse_period_end_statement(
 
   if (!res) { return std::unexpected{res.error()}; }
 
-  auto [period_name, list] = *res;
+  auto [period_name, end_time] = *res;
 
-  period_map.at(period_name).end = list;
+  period_map.at(period_name).end = end_time;
   return {};
 }
 
