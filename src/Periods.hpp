@@ -35,7 +35,7 @@ struct PeriodParams {
     return dispersion_rate
            * (adjustment_matrix.get() != nullptr
                   ? std::pow(adjustment_matrix[from * regions + to],
-                             -distance_penalty)
+                             distance_penalty)
                   : 1.0);
   }
 
