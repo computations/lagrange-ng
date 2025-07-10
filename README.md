@@ -28,7 +28,7 @@ as a library via `apt` or `brew`. If this fails to fix the issue, please let me 
 
 # Running
 
-In order to run Lagrange-NG, three files are needed:
+In order to run Lagrange-NG, three files are required:
 
 1. A phylogeny in newick format with branch lengths specified in time,
 2. An absence presence matrix for the ranges of each of the taxa in the phylogeny as a phylip file and,
@@ -168,6 +168,23 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 - `mrca`: Specify an interior node by a list of tips. The node specified is the MRCA of those tips. For example, when
   using the tree `(a,(b, c)1)2`, `mrca foo = b c` will refer to node `1`, and `mrca bar = a c` will refer to node `2`.
   Use this option to specify interior nodes for other options.
+- `period`: Specify and modify periods. None of the below options are required,
+  except that periods cannot be overlapping. As the default start and end times
+  for a period are `0` and `inf`, this means that if the control file specifies
+  more than one period, the boundry between them must be defined with start and
+  end times. Please see the section on periods for an example.
+  - `<VALUE>`: declare a period with the name `<VALUE>`. Periods must be
+  declared before they are modified.
+  - `start`: The start time for the period. If not specified, defaults to `0.0`.
+  - `end`: The end time for the period. If not specified, defaults to `inf`.
+  - `matrix`: Adjustment matrix filename for the period. Used to specify
+    region connectivities. If specified, the parameter `distance-penalty` will
+    be inferred, which estimates the "strength" of the connectivity. Specified
+    as a CSV file. Please see the section periods for details
+  - `include`: A range mask to define which areas _must_ be included for this
+    period. Given as a binary string.
+  - `exclude`: A range mask to define which areas will be excluded for this
+    period. Given as a binary string.
 - `fossil`: Specify constraints on inner nodes. There are currently four different modes supported:
   - `include`: Constrain a node to contain at least the areas specified. For 
     example, `fossil include foo = 011` will constrain the node `foo` 
@@ -208,6 +225,138 @@ treefile = 'My Super Awesome Tree.nwk`
 ```
 to be able to parse the tree. This holds true for taxa names in the `mrca`
 option, `mrca` names, user specified region names, and filenames.
+
+## Periods
+
+At times, researchers might want to model the changing geography of a region
+over the course of the phylogenetic tree. For this purpose, there are
+**periods**. Periods break up the time along the tree, and give each section of
+time:
+
+- independent extinction and dispersion parameters;
+- independent connectivities and distance penalties; and
+- period wide area inclusion and exclusion masks.
+
+To specify a period and all of the possible options, Lagrange-NG uses a "declare
+and use" model. That means that periods must be declared before modification.
+For example, the following period statements are valid.
+
+```ini
+period early
+period early exclude = 010
+```
+
+But the following are not, because the period is "used" before it is "declared".
+
+
+```ini
+period late matrix = late_distance.csv
+period late
+```
+
+As mentioned above, each period has several parameters that can be modified.
+These are
+
+- `start` and `end` times;
+- `include` and `exclude` masks; and
+- a `matrix` csv file.example/periods.3.periods.csv
+
+Below is an example showing all of these being set.
+
+```ini
+period early
+period early end = 1.0
+period early matrix = early_matrix.csv
+
+period middle
+period middle start = 1.0
+period middle end = 2.0
+period middle include = 100
+
+period late
+period late start = 2.0
+period exclude = 010
+```
+
+Here, we declare three periods `early`, `middle`, and `late`. Period `early`
+will be used for range evolution between `0.0` and `1.0` because the default
+start time is `0.0`. In addition `early` has a connectivity matrix which is
+specified in the file `early_matrix.csv`. Period `middle` runs from times `1.0`
+to `2.0`, and requires that all ranges considered will include the first area.
+Finally, the `late` period starts at time `2.0`, and has an unbounded end time.
+Additionally, `late` has an exclude mask which will exclude any range which
+includes the second area.
+
+Important: Period times are measured _backwards_ through time, where `0.0`
+indicates the present.
+
+### Example
+
+```ini
+period early
+period early exclude = 010
+period early end = 0.2
+
+period middle
+period middle start = 0.2
+period middle end = 0.4
+
+period late
+period late start = 0.4
+period late exclude = 010
+```
+
+### Adjustment Matrices
+
+Adjustment matrices are given as CSV files, with each row specifying an
+adjustment between two areas. For two areas `A` and `B`, the adjustment value
+between them represents the ease at which a population can spread to `B`
+when starting from `A`. Adjustments can take on any value (including negative
+values), but I suggest that only positive values are used. Adjustment values
+greater than `1.0` indicate that the link between the two areas is "easy", and
+values less than `1.0` indicate the link is "difficult".
+
+While performing inference, Lagrange-NG will modify the per region dispersion
+rate based on the adjustment values in the matrix. The contribution of the link
+between `A` and `B` to the dispersion rate is `Adj(A,B)^x` where `x` is the
+distance penalty. The distance penalty is an inferred value, and can be positive
+or negative. If the distance penalty is above `1.0`, adjustment values which are
+"easy" become more easy, and adjustment values which are "difficult" become more
+difficult. When the distance penalty is below `-1.0`, the opposite is true. As
+this is the case, I would suggest normalizing the values such that they are all
+either greater than or equal to `1.0` or between `0.0` and `1.0`.
+
+Adjustment matrices are given as CSV files with a header. Below is an example of
+a (symmetric) adjustment matrix. 
+
+```csv
+from, to, dist
+A, B, 0.2
+A, C, 0.4
+B, C, 0.1
+```
+
+Adjustment matrices can be specified as either symmetric, or non-symmetric. In
+the symmetric case, like the matrix above, the adjustment between `A` and `B` is
+assumed to be symmetric. When specifying a symmetric matrix, the form provided
+should be in "upper triangular" form. That is, for `n` areas, the matrix should
+have `n-1` rows where the first area is in the `from` column, and it should have
+`n-2` rows where the second area is in the `from` column, and so on. The rows do
+not have to be in any order however.
+
+In the non-symmetric case, the rows can be in any order, and they are not
+subject to any constraints. For example, below is a non-symmetric adjustment
+matrix where the rows have no particular order.
+
+```csv
+from, to, dist
+A, B, 0.2
+A, C, 0.4
+C, A, 0.3
+C, B, 0.3
+B, C, 0.1
+B, A, 0.3
+```
 
 ## Expm Modes
 

@@ -242,14 +242,27 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                         ConfigFile& config) -> ParsingResult<void> {
               return p.parse_period_statement(config._period_map);
             }},
-            ._name{"Period statement"},
-            ._help{},
-            ._usage{
-                "",
-            },
+            ._name{"Create and manipulate periods."},
+            ._help{"Create and manipulate periods. Each period is declared by "
+                   "giving it a name (see the first example). From there, the "
+                   "period can be modified via a series of commands. None of "
+                   "the options are strictly required, with some caveats. In "
+                   "the case that there is no start time, the start time is "
+                   "assumed to be 0.0, and if there is no end time, then it is "
+                   "assumed to be infinity. Periods cannot be overlapping, so "
+                   "if more than one period does not have start or end times, "
+                   "then an error will be thrown. For more information about "
+                   "periods, please see README.md"},
+            ._usage{"period <PERIOD> [(start|end|matrix|include|exclude) = "
+                    "<VALUE>]"},
             ._examples{
-                "periods = 1.5 (creates 2 periods)",
-                "periods = 1.0 2.0 (creates 3 periods)",
+                "period foo",
+                "period foo start = 1.0",
+                "period foo end = 2.0",
+                "period foo include = 101",
+                "period foo exclude = 011",
+                "period foo matrix = matrix_file.csv",
+                "period foo matrix = 'matrix file with spaces.csv'",
             },
         },
     },
@@ -323,12 +336,12 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"Split result specification"},
-            ._help{"Specify which ancestral splits to compute. Can be a list "
-                   "of nodes, each specified by the mrca command. If no "
-                   "nodes are "
-                   "provided, then ancestral splits for all nodes are "
-                   "computed."},
-            ._usage{"splits [<TAXON> ...]"},
+            ._help{
+                "Specify which ancestral splits to compute. Can be a list "
+                "of nodes, each specified by the mrca command. If no "
+                "nodes are provided, then ancestral splits for all nodes are "
+                "computed."},
+            ._usage{"splits [<MRCA> ...]"},
             ._examples{
                 "splits (compute splits for all nodes)",
                 "splits crown stem (compute splits for nodes crown and stem)",
@@ -357,7 +370,7 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                    "nodes are "
                    "provided, then ancestral states for all nodes are "
                    "computed."},
-            ._usage{"splits [<TAXON> ...]"},
+            ._usage{"splits [<MRCA> ...]"},
             ._examples{
                 "states (compute states for all nodes)",
                 "states crown stem (compute states for nodes crown and stem)",
@@ -447,14 +460,14 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                         ConfigFile& config) -> ParsingResult<void> {
               return p.parse_and_assign(config._max_areas);
             }},
-            ._name{"Maximum areas limit"},
+            ._name{"Maximum area limit"},
             ._help{"Set the maximum areas allowed in the analysis. Ranges "
                    "which occupy more than the number of max areas will "
                    "not be considered when computing the likelihood or when "
                    "computing ancestral states/splits."},
             ._usage{"maxareas = <INTEGER>"},
-            ._examples{
-                "maxareas = 3 (ranges with more than 3 areas are invalid)"},
+            ._examples{"maxareas = 3 (ranges with more than 3 areas are not "
+                       "considred)"},
         },
     },
     {
@@ -709,6 +722,7 @@ void ConfigFileParser::print_help_long() {
 }
 
 void ConfigFileParser::print_help_short() {
+  MESSAGE_INFO("usage: lagrange-ng [help|<CONFIG FILE>]");
   MESSAGE_INFO(COLORIZE(ANSI_COLOR_BLUE, "Configuration file options:"));
   for (auto [option, config] : _config_action_map) {
     MESSAGE_INFO("  {}", !config._usage.empty() ? config._usage : config._name);
@@ -735,7 +749,7 @@ auto ConfigFileParser::parse_line(ConfigFile& config) -> ParsingResult<void> {
       return r;
     }
   } else {
-    LOG_ERROR("Option '{}' at {} is invalid",
+    LOG_ERROR("Option '{}' at {} is invalid\n",
               config_value,
               _lexer.describePosition());
     print_help_short();
