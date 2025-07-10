@@ -95,6 +95,12 @@ TEST_F(ConfigFileTest, lines) {
       "workers = ",
       "workers ",
       "foo",
+      "period exclude = 101",
+      "period foo\nperiod foo",
+      "period foo bar",
+      "period foo\nperiod foo start = 1.0 2.0",
+      "period foo\nperiod foo start = bar",
+      "period foo\nperiod foo matrix = foo bar",
   };
 
   for (auto line : failure_lines) {
@@ -129,11 +135,13 @@ TEST_F(ConfigFileTest, lines) {
       "logfile = test.log",
       "logfile = 'test a'",
       "logfile = 'test\" a'",
+      "period foo\nperiod foo start = 1.0",
+      "period exclude\nperiod exclude exclude = 101",
+      "period foo\nperiod foo matrix = 'foo bar'",
   };
 
   for (auto line : success_lines) {
     std::istringstream iss{line};
-    //EXPECT_NO_THROW(ConfigFile(iss, true));
-    (ConfigFile(iss, true));
+    EXPECT_NO_THROW(ConfigFile(iss, true));
   }
 }

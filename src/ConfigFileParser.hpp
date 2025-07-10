@@ -210,18 +210,17 @@ class ConfigFileParser {
     }
   }
 
-  ParsingResult<void> parse_period_include_statement(
-      PeriodConfigMap& period_map);
+  ParsingResult<void> parse_period_include_statement(PeriodConfig& period);
 
-  ParsingResult<void> parse_period_exclude_statement(
-      PeriodConfigMap& period_map);
+  ParsingResult<void> parse_period_exclude_statement(PeriodConfig& period);
 
-  ParsingResult<void> parse_period_start_statement(PeriodConfigMap& period_map);
+  ParsingResult<void> parse_period_start_statement(PeriodConfig& period);
 
-  ParsingResult<void> parse_period_end_statement(PeriodConfigMap& period_map);
+  ParsingResult<void> parse_period_end_statement(PeriodConfig& period);
 
-  ParsingResult<void> parse_period_matrix_statement(
-      PeriodConfigMap& period_map);
+  ParsingResult<void> parse_period_matrix_statement(PeriodConfig& period);
+
+  ParsingResult<void> parse_period_sub_statement(PeriodConfig& period);
 
   ParsingResult<void> parse_period_statement(PeriodConfigMap& period_map);
 

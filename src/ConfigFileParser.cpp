@@ -90,70 +90,32 @@ auto ConfigFileParser::determine_opt_method(const std::string& method_string)
 auto ConfigFileParser::parse_assignment(ToLowerOption l)
     -> ParsingResult<std::string> {
   if (auto r = _lexer.expect(ConfigLexemeType::EQUALS_SIGN); !r) {
+    LOG_ERROR("Expected an equal sign at {}", _lexer.describePosition());
     return std::unexpected{ParsingError::expected_equals_sign};
   }
 
   return parse(l);
 };
 
-ParsingResult<void> ConfigFileParser::parse_period_include_statement(
-    PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<std::string>(period_map);
+ParsingResult<void> ConfigFileParser::parse_period_sub_statement(
+    PeriodConfig& period) {
+  auto command = parse<std::string>();
 
-  if (!res) { return std::unexpected{res.error()}; }
+  if (!command) {
+    LOG_ERROR(
+        "Expected one of [start | end | matrix | exclude | include] at {}",
+        _lexer.describePosition());
+    return std::unexpected{ParsingError::invalid_option};
+  }
 
-  auto [period_name, list] = *res;
-
-  period_map.at(period_name).include_areas = list;
-  return {};
-}
-
-ParsingResult<void> ConfigFileParser::parse_period_exclude_statement(
-    PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<std::string>(period_map);
-
-  if (!res) { return std::unexpected{res.error()}; }
-
-  auto [period_name, list] = *res;
-
-  period_map.at(period_name).exclude_areas = list;
-  return {};
-}
-
-ParsingResult<void> ConfigFileParser::parse_period_start_statement(
-    PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<double>(period_map);
-
-  if (!res) { return std::unexpected{res.error()}; }
-
-  auto [period_name, start_time] = *res;
-
-  period_map.at(period_name).start = start_time;
-  return {};
-}
-
-ParsingResult<void> ConfigFileParser::parse_period_end_statement(
-    PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<double>(period_map);
-
-  if (!res) { return std::unexpected{res.error()}; }
-
-  auto [period_name, end_time] = *res;
-
-  period_map.at(period_name).end = end_time;
-  return {};
-}
-
-ParsingResult<void> ConfigFileParser::parse_period_matrix_statement(
-    PeriodConfigMap& period_map) {
-  auto res = parse_and_check_id_map<std::filesystem::path>(period_map);
-
-  if (!res) { return std::unexpected{res.error()}; }
-
-  auto [period_name, list] = *res;
-
-  period_map.at(period_name).adjustment_matrix_filename = list;
-  return {};
+  if (command == "start") { return parse_and_assign(period.start); }
+  if (command == "end") { return parse_and_assign(period.end); }
+  if (command == "matrix") {
+    return parse_and_assign(period.adjustment_matrix_filename);
+  }
+  if (command == "include") { return parse_and_assign(period.include_areas); }
+  if (command == "exclude") { return parse_and_assign(period.exclude_areas); }
+  return std::unexpected{ParsingError::invalid_option};
 }
 
 ParsingResult<void> ConfigFileParser::parse_period_statement(
@@ -165,37 +127,7 @@ ParsingResult<void> ConfigFileParser::parse_period_statement(
     return std::unexpected{value.error()};
   }
 
-  if (value == "include") {
-    auto r = parse_period_include_statement(period_map);
-    if (!r) {
-      LOG_ERROR("Failed to parse a period include statement at {}",
-                _lexer.describePosition());
-    }
-  } else if (value == "exclude") {
-    auto r = parse_period_exclude_statement(period_map);
-    if (!r) {
-      LOG_ERROR("Failed to parse a period exclude statement at {}",
-                _lexer.describePosition());
-    }
-  } else if (value == "start") {
-    auto r = parse_period_start_statement(period_map);
-    if (!r) {
-      LOG_ERROR("Failed to parse a period start statement at {}",
-                _lexer.describePosition());
-    }
-  } else if (value == "end") {
-    auto r = parse_period_end_statement(period_map);
-    if (!r) {
-      LOG_ERROR("Failed to parse a period end statement at {}",
-                _lexer.describePosition());
-    }
-  } else if (value == "matrix") {
-    auto r = parse_period_matrix_statement(period_map);
-    if (!r) {
-      LOG_ERROR("Failed to parse a period matrix statement at {}",
-                _lexer.describePosition());
-    }
-  } else {
+  if (_lexer.peak() == ConfigLexemeType::END) {
     if (period_map.contains(*value)) {
       LOG_ERROR("Duplicate period declaration for period id '{}' at {}",
                 *value,
@@ -203,13 +135,25 @@ ParsingResult<void> ConfigFileParser::parse_period_statement(
       return std::unexpected{ParsingError::duplicate_id};
     } else {
       period_map.insert({*value, {}});
+      return {};
     }
+  }
+
+  if (!period_map.contains(*value)) {
+    LOG_ERROR("Period {} was not declared before use at {}",
+              *value,
+              _lexer.describePosition());
+    return std::unexpected{ParsingError::invalid_option};
+  }
+
+  if (auto r = parse_period_sub_statement(period_map.at(*value)); !r) {
+    return r;
   }
 
   if (!_lexer.expect(ConfigLexemeType::END)) {
     LOG_ERROR(
-        "Expected end token at {}. There is probably some extra characters on "
-        "this line.",
+        "Expected end token at {}. There probably are some extra characters "
+        "on this line.",
         _lexer.describePosition());
     return std::unexpected{ParsingError::expected_end};
   }
@@ -259,7 +203,8 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
             }},
             ._name{"Ares name list"},
             ._help{
-                "List of the area names, which will be used for output. There "
+                "List of the area names, which will be used for output. "
+                "There "
                 "must be as many area names as there are areas in the data. "
                 "Area names can contain spaces, so long as the whole name is "
                 "quoted (e.g. 'North America')"},
@@ -279,10 +224,11 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return p.parse_and_assign(config._prefix);
             }},
             ._name{"Output file prefix"},
-            ._help{
-                "Specifies the output file prefix. This is a path that will be "
-                "prepended to the output files. The prefix can included "
-                "directories, and if they do not exist, they will be created"},
+            ._help{"Specifies the output file prefix. This is a path that "
+                   "will be "
+                   "prepended to the output files. The prefix can included "
+                   "directories, and if they do not exist, they will be "
+                   "created"},
             ._usage{"prefix = <PATH>"},
             ._examples{
                 "prefix = results/test.1 (makes results/test.1.results.json)",
@@ -296,15 +242,11 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                         ConfigFile& config) -> ParsingResult<void> {
               return p.parse_period_statement(config._period_map);
             }},
-            ._name{"Period list"},
-            ._help{
-                "List of period break point times, on the scale of the branch "
-                "lengths. Each number is a boundry between two periods. For "
-                "example, if we have a period that goes from 0.0 to 1.0, and a "
-                "second period that goes from 1.0 to the end of time, then "
-                "only the 1.0 boundry needs to be specified. Units are _back "
-                "in time_, so 0.0 is the time at the tips."},
-            ._usage{"periods = <FLOAT> [<FLOAT> ...]"},
+            ._name{"Period statement"},
+            ._help{},
+            ._usage{
+                "",
+            },
             ._examples{
                 "periods = 1.5 (creates 2 periods)",
                 "periods = 1.0 2.0 (creates 3 periods)",
@@ -347,14 +289,15 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"Fossil specification"},
-            ._help{
-                "Specify a fossil constraint for an ancestral node. Can "
-                "either be an include, exclude, or fixed constraint. "
-                "Nodes constrained with an include fossil will only "
-                "consider ancestral states with areas that are set in the "
-                "given range, and vice versa for an exclude constraint. Fixed "
-                "constraints require that the inner node's ancestral state is "
-                "the given range."},
+            ._help{"Specify a fossil constraint for an ancestral node. Can "
+                   "either be an include, exclude, or fixed constraint. "
+                   "Nodes constrained with an include fossil will only "
+                   "consider ancestral states with areas that are set in the "
+                   "given range, and vice versa for an exclude constraint. "
+                   "Fixed "
+                   "constraints require that the inner node's ancestral "
+                   "state is "
+                   "the given range."},
             ._usage{"fossil [include|exclude|fixed] <MRCA LABEL> = <RANGE>"},
             ._examples{
                 "fossil include crown = 0010 (will include the 3rd area)",
@@ -380,10 +323,11 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"Split result specification"},
-            ._help{
-                "Specify which ancestral splits to compute. Can be a list "
-                "of nodes, each specified by the mrca command. If no nodes are "
-                "provided, then ancestral splits for all nodes are computed."},
+            ._help{"Specify which ancestral splits to compute. Can be a list "
+                   "of nodes, each specified by the mrca command. If no "
+                   "nodes are "
+                   "provided, then ancestral splits for all nodes are "
+                   "computed."},
             ._usage{"splits [<TAXON> ...]"},
             ._examples{
                 "splits (compute splits for all nodes)",
@@ -408,10 +352,11 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"State result specification"},
-            ._help{
-                "Specify which ancestral states to compute. Can be a list "
-                "of nodes, each specified by the mrca command. If no nodes are "
-                "provided, then ancestral states for all nodes are computed."},
+            ._help{"Specify which ancestral states to compute. Can be a list "
+                   "of nodes, each specified by the mrca command. If no "
+                   "nodes are "
+                   "provided, then ancestral states for all nodes are "
+                   "computed."},
             ._usage{"splits [<TAXON> ...]"},
             ._examples{
                 "states (compute states for all nodes)",
@@ -427,9 +372,9 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return p.parse_and_assign(config._dispersion);
             }},
             ._name{"Dispersion rate"},
-            ._help{
-                "Fix the dispersion rate in evaluation mode. Has no effect in "
-                "optimize mode."},
+            ._help{"Fix the dispersion rate in evaluation mode. Has no "
+                   "effect in "
+                   "optimize mode."},
             ._usage{"dispersion = <FLOAT>"},
             ._examples{"dispersion = 0.1"},
         },
@@ -442,9 +387,9 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return p.parse_and_assign(config._extinction);
             }},
             ._name{"Extinction rate"},
-            ._help{
-                "Fix the extinction rate in evaluation mode. Has no effect in "
-                "optimize mode."},
+            ._help{"Fix the extinction rate in evaluation mode. Has no "
+                   "effect in "
+                   "optimize mode."},
             ._usage{"extinction = <FLOAT>"},
             ._examples{"extinction = 0.1"},
         },
@@ -563,12 +508,12 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"Run mode specification"},
-            ._help{
-                "Sets the run mode for results. Setting this to optimize "
-                "will optimize all free parameters before computing "
-                "ancestral states.  On the other hand, evaluate mode will skip "
-                "the optimization step, and only compute results. Defaults "
-                "to optimize."},
+            ._help{"Sets the run mode for results. Setting this to optimize "
+                   "will optimize all free parameters before computing "
+                   "ancestral states.  On the other hand, evaluate mode will "
+                   "skip "
+                   "the optimization step, and only compute results. Defaults "
+                   "to optimize."},
             ._usage{"mode = [optimize|evaluate]"},
             ._examples{},
         },
@@ -677,17 +622,17 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
               return {};
             }},
             ._name{"Ambiguous characters"},
-            ._help{
-                "In the case where maxareas is given, but a tip state has a "
-                "number of occupied areas which exceeds that limit, then "
-                "this option will allow for those tip states to be "
-                "converted into ambiguous states. For example, if maxareas "
-                "= 2, and a tip has the range 111, the tip state will be "
-                "converted to the ambiguous state combining the ranges 011, "
-                "101, and 110. If this option is not set, then tips with "
-                "ranges that exceed the maxareas limit will cause the "
-                "program to quit with an error. If set, a warning will be "
-                "printed every time a state is converted. Set on by default."},
+            ._help{"In the case where maxareas is given, but a tip state has a "
+                   "number of occupied areas which exceeds that limit, then "
+                   "this option will allow for those tip states to be "
+                   "converted into ambiguous states. For example, if maxareas "
+                   "= 2, and a tip has the range 111, the tip state will be "
+                   "converted to the ambiguous state combining the ranges 011, "
+                   "101, and 110. If this option is not set, then tips with "
+                   "ranges that exceed the maxareas limit will cause the "
+                   "program to quit with an error. If set, a warning will be "
+                   "printed every time a state is converted. Set on by "
+                   "default."},
             ._usage{"allow-ambiguous [= true|on|false|off]"},
             ._examples{},
         },
