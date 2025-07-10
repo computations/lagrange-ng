@@ -399,13 +399,13 @@ class Workspace {
 
   [[nodiscard]] auto getParamMins() const -> std::vector<double> {
     constexpr double rate_min = 1e-7;
-    constexpr double penalty_min = -5;
+    constexpr double penalty_min = -10;
     return makeParameterVector(rate_min, penalty_min);
   }
 
   [[nodiscard]] auto getParamMaxs() const -> std::vector<double> {
     constexpr double rate_max = 1e2;
-    constexpr double penalty_max = 5;
+    constexpr double penalty_max = 10;
     return makeParameterVector(rate_max, penalty_max);
   }
 
