@@ -180,7 +180,7 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
   - `node`: This option is an alias for `include`.
 - `logfile`: Specify a file to log the output of the program (the log messages).
 - `output-type`: One of either `json` or `csv`:
-  - `json`: Compile all the results into one json file, whos contents are 
+  - `json`: Compile all the results into one json file, who's contents are 
     detailed below. If your tree is large, this has a chance of running out of
     memory, particularly when computing splits.
   - `csv`: Output results as a set of CSV files.
