@@ -137,10 +137,12 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
   }
 }
 
-void Context::updateRates(const std::vector<double>& x) {
-  size_t index = 0;
-  for (auto& p : _workspace->getPeriodParams()) { p.applyParameters(x, index); }
-  lagrange_assert(index == x.size(), "There was an issue applying parameters");
+void Context::updateRates(std::ranges::view auto x) {
+  auto itr = x.begin();
+  for (auto& p : _workspace->getPeriodParams()) {
+    itr = p.applyParameters(std::ranges::subrange{itr, x.end()});
+  }
+  lagrange_assert(itr == x.end(), "There was an issue applying parameters");
   for (auto& rm : _rate_matrix_ops) { rm->eval(_workspace); }
 }
 
@@ -273,11 +275,25 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   const size_t dims = _workspace->getOptDimsSize();
   nlopt::opt opt(_opt_method, dims);
-  auto objective = [](const std::vector<double>& x,
-                      std::vector<double>& grad,
-                      void* f_data) -> double {
-    auto* obj = static_cast<OptContext*>(f_data);
-    LOG_DEBUG("current params: {}", x);
+  auto objective = [&](unsigned int size,
+                       const double* x_ptr,
+                       double* grad_ptr) mutable -> double {
+    auto* obj = &oc;
+    struct X_struct : std::ranges::view_interface<X_struct> {
+      const double* x_ptr;
+      size_t size;
+      const double* begin() { return x_ptr; }
+      const double* end() { return x_ptr + size; }
+    } x{.x_ptr = x_ptr, .size = size};
+    static_assert(std::ranges::range<X_struct>);
+
+    struct Grad_struct : std::ranges::view_interface<Grad_struct> {
+      double* grad_ptr;
+      size_t size;
+      double* begin() { return grad_ptr; }
+      double* end() { return grad_ptr + size; }
+    } grad{.grad_ptr = grad_ptr, .size = size};
+    static_assert(std::ranges::range<Grad_struct>);
 
     obj->context.updateRates(x);
     double llh = obj->context.computeLLH(obj->ts, obj->tc);
@@ -286,10 +302,15 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     if (!grad.empty()) {
       constexpr double step = 1e-7;
 
-      for (size_t i = 0; i < grad.size(); ++i) {
-        auto tmp_params{x};
-        tmp_params[i] += step;
-        obj->context.updateRates(tmp_params);
+      for (size_t i = 0; i < std::ranges::size(grad); ++i) {
+        obj->context.updateRates(x | std::views::enumerate
+                                 | std::views::transform([&](const auto& y) {
+                                     auto [itr, g] = y;
+                                     if (static_cast<size_t>(itr) == i) {
+                                       return g + step;
+                                     }
+                                     return g;
+                                   }));
         grad[i] = (obj->context.computeLLH(obj->ts, obj->tc) - llh) / step;
         obj->f_evals += 1;
       }
@@ -304,7 +325,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     return llh;
   };
 
-  opt.set_max_objective(objective, &oc);
+  opt.set_max_objective(objective);
 
   opt.set_lower_bounds(_workspace->getParamMins());
   opt.set_upper_bounds(_workspace->getParamMaxs());

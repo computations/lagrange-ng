@@ -46,6 +46,15 @@ struct PeriodParams {
     return extinction_rate;
   }
 
+  auto applyParameters(std::ranges::range auto x) {
+    auto itr = x.begin();
+    dispersion_rate = *itr++;
+    extinction_rate = *itr++;
+
+    if (adjustment_matrix != nullptr) { distance_penalty = *itr++; }
+    return itr;
+  }
+
   void applyParameters(const std::vector<double> &x, size_t &index) {
     dispersion_rate = x[index];
     index += 1;

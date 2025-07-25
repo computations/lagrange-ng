@@ -67,7 +67,7 @@ class Context {
   [[nodiscard]] auto toString() const -> std::string;
 
   void updateRates(const std::vector<PeriodParams>& p);
-  void updateRates(const std::vector<double>& x);
+  void updateRates(std::ranges::view auto x);
   void applyAdjustmentMatrices(const std::vector<PeriodParams>& period_params);
   void setupPeriods(const std::vector<PeriodParams>& period_params);
   void init(const std::vector<PeriodParams>& period_params);
