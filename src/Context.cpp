@@ -303,7 +303,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       constexpr double step = 1e-7;
 
       for (size_t i = 0; i < std::ranges::size(grad); ++i) {
-        obj->context.updateRates(x | std::views::enumerate
+        obj->context.updateRates(std::views::zip(std::views::iota(0ul, size), x)
                                  | std::views::transform([&](const auto& y) {
                                      auto [itr, g] = y;
                                      if (static_cast<size_t>(itr) == i) {
