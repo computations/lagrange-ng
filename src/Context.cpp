@@ -127,10 +127,18 @@ void Context::registerGoals(
 }
 
 void Context::updateRates(const std::vector<PeriodParams>& params) {
-  for (auto [ws_params, params] :
+#ifdef __cpp_lib_ranges_zip
+  for (auto [ws_params, p] :
        std::views::zip(_workspace->getPeriodParams(), params)) {
-    ws_params.applyParameters(params);
+    ws_params.applyParameters(p);
   }
+#else
+  for (size_t i = 0;
+       i < _workspace->getPeriodParams().size() && i < params.size();
+       ++i) {
+    _workspace->getPeriodParams(i).applyParameters(params[i]);
+  }
+#endif
 
   for (size_t i = 0; i < _rate_matrix_ops.size(); ++i) {
     _rate_matrix_ops[i]->eval(_workspace);
@@ -303,6 +311,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       constexpr double step = 1e-7;
 
       for (size_t i = 0; i < std::ranges::size(grad); ++i) {
+#ifdef __cpp_lib_ranges_zip
         obj->context.updateRates(std::views::zip(std::views::iota(0ul, size), x)
                                  | std::views::transform([&](const auto& y) {
                                      auto [itr, g] = y;
@@ -311,6 +320,12 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
                                      }
                                      return g;
                                    }));
+#else
+        std::vector<double> tmp_x{x.begin(), x.end()};
+        tmp_x[i] += step;
+
+        obj->context.updateRates(std::span(tmp_x));
+#endif
         grad[i] = (obj->context.computeLLH(obj->ts, obj->tc) - llh) / step;
         obj->f_evals += 1;
       }

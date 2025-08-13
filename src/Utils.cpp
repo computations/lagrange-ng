@@ -55,9 +55,13 @@ auto lagrange_convert_list_to_dist(const std::vector<std::string> &dist,
     -> Range {
   Range ret = 0;
   for (const auto &area : dist) {
-    for (const auto &[i, n] :
-         std::views::zip(std::views::iota(0ul, names.size()), names)) {
+#ifdef __cpp_lib_ranges_enumerate
+    for (const auto &[i, n] : std::views::enumerate(names)) {
       if (area == n) {
+#else
+    for (size_t i = 0; i < names.size(); ++i) {
+      if (area == names[i]) {
+#endif
         ret |= 1ULL << i;
         break;
       }

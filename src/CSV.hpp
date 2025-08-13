@@ -27,9 +27,17 @@ class CSVRow {
 
  private:
   std::string get_data(const std::string_view& key) const {
+#ifdef __cpp_lib_ranges_zip
     for (auto [h_key, data] : std::views::zip(*_header, _data)) {
       if (h_key == key) { return data; }
     }
+#else
+    auto header = _header->begin();
+    auto data = _data.begin();
+    for (; header != _header->end() && data != _data.end(); ++header, ++data) {
+      if (*header == key) { return *data; }
+    }
+#endif
     return {};
   }
 

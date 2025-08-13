@@ -312,6 +312,10 @@ class Workspace {
     return _periods;
   }
 
+  [[nodiscard]] auto getPeriodParams(size_t period_index) -> PeriodParams & {
+    return _periods[period_index];
+  }
+
   [[nodiscard]] auto getPeriodParams(size_t period_index) const
       -> const PeriodParams & {
     return _periods[period_index];
@@ -423,9 +427,15 @@ class Workspace {
   {
     lagrange_assert(_periods.size() == mats.size(),
                     "Setting adjusment matrices failed");
+#ifdef __cpp_lib_ranges_zip
     for (auto [a, b] : std::views::zip(_periods, mats)) {
       a.adjustment_matrix = b;
     }
+#else
+    for (size_t i = 0; i < _periods.size(); ++i) {
+      _periods[i].adjustment_matrix = mats[i];
+    }
+#endif
   }
 
   template <typename R>
@@ -438,7 +448,13 @@ class Workspace {
   {
     lagrange_assert(_periods.size() == ranges.size(),
                     "Setting adjusment matrices failed");
+#ifdef __cpp_lib_ranges_zip
     for (auto [a, b] : std::views::zip(_periods, ranges)) { a.regions = b; }
+#else
+    for (size_t i = 0; i < _periods.size(); ++i) {
+      _periods[i].regions = ranges[i];
+    }
+#endif
   }
 
  private:

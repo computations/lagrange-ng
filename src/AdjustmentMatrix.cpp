@@ -53,13 +53,16 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
 void AdjustmentMatrix::read_arcs(CSVReader& reader,
                                  const std::vector<std::string>& area_names) {
   _region_count = area_names.size();
+#ifdef __cpp_lib_ranges_zip
   auto reverse_area_name_map =
-      std::views::zip(std::views::iota(0ul, area_names.size()), area_names)
-      | std::views::transform([](const auto& a) -> auto {
-          return std::make_pair(std::get<1>(a),
-                                static_cast<size_t>(std::get<0>(a)));
-        })
+      std::views::zip(area_names, std::views::iota(0ul, area_names.size()))
       | std::ranges::to<std::unordered_map>();
+#else
+  std::unordered_map<std::string, size_t> reverse_area_name_map;
+  for (size_t i = 0; i < area_names.size(); ++i) {
+    reverse_area_name_map[area_names[i]] = i;
+  }
+#endif
 
   constexpr auto from_key = "from"sv;
   constexpr auto to_key = "to"sv;
