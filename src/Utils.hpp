@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <bit>
 
 #include "Common.hpp"
 
@@ -208,6 +209,14 @@ template <>
 struct hash<std::pair<size_t, double>> {
   auto operator()(std::pair<size_t, double> const &p) const -> std::size_t {
     return std::hash<size_t>{}(p.first) ^ std::hash<double>{}(p.second);
+  }
+};
+
+template <>
+struct hash<std::pair<size_t, size_t>> {
+  auto operator()(std::pair<size_t, size_t> const &p) const -> std::size_t {
+    return std::rotl(std::hash<size_t>{}(p.first),1)
+           ^ std::hash<size_t>{}(p.second);
   }
 };
 

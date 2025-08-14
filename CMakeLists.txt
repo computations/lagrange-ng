@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 cmake_policy(SET CMP0135 NEW)
 
 project(lagrange-ng)
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 23 REQUIRED)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -10,6 +10,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(FetchContent)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+option(BUILD_ONLY_STATIC "Only build the exclusively static library" OFF)
+
+if("${CMAKE_BUILD_TYPE}" MATCHES "Debug" AND ${BUILD_ONLY_STATIC})
+  message(WARNING "Cannot build a debug static binary")
+endif()
 
 # Find NLopt, otherwise download it
 FetchContent_Declare(NLopt
@@ -18,7 +23,6 @@ FetchContent_Declare(NLopt
   EXCLUDE_FROM_ALL
   FIND_PACKAGE_ARGS
 )
-
 
 # Find json lib, otherwise download it
 FetchContent_Declare(nlohmann_json
@@ -37,48 +41,121 @@ FetchContent_Declare(logger
 
 FetchContent_MakeAvailable(NLopt nlohmann_json logger)
 
-FetchContent_GetProperties(NLopt
-  POPULATED NLopt_POPULATED
-)
-
-if(${NLopt_POPULATED})
-  set(NLOPT_LIB nlopt)
+if(DEFINED NLOPT_LIBRARIES)
+  set(NLOPT_LIB ${NLOPT_LIBRARIES})
 else()
-  set(NLOPT_LIB NLopt::nlopt)
+  set(NLOPT_LIB nlopt)
 endif()
 
+message(STATUS 
+  "Using NLOpt: ${NLOPT_LIB}")
 
 # Find MKL, fallback to OpenBLAS
-include(FindMKL)
-find_package(MKL)
+#include(FindMKL)
+find_package(MKL CONFIG)
 
-if (${MKL_FOUND})
-  set(LAGRANGE_LIBS ${MKL_LIBRARIES})
-  set(LAGRANGE_INCLUDES ${MKL_INCLUDE_DIRS})
-  set(LAGRANGE_DEFINES MKL_ENABLED=1)
+if (MKL_FOUND)
+  set(LAGRANGE_BLAS_LIBS $<LINK_ONLY:MKL::MKL>)
+  set(LAGRANGE_INCLUDES $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+  set(LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+  set(LAGRANGE_DEFINES MKL_ENABLED)
 else()
-    FetchContent_Declare(OpenBLAS
-      URL https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
-      URL_HASH SHA256=38240eee1b29e2bde47ebb5d61160207dc68668a54cac62c076bb5032013b1eb
-      EXCLUDE_FROM_ALL
-      FIND_PACKAGE_ARGS
-    )
-    FetchContent_MakeAvailable(OpenBLAS)
-    set(LAGRANGE_LIBS openblas)
+  find_package(PkgConfig)
 
-    FetchContent_GetProperties(OpenBLAS
-      POPULATED OpenBLAS_POPULATED
-    )
+  pkg_check_modules(OpenBLAS openblas)
 
-    if(NOT ${OpenBLAS_FOUND})
-      set(OpenBLAS_INCLUDE_DIRS 
-        ${CMAKE_BINARY_DIR}/
-        ${CMAKE_CURRENT_BINARY_DIR}/generated/
-        ${OpenBLAS_SOURCE_DIR}/lapack-netlib/LAPACKE/include)
+  if(OpenBLAS_FOUND OR DEFINED OpenBLAS_INCLUDE_DIRS)
+    set(LAGRANGE_BLAS_LIBS openblas)
+
+    include(CheckSourceCompiles)
+    include(CMakePushCheckState)
+
+    cmake_push_check_state()
+
+    set(CMAKE_REQUIRED_LIBRARIES openblas)
+    set(CMAKE_REQUIRED_LINK_DIRECTORIES ${OpenBLAS_LIBRARY_DIRS})
+    set(CMAKE_REQUIRED_FLAGS ${OpenBLAS_CFLAGS_OTHER})
+    set(CMAKE_REQUIRED_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+
+    # Some platforms ship openblas without lapacke bulit, so we have to check
+    # for it here
+
+    check_source_compiles(CXX 
+    "
+    #include <cblas.h>
+    #include <lapacke.h>
+
+    int main(){
+    LAPACKE_zgesv(CblasRowMajor,
+                  1,
+                  1,
+                  nullptr,
+                  1,
+                  nullptr,
+                  nullptr,
+                  1);
+    return 0;
+
+    }
+    "
+    HAVE_LAPACKE)
+
+    if(NOT HAVE_LAPACKE)
+
+      set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
+
+      check_source_compiles(CXX 
+      "
+      #include <cblas.h>
+      #include <lapacke.h>
+
+      int main(){
+        LAPACKE_zgesv(CblasRowMajor,
+                1,
+                1,
+                nullptr,
+                1,
+                nullptr,
+                nullptr,
+                1);
+        return 0;
+
+      }
+      "
+      HAVE_LAPACKE_IN_SYSTEM_PATH)
+
+      set(LAGRANGE_BLAS_LIBS ${LAGRANGE_BLAS_LIBS} lapacke)
     endif()
-    message("Setting include directory for openblas to ${OpenBLAS_INCLUDE_DIRS}")
-    set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+
+    cmake_pop_check_state()
+
+  else()
+    FetchContent_Declare(OpenBLAS
+      URL
+      https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz
+      URL_HASH SHA256=27342cff518646afb4c2b976d809102e368957974c250a25ccc965e53063c95d
+      EXCLUDE_FROM_ALL
+    )
+
+    FetchContent_MakeAvailable(OpenBLAS)
+
+    set(OpenBLAS_INCLUDE_DIRS
+      ${CMAKE_CURRENT_BINARY_DIR}/
+      ${CMAKE_CURRENT_BINARY_DIR}/generated
+      ${openblas_SOURCE_DIR}/lapack-netlib/LAPACKE/include/
+    )
+
+    message("Setting OpenBLAS library directory to ${OpenBLAS_LIBRARY_DIRS}")
+    message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
+
+    set(LAGRANGE_BLAS_LIBS openblas)
+  endif()
+
+  set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
+  set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
+
+message(STATUS "Using BLAS: ${LAGRANGE_BLAS_LIBS}")
 
 find_package(Git)
 if(GIT_FOUND)
@@ -91,7 +168,7 @@ if(GIT_FOUND)
             OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 else()
-  SET(LAGRANGE_BUILD_VERSION "v0.5.1-release")
+  SET(LAGRANGE_BUILD_VERSION "v0.7.0-release")
 endif()
 
 set(LAGRANGE_DEFINES ${LAGRANGE_DEFINES} LAGRANGE_BUILD_VERSION=${LAGRANGE_BUILD_VERSION})
@@ -100,7 +177,7 @@ add_subdirectory(src)
 
 option(BUILD_TESTS "Enable building the tests" OFF)
 
-if(${BUILD_TESTS})
+if(BUILD_TESTS AND NOT BUILD_ONLY_STATIC)
   include(CTest)
   enable_testing()
   add_subdirectory(tests)

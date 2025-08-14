@@ -28,9 +28,15 @@ TEST_F(ConfigFileTest, basic) {
   std::vector<std::string> expected_area_names = {"RA", "RB", "RC"};
   ASSERT_EQ(config.area_names().size(), expected_area_names.size());
 
+#ifdef __cpp_lib_ranges_enumerate
   for (auto const [index, it] : expected_area_names | std::views::enumerate) {
     EXPECT_EQ(it, config.area_names()[index]);
   }
+#else
+  for (size_t i = 0; i < expected_area_names.size(); ++i) {
+    EXPECT_EQ(expected_area_names[i], config.area_names()[i]);
+  }
+#endif
 
   EXPECT_TRUE(config.compute_all_states());
 

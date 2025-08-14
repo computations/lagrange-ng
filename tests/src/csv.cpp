@@ -16,8 +16,8 @@ TEST(CSVTest, simple) {
   EXPECT_EQ(row.get<std::string>("a"), "1");
   EXPECT_EQ(row.get<std::string>("b"), "2");
 
-  EXPECT_EQ(row.get<size_t>("a"), 1);
-  EXPECT_EQ(row.get<size_t>("b"), 2);
+  EXPECT_EQ(row.get<uint64_t>("a"), 1);
+  EXPECT_EQ(row.get<uint64_t>("b"), 2);
 }
 
 TEST(CSVTest, errors) {
@@ -32,6 +32,6 @@ TEST(CSVTest, errors) {
   EXPECT_EQ(row.get<std::string>("a"), "c");
   EXPECT_EQ(row.get<std::string>("b"), "d");
 
-  EXPECT_ANY_THROW(row.get<size_t>("a"));
-  EXPECT_ANY_THROW(row.get<size_t>("b"));
+  EXPECT_ANY_THROW(row.get<uint64_t>("a"));
+  EXPECT_ANY_THROW(row.get<uint64_t>("b"));
 }
