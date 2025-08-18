@@ -1,0 +1,2 @@
+-DMKL_LINK=static
+-DMKL_THREADING=gnu_thread
