@@ -58,3 +58,18 @@ workflows:
       - run-tests:
           requires:
             - build-linux-static
+      - gh/release:
+          tag: "<< pipeline.git.tag >>"
+          title: "Release << pipeline.git.tag >>"
+          requires:
+            - build-linux-static
+            - run-tests
+          filters:
+            branches:
+              only:
+                - master
+      - gh/upload:
+          requires:
+            - gh/release
+          tag: "<< pipeline.git.tag >>"
+          files: "./bin/lagrange-ng"
