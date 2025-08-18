@@ -59,7 +59,7 @@ workflows:
           requires:
             - build-linux-static
       - gh/release:
-          tag: "test-ci-1"
+          tag: "test-ci-0"
           title: "Release << pipeline.git.tag >>"
           requires:
             - build-linux-static
@@ -69,7 +69,7 @@ workflows:
       - gh/upload:
           requires:
             - gh/release
-          tag: "test-ci-1"
+          tag: "test-ci-0"
           files: "./bin/lagrange-ng"
           context:
             - GITHUB_TOKEN
