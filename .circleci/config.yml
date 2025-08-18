@@ -45,8 +45,8 @@ jobs:
       - run:
           name: "Run tests"
           command: |
-            ls -l
             cd bin
+            ls -l
             ./lagrange-test
 
 
