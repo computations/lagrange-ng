@@ -25,7 +25,7 @@ jobs:
           name: "Get Dependancies"
           command: |
             sudo apt-get update
-            sudo apt-get install gcc-14 g++-14 ninja-build intel-mkl-full
+            sudo apt-get install gcc-14 g++-14 ninja-build intel-mkl-full linux-headers-generic
       - run:
           name: "Build executable"
           command: |
