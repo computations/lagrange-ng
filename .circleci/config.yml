@@ -29,8 +29,8 @@ jobs:
       - run:
           name: "Build executable"
           command: |
-            fd -e cmake mkl . /
-            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 $(cat .release-opts/mkl-threaded)
+            fdfind -e cmake mkl . /
+            # cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 $(cat .release-opts/mkl-threaded)
       - persist_to_workspace:
           root: .
           paths:
