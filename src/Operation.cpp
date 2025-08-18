@@ -645,12 +645,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 
   {
-#ifdef MKL_ENABLED
-    auto *ipiv = (long long int *)malloc(sizeof(long long int)
-                                         * static_cast<size_t>(rows));
-#else
-    int *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
-#endif
+    auto *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
     assert(ipiv != nullptr);
 
 #ifdef MKL_ENABLED
