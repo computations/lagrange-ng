@@ -31,8 +31,6 @@ jobs:
           command: |
             export MKL_ROOT=/opt/intel/oneapi/mkl/latest
             cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 $(cat ../.release-opts/mkl-threaded)
-            cd build
-            make
       - persist_to_workspace:
           root: .
           paths:
