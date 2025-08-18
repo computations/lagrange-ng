@@ -71,5 +71,8 @@ workflows:
             - gh/release
           tag: "test-ci-0"
           files: "./bin/lagrange-ng"
+          pre-steps:
+            - attach_workspace:
+              at: .
           context:
             - GITHUB_TOKEN
