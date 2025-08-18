@@ -64,10 +64,6 @@ workflows:
           requires:
             - build-linux-static
             - run-tests
-          filters:
-            branches:
-              only:
-                - master
       - gh/upload:
           requires:
             - gh/release
