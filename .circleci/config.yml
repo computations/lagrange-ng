@@ -26,7 +26,7 @@ jobs:
       - run:
           name: "Build executable"
           command: |
-            cmake -Bbuild -H.
+            cmake -Bbuild -H. -G Ninja
             cd build && ninja
 
 # Orchestrate jobs using workflows
