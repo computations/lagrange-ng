@@ -1,2 +1,1 @@
--DMKL_LINK=static
--DMKL_THREADING=gnu_thread
+-DMKL_LINK=static -DMKL_THREADING=gnu_thread -DMKL_ROOT=/opt/intel/oneapi/mkl/latest
