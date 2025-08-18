@@ -27,8 +27,7 @@ jobs:
           name: "Build executable"
           command: |
             cmake -Bbuild -H.
-            cd build
-            ninja
+            cd build && ninja
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
