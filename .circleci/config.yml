@@ -29,9 +29,9 @@ jobs:
       - run:
           name: "Build executable"
           command: |
-            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBULID_TESTS=ON -G Ninja
+            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTS=ON -G Ninja
             cd build
-            ninja --quiet
+            ninja --verbose
       - persist_to_workspace:
           root: .
           paths:
