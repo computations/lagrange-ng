@@ -59,20 +59,26 @@ workflows:
           requires:
             - build-linux-static
       - gh/release:
-          tag: " << pipeline.git.revision >>"
+          tag: " << pipeline.git.tag >>"
           title: "Release-test-ci-3"
           requires:
             - build-linux-static
             - run-tests
           context:
             - GITHUB_TOKEN
+          filters:
+            tags:
+              only: /^v.*/
       - gh/upload:
           requires:
             - gh/release
-          tag: "<< pipeline.git.revision >>"
+          tag: "<< pipeline.git.tag >>"
           files: "./bin/lagrange-ng"
           pre-steps:
             - attach_workspace:
                 at: .
           context:
             - GITHUB_TOKEN
+          filters:
+            tags:
+              only: /^v.*/
