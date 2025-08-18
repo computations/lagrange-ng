@@ -46,7 +46,7 @@ jobs:
           command: |
             ls -l
             cd bin
-            ./lagrange-tests
+            ./lagrange-test
 
 
 # Orchestrate jobs using workflows
