@@ -34,7 +34,7 @@ if (MKL_INCLUDE_DIRS AND MKL_LIBRARIES AND MKL_INTERFACE_LIBRARY AND
   set (MKL_FIND_QUIETLY TRUE)
 endif()
 
-if(NOT BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
   if (WIN32)
     set(INT_LIB "mkl_intel_ilp64.lib")
     set(SEQ_LIB "mkl_sequential.lib")

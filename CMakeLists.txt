@@ -55,23 +55,23 @@ find_package(MKL CONFIG)
 if (${MKL_FOUND})
   set(LAGRANGE_LIBS $<LINK_ONLY:MKL::MKL>)
   set(LAGRANGE_INCLUDES $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-  set (LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+  set(LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
   set(LAGRANGE_DEFINES MKL_ENABLED)
 else()
     FetchContent_Declare(OpenBLAS
       URL https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.29/OpenBLAS-0.3.29.tar.gz
       URL_HASH SHA256=38240eee1b29e2bde47ebb5d61160207dc68668a54cac62c076bb5032013b1eb
       EXCLUDE_FROM_ALL
-      FIND_PACKAGE_ARGS
+      #FIND_PACKAGE_ARGS
     )
     FetchContent_MakeAvailable(OpenBLAS)
-    set(LAGRANGE_LIBS openblas)
+    set(LAGRANGE_LIBS openblas_static)
 
     FetchContent_GetProperties(OpenBLAS
       POPULATED OpenBLAS_POPULATED
     )
 
-    if(NOT ${OpenBLAS_FOUND})
+    if(NOT DEFINED OpenBLAS_INCLUDE_DIRS)
       set(OpenBLAS_INCLUDE_DIRS 
         ${CMAKE_BINARY_DIR}/
         ${CMAKE_CURRENT_BINARY_DIR}/generated/
