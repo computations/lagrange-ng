@@ -73,6 +73,6 @@ workflows:
           files: "./bin/lagrange-ng"
           pre-steps:
             - attach_workspace:
-              at: .
+                at: .
           context:
             - GITHUB_TOKEN
