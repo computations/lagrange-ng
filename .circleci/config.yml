@@ -60,7 +60,7 @@ workflows:
             - build-linux-static
       - gh/release:
           tag: " << pipeline.git.revision >>"
-          title: "Release test-ci-2"
+          title: "Release-test-ci-3"
           requires:
             - build-linux-static
             - run-tests
