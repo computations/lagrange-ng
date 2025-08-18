@@ -64,8 +64,12 @@ workflows:
           requires:
             - build-linux-static
             - run-tests
+          context:
+            - GITHUB_TOKEN
       - gh/upload:
           requires:
             - gh/release
           tag: "<< pipeline.git.tag >>"
           files: "./bin/lagrange-ng"
+          context:
+            - GITHUB_TOKEN
