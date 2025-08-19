@@ -96,7 +96,7 @@ jobs:
           name: "Upload Release"
           command: |
             gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-linux-static
-            gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
+            # gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
 
 
 
@@ -131,19 +131,8 @@ workflows:
           requires:
             - gh/release
             - run-tests
-            - run-tests-macos
           filters:
             branches:
               ignore: /.*/
-            tags:
-              only: /^v.*/
-      - build-mac-static:
-          filters:
-            tags:
-              only: /^v.*/
-      - run-tests-macos:
-          requires:
-            - build-mac-static
-          filters:
             tags:
               only: /^v.*/
