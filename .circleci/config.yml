@@ -78,7 +78,7 @@ jobs:
       - run:
           name: "Run linux tests"
           command: |
-            .bin/lagrange-test-linux-static
+            ./bin/lagrange-test-linux-static
 
   run-tests-macos:
     macos:
@@ -88,10 +88,9 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Run linux tests"
+          name: "Run macos tests"
           command: |
-            cd bin
-            ./lagrange-test-linux-static
+            ./bin/lagrange-test-macos-static
 
   upload-release:
     docker:
