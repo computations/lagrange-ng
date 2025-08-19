@@ -300,7 +300,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       size_t size;
       double* begin() { return grad_ptr; }
       double* end() { return grad_ptr + size; }
-    } grad{.grad_ptr = grad_ptr, .size = size};
+    } grad{.grad_ptr = grad_ptr, .size = grad_ptr == nullptr ? 0 : size};
     static_assert(std::ranges::range<Grad_struct>);
 
     obj->context.updateRates(x);
