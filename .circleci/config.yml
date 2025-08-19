@@ -82,10 +82,10 @@ workflows:
           requires:
             - gh/release
           tag: "<< pipeline.git.tag >>"
-          files: "./bin/lagrange-ng"
+          files: "./project/bin/lagrange-ng"
           pre-steps:
             - attach_workspace:
-                at: .
+                at: project/
           context:
             - GITHUB_TOKEN
           filters:
