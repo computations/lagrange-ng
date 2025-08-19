@@ -36,8 +36,8 @@ jobs:
       - persist_to_workspace:
           root: linux-artifacts
           paths:
-            - bin/lagrange-ng
-            - bin/lagrange-test
+            - ../bin/lagrange-ng
+            - ../bin/lagrange-test
   build-mac-static:
     macos:
       xcode: 16.4.0
@@ -60,8 +60,8 @@ jobs:
       - persist_to_workspace:
           root: macos-artifacts
           paths:
-            - bin/lagrange-ng
-            - bin/lagrange-test
+            - ../bin/lagrange-ng
+            - ../bin/lagrange-test
   run-tests:
     docker:
       - image: cimg/base:current
