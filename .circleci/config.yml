@@ -48,6 +48,18 @@ jobs:
             cd bin
             ls -l
             ./lagrange-test
+  upload-release:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - attach_workspace:
+          at: .
+      - gh/install
+      - run:
+          name: "Upload Release"
+          command: |
+            gh release upload "<< pipline.git.tag >>" ./bin/lagrange-ng#lagrange-ng-linux-static
+
 
 
 # Orchestrate jobs using workflows
@@ -68,9 +80,6 @@ workflows:
       - gh/release:
           tag: "<< pipeline.git.tag >>"
           title: "Release-test-ci-3"
-          requires:
-            - build-linux-static
-            - run-tests
           context:
             - GITHUB_TOKEN
           filters:
@@ -78,11 +87,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-      - gh/upload:
-          requires:
-            - gh/release
-          tag: "<< pipeline.git.tag >>"
-          files: "./bin/lagrange-ng"
+      - upload-release:
           context:
             - GITHUB_TOKEN
           filters:
