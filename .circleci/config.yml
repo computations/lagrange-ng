@@ -102,7 +102,7 @@ jobs:
       - run:
           name: "Upload Release"
           command: |
-            gh release upload << pipeline.git.tag >> ./artifacts/bin/lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./bin/lagrange-ng-linux-static
             # gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
 
 
