@@ -78,6 +78,9 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+          pre-steps:
+            - attach_workspace:
+                at: .
       - gh/upload:
           requires:
             - gh/release
@@ -85,7 +88,7 @@ workflows:
           files: "./project/bin/lagrange-ng"
           pre-steps:
             - attach_workspace:
-                at: project/
+                at: .
           context:
             - GITHUB_TOKEN
           filters:
