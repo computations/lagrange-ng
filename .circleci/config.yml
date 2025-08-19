@@ -33,11 +33,13 @@ jobs:
             cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTS=ON -G Ninja
             cd build
             ninja --verbose
+            mv bin/lagrange-ng bin/lagrange-ng-linux-static
+            mv bin/lagrange-test bin/lagrange-test-linux-static
       - persist_to_workspace:
-          root: /tmp/linux-artifacts
+          root: .
           paths:
-            - bin/lagrange-ng
-            - bin/lagrange-test
+            - bin/lagrange-ng-linux-static
+            - bin/lagrange-test-linux-static
   build-mac-static:
     macos:
       xcode: 16.4.0
@@ -57,11 +59,13 @@ jobs:
             cmake -Bbuild -H. -DBUILD_TESTS=ON -G Ninja
             cd build
             ninja --verbose
+            mv bin/lagrange-ng bin/lagrange-ng-macos-static
+            mv bin/lagrange-test bin/lagrange-test-macos-static
       - persist_to_workspace:
-          root: /tmp/macos-artifacts
+          root: .
           paths:
-            - bin/lagrange-ng
-            - bin/lagrange-test
+            - bin/lagrange-ng-macos-static
+            - bin/lagrange-test-macos-static
   run-tests:
     docker:
       - image: cimg/base:current
@@ -72,7 +76,7 @@ jobs:
           name: "Run linux tests"
           command: |
             cd bin
-            ./linux-artifacts/lagrange-test
+            ./lagrange-test-linux-static
 
   run-tests-macos:
     macos:
@@ -85,7 +89,7 @@ jobs:
           name: "Run linux tests"
           command: |
             cd bin
-            ./macos-artifacts/lagrange-test
+            ./lagrange-test-linux-static
 
   upload-release:
     docker:
@@ -97,7 +101,7 @@ jobs:
       - run:
           name: "Upload Release"
           command: |
-            gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./lagrange-ng-linux-static
             # gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
 
 
