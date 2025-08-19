@@ -26,7 +26,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install gcc-14 g++-14 ninja-build
-            mkdir linux-artifacts
+            mkdir /tmp/linux-artifacts
       - run:
           name: "Build executable"
           command: |
@@ -50,7 +50,7 @@ jobs:
           name: "Install Ninja"
           command: |
             brew install ninja
-            mkdir macos-artifacts
+            mkdir /tmp/macos-artifacts
       - run:
           name: "Build Executable"
           command: |
