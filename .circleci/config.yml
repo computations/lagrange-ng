@@ -78,17 +78,11 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-          pre-steps:
-            - attach_workspace:
-                at: .
       - gh/upload:
           requires:
             - gh/release
           tag: "<< pipeline.git.tag >>"
           files: "./project/bin/lagrange-ng"
-          pre-steps:
-            - attach_workspace:
-                at: .
           context:
             - GITHUB_TOKEN
           filters:
