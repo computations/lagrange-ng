@@ -96,13 +96,14 @@ jobs:
     docker:
       - image: cimg/base:current
     steps:
-      - attach_workspace:
-          at: .
+      - checkout
       - gh/install
+      - attach_workspace:
+          at: artifacts
       - run:
           name: "Upload Release"
           command: |
-            gh release upload << pipeline.git.tag >> ./bin/lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./artifacts/bin/lagrange-ng-linux-static
             # gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
 
 
