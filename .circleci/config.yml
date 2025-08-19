@@ -58,7 +58,7 @@ jobs:
       - run:
           name: "Upload Release"
           command: |
-            gh release upload "<< pipline.git.tag >>" ./bin/lagrange-ng#lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./bin/lagrange-ng#lagrange-ng-linux-static
 
 
 
