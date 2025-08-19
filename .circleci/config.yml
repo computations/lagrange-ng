@@ -90,6 +90,9 @@ workflows:
       - upload-release:
           context:
             - GITHUB_TOKEN
+          requires:
+            - gh/release
+            - run-tests
           filters:
             tags:
               only: /^v.*/
