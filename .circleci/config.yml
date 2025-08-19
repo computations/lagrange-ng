@@ -82,7 +82,7 @@ workflows:
           requires:
             - gh/release
           tag: "<< pipeline.git.tag >>"
-          files: "./project/bin/lagrange-ng"
+          files: "./bin/lagrange-ng"
           context:
             - GITHUB_TOKEN
           filters:
