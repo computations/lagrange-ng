@@ -33,9 +33,33 @@ jobs:
             cd build
             ninja --verbose
       - persist_to_workspace:
-          root: .
+          root: linux-artifacts
           paths:
-            - .
+            - bin/lagrange-ng
+            - bin/lagrange-test
+  build-mac-static:
+    macos:
+      xcode: 16.4.0
+    resource_class: m4pro.medium
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - run:
+          name: "Install Ninja"
+          command: |
+            brew install ninja
+      - run:
+          name: "Build Executable"
+          command: |
+            cmake -Bbuild -H. -DBUILD_TESTS=ON -G Ninja
+            cd build
+            ninja --verbose
+      - persist_to_workspace:
+          root: macos-artifacts
+          paths:
+            - bin/lagrange-ng
+            - bin/lagrange-test
   run-tests:
     docker:
       - image: cimg/base:current
@@ -43,11 +67,24 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Run tests"
+          name: "Run linux tests"
           command: |
             cd bin
-            ls -l
-            ./lagrange-test
+            ./linux-artifacts/lagrange-test
+
+  run-tests-macos:
+    macos:
+      xcode: 16.4.0
+    resource_class: m4pro.medium
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Run linux tests"
+          command: |
+            cd bin
+            ./macos-artifacts/lagrange-test
+
   upload-release:
     docker:
       - image: cimg/base:current
@@ -58,7 +95,8 @@ jobs:
       - run:
           name: "Upload Release"
           command: |
-            gh release upload << pipeline.git.tag >> ./bin/lagrange-ng#lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-linux-static
+            gh release upload << pipeline.git.tag >> ./linux-artifacts/lagrange-ng#lagrange-ng-macos-static
 
 
 
@@ -66,25 +104,20 @@ jobs:
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   build-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
+    filters:
+      tags:
+        only: /^v.*/
     jobs:
-      - build-linux-static:
-          filters:
-            tags:
-              only: /^v.*/
+      - build-linux-static
       - run-tests:
           requires:
             - build-linux-static
-          filters:
-            tags:
-              only: /^v.*/
       - gh/release:
           tag: "<< pipeline.git.tag >>"
           title: "Release-test-ci-3"
           context:
             - GITHUB_TOKEN
           filters:
-            tags:
-              only: /^v.*/
             branches:
               ignore: /.*/
       - upload-release:
@@ -93,8 +126,11 @@ workflows:
           requires:
             - gh/release
             - run-tests
+            - run-tests-macos
           filters:
-            tags:
-              only: /^v.*/
             branches:
               ignore: /.*/
+      - build-mac-static
+      - run-tests-macos:
+          requires:
+            - build-mac-static
