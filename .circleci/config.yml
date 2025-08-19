@@ -74,11 +74,11 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: bin/
+          at: artifacts
       - run:
           name: "Run linux tests"
           command: |
-            ./bin/lagrange-test-linux-static
+            ./artifacts/bin/lagrange-test-linux-static
 
   run-tests-macos:
     macos:
