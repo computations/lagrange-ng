@@ -67,8 +67,6 @@ else()
     FetchContent_MakeAvailable(OpenBLAS)
     set(LAGRANGE_LIBS openblas_static)
 
-    set_target_properties(openblas_static PROPERTIES COMPILE_OPTIONS "-w")
-
     FetchContent_GetProperties(OpenBLAS
       POPULATED OpenBLAS_POPULATED
     )
