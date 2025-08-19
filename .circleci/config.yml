@@ -72,13 +72,13 @@ jobs:
     docker:
       - image: cimg/base:current
     steps:
+      - checkout
       - attach_workspace:
-          at: .
+          at: bin/
       - run:
           name: "Run linux tests"
           command: |
-            cd bin
-            ./lagrange-test-linux-static
+            .bin/lagrange-test-linux-static
 
   run-tests-macos:
     macos:
