@@ -22,14 +22,14 @@ jobs:
       # Checkout the code as the first step.
       - checkout
       - run:
-          name: "Get Dependancies"
+          name: "Get Dependancies and Setup"
           command: |
             sudo apt-get update
             sudo apt-get install gcc-14 g++-14 ninja-build
+            mkdir linux-artifacts
       - run:
           name: "Build executable"
           command: |
-            mkdir linux-artifacts
             cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTS=ON -G Ninja
             cd build
             ninja --verbose
@@ -50,6 +50,7 @@ jobs:
           name: "Install Ninja"
           command: |
             brew install ninja
+            mkdir macos-artifacts
       - run:
           name: "Build Executable"
           command: |
