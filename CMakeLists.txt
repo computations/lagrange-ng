@@ -10,6 +10,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(FetchContent)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+option(BUILD_ONLY_STATIC "Only build the exclusively static library" OFF)
+
+if("${CMAKE_BUILD_TYPE}" MATCHES "Debug" AND ${BUILD_ONLY_STATIC})
+  message(WARNING "Cannot build a debug static binary")
+endif()
 
 # Find NLopt, otherwise download it
 FetchContent_Declare(NLopt
@@ -101,7 +106,7 @@ add_subdirectory(src)
 
 option(BUILD_TESTS "Enable building the tests" OFF)
 
-if(${BUILD_TESTS})
+if(${BUILD_TESTS} AND NOT ${BUILD_ONLY_STATIC})
   include(CTest)
   enable_testing()
   add_subdirectory(tests)

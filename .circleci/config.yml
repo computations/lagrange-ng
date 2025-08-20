@@ -8,7 +8,7 @@ orbs:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/jobs-steps/#jobs-overview & https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  build-linux-static:
+  build-linux-debug:
     # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/executor-intro/ & https://circleci.com/docs/configuration-reference/#executor-job
     docker:
@@ -30,7 +30,33 @@ jobs:
       - run:
           name: "Build executable"
           command: |
-            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTS=ON -G Ninja
+            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja
+            cd build
+            ninja --verbose
+            cd ..
+            mv bin/lagrange-ng bin/lagrange-ng-linux-debug
+            mv bin/lagrange-test bin/lagrange-test-linux-debug
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/lagrange-ng-linux-static
+            - bin/lagrange-test-linux-static
+  build-linux-static:
+    docker:
+      - image: cimg/base:current
+
+    steps:
+      - checkout
+      - run:
+          name: "Get Dependancies and Setup"
+          command: |
+            sudo apt-get update
+            sudo apt-get install gcc-14 g++-14 ninja-build
+            mkdir /tmp/linux-artifacts
+      - run:
+          name: "Build executable"
+          command: |
+            cmake -Bbuild -H. -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DCMAKE_BUILD_TYPE=Release -DBUILD_ONLY_STATIC=ON -G Ninja
             cd build
             ninja --verbose
             cd ..
@@ -78,7 +104,7 @@ jobs:
       - run:
           name: "Run linux tests"
           command: |
-            ./artifacts/bin/lagrange-test-linux-static
+            ./artifacts/bin/lagrange-test-linux-debug
 
   run-tests-macos:
     macos:
@@ -113,14 +139,14 @@ jobs:
 workflows:
   build-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
     jobs:
-      - build-linux-static:
-          filters:
-            tags:
-              only: /^v.*/
+      - build-linux-debug
       - run-tests:
           requires:
-            - build-linux-static
+            - build-linux-debug
+      - build-linux-static:
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
       - gh/release:

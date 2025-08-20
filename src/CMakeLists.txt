@@ -42,6 +42,9 @@ if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
     -Wall 
     -Wextra 
     -fdiagnostics-color=always)
+    if(${BUILD_ONLY_STATIC})
+      target_link_libraries(lagrange-release-libs PUBLIC -static)
+    endif()
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
     -fsanitize-recover=address -fsanitize=undefined -fdiagnostics-color=always)
