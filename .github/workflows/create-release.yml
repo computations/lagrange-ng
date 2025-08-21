@@ -1,20 +1,15 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: Releases
 
-on:
+on: 
   push:
-    branches: [ "circleci-project-setup" ]
-  pull_request:
-    branches: [ "master" ]
+    tags:
+    - 'v.+'
 
 jobs:
+
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
-      fail-fast: false
-      matrix:
         include:
           - os: ubuntu-latest
             c_compiler: gcc-14
@@ -25,9 +20,10 @@ jobs:
             cpp_compiler: clang++
             build_type: Release
 
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
-
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -45,7 +41,12 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
         -DBUILD_STATIC_ONLY=ON
-
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+    - name: Rename
+      run: >
+        mv bin/lagrange-ng bin/lagrange-ng-static-${{ matrix.os }}
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "bin/"
