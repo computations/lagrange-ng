@@ -20,9 +20,9 @@ jobs:
             c_compiler: gcc-14
             cpp_compiler: g++-14
             build_type: Release
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+          - os: macos-15
+            c_compiler: gcc-14
+            cpp_compiler: g++-14
             build_type: Release
 
     steps:
