@@ -40,13 +40,11 @@ if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
     if(${BUILD_ONLY_STATIC})
       target_link_libraries(lagrange-release-libs PUBLIC -static)
     else()
-    set(LAGRANGE_BUILD_FLAGS 
-        ${LAGRANGE_BUILD_FLAGS}
-        -march=native -mtune=native
-       )
-  endif()
-endif()
-
+      set(LAGRANGE_BUILD_FLAGS 
+          ${LAGRANGE_BUILD_FLAGS}
+          -march=native -mtune=native
+         )
+    endif()
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
     -fsanitize-recover=address -fsanitize=undefined -fdiagnostics-color=always)
