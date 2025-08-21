@@ -38,6 +38,7 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
+      if: matrix.os != 'macos*'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -48,7 +49,7 @@ jobs:
         -DBUILD_STATIC_ONLY=ON
 
     - name: Configure CMake
-      if: matrix.os == 'macos-15'
+      if: matrix.os == 'macos*'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
