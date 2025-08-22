@@ -55,7 +55,7 @@ elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 endif()
 
 set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}
-  logger)
+  logger ${LAGRANGE_BLAS_LIBS})
 
 set(WARNING_FLAGS -Wall -Wextra)
 

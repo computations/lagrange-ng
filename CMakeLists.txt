@@ -24,7 +24,6 @@ FetchContent_Declare(NLopt
   FIND_PACKAGE_ARGS
 )
 
-
 # Find json lib, otherwise download it
 FetchContent_Declare(nlohmann_json
   URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
@@ -42,15 +41,21 @@ FetchContent_Declare(logger
 
 FetchContent_MakeAvailable(NLopt nlohmann_json logger)
 
-set(NLOPT_LIB nlopt)
+if(DEFINED NLOPT_LIBRARIES)
+  set(NLOPT_LIB ${NLOPT_LIBRARIES})
+else()
+  set(NLOPT_LIB nlopt)
+endif()
 
+message(STATUS 
+  "Using NLOpt: ${NLOPT_LIB}")
 
 # Find MKL, fallback to OpenBLAS
 #include(FindMKL)
 find_package(MKL CONFIG)
 
 if (MKL_FOUND)
-  set(LAGRANGE_LIBS $<LINK_ONLY:MKL::MKL>)
+  set(LAGRANGE_BLAS_LIBS $<LINK_ONLY:MKL::MKL>)
   set(LAGRANGE_INCLUDES $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
   set(LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
   set(LAGRANGE_DEFINES MKL_ENABLED)
@@ -60,7 +65,7 @@ else()
   pkg_check_modules(OpenBLAS openblas)
 
   if(OpenBLAS_FOUND OR OpenBLAS_INCLUDE_DIRS MATCHES ".+")
-    set(LAGRANGE_LIBS openblas)
+    set(LAGRANGE_BLAS_LIBS openblas)
 
     include(CheckSourceCompiles)
     include(CMakePushCheckState)
@@ -119,7 +124,7 @@ else()
       "
       HAVE_LAPACKE_IN_SYSTEM_PATH)
 
-      set(LAGRANGE_LIBS ${LAGRANGE_LIBS} lapacke)
+      set(LAGRANGE_BLAS_LIBS ${LAGRANGE_LIBS} lapacke)
     endif()
 
     cmake_pop_check_state()
@@ -143,12 +148,14 @@ else()
     message("Setting OpenBLAS library directory to ${OpenBLAS_LIBRARY_DIRS}")
     message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
 
-    set(LAGRANGE_LIBS openblas)
+    set(LAGRANGE_BLAS_LIBS openblas)
   endif()
 
   set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
   set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
+
+message(STATUS "Using BLAS: ${LAGRANGE_BLAS_LIBS}")
 
 find_package(Git)
 if(GIT_FOUND)
