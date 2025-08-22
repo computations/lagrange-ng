@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      matrix:
         include:
           - os: ubuntu-latest
             c_compiler: gcc-14
