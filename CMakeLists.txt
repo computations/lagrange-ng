@@ -46,7 +46,7 @@ FetchContent_GetProperties(NLopt
   POPULATED NLopt_POPULATED
 )
 
-if(${NLopt_POPULATED})
+if(NLopt_POPULATED)
   set(NLOPT_LIB nlopt)
 else()
   set(NLOPT_LIB NLopt::nlopt)
@@ -57,7 +57,7 @@ endif()
 #include(FindMKL)
 find_package(MKL CONFIG)
 
-if (${MKL_FOUND})
+if (MKL_FOUND)
   set(LAGRANGE_LIBS $<LINK_ONLY:MKL::MKL>)
   set(LAGRANGE_INCLUDES $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
   set(LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
@@ -115,7 +115,7 @@ else()
       "
       HAVE_LAPACKE)
 
-      if(NOT ${HAVE_LAPACKE})
+      if(NOT HAVE_LAPACKE)
 
           set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
 
@@ -168,7 +168,7 @@ add_subdirectory(src)
 
 option(BUILD_TESTS "Enable building the tests" OFF)
 
-if(${BUILD_TESTS} AND NOT ${BUILD_ONLY_STATIC})
+if(BUILD_TESTS AND NOT BUILD_ONLY_STATIC)
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
