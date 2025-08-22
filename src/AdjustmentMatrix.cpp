@@ -59,13 +59,21 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   std::unordered_set<
       std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)> >
       arc_set;
-  for (auto a : arcs) { arc_set.insert({a.from, a.to}); }
+  std::unordered_set<decltype(AdjustmentArc::from)> label_set;
+  for (auto a : arcs) {
+    arc_set.insert({a.from, a.to});
+    label_set.insert(a.from);
+    label_set.insert(a.to);
+  }
 
-  auto expected_sym_size = (arcs.size() - 1) * (arcs.size()) / 2;
-  auto expected_nonsym_size = arcs.size() * arcs.size();
+  size_t label_count = label_set.size();
 
-  return arc_set.size() == expected_sym_size
-         || arc_set.size() == expected_nonsym_size;
+  auto expected_sym_size = (label_count - 1) * (label_count) / 2;
+  auto expected_nonsym_size = label_count * label_count - label_count;
+
+  return (arc_set.size() == expected_sym_size
+          || arc_set.size() == expected_nonsym_size)
+         && check_duplicates(arcs);
 #endif
 }
 
