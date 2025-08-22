@@ -124,7 +124,7 @@ else()
       "
       HAVE_LAPACKE_IN_SYSTEM_PATH)
 
-      set(LAGRANGE_BLAS_LIBS ${LAGRANGE_LIBS} lapacke)
+      set(LAGRANGE_BLAS_LIBS ${LAGRANGE_BLAS_LIBS} lapacke)
     endif()
 
     cmake_pop_check_state()
