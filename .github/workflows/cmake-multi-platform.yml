@@ -43,6 +43,12 @@ jobs:
       run: |
         sudo apt-get install libopenblas-dev liblapacke-dev
 
+    - name: Install Deps
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        sudo brew install openblas
+
     - name: Configure CMake
       if: matrix.os != 'macos-latest'
       run: >
