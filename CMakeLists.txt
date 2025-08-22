@@ -42,15 +42,7 @@ FetchContent_Declare(logger
 
 FetchContent_MakeAvailable(NLopt nlohmann_json logger)
 
-FetchContent_GetProperties(NLopt
-  POPULATED NLopt_POPULATED
-)
-
-if(NLopt_POPULATED)
-  set(NLOPT_LIB nlopt)
-else()
-  set(NLOPT_LIB NLopt::nlopt)
-endif()
+set(NLOPT_LIB nlopt)
 
 
 # Find MKL, fallback to OpenBLAS
