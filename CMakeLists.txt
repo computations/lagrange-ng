@@ -68,19 +68,24 @@ else()
       https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz
       URL_HASH SHA256=27342cff518646afb4c2b976d809102e368957974c250a25ccc965e53063c95d
       EXCLUDE_FROM_ALL
+      FIND_PACKAGE_ARGS
     )
 
     FetchContent_MakeAvailable(OpenBLAS)
 
-    set(OpenBLAS_INCLUDE_DIRS
-      ${CMAKE_CURRENT_BINARY_DIR}/
-      ${CMAKE_CURRENT_BINARY_DIR}/generated
-      ${openblas_SOURCE_DIR}/lapack-netlib/LAPACKE/include/
-    )
+    if(NOT DEFINED OpenBLAS_INCLUDE_DIRS)
+      set(OpenBLAS_INCLUDE_DIRS
+        ${CMAKE_CURRENT_BINARY_DIR}/
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
+        ${openblas_SOURCE_DIR}/lapack-netlib/LAPACKE/include/
+      )
 
-    message("Setting OpenBLAS library to ${OpenBLAS_LIBRARY_DIRS}")
-    message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
-    set(LAGRANGE_LIBS openblas_static)
+      message("Setting OpenBLAS library to ${OpenBLAS_LIBRARY_DIRS}")
+      message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
+      set(LAGRANGE_LIBS openblas_static)
+    else()
+      set(LAGRANGE_LIBS openblas)
+    endif()
     set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
     set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
