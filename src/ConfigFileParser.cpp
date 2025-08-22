@@ -2,8 +2,11 @@
 
 #include <cctype>
 #include <functional>
-#include <generator>
 #include <string_view>
+
+#ifdef __cpp_lib_generator
+  #include <generator>
+#endif
 
 #include "ConfigFile.hpp"
 #include "logger.hpp"
