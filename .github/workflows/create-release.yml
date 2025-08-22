@@ -2,8 +2,7 @@ name: Releases
 
 on: 
   push:
-    tags:
-    - 'v.+'
+    branches: [ "circleci-project-setup" ]
 
 jobs:
 
@@ -25,28 +24,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "bin-output-dir=${{ github.workspace }}/bin" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      if: matrix.os != 'macos-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DBUILD_ONLY_STATIC=ON
         -S ${{ github.workspace }}
-        -DBUILD_STATIC_ONLY=ON
+
+    - name: Configure CMake
+      if: matrix.os == 'macos-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DBUILD_ONLY_STATIC=ON
+        -S ${{ github.workspace }}
+
     - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
     - name: Rename
       run: >
-        mv bin/lagrange-ng bin/lagrange-ng-static-${{ matrix.os }}
+        mv ${{ steps.strings.outputs.bin-output-dir }} ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-static-${{ matrix.os }}
+
     - uses: ncipollo/release-action@v1
       with:
         artifacts: "bin/"

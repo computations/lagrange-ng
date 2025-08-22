@@ -4,7 +4,7 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "circleci-project-setup" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
