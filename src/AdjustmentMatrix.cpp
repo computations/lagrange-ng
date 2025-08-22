@@ -16,7 +16,8 @@ namespace lagrange {
 using namespace std::string_view_literals;
 
 static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
-#ifdef __cpp_lib_ranges_zip
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) && __clang_major__ > 18)
   auto duplicates = arcs | std::views::adjacent<2>
                     | std::views::transform([](const auto& t) -> bool {
                         auto& [a, b] = t;
@@ -41,7 +42,8 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
  * - All arcs are found (both symmetric and non)
  */
 static bool is_valid(std::span<const AdjustmentArc> arcs) {
-#ifdef __cpp_lib_ranges_zip
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) && __clang_major__ > 18)
   auto runs = arcs | std::views::chunk_by([](const auto& a, const auto& b) {
                 auto [a_from, a_to, a_dist] = a;
                 auto [b_from, b_to, b_dist] = b;
@@ -62,7 +64,7 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   return check_duplicates(arcs) && (decreasing != equal);
 #else
   std::unordered_set<
-      std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)>>
+      std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)> >
       arc_set;
   for (auto a : arcs) { arc_set.insert({a.from, a.to}); }
 

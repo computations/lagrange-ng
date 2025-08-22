@@ -259,7 +259,8 @@ class ConfigFile {
     if (period_buffer.front().second.start != 0.0) { OllKorrect &= false; }
     if (!std::isinf(period_buffer.back().second.end)) { OllKorrect &= false; }
 
-#ifndef __cpp_lib_ranges_zip
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) && __clang_major__ > 18)
     for (auto [a, b] : period_buffer | std::views::adjacent<2>) {
       auto pc_a = a.second;
       auto pc_b = b.second;
