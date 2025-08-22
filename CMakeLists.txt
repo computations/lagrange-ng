@@ -63,25 +63,32 @@ if (MKL_FOUND)
   set(LAGRANGE_BUILD_FLAGS $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
   set(LAGRANGE_DEFINES MKL_ENABLED)
 else()
-    if(DEFINED OpenBLAS_INCLUDE_DIRS)
-      set(LAGRANGE_LIBS openblas)
+  find_package(PkgConfig)
 
-      include(CheckSourceCompiles)
-      include(CMakePushCheckState)
+  pkg_check_modules(OpenBLAS openblas)
 
-      cmake_push_check_state()
+  if(OpenBLAS_FOUND)
+    set(LAGRANGE_LIBS openblas)
 
-      set(CMAKE_REQUIRED_LIBRARIES openblas)
-      set(CMAKE_REQUIRED_FLAGS -fopenmp)
-      set(CMAKE_REQUIRED_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+    include(CheckSourceCompiles)
+    include(CMakePushCheckState)
 
-      check_source_compiles(CXX 
-      "
-      #include <cblas.h>
-      #include <lapacke.h>
+    cmake_push_check_state()
 
-      int main(){
-          LAPACKE_zgesv(CblasRowMajor,
+    set(CMAKE_REQUIRED_LIBRARIES ${OpenBLAS_LINK_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS ${OpenBLAS_CFLAGS_OTHER})
+    set(CMAKE_REQUIRED_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+
+    # Some platforms ship openblas without lapacke bulit, so we have to check
+    # for it here
+
+    check_source_compiles(CXX 
+    "
+    #include <cblas.h>
+    #include <lapacke.h>
+
+    int main(){
+    LAPACKE_zgesv(CblasRowMajor,
                   1,
                   1,
                   nullptr,
@@ -89,64 +96,65 @@ else()
                   nullptr,
                   nullptr,
                   1);
-          return 0;
+    return 0;
+
+    }
+    "
+    HAVE_LAPACKE)
+
+    if(NOT HAVE_LAPACKE)
+
+      set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
+
+      check_source_compiles(CXX 
+      "
+      #include <cblas.h>
+      #include <lapacke.h>
+
+      int main(){
+        LAPACKE_zgesv(CblasRowMajor,
+                1,
+                1,
+                nullptr,
+                1,
+                nullptr,
+                nullptr,
+                1);
+        return 0;
 
       }
       "
-      HAVE_LAPACKE)
+      HAVE_LAPACKE_IN_SYSTEM_PATH)
 
-      if(NOT HAVE_LAPACKE)
+      set(LAGRANGE_LIBS ${LAGRANGE_LIBS} lapacke)
+    endif()
 
-          set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
+    cmake_pop_check_state()
 
-          check_source_compiles(CXX 
-          "
-          #include <cblas.h>
-          #include <lapacke.h>
+  else()
+    FetchContent_Declare(OpenBLAS
+      URL
+      https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz
+      URL_HASH SHA256=27342cff518646afb4c2b976d809102e368957974c250a25ccc965e53063c95d
+      EXCLUDE_FROM_ALL
+    )
 
-          int main(){
-              LAPACKE_zgesv(CblasRowMajor,
-                      1,
-                      1,
-                      nullptr,
-                      1,
-                      nullptr,
-                      nullptr,
-                      1);
-              return 0;
+    FetchContent_MakeAvailable(OpenBLAS)
 
-          }
-          "
-          HAVE_LAPACKE_IN_SYSTEM_PATH)
+    set(OpenBLAS_INCLUDE_DIRS
+      ${CMAKE_CURRENT_BINARY_DIR}/
+      ${CMAKE_CURRENT_BINARY_DIR}/generated
+      ${openblas_SOURCE_DIR}/lapack-netlib/LAPACKE/include/
+    )
 
-        set(LAGRANGE_LIBS ${LAGRANGE_LIBS} lapacke)
-      endif()
+    message("Setting OpenBLAS library directory to ${OpenBLAS_LIBRARY_DIRS}")
+    message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
 
-      cmake_pop_check_state()
+    set(LAGRANGE_LIBS openblas)
+  endif()
 
-    else()
-      FetchContent_Declare(OpenBLAS
-        URL
-        https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz
-        URL_HASH SHA256=27342cff518646afb4c2b976d809102e368957974c250a25ccc965e53063c95d
-        EXCLUDE_FROM_ALL
-        FIND_PACKAGE_ARGS
-      )
-
-      FetchContent_MakeAvailable(OpenBLAS)
-      set(OpenBLAS_INCLUDE_DIRS
-        ${CMAKE_CURRENT_BINARY_DIR}/
-        ${CMAKE_CURRENT_BINARY_DIR}/generated
-        ${openblas_SOURCE_DIR}/lapack-netlib/LAPACKE/include/
-      )
-
-      message("Setting OpenBLAS library to ${OpenBLAS_LIBRARY_DIRS}")
-      message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
-      set(LAGRANGE_LIBS openblas_static)
-      endif()
-
-      set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
-      set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+  set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
+  set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 endif()
 
 find_package(Git)
