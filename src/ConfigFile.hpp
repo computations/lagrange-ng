@@ -259,9 +259,17 @@ class ConfigFile {
     if (period_buffer.front().second.start != 0.0) { OllKorrect &= false; }
     if (!std::isinf(period_buffer.back().second.end)) { OllKorrect &= false; }
 
+#ifdef __cpp_lib_ranges_zip
     for (auto [a, b] : period_buffer | std::views::adjacent<2>) {
       auto pc_a = a.second;
       auto pc_b = b.second;
+#else
+    for (auto a = period_buffer.begin(), b = next(period_buffer.begin());
+         b != period_buffer.end();
+         ++a, ++b) {
+      auto pc_a = a->second;
+      auto pc_b = b->second;
+#endif
       if (pc_a.end != pc_b.start) {
         OllKorrect &= false;
         LOG_ERROR(

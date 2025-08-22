@@ -5,15 +5,18 @@
 #include <ranges>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "CSV.hpp"
+#include "Utils.hpp"
 
 namespace lagrange {
 
 using namespace std::string_view_literals;
 
 static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
+#ifdef __cpp_lib_ranges_zip
   auto duplicates = arcs | std::views::adjacent<2>
                     | std::views::transform([](const auto& t) -> bool {
                         auto& [a, b] = t;
@@ -22,6 +25,14 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
                         return a_from == b_from && a_to == b_to;
                       });
   return std::ranges::none_of(duplicates, std::identity{});
+#else
+  for (size_t i = 0, j = 1; j < arcs.size(); ++i, ++j) {
+    auto a = arcs[i];
+    auto b = arcs[j];
+    if (a.from == b.from && a.to == b.to) { return true; }
+  }
+  return false;
+#endif
 }
 
 /* assume that the matrix is sorted */
@@ -30,6 +41,7 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
  * - All arcs are found (both symmetric and non)
  */
 static bool is_valid(std::span<const AdjustmentArc> arcs) {
+#ifdef __cpp_lib_ranges_zip
   auto runs = arcs | std::views::chunk_by([](const auto& a, const auto& b) {
                 auto [a_from, a_to, a_dist] = a;
                 auto [b_from, b_to, b_dist] = b;
@@ -48,6 +60,18 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   });
 
   return check_duplicates(arcs) && (decreasing != equal);
+#else
+  std::unordered_set<
+      std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)>>
+      arc_set;
+  for (auto a : arcs) { arc_set.insert({a.from, a.to}); }
+
+  auto expected_sym_size = (arcs.size() - 1) * (arcs.size()) / 2;
+  auto expected_nonsym_size = arcs.size() * arcs.size();
+
+  return arc_set.size() == expected_sym_size
+         || arc_set.size() == expected_nonsym_size;
+#endif
 }
 
 void AdjustmentMatrix::read_arcs(CSVReader& reader,
