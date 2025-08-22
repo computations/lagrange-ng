@@ -64,7 +64,7 @@ else()
 
   pkg_check_modules(OpenBLAS openblas)
 
-  if(OpenBLAS_FOUND OR OpenBLAS_INCLUDE_DIRS MATCHES ".+")
+  if(OpenBLAS_FOUND OR DEFINED OpenBLAS_INCLUDE_DIRS)
     set(LAGRANGE_BLAS_LIBS openblas)
 
     include(CheckSourceCompiles)
