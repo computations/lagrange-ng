@@ -41,7 +41,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        apt-get install libopenblas-dev
+        sudo apt-get install libopenblas-dev
 
     - name: Configure CMake
       if: matrix.os != 'macos-latest'
