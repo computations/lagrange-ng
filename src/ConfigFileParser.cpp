@@ -678,6 +678,34 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
     },
 };
 
+std::string_view break_line(std::string_view& str, size_t line_length) {
+  size_t start_index = 0;
+  while (start_index < str.length()) {
+    if (start_index + line_length > str.length()) {
+      auto ret = str.substr(start_index, line_length);
+      str = {str.begin() + line_length, str.end()};
+      return ret;
+    }
+
+    size_t cur_line_length = line_length;
+
+    if (cur_line_length + start_index >= str.size()) {
+      cur_line_length = str.size() - start_index - 1;
+    }
+
+    while (cur_line_length != 0
+           && std::isspace(str[start_index + cur_line_length]) == 0) {
+      cur_line_length -= 1;
+    }
+    auto ret = str.substr(start_index, cur_line_length);
+    start_index += cur_line_length + 1;
+    str = {str.begin() + start_index, str.end()};
+    return ret;
+  }
+  return {};
+}
+
+#ifdef __cpp_lib_generator
 std::generator<std::string_view> break_line(const std::string_view& str,
                                             size_t line_length) {
   size_t start_index = 0;
@@ -701,6 +729,7 @@ std::generator<std::string_view> break_line(const std::string_view& str,
     start_index += cur_line_length + 1;
   }
 }
+#endif
 
 void ConfigFileParser::print_help_long() {
   MESSAGE_INFO(COLORIZE(ANSI_COLOR_BLUE, "Configuration file options:\n"));
@@ -708,7 +737,14 @@ void ConfigFileParser::print_help_long() {
     MESSAGE_INFO(COLORIZE(ANSI_COLOR_BLUE, "  {}"),
                  !config._usage.empty() ? config._usage : config._name);
     if (!config._help.empty()) {
+#ifndef __cpp_lib_generator
       for (auto line : break_line(config._help, 78)) {
+#else
+      std::string_view str{config._help};
+      while (true) {
+        auto line = break_line(str, 78);
+        if (line.empty()) { break; }
+#endif
         MESSAGE_INFO("    {}", line);
       }
     }

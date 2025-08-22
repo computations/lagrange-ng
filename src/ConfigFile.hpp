@@ -265,7 +265,8 @@ class ConfigFile {
       auto pc_a = a.second;
       auto pc_b = b.second;
 #else
-    for (auto a_itr = period_buffer.begin(), b_itr = next(period_buffer.begin());
+    for (auto a_itr = period_buffer.begin(),
+              b_itr = next(period_buffer.begin());
          b_itr != period_buffer.end();
          ++a_itr, ++b_itr) {
       auto a = *a_itr;
