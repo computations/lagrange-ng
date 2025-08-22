@@ -115,7 +115,7 @@ else()
       "
       HAVE_LAPACKE)
 
-      if(${HAVE_LAPACKE})
+      if(NOT ${HAVE_LAPACKE})
 
           set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
 
