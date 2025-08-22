@@ -38,7 +38,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        sudo apt-get install libopenblas-dev liblapacke-dev libnlopt-cxx-dev
+        sudo apt-get install libopenblas-dev liblapacke-dev
 
     - name: Install Deps
       if: matrix.os == 'macos-latest'
