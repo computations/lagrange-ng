@@ -85,6 +85,64 @@ else()
       set(LAGRANGE_LIBS openblas_static)
     else()
       set(LAGRANGE_LIBS openblas)
+
+      include(CheckSourceCompiles)
+      include(CMakePushCheckState)
+
+      cmake_push_check_state()
+
+      set(CMAKE_REQUIRED_LIBRARIES openblas)
+      set(CMAKE_REQUIRED_FLAGS -fopenmp)
+      set(CMAKE_REQUIRED_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
+
+      check_source_compiles(CXX 
+      "
+      #include <cblas.h>
+      #include <lapacke.h>
+
+      int main(){
+          LAPACKE_zgesv(CblasRowMajor,
+                  1,
+                  1,
+                  nullptr,
+                  1,
+                  nullptr,
+                  nullptr,
+                  1);
+          return 0;
+
+      }
+      "
+      HAVE_LAPACKE)
+
+      if(${HAVE_LAPACKE})
+
+          set(CMAKE_REQUIRED_LIBRARIES openblas lapacke)
+
+          check_source_compiles(CXX 
+          "
+          #include <cblas.h>
+          #include <lapacke.h>
+
+          int main(){
+              LAPACKE_zgesv(CblasRowMajor,
+                      1,
+                      1,
+                      nullptr,
+                      1,
+                      nullptr,
+                      nullptr,
+                      1);
+              return 0;
+
+          }
+          "
+          HAVE_LAPACKE_IN_SYSTEM_PATH)
+
+        set(LAGRANGE_LIBS ${LAGRANGE_LIBS} lapacke)
+      endif()
+
+      cmake_pop_check_state()
     endif()
     set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
     set(LAGRANGE_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
