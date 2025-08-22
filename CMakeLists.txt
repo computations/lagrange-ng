@@ -64,8 +64,9 @@ if (${MKL_FOUND})
   set(LAGRANGE_DEFINES MKL_ENABLED)
 else()
     FetchContent_Declare(OpenBLAS
-      URL https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30-x64.zip
-      URL_HASH SHA256=8b04387766efc05c627e26d24797ec0d4ed4c105ec14fa7400aa84a02db22b66
+      URL
+      https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30-x64-64.zip
+      URL_HASH SHA256=b4d8248ff14f8405ead4580f57503ffce240de3f6ad46409898f5bc0f989c5d2
       EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(OpenBLAS)
@@ -75,10 +76,10 @@ else()
       SOURCE_DIR openblas
     )
 
+    set(OpenBLAS_LIBRARY_DIRS ${openblas_SOURCE_DIR}/lib/libopenblasp-r0.3.30)
     set(OpenBLAS_INCLUDE_DIRS ${openblas_SOURCE_DIR}/include)
-    set(OpenBLAS_LIBRARY_DIRS ${openblas_SOURCE_DIR}/lib/)
 
-    message("Setting OpenBLAS library to ${OpenBLAS_LIBRARIES}")
+    message("Setting OpenBLAS library to ${OpenBLAS_LIBRARY_DIRS}")
     message("Setting OpenBLAS include directory to ${OpenBLAS_INCLUDE_DIRS}")
     set(LAGRANGE_LIBS openblas)
     set(LAGRANGE_LIB_DIR ${OpenBLAS_LIBRARY_DIRS})
