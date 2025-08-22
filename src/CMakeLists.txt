@@ -62,6 +62,7 @@ set(WARNING_FLAGS -Wall -Wextra)
 target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_INCLUDES})
 target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread)
+target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LIB_DIRS})
 target_compile_definitions(lagrange-release-libs PUBLIC ${LAGRANGE_DEFINES})
 target_link_options(lagrange-release-libs PUBLIC ${LAGRANGE_LINK_FLAGS})
 
