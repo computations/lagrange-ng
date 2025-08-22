@@ -65,6 +65,8 @@ jobs:
         -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DOpenBLAS_INCLUDE_DIRS=$(brew --prefix openblas)/include
+        -DOpenBLAS_LIBRARY_DIRS=$(brew --prefix openblas)/lib
         -S ${{ github.workspace }}
 
     - name: Build

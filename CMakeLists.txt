@@ -67,7 +67,7 @@ else()
 
   pkg_check_modules(OpenBLAS openblas)
 
-  if(OpenBLAS_FOUND)
+  if(OpenBLAS_FOUND OR OpenBLAS_INCLUDE_DIRS MATCHES ".+")
     set(LAGRANGE_LIBS openblas)
 
     include(CheckSourceCompiles)
@@ -75,7 +75,8 @@ else()
 
     cmake_push_check_state()
 
-    set(CMAKE_REQUIRED_LIBRARIES ${OpenBLAS_LINK_LIBRARIES})
+    set(CMAKE_REQUIRED_LIBRARIES openblas)
+    set(CMAKE_REQUIRED_LINK_DIRECTORIES ${OpenBLAS_LIBRARY_DIRS})
     set(CMAKE_REQUIRED_FLAGS ${OpenBLAS_CFLAGS_OTHER})
     set(CMAKE_REQUIRED_INCLUDES ${OpenBLAS_INCLUDE_DIRS})
 
