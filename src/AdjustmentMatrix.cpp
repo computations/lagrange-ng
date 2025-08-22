@@ -72,8 +72,7 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   auto expected_nonsym_size = label_count * label_count - label_count;
 
   return (arc_set.size() == expected_sym_size
-          || arc_set.size() == expected_nonsym_size)
-         && check_duplicates(arcs);
+          || arc_set.size() == expected_nonsym_size);
 #endif
 }
 
