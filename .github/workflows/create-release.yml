@@ -54,7 +54,7 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
     - name: Rename
       run: >
-        mv ${{ steps.strings.outputs.bin-output-dir }} ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng--${{ matrix.os }}
+        mv ${{ steps.strings.outputs.bin-output-dir }} ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os }}
 
     - uses: ncipollo/release-action@v1
       with:
