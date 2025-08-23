@@ -48,14 +48,13 @@ jobs:
         -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DBUILD_ONLY_STATIC=ON
         -S ${{ github.workspace }}
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
     - name: Rename
       run: >
-        mv ${{ steps.strings.outputs.bin-output-dir }} ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-static-${{ matrix.os }}
+        mv ${{ steps.strings.outputs.bin-output-dir }} ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng--${{ matrix.os }}
 
     - uses: ncipollo/release-action@v1
       with:
