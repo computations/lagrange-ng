@@ -2,7 +2,6 @@ name: Releases
 
 on: 
   push:
-    branches: [ "circleci-project-setup" ]
     tags: ["v*"]
 
 jobs:
@@ -53,10 +52,12 @@ jobs:
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
     - name: Rename
       run: >
         mv ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os }}
 
-    - uses: ncipollo/release-action@v1
+    - uses: actions/upload-artifact@v4
       with:
-        artifacts: "bin/"
+        artifacts: "bin/*"
+        allowUpdates: true
