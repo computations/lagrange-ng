@@ -57,7 +57,7 @@ jobs:
       run: >
         mv ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os }}
 
-    - uses: actions/upload-artifact@v4
-      with:
+    - name: Create Release
+      uses: ncipollo/release-action@v1.18.0
         artifacts: "bin/*"
         allowUpdates: true
