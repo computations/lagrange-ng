@@ -12,10 +12,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            os-name: linux
             c_compiler: gcc-14
             cpp_compiler: g++-14
             build_type: Release
           - os: macos-latest
+            os-name: macos
             c_compiler: clang
             cpp_compiler: clang++
             build_type: Release
@@ -55,7 +57,7 @@ jobs:
 
     - name: Rename
       run: >
-        mv ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os }}
+        mv ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os-name }}
 
     - name: Create Release
       uses: ncipollo/release-action@v1.18.0
