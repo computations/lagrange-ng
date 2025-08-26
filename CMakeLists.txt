@@ -12,6 +12,8 @@ include(FetchContent)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(BUILD_ONLY_STATIC "Only build the exclusively static library" OFF)
 option(STRIP_BINARY "Strip the binary when building" OFF)
+set(PROVIDED_BUILD_VERSION "" CACHE STRING "Manually set the build version")
+mark_as_advanced(PROVIDED_BUILD_VERSION)
 
 if(STRIP_BINARY)
   set(LAGRANGE_STRIP_FLAGS -s)
@@ -165,16 +167,24 @@ endif()
 
 message(STATUS "Using BLAS: ${LAGRANGE_BLAS_LIBS}")
 
-find_package(Git)
-if(GIT_FOUND)
-    if(EXISTS ${CMAKE_SOURCE_DIR})
-        execute_process(
-            COMMAND ${GIT_EXECUTABLE} describe
-            WORKING_DIRECTORY "${local_dir}"
-            OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
-            ERROR_QUIET
-            OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
+if(DEFINED PROVIDED_BUILD_VERSION)
+  SET(LAGRANGE_BUILD_VERSION ${PROVIDED_BUILD_VERSION})
+else()
+  find_package(Git)
+  if(GIT_FOUND)
+      if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+          execute_process(
+              COMMAND ${GIT_EXECUTABLE} describe
+              WORKING_DIRECTORY "${local_dir}"
+              OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
+              ERROR_QUIET
+              OUTPUT_STRIP_TRAILING_WHITESPACE)
+      endif()
+  endif()
+endif()
+
+if(NOT DEFINED LAGRANGE_BUILD_VERSION)
+  set(LAGRANGE_BUILD_VERSION "unknown")
 endif()
 
 set(LAGRANGE_DEFINES ${LAGRANGE_DEFINES}

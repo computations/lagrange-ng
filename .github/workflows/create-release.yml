@@ -28,8 +28,6 @@ jobs:
     steps:
 
     - uses: actions/checkout@v4
-      with:
-        fetch-tags: true
 
     - name: Set reusable strings
       id: strings
@@ -57,6 +55,7 @@ jobs:
         -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DSTRIP_BINARY=ON
+        -DPROVIDED_BUILD_VERSION=${{ github.ref_name }}
         -S ${{ github.workspace }}
 
     - name: Build
