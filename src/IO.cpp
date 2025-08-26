@@ -27,6 +27,7 @@
 #define STRING(s) #s
 #define STRINGIFY(s) STRING(s)
 #define GIT_REV_STRING STRINGIFY(LAGRANGE_BUILD_VERSION)
+#define BUILD_TYPE_STRING STRINGIFY(CURRENT_BUILD_TYPE)
 
 namespace lagrange {
 
@@ -543,7 +544,12 @@ void write_json_file(const ConfigFile &config,
 }
 
 void print_run_header(const ConfigFile &config) {
+#ifdef GIT_REV_STRING
   LOG(INFO, "Lagrange-ng version: {}", GIT_REV_STRING)
+#endif
+#ifdef CURRENT_BUILD_TYPE
+  LOG(INFO, "Lagrange-ng build type: {}", BUILD_TYPE_STRING)
+#endif
   LOG(INFO, "Using tree: {}", config.tree_filename().c_str());
   LOG(INFO, "Using data: {}", config.data_filename().c_str());
 }
