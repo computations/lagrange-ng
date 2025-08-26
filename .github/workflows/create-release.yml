@@ -62,11 +62,13 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
     - name: Rename
-      run: >
+      shell: bash
+      run: |
         export LAGRANGE_BIN_SRC=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng
         export LAGRANGE_BIN_DST=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os-name }}
 
         mv ${LAGRANGE_BIN_SRC} ${LAGRANGE_BIN_DST}
+
         xz ${LAGRANGE_BIN_DST}
 
     - name: Create Release
