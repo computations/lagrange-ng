@@ -1,3 +1,5 @@
+[![Build and run tests](https://github.com/computations/lagrange-ng/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/computations/lagrange-ng/actions/workflows/cmake-multi-platform.yml)
+
 # Introduction
 
 The new version of Lagrange, a tool to infer ancestral ranges and splits using the DEC model. For a detailed
