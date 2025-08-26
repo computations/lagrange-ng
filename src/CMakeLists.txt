@@ -31,9 +31,9 @@ endif()
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   set(LAGRANGE_BUILD_FLAGS 
+    ${LAGRANGE_BUILD_FLAGS}
     -O3 
     -fno-omit-frame-pointer 
-    -g 
     -Wall 
     -Wextra 
     -fdiagnostics-color=always)
@@ -59,13 +59,21 @@ set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}
 
 set(WARNING_FLAGS -Wall -Wextra)
 
-target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
+target_compile_options(lagrange-release-libs PUBLIC 
+  ${LAGRANGE_BUILD_FLAGS}
+  ${WARNING_FLAGS} 
+  ${LAGRANGE_STRIP_FLAGS}
+)
 target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_INCLUDES})
 target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread)
 target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LIB_DIR})
 target_compile_definitions(lagrange-release-libs PUBLIC ${LAGRANGE_DEFINES})
 target_link_options(lagrange-release-libs PUBLIC ${LAGRANGE_LINK_FLAGS})
 
-target_compile_options(lagrange-ng PRIVATE ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
+target_compile_options(lagrange-ng PRIVATE 
+  ${LAGRANGE_BUILD_FLAGS} 
+  ${WARNING_FLAGS}
+  ${LAGRANGE_STRIP_FLAGS}
+)
 target_include_directories(lagrange-ng PRIVATE ${LAGRANGE_INCLUDES})
 target_link_libraries(lagrange-ng PRIVATE lagrange-release-libs pthread)

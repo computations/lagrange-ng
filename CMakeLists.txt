@@ -11,6 +11,14 @@ include(FetchContent)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(BUILD_ONLY_STATIC "Only build the exclusively static library" OFF)
+option(STRIP_BINARY "Strip the binary when building" OFF)
+
+if(STRIP_BINARY)
+  set(LAGRANGE_STRIP_FLAGS -s)
+else()
+  set(LAGRANGE_STRIP_FLAGS -g)
+endif()
+
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Debug" AND ${BUILD_ONLY_STATIC})
   message(WARNING "Cannot build a debug static binary")

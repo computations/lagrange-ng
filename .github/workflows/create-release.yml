@@ -46,6 +46,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBUILD_ONLY_STATIC=ON
+        -DSTRIP_BINARY=ON
         -S ${{ github.workspace }}
 
     - name: Configure CMake
@@ -55,6 +56,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DSTRIP_BINARY=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -62,7 +64,11 @@ jobs:
 
     - name: Rename
       run: >
-        mv ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os-name }}
+        export LAGRANGE_BIN_SRC=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng
+        export LAGRANGE_BIN_DST=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os-name }}
+
+        mv ${LAGRANGE_BIN_SRC} ${LAGRANGE_BIN_DST}
+        xz ${LAGRANGE_BIN_DST}
 
     - name: Create Release
       uses: ncipollo/release-action@v1.18.0
