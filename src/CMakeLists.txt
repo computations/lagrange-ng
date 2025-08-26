@@ -30,8 +30,23 @@ if(LAGRANGE_USER_BARRIER)
 endif()
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
-  set(LAGRANGE_BUILD_FLAGS -O3 -mtune=native -march=native
-    -fno-omit-frame-pointer -g -Wall -Wextra -fdiagnostics-color=always)
+  set(LAGRANGE_BUILD_FLAGS 
+    -O3 
+    -fno-omit-frame-pointer 
+    -g 
+    -Wall 
+    -Wextra 
+    -fdiagnostics-color=always)
+
+    if(${BUILD_ONLY_STATIC})
+      target_link_libraries(lagrange-release-libs PUBLIC -static)
+    else()
+      set(LAGRANGE_BUILD_FLAGS 
+          ${LAGRANGE_BUILD_FLAGS}
+          -march=native -mtune=native
+         )
+    endif()
+
 elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
   set(LAGRANGE_BUILD_FLAGS -g -fno-omit-frame-pointer -fsanitize=address
     -fsanitize-recover=address -fsanitize=undefined -fdiagnostics-color=always)
@@ -40,14 +55,14 @@ elseif("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 endif()
 
 set(LAGRANGE_LIBS ${LAGRANGE_LIBS} nlohmann_json::nlohmann_json ${NLOPT_LIB}
-  logger)
+  logger ${LAGRANGE_BLAS_LIBS})
 
 set(WARNING_FLAGS -Wall -Wextra)
 
 target_compile_options(lagrange-release-libs PUBLIC ${LAGRANGE_BUILD_FLAGS} ${WARNING_FLAGS})
 target_include_directories(lagrange-release-libs PUBLIC ${LAGRANGE_INCLUDES})
 target_link_libraries(lagrange-release-libs PUBLIC ${LAGRANGE_LIBS} pthread)
-target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LIB_DIRS})
+target_link_directories(lagrange-release-libs PUBLIC ${LAGRANGE_LIB_DIR})
 target_compile_definitions(lagrange-release-libs PUBLIC ${LAGRANGE_DEFINES})
 target_link_options(lagrange-release-libs PUBLIC ${LAGRANGE_LINK_FLAGS})
 

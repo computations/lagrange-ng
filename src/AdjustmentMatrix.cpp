@@ -5,14 +5,18 @@
 #include <ranges>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "CSV.hpp"
+#include "Utils.hpp"
 
 namespace lagrange {
 
 using namespace std::string_view_literals;
 
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) || __clang_major__ > 18)
 static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
   auto duplicates = arcs | std::views::adjacent<2>
                     | std::views::transform([](const auto& t) -> bool {
@@ -23,6 +27,7 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
                       });
   return std::ranges::none_of(duplicates, std::identity{});
 }
+#endif
 
 /* assume that the matrix is sorted */
 /* need to check that:
@@ -30,6 +35,8 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
  * - All arcs are found (both symmetric and non)
  */
 static bool is_valid(std::span<const AdjustmentArc> arcs) {
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) || __clang_major__ > 18)
   auto runs = arcs | std::views::chunk_by([](const auto& a, const auto& b) {
                 auto [a_from, a_to, a_dist] = a;
                 auto [b_from, b_to, b_dist] = b;
@@ -48,6 +55,25 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
   });
 
   return check_duplicates(arcs) && (decreasing != equal);
+#else
+  std::unordered_set<
+      std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)> >
+      arc_set;
+  std::unordered_set<decltype(AdjustmentArc::from)> label_set;
+  for (auto a : arcs) {
+    arc_set.insert({a.from, a.to});
+    label_set.insert(a.from);
+    label_set.insert(a.to);
+  }
+
+  size_t label_count = label_set.size();
+
+  auto expected_sym_size = (label_count - 1) * (label_count) / 2;
+  auto expected_nonsym_size = label_count * label_count - label_count;
+
+  return (arc_set.size() == expected_sym_size
+          || arc_set.size() == expected_nonsym_size);
+#endif
 }
 
 void AdjustmentMatrix::read_arcs(CSVReader& reader,

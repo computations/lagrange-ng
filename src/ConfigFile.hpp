@@ -259,9 +259,21 @@ class ConfigFile {
     if (period_buffer.front().second.start != 0.0) { OllKorrect &= false; }
     if (!std::isinf(period_buffer.back().second.end)) { OllKorrect &= false; }
 
+#if defined(__cpp_lib_ranges_zip) \
+    && (!defined(__clang_major__) && __clang_major__ > 18)
     for (auto [a, b] : period_buffer | std::views::adjacent<2>) {
       auto pc_a = a.second;
       auto pc_b = b.second;
+#else
+    for (auto a_itr = period_buffer.begin(),
+              b_itr = next(period_buffer.begin());
+         b_itr != period_buffer.end();
+         ++a_itr, ++b_itr) {
+      auto a = *a_itr;
+      auto b = *b_itr;
+      auto pc_a = a_itr->second;
+      auto pc_b = b_itr->second;
+#endif
       if (pc_a.end != pc_b.start) {
         OllKorrect &= false;
         LOG_ERROR(
@@ -273,14 +285,14 @@ class ConfigFile {
             pc_b.start);
       }
 
-      if (std::isinf(a.second.end)) {
+      if (std::isinf(pc_a.end)) {
         OllKorrect &= false;
         LOG_ERROR(
             "There are several end periods, please specify only one end "
             "period.");
       }
 
-      if (b.second.start == 0.0) {
+      if (pc_b.start == 0.0) {
         OllKorrect &= false;
         LOG_ERROR(
             "There are several start periods, please specify only one start "
