@@ -72,7 +72,8 @@ class Node {
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
-  auto setHeight() -> double;
+  auto getHeight() const -> double;
+  void setHeight(double);
   void setHeightReverse(double height = 0.0);
 
   friend auto getParentWithNode(const std::shared_ptr<Node> &current,

@@ -57,7 +57,10 @@ void Tree::setHeightTopDown() { _root->setHeightReverse(); }
 /*
  * only makes sense for ultrametric trees
  */
-void Tree::setHeightBottomUp() { _root->setHeight(); }
+void Tree::setHeightBottomUp() {
+  double h = _root->getHeight();
+  _root->setHeight(h);
+}
 
 void Tree::processReRoot(const std::shared_ptr<Node> &node) {
   if (node != _root || node->isTip()) { return; }

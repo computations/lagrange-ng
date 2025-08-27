@@ -106,11 +106,19 @@ auto Node::getNewickLambda(
 
 auto Node::getChildCount() const -> size_t { return _children.size(); }
 
-auto Node::setHeight() -> double {
+/*
+ * This is bugged. In the case of a non-ultrametric tree, this puts nodes which
+ * are older to the present time. that is, all tips have height zero.
+ */
+auto Node::getHeight() const -> double {
   double height = 0.0;
-  for (const auto &c : _children) { height = std::max(height, c->setHeight()); }
-  _height = height;
+  for (const auto &c : _children) { height = std::max(height, c->getHeight()); }
   return _height + _branch_length;
+}
+
+void Node::setHeight(double h) {
+  _height = h - _branch_length;
+  for (const auto &c : _children) { c->setHeight(_height); }
 }
 
 void Node::setHeightReverse(double h) {
