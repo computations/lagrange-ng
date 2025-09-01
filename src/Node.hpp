@@ -72,8 +72,11 @@ class Node {
 
   auto findNode(const std::shared_ptr<Node> &n) -> bool;
 
+  auto computeHeight() const -> double;
+  auto computeMinHeight() const -> double;
   auto getHeight() const -> double;
   void setHeight(double);
+
   void setHeightReverse(double height = 0.0);
 
   friend auto getParentWithNode(const std::shared_ptr<Node> &current,
@@ -181,6 +184,8 @@ class Node {
   void assignAncestralSplit(const SplitReturn &);
 
   auto assignFossil(const Fossil &) -> bool;
+
+  auto validateHeight() const -> bool;
 
  private:
   auto getCount(size_t) -> size_t;

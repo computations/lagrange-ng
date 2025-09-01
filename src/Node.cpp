@@ -106,15 +106,23 @@ auto Node::getNewickLambda(
 
 auto Node::getChildCount() const -> size_t { return _children.size(); }
 
-/*
- * This is bugged. In the case of a non-ultrametric tree, this puts nodes which
- * are older to the present time. that is, all tips have height zero.
- */
-auto Node::getHeight() const -> double {
-  double height = 0.0;
-  for (const auto &c : _children) { height = std::max(height, c->getHeight()); }
-  return _height + _branch_length;
+auto Node::computeHeight() const -> double {
+  double tree_height = 0.0;
+  for (const auto &c : _children) {
+    tree_height = std::max(tree_height, c->computeHeight());
+  }
+  return tree_height + _branch_length;
 }
+
+auto Node::computeMinHeight() const -> double{
+  double min_node_height = _height;
+  for (const auto &c : _children) {
+    min_node_height = std::min(min_node_height, c->computeMinHeight());
+  }
+  return min_node_height;
+}
+
+auto Node::getHeight() const -> double { return _height; }
 
 void Node::setHeight(double h) {
   _height = h - _branch_length;
@@ -124,6 +132,14 @@ void Node::setHeight(double h) {
 void Node::setHeightReverse(double h) {
   _height = h + _branch_length;
   for (const auto &c : _children) { c->setHeightReverse(_height); }
+}
+
+auto Node::validateHeight() const -> bool {
+  for (auto child : _children) {
+    if (!child->validateHeight()) { return false; }
+    if (_height < child->getHeight()) { return false; }
+  }
+  return std::isfinite(_height) && _height >= 0.0;
 }
 
 void getNodesByMRCAEntry(const std::shared_ptr<Node> &current,

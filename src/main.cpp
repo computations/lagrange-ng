@@ -64,10 +64,14 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
 
 static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
-  tree->setHeightTopDown();
+  tree->setHeightBottomUp();
   tree->setPeriods(config.periods());
   tree->assignMCRALabels(config.mrcas());
   tree->assignFossils(config.fossils());
+
+  if(!tree->validate()){
+    LOG_ERROR("There was a problem setting up the tree");
+  }
 }
 
 static void assign_results_to_tree(std::shared_ptr<Tree> &tree,

@@ -91,6 +91,8 @@ class Tree {
                          const MRCALabel &);
   void assignSplitResult(const SplitReturn &, const MRCALabel &);
 
+  bool validate() const;
+
  private:
   void processReRoot(const std::shared_ptr<Node> &node);
   static void exchangeInfo(const std::shared_ptr<Node> &node1,

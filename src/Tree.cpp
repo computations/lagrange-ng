@@ -58,7 +58,7 @@ void Tree::setHeightTopDown() { _root->setHeightReverse(); }
  * only makes sense for ultrametric trees
  */
 void Tree::setHeightBottomUp() {
-  double h = _root->getHeight();
+  double h = _root->computeHeight();
   _root->setHeight(h);
 }
 
@@ -200,5 +200,19 @@ void Tree::assignStateResult(std::unique_ptr<LagrangeMatrixBase[]> r,
 void Tree::assignSplitResult(const SplitReturn &r,
                              const MRCALabel &mrca_label) {
   getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
+}
+
+auto Tree::validate() const -> bool {
+  if (!_root->validateHeight()) {
+    LOG_ERROR(
+        "Failed to correctly set the tree height, analysis could be incorrect");
+    return false;
+  }
+
+  if (_root->computeMinHeight() != 0.0) {
+    LOG_ERROR("Start point for tree is not 0.0, analysis could be incorrect");
+  }
+
+  return true;
 }
 }  // namespace lagrange
