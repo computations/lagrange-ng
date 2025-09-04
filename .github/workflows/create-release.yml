@@ -68,6 +68,7 @@ jobs:
         LAGRANGE_BIN_SRC: ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng
         LAGRANGE_BIN_DST: ${{ steps.strings.outputs.artifacts-dir }}/lagrange-ng-${{ matrix.release-name }}
       run: |
+        mkdir -p ${{ steps.strings.outputs.artifacts-dir }}
         mv ${LAGRANGE_BIN_SRC} ${LAGRANGE_BIN_DST}
         xz ${LAGRANGE_BIN_DST}
 
