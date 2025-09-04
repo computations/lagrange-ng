@@ -13,12 +13,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            os-name: linux
+            release-name: x86-linux
             c_compiler: gcc-14
             cpp_compiler: g++-14
             build_type: Release
           - os: macos-latest
-            os-name: macos
+            release-name: arm-mac
             c_compiler: clang
             cpp_compiler: clang++
             build_type: Release
@@ -35,6 +35,7 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         echo "bin-output-dir=${{ github.workspace }}/bin" >> "$GITHUB_OUTPUT"
+        echo "artifacts-dir=${{ github.workspace }}/artifacts" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       if: matrix.os != 'macos-latest'
@@ -63,16 +64,15 @@ jobs:
 
     - name: Rename
       shell: bash
+      env:
+        LAGRANGE_BIN_SRC: ${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng
+        LAGRANGE_BIN_DST: ${{ steps.strings.outputs.artifacts-dir }}/lagrange-ng-${{ matrix.release-name }}
       run: |
-        export LAGRANGE_BIN_SRC=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng
-        export LAGRANGE_BIN_DST=${{ steps.strings.outputs.bin-output-dir }}/lagrange-ng-${{ matrix.os-name }}
-
         mv ${LAGRANGE_BIN_SRC} ${LAGRANGE_BIN_DST}
-
         xz ${LAGRANGE_BIN_DST}
 
     - name: Create Release
       uses: ncipollo/release-action@v1.18.0
       with:
-        artifacts: "bin/*"
+        artifacts: ${{ steps.strings.outputs.artifacts-dir }}
         allowUpdates: true
