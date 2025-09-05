@@ -10,6 +10,7 @@
 
 #include "CSV.hpp"
 #include "Utils.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
 
@@ -110,8 +111,20 @@ void AdjustmentMatrix::read_arcs(CSVReader& reader,
 
 AdjustmentMatrix::AdjustmentMatrix(const std::filesystem::path& filename,
                                    const std::vector<std::string>& area_names) {
-  CSVReader reader(filename);
-  read_arcs(reader, area_names);
+  if (!std::filesystem::exists(filename)) {
+    throw std::runtime_error{
+        std::format("Can't find the matrix file '{}'", filename.c_str())};
+  }
+  try {
+    CSVReader reader(filename);
+    read_arcs(reader, area_names);
+  } catch (CSVValueError& err) {
+    LOG_ERROR(
+        "There was an error reading one of the values in the matrix file '{}'",
+        filename.c_str());
+    throw std::runtime_error{
+        std::format("Failed to read the matrix file '{}'", filename.c_str())};
+  }
 
   _type = determine_matrix_symmetry(_arcs, area_names.size());
   if (_type == AdjustmentMatrixType::invalid) {

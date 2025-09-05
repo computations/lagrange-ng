@@ -12,6 +12,10 @@
 using CSVHeaderType = std::vector<std::string>;
 using CSVHeaderPointer = std::shared_ptr<CSVHeaderType>;
 
+class CSVValueError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 class CSVRow {
  public:
   CSVRow() = default;

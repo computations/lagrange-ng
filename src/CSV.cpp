@@ -13,6 +13,9 @@ std::vector<std::string> read_row(std::string_view row) {
              }
              if (*end_itr == ' ') { end_itr = std::prev(end_itr); }
              end_itr = std::next(end_itr);
+             if (end_itr - beg_itr < 0) {
+               throw CSVValueError{"Expected a value"};
+             }
              return std::ranges::subrange{beg_itr, end_itr};
            })
          | std::ranges::to<std::vector<std::string>>();
