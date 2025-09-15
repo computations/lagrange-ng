@@ -1,5 +1,6 @@
 #include "Context.hpp"
 
+#include <chrono>
 #include <nlopt.hpp>
 #include <ostream>
 #include <ranges>
@@ -281,7 +282,11 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     WorkerState& ts;
     size_t iter = 0;
     size_t f_evals = 1;
+    std::chrono::high_resolution_clock::time_point last_print =
+        std::chrono::high_resolution_clock::now();
   } oc{*this, tc, ts};
+
+  constexpr std::chrono::duration<double> print_time_threshold{10};
 
   const size_t dims = _workspace->getOptDimsSize();
   nlopt::opt opt(_opt_method, dims);
@@ -333,7 +338,12 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       }
     }
 
-    if (obj->iter % 10 == 0) { LOG(PROGRESS, "Current LLH: {:.7}", llh); }
+    auto cur_time = std::chrono::high_resolution_clock::now();
+    if (obj->iter % 10 == 0
+        || (cur_time - obj->last_print) > print_time_threshold) {
+      LOG(PROGRESS, "Iteration: {}, Current LLH: {:.7}", obj->iter, llh);
+      obj->last_print = cur_time;
+    }
     if (std::isnan(llh)) {
       LOG(ERROR, "Log liklihood is not a number");
       throw std::runtime_error{"Log likelihood is not a number"};
