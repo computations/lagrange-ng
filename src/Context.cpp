@@ -78,6 +78,7 @@ auto Context::makeSplitGoalCB() -> std::function<void(Node&)> {
 }
 
 void Context::registerStateLHGoal() {
+  LOG_INFO("Registering state goals");
   if (!_state_lh_goal.empty()) { return; }
   if (_reverse_operations.empty()) { registerBackwardOperations(); }
 
@@ -96,6 +97,7 @@ void Context::registerStateLHGoal(
 }
 
 void Context::registerSplitLHGoal() {
+  LOG_INFO("Registering split goals");
   auto cb = makeSplitGoalCB();
   registerGoals(cb);
 }

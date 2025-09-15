@@ -65,8 +65,11 @@ static void set_expm_mode(Context &context, const ConfigFile &config) {
 static void setup_tree(const std::shared_ptr<Tree> &tree,
                        const ConfigFile &config) {
   tree->setHeightBottomUp();
+  LOG_INFO("Setting up tree periods");
   tree->setPeriods(config.periods());
+  LOG_INFO("Assigning MRCA labels");
   tree->assignMCRALabels(config.mrcas());
+  LOG_INFO("Assigning fossils");
   tree->assignFossils(config.fossils());
 
   if(!tree->validate()){
@@ -112,7 +115,9 @@ static void assign_tip_data(Context &context,
 static void setup_context(Context &context,
                           const Alignment &data,
                           const ConfigFile &config) {
+  LOG_INFO("Setting up periods");
   context.setupPeriods(config.period_params());
+  LOG_INFO("Registering LH goal");
   context.registerLHGoal();
 
   if (config.compute_all_states() || config.compute_all_splits()) {
@@ -132,7 +137,9 @@ static void setup_context(Context &context,
   }
 
   context.set_opt_method(config.opt_method());
+  LOG_INFO("Initializing context");
   context.init(config.period_params());
+  LOG_INFO("Assigning tip data");
   assign_tip_data(context, data, config);
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
@@ -141,16 +148,20 @@ static void setup_context(Context &context,
 static void handle_tree(std::shared_ptr<Tree> &tree,
                         const Alignment &data,
                         const ConfigFile &config) {
+  LOG_INFO("Setting up tree structure");
   setup_tree(tree, config);
 
+  LOG_INFO("Setting up optimization context");
   Context context(tree, config.region_count(), config.max_areas());
   setup_context(context, data, config);
 
+  LOG_INFO("Setting up worker context");
   WorkerContext wc = context.makeThreadContext();
   wc.setTotalThreads(config.workers());
   wc.initBarrier();
 
   if (config.dump_graph()) {
+    LOG_INFO("Dumping analysis graph");
     std::ofstream forward_graph_file{config.forwardGraphFilename()};
     context.dumpForwardGraph(forward_graph_file);
 
