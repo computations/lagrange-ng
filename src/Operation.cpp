@@ -927,7 +927,12 @@ bool SplitOperation::check_for_errors(const std::shared_ptr<Workspace> &ws) {
       return false;
     }
     if ((parent_clv[i] > 1.0) != (parent_clv[i] < 0.0)) {
-      LOG_ERROR("Split operation failed, value is not between 0.0 and 1.0");
+      LOG_ERROR(
+          "Split operation failed, value 'CLV{}[{}] : {}' is not between 0.0 and "
+          "1.0",
+          _parent_clv_index,
+          i,
+          parent_clv[i]);
       return false;
     }
     all_zeroes &= (parent_clv[i] == 0.0);
