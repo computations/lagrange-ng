@@ -565,6 +565,8 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if (_N == nullptr) { _N.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
   if (_D == nullptr) { _D.reset(new LagrangeMatrixBase[ws->matrixSize()]); }
 
+  LOG_DEBUG("Setting up matrices for pade exponentation");
+
   cblas_dcopy(ws->matrixSize(), _A.get(), 1, _X_1.get(), 1);
 
   for (size_t i = 0; i < ws->matrixSize(); i++) {
@@ -596,6 +598,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 #endif
 
+  LOG_DEBUG("Performing main loop pade expm");
   for (int i = 2; i <= q;) {
     c = c * (q - i + 1) / (i * (2 * q - i + 1));
     sign *= -1.0;
@@ -644,6 +647,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
     i += 1;
   }
 
+  LOG_DEBUG("Solving matrix in pade expm");
   {
     auto *ipiv = (int *)malloc(sizeof(int) * static_cast<size_t>(rows));
     assert(ipiv != nullptr);
@@ -720,6 +724,7 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
 #endif
   }
 
+  LOG_DEBUG("Updating prob matrix");
   ws->updateProbMatrix(_prob_matrix_index, r1.get());
 
   _last_execution = ws->advanceClock();
