@@ -409,7 +409,7 @@ class Workspace {
 
   [[nodiscard]] auto getParamMaxs() const -> std::vector<double> {
     constexpr double rate_max = 1e2;
-    constexpr double penalty_max = 10;
+    constexpr double penalty_max = 0.0;
     return makeParameterVector(rate_max, penalty_max);
   }
 
