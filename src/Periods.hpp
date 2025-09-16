@@ -18,6 +18,7 @@ struct PeriodParams {
   double extinction_rate;
   double distance_penalty;
   std::shared_ptr<double[]> adjustment_matrix = nullptr;
+  std::string name;
   size_t regions;
   RangeMask include_area_mask = 0;
   RangeMask exclude_area_mask = 0;

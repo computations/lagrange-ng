@@ -42,6 +42,7 @@ TEST_F(ContextTest, simple0) {
   context.init({{.dispersion_rate = 0.1,
                  .extinction_rate = 0.1,
                  .distance_penalty = 1.0,
+                 .name = "",
                  .regions = 2}});
 }
 
@@ -58,6 +59,7 @@ TEST_F(ContextTest, computelh1) {
   context.init({{.dispersion_rate = 0.01,
                  .extinction_rate = 0.01,
                  .distance_penalty = 1.0,
+                 .name = "",
                  .regions = 2}});
   EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
               == SetCLVStatus::definite);
@@ -82,6 +84,7 @@ TEST_F(ContextTest, optimizeSimple0) {
   context.init({{.dispersion_rate = 10.5,
                  .extinction_rate = 1.5,
                  .distance_penalty = 1,
+                 .name = "",
                  .regions = 2}});
   // context.updateRates({{10.5, 1.5}});
   context.set_opt_method(OptimizationMethod::BFGS);
@@ -113,6 +116,7 @@ TEST_F(ContextTest, StateGoal0) {
   context.init({{.dispersion_rate = 10.5,
                  .extinction_rate = 1.5,
                  .distance_penalty = 1,
+                 .name = "",
                  .regions = 2}});
   // context.updateRates({{10.5, 1.5}});
 

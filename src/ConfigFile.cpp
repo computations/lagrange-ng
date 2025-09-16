@@ -155,6 +155,7 @@ auto ConfigFile::period_params() -> std::vector<PeriodParams> {
              .extinction_rate = _extinction,
              .distance_penalty = 1.0,
              .adjustment_matrix = nullptr,
+             .name = "default",
              .regions = *_region_count}};
   } else if (!_period_map.empty()) {
     if (!finalize_periods()) {
@@ -171,6 +172,7 @@ auto ConfigFile::period_params() const -> std::vector<PeriodParams> {
              .extinction_rate = _extinction,
              .distance_penalty = 1.0,
              .adjustment_matrix = nullptr,
+             .name = "default",
              .regions = *_region_count}};
   } else if (_period_params.empty() && !_period_map.empty()) {
     throw std::runtime_error{"Failed to setup periods"};

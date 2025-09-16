@@ -81,11 +81,26 @@ class ConfigFile {
     }
   }
 
+  [[nodiscard]] bool validate_periods() const {
+    bool OllKorrect = true;
+    for (auto p : _period_params) {
+      if (lagrange_popcount(p.include_area_mask) > 1) {
+        LOG_ERROR(
+            "Include area mask for period '{}' has more than one set region. "
+            "This is invalid.",
+            p.name);
+        OllKorrect = false;
+      }
+    }
+    return OllKorrect;
+  }
+
   [[nodiscard]] bool finalize_periods() {
     bool OllKorrect = true;
     read_period_matrix_files();
     OllKorrect &= setup_periods();
     finalize_periods(region_count(), max_areas());
+    OllKorrect &= validate_periods();
     return OllKorrect;
   }
 
@@ -313,6 +328,7 @@ class ConfigFile {
                 .adjustment_matrix = p.adjustment_matrix
                                          ? p.adjustment_matrix->to_matrix()
                                          : nullptr,
+                .name = key,
                 .regions = _region_count.value_or(0),
                 .include_area_mask =
                     p.include_areas

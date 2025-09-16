@@ -77,7 +77,8 @@ class Context {
   }
 
   void setParams(double e, double d) {
-    _workspace->setPeriodParams(0, {e, d, 1.0, nullptr, _workspace->regions()});
+    _workspace->setPeriodParams(
+        0, {e, d, 1.0, nullptr, "", _workspace->regions()});
   }
 
   [[nodiscard]] auto currentParams() const -> std::vector<PeriodParams>;
