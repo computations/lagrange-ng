@@ -209,8 +209,11 @@ auto Tree::validate() const -> bool {
     return false;
   }
 
-  if (_root->computeMinHeight() != 0.0) {
-    LOG_ERROR("Start point for tree is not 0.0, analysis could be incorrect");
+  if (_root->computeMinHeight() > 1e-7) {
+    LOG_WARNING(
+        "Start point for tree is {}, but it should be 0.0. Analysis could be "
+        "incorrect",
+        _root->computeMinHeight());
   }
 
   return true;
