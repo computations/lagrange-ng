@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "AncSplit.hpp"
+#include "Checkpoint.hpp"
 #include "Common.hpp"
 #include "ConfigFile.hpp"
 #include "MRCA.hpp"
@@ -294,6 +295,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
                        const double* x_ptr,
                        double* grad_ptr) mutable -> double {
     auto* obj = &oc;
+    /* These two structs are here to wrap the pointers in  std::ranges. */
     struct X_struct : std::ranges::view_interface<X_struct> {
       const double* x_ptr;
       size_t size;
@@ -343,6 +345,9 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
         || (cur_time - obj->last_print) > print_time_threshold) {
       LOG(PROGRESS, "Iteration: {}, Current LLH: {:.7}", obj->iter, llh);
       obj->last_print = cur_time;
+      if (_checkpoint) {
+        _checkpoint->write_checkpoint(obj->context.currentParams());
+      }
     }
     if (std::isnan(llh)) {
       LOG(ERROR, "Log liklihood is not a number");

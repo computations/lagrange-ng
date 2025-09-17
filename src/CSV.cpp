@@ -1,11 +1,25 @@
 #include "CSV.hpp"
 
+#include <numeric>
+
+auto make_csv_row(const std::initializer_list<std::string_view>& fields)
+    -> std::string {
+  return std::accumulate(std::next(fields.begin()),
+                         fields.end(),
+                         std::string(*fields.begin()),
+                         [](const std::string& acc,
+                            const std::string_view& entry) -> std::string {
+                           return std::format("{}, {}", acc, entry);
+                         })
+         + "\n";
+}
+
 std::vector<std::string> read_row(std::string_view row) {
   return row | std::views::chunk_by([](auto, auto c) -> bool {
            if (c == ',') { return false; }
            return true;
          })
-         | std::views::transform([](const auto& a) -> auto {
+         | std::views::transform([](const auto &a) -> auto {
              auto beg_itr = a.begin();
              auto end_itr = std::prev(a.end());
              while (*beg_itr == ',' || std::isspace(*beg_itr)) {
@@ -22,16 +36,16 @@ std::vector<std::string> read_row(std::string_view row) {
 }
 
 template <>
-uint64_t CSVRow::get(const std::string_view& key) const {
+uint64_t CSVRow::get(const std::string_view &key) const {
   return std::stoul(get_data(key));
 }
 
 template <>
-double CSVRow::get(const std::string_view& key) const {
+double CSVRow::get(const std::string_view &key) const {
   return std::stod(get_data(key));
 }
 
 template <>
-long CSVRow::get(const std::string_view& key) const {
+long CSVRow::get(const std::string_view &key) const {
   return std::stol(get_data(key));
 }

@@ -2,6 +2,7 @@
 #define PERIODS_H
 
 #include <cmath>
+#include <concepts>
 #include <format>
 #include <limits>
 #include <memory>
@@ -47,7 +48,7 @@ struct PeriodParams {
     return extinction_rate;
   }
 
-  auto applyParameters(std::ranges::range auto x) {
+  auto applyParameters(const std::ranges::range auto &x) {
     auto itr = x.begin();
     dispersion_rate = *itr++;
     extinction_rate = *itr++;
@@ -79,6 +80,12 @@ struct PeriodParams {
   }
 
   bool hasAdjustmentMatrix() const { return adjustment_matrix != nullptr; }
+};
+
+template <typename R>
+concept PeriodParameterRange = requires(R r) {
+  requires std::ranges::range<R>;
+  { *r.begin() } -> std::convertible_to<PeriodParams>;
 };
 
 struct PeriodSegment {

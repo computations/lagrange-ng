@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "AncSplit.hpp"
+#include "CSV.hpp"
 #include "Common.hpp"
 #include "ConfigFile.hpp"
 #include "Context.hpp"

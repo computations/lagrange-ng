@@ -1,6 +1,7 @@
 #ifndef CSV_READER_H
 #define CSV_READER_H
 
+#include <concepts>
 #include <filesystem>
 #include <fstream>
 #include <ranges>
@@ -8,6 +9,32 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+
+template <std::ranges::range R>
+auto make_csv_row(const R& entries) -> auto
+  requires std::convertible_to<std::ranges::range_value_t<R>, std::string>
+           || std::convertible_to<std::ranges::range_value_t<R>,
+                                  std::string_view>
+{
+  return entries | std::ranges::views::join_with(',');
+}
+
+template <std::ranges::range R>
+auto make_csv_row(const R& entries) -> auto
+  requires std::floating_point<std::ranges::range_value_t<R>>
+{
+  return entries | std::views::transform([](const auto& val) -> std::string {
+           return std::to_string(val);
+         })
+         | std::ranges::views::join_with(',');
+}
+
+template <std::ranges::range R>
+auto write_csv_row(std::ostream& os, const R& entries) {
+  for (auto e : make_csv_row(entries)) { os << e; }
+  os << "\n";
+}
 
 using CSVHeaderType = std::vector<std::string>;
 using CSVHeaderPointer = std::shared_ptr<CSVHeaderType>;

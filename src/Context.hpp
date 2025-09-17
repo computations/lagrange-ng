@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <nlopt.hpp>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,6 +17,7 @@
 #include <vector>
 
 #include "AncSplit.hpp"
+#include "Checkpoint.hpp"
 #include "Common.hpp"
 #include "ConfigFile.hpp"
 #include "Operation.hpp"
@@ -130,6 +132,8 @@ class Context {
   nlopt::algorithm _opt_method;
 
   double _lh_epsilon;
+
+  std::optional<Checkpoint> _checkpoint;
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;
