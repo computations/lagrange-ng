@@ -101,10 +101,8 @@ class PeriodTimes {
 
   template <typename R>
   PeriodTimes(const R &periods)
-    requires(requires(R r) {
-      requires std::ranges::range<R>;
-      { *r.begin() } -> std::same_as<double>;
-    })
+    requires std::ranges::range<R>
+             && std::floating_point<std::ranges::range_value_t<R>>
       : _end_points{periods.begin(), periods.end()} {
     terminate();
   }
