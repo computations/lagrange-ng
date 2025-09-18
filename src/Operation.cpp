@@ -407,11 +407,6 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
            next_dist(source_dist, static_cast<uint32_t>(ws->maxAreas())),
       ++source_index) {
     if (source_dist == 0) { continue; }
-    if (source_dist & period.exclude_area_mask) { continue; }
-    if (period.include_area_mask && !(source_dist & period.include_area_mask)) {
-      continue;
-    }
-
     size_t dest_index = 0;
     Range dest_dist = 0;
 
@@ -420,10 +415,6 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
              next_dist(dest_dist, static_cast<uint32_t>(ws->maxAreas())),
         ++dest_index) {
       if (lagrange_popcount(source_dist ^ dest_dist) != 1) { continue; }
-      if (dest_dist & period.exclude_area_mask) { continue; }
-      if (period.include_area_mask && !(dest_dist & period.include_area_mask)) {
-        continue;
-      }
 
       size_t i = lagrange_fast_log2(source_dist ^ dest_dist) - 1;
       /* Source is "gaining" a region, so we add */
@@ -932,8 +923,7 @@ bool SplitOperation::check_for_errors(const std::shared_ptr<Workspace> &ws) {
     }
     if ((parent_clv[i] > 1.0) != (parent_clv[i] < 0.0)) {
       LOG_ERROR(
-          "Split operation failed, value 'CLV{}[{}] : {}' is not between 0.0 "
-          "and "
+          "Split operation failed, value 'CLV{}[{}] : {}' is not between 0.0 and "
           "1.0",
           _parent_clv_index,
           i,
