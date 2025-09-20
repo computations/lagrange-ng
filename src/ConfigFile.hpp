@@ -179,6 +179,10 @@ class ConfigFile {
   auto distributionsCSVResultsFilename() const -> std::filesystem::path;
   auto nodeInfoCSVResultsFilename() const -> std::filesystem::path;
 
+  auto checkpointFilename() const -> std::filesystem::path;
+
+  [[nodiscard]] bool loadCheckpoint() const { return true; }
+
   auto forwardGraphFilename() const -> std::filesystem::path;
   auto reverseGraphFilename() const -> std::filesystem::path;
 
@@ -411,6 +415,7 @@ class ConfigFile {
 
   std::optional<bool> _allow_ambigious;
   std::optional<bool> _dump_graph;
+  std::optional<bool> _load_checkpoint;
 };
 
 }  // namespace lagrange

@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <nlopt.hpp>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -56,8 +55,7 @@ class Context {
   void optimizeAndComputeValues(WorkerState& ts,
                                 WorkerContext& tc,
                                 bool states,
-                                bool splits,
-                                const LagrangeOperationMode& mode);
+                                bool splits);
 
   auto computeLLH(WorkerState& ts) -> double;
   auto computeLLH(WorkerState& ts, WorkerContext& tc) -> double;
@@ -103,6 +101,15 @@ class Context {
   void dumpForwardGraph(std::ostream& os) const;
   void dumpReverseGraph(std::ostream& os) const;
 
+  void setCheckpoint(const std::filesystem::path& checkpoint_filename);
+  void setCheckpoint(std::unique_ptr<Checkpoint> ckp);
+
+  void setCheckpointLoad(bool l) { _load_checkpoint = l; }
+
+  void setRunMode(LagrangeOperationMode run_mode);
+
+  auto currentParamsVector() const -> std::vector<double>;
+
  private:
   void registerForwardOperations();
   void registerBackwardOperations();
@@ -129,11 +136,12 @@ class Context {
   auto makeStateGoalCB() -> std::function<void(Node&)>;
   auto makeSplitGoalCB() -> std::function<void(Node&)>;
 
+  void setInitialParams();
+  std::vector<double> getDefaultParams();
+
   nlopt::algorithm _opt_method;
 
   double _lh_epsilon;
-
-  std::optional<Checkpoint> _checkpoint;
 
   std::shared_ptr<Tree> _tree;
   std::shared_ptr<Workspace> _workspace;
@@ -144,6 +152,10 @@ class Context {
   std::vector<std::shared_ptr<SplitOperation>> _forward_operations;
   std::vector<std::shared_ptr<ReverseSplitOperation>> _reverse_operations;
   std::vector<std::shared_ptr<MakeRateMatrixOperation>> _rate_matrix_ops;
+
+  LagrangeOperationMode _run_mode;
+  std::unique_ptr<Checkpoint> _checkpoint;
+  std::optional<bool> _load_checkpoint;
 };
 
 }  // namespace lagrange

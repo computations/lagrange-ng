@@ -222,11 +222,14 @@ void Context::haltThreads(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::Halt, tc, _workspace);
 }
 
+void Context::setInitialParams() {
+  updateRates(getDefaultParams() | std::views::all);
+}
+
 void Context::optimizeAndComputeValues(WorkerState& ts,
                                        WorkerContext& tc,
                                        bool states,
-                                       bool splits,
-                                       const LagrangeOperationMode& mode) {
+                                       bool splits) {
   ts.assign_threads();
   /* This blocks all but the main thread from proceeding until the halt mode
    * is set, which means that all further code is only executed by one thread
@@ -236,9 +239,11 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     return;
   }
 
+  setInitialParams();
   double initial_lh = computeLLH(ts, tc);
 
-  if (mode == LagrangeOperationMode::EVALUATE) {
+  if (_run_mode == LagrangeOperationMode::EVALUATE
+      || _checkpoint->isFinalized()) {
     LOG(INFO, "LLH: {:.7}", initial_lh);
     auto params = currentParams();
     for (const auto& p : params) {
@@ -249,7 +254,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     }
   }
 
-  if (mode == LagrangeOperationMode::OPTIMIZE) {
+  if (_run_mode == LagrangeOperationMode::OPTIMIZE && !_checkpoint->isFinalized()) {
     LOG(INFO, "Initial LLH: {:.7}", initial_lh);
 
     double final_lh = optimize(ts, tc);
@@ -346,7 +351,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
       LOG(PROGRESS, "Iteration: {}, Current LLH: {:.7}", obj->iter, llh);
       obj->last_print = cur_time;
       if (_checkpoint) {
-        _checkpoint->write_checkpoint(obj->context.currentParams());
+        _checkpoint->logCheckpoint(
+            obj->context.currentParams(), obj->iter, false);
       }
     }
     if (std::isnan(llh)) {
@@ -364,7 +370,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
 
   opt.set_ftol_rel(_lh_epsilon);
 
-  std::vector<double> results = _workspace->getDefaultParams();
+  std::vector<double> results = currentParamsVector();
   double obj_val = 0;
 
   try {
@@ -373,6 +379,8 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     LOG(WARNING,
         "NLopt finished with limited roundoff, results might be incorrect");
   }
+
+  _checkpoint->logCheckpoint(currentParams(), oc.iter, true);
 
   LOG(INFO, "Finished optimization with {} likelihood evaluations", oc.f_evals);
 
@@ -413,6 +421,13 @@ void Context::computeStateGoal(WorkerState& ts, WorkerContext& tc) {
 
 void Context::computeSplitGoal(WorkerState& ts, WorkerContext& tc) {
   ts.work(WorkerMode::ComputeSplitGoal, tc, _workspace);
+}
+
+auto Context::currentParamsVector() const -> std::vector<double> {
+  return currentParams()
+         | std::views::transform(
+             [](auto& e) -> std::vector<double> { return e.to_vector(); })
+         | std::views::join | std::ranges::to<std::vector<double>>();
 }
 
 auto Context::currentParams() const -> std::vector<PeriodParams> {
@@ -516,6 +531,23 @@ void Context::dumpForwardGraph(std::ostream& os) const {
   for (const auto& lhg : _llh_goal) { lhg.printGraph(os, index); }
   for (const auto& fop : _forward_operations) { fop->printGraph(os, index); }
   os << "}";
+}
+
+void Context::setCheckpoint(const std::filesystem::path& checkpoint_filename) {
+  setCheckpoint(std::make_unique<Checkpoint>(checkpoint_filename));
+}
+
+void Context::setCheckpoint(std::unique_ptr<Checkpoint> ckp) {
+  _checkpoint = std::move(ckp);
+}
+
+void Context::setRunMode(LagrangeOperationMode mode) { _run_mode = mode; }
+
+std::vector<double> Context::getDefaultParams() {
+  if (_load_checkpoint && _checkpoint->existingCheckpoint()) {
+    return _checkpoint->loadCheckpoint();
+  }
+  return _workspace->getDefaultParams();
 }
 
 }  // namespace lagrange

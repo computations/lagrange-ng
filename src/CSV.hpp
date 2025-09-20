@@ -10,7 +10,6 @@
 #include <string_view>
 #include <vector>
 
-
 template <std::ranges::range R>
 auto make_csv_row(const R& entries) -> auto
   requires std::convertible_to<std::ranges::range_value_t<R>, std::string>
@@ -56,6 +55,12 @@ class CSVRow {
     return get_data(key);
   }
 
+  template <typename T>
+  std::pair<std::string_view, T> get(size_t index) const {
+    std::string_view header_val = (*_header)[index];
+    return {header_val, get_data(header_val)};
+  }
+
  private:
   std::string get_data(const std::string_view& key) const {
 #ifdef __cpp_lib_ranges_zip
@@ -84,6 +89,9 @@ double CSVRow::get(const std::string_view& key) const;
 
 template <>
 long CSVRow::get(const std::string_view& key) const;
+
+template <>
+bool CSVRow::get(const std::string_view& key) const;
 
 std::vector<std::string> read_row(std::string_view row);
 
@@ -172,6 +180,12 @@ class CSVReader {
   CSVIter end() { return {nullptr, nullptr}; }
 
   CSVHeaderType const& header() const { return *_header; }
+
+  std::vector<CSVRow> read_rows() {
+    std::vector<CSVRow> rows;
+    for (auto row : *this) { rows.push_back(row); }
+    return rows;
+  }
 
  private:
   void read_header() {

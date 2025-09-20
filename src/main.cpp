@@ -72,7 +72,7 @@ static void setup_tree(const std::shared_ptr<Tree> &tree,
   LOG_INFO("Assigning fossils");
   tree->assignFossils(config.fossils());
 
-  if(!tree->validate()){
+  if (!tree->validate()) {
     LOG_ERROR("There was a problem setting up the tree");
   }
 }
@@ -143,7 +143,12 @@ static void setup_context(Context &context,
   assign_tip_data(context, data, config);
   context.set_lh_epsilon(config.lh_epsilon());
   set_expm_mode(context, config);
+
+  context.setRunMode(config.run_mode());
+  context.setCheckpoint(config.checkpointFilename());
+  context.setCheckpointLoad(config.loadCheckpoint());
 }
+
 
 static void handle_tree(std::shared_ptr<Tree> &tree,
                         const Alignment &data,
@@ -182,8 +187,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
                          std::ref(worker_states[i]),
                          std::ref(wc),
                          config.computeStates(),
-                         config.computeSplits(),
-                         std::cref(config.run_mode()));
+                         config.computeSplits());
   }
 
   LOG(INFO, "Waiting for Workers to finish");

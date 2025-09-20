@@ -321,6 +321,12 @@ auto ConfigFile::nodeInfoCSVResultsFilename() const -> std::filesystem::path {
   return scaled_tree_filename;
 }
 
+auto ConfigFile::checkpointFilename() const -> std::filesystem::path {
+  auto checkpoint_filename = _prefix;
+  checkpoint_filename += ".ckp";
+  return checkpoint_filename;
+}
+
 auto ConfigFile::forwardGraphFilename() const -> std::filesystem::path {
   auto graphvis_filename = _prefix;
   graphvis_filename += ".forward-graph.gv";

@@ -28,6 +28,12 @@ struct PeriodParams {
     return std::format("(disp: {}, ext: {})", dispersion_rate, extinction_rate);
   }
 
+  auto to_vector() const -> std::vector<double> {
+    std::vector<double> ret = {dispersion_rate, extinction_rate};
+    if (hasAdjustmentMatrix()) { ret.push_back(distance_penalty); }
+    return ret;
+  }
+
   auto getDispersionRate(size_t from, size_t to) const -> double {
     if (exclude_area_mask
         && (lagrange_bextr(exclude_area_mask, from)

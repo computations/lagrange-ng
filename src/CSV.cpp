@@ -49,3 +49,8 @@ template <>
 long CSVRow::get(const std::string_view &key) const {
   return std::stol(get_data(key));
 }
+
+template <>
+bool CSVRow::get(const std::string_view &key) const {
+  return std::stoi(get_data(key));
+}
