@@ -33,15 +33,15 @@ class Checkpoint {
                      bool final) {
     if (!_checkpoint_file) { initCheckpoint(parameters); }
     std::vector<std::string> parameter_list;
-    parameter_list.push_back(std::to_string(iter));
+    parameter_list.push_back(std::format("{}", iter));
     for (auto &p : parameters) {
-      parameter_list.push_back(std::to_string(p.dispersion_rate));
-      parameter_list.push_back(std::to_string(p.extinction_rate));
+      parameter_list.push_back(std::format("{}", p.dispersion_rate));
+      parameter_list.push_back(std::format("{}", p.extinction_rate));
       if (p.hasAdjustmentMatrix()) {
-        parameter_list.push_back(std::to_string(p.distance_penalty));
+        parameter_list.push_back(std::format("{}", p.distance_penalty));
       }
     }
-    parameter_list.push_back(std::to_string(final));
+    parameter_list.push_back(std::format("{:d}", final));
     write_csv_row(*_checkpoint_file, parameter_list);
   }
 
