@@ -248,7 +248,8 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     auto params = currentParams();
     for (const auto& p : params) {
       LOG(INFO,
-          "Dispersion: {:.7}, Extinction: {:.7}",
+          "Period: {}, Dispersion: {:.7}, Extinction: {:.7}",
+          p.name,
           p.dispersion_rate,
           p.extinction_rate);
     }
