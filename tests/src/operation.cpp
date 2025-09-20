@@ -165,6 +165,7 @@ class OperationTest : public ::testing::Test {
                          {.dispersion_rate = .3123,
                           .extinction_rate = 1.1231,
                           .distance_penalty = 1.0,
+                          .name = "test",
                           .regions = _regions});
 
     _rate_matrix_op =
@@ -301,6 +302,7 @@ TEST_F(OperationTest, MakeRateMatrixOperationSimple1) {
                             {.dispersion_rate = .3123,
                              .extinction_rate = 1.1231,
                              .distance_penalty = 1.0,
+                             .name = "test",
                              .regions = regions});
   MakeRateMatrixOperation make_op(_rate_matrix, _period);
 
