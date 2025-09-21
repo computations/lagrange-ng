@@ -243,7 +243,7 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
   double initial_lh = computeLLH(ts, tc);
 
   if (_run_mode == LagrangeOperationMode::EVALUATE
-      || _checkpoint->isFinalized()) {
+      || (_checkpoint && _checkpoint->isFinalized())) {
     LOG(INFO, "LLH: {:.7}", initial_lh);
     auto params = currentParams();
     for (const auto& p : params) {
@@ -255,7 +255,8 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     }
   }
 
-  if (_run_mode == LagrangeOperationMode::OPTIMIZE && !_checkpoint->isFinalized()) {
+  if (_run_mode == LagrangeOperationMode::OPTIMIZE
+      && !(_checkpoint && _checkpoint->isFinalized())) {
     LOG(INFO, "Initial LLH: {:.7}", initial_lh);
 
     double final_lh = optimize(ts, tc);
@@ -381,7 +382,9 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
         "NLopt finished with limited roundoff, results might be incorrect");
   }
 
-  _checkpoint->logCheckpoint(currentParams(), oc.iter, true);
+  if (_checkpoint) {
+    _checkpoint->logCheckpoint(currentParams(), oc.iter, true);
+  }
 
   LOG(INFO, "Finished optimization with {} likelihood evaluations", oc.f_evals);
 
