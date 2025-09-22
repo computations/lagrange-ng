@@ -173,4 +173,26 @@ auto convert_dist_binary_string_to_dist(const std::string &dist) -> Range {
   return d;
 }
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+
+  #include <windows.h>
+
+size_t get_system_memory() {
+  MEMORYSTATUSEX status;
+  status.dwLength = sizeof(status);
+  GlobalMemoryStatusEx(&status);
+  return status.ullTotalPhys;
+}
+
+#elif __unix__
+
+  #include <unistd.h>
+
+size_t get_system_memory() {
+  auto page_count = sysconf(_SC_PHYS_PAGES);
+  auto page_size = sysconf(_SC_PAGE_SIZE);
+  return page_count * page_size;
+}
+#endif
+
 }  // namespace lagrange

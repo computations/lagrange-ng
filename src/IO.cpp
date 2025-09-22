@@ -564,5 +564,6 @@ void print_run_header(const ConfigFile &config) {
 #endif
   LOG(INFO, "Using tree: {}", config.tree_filename().c_str());
   LOG(INFO, "Using data: {}", config.data_filename().c_str());
+  LOG(INFO, "This system has {} GiB of memory", get_system_memory() / 1024 / 1024/ 1024);
 }
 }  // namespace lagrange

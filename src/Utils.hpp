@@ -159,6 +159,8 @@ void lagrange_assert(bool condition,
   }
 }
 
+size_t get_system_memory();
+
 class UtilDistIndexConversionException : public std::exception {};
 }  // namespace lagrange
 
