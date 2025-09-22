@@ -253,10 +253,8 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
             normalize_state_distribution_by_lwr(states, total_states);
         Range dist = 0;
         size_t dist_index = 0;
-        Range incl_areas =
-            n.getIncludedAreas().hasValue() ? n.getIncludedAreas().get() : 0;
-        Range excl_areas =
-            n.getExcludedAreas().hasValue() ? n.getExcludedAreas().get() : 0;
+        Range incl_areas = n.getIncludedAreas().value_or(0);
+        Range excl_areas = n.getExcludedAreas().value_or(0);
         while (true) {
           {
             auto tmp =

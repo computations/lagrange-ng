@@ -188,11 +188,11 @@ void join_splits_happy(Range splitting_dist,
 constexpr auto weighted_combine_check_happy_path(
     size_t states,
     size_t max_areas,
-    const Option<Range> &fixed_dist,
+    const std::optional<Range> &fixed_dist,
     Range excl_area_mask,
     Range incl_area_mask) {
-  return (states == (max_areas)) && (!fixed_dist.hasValue())
-         && (excl_area_mask == 0) && (incl_area_mask == 0);
+  return (states == (max_areas)) && (!fixed_dist) && (excl_area_mask == 0)
+         && (incl_area_mask == 0);
 }
 
 void weighted_combine_happy(const LagrangeConstColVector &c1,
@@ -216,7 +216,7 @@ void weighted_combine(const LagrangeConstColVector &c1,
                       size_t c1_scale,
                       size_t c2_scale,
                       size_t &scale_count,
-                      const Option<Range> &fixed_dist,
+                      const std::optional<Range> &fixed_dist,
                       Range excl_area_mask,
                       Range incl_area_mask) {
   assert(states != 0);
@@ -242,7 +242,7 @@ void weighted_combine(const LagrangeConstColVector &c1,
 
       if (index >= states) { break; }
 
-      if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
+      if (fixed_dist && fixed_dist.value() != dist) { continue; }
 
       join_splits(dist, index, regions, c1, c2, dest, scale, dist_map_func);
     }
@@ -308,7 +308,7 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
                               size_t c1_scale,
                               size_t c2_scale,
                               size_t &scale_count,
-                              const Option<Range> &fixed_dist,
+                              const std::optional<Range> &fixed_dist,
                               Range excl_area_mask,
                               Range incl_area_mask) {
   assert(states != 0);
@@ -316,7 +316,7 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
 
   std::vector<RegionSplit> splits;
 
-  if (max_areas == regions && !fixed_dist.hasValue()) {
+  if (max_areas == regions && !fixed_dist) {
     const auto identity_func = [](Range d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       fused_reverse_join_splits(i, regions, c1, c2, dest, identity_func);
@@ -342,7 +342,7 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
 
       if (index >= states) { break; }
 
-      if (fixed_dist.hasValue() && fixed_dist.get() != dist) { continue; }
+      if (fixed_dist && fixed_dist.value() != dist) { continue; }
 
       fused_reverse_join_splits(dist, regions, c1, c2, dest, dist_map_func);
       /*reverse_join_splits(*/
@@ -923,7 +923,8 @@ bool SplitOperation::check_for_errors(const std::shared_ptr<Workspace> &ws) {
     }
     if ((parent_clv[i] > 1.0) != (parent_clv[i] < 0.0)) {
       LOG_ERROR(
-          "Split operation failed, value 'CLV{}[{}] : {}' is not between 0.0 and "
+          "Split operation failed, value 'CLV{}[{}] : {}' is not between 0.0 "
+          "and "
           "1.0",
           _parent_clv_index,
           i,
@@ -1219,7 +1220,7 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   const Range max_dist = 1ULL << ws->regions();
   for (index = 0, dist = 0; dist < max_dist;
        index++, dist = next_dist(dist, max_areas)) {
-    if (_fixed_dist.hasValue() && _fixed_dist.get() != index) { continue; }
+    if (_fixed_dist && _fixed_dist.value() != index) { continue; }
 
     if (!check_excl_dist(index, _excl_area_mask)) { continue; }
     if (!check_incl_dist(index, _incl_area_mask)) { continue; }

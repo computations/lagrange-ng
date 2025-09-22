@@ -114,7 +114,7 @@ auto Node::computeHeight() const -> double {
   return tree_height + _branch_length;
 }
 
-auto Node::computeMinHeight() const -> double{
+auto Node::computeMinHeight() const -> double {
   double min_node_height = _height;
   for (const auto &c : _children) {
     min_node_height = std::min(min_node_height, c->computeMinHeight());
@@ -219,12 +219,12 @@ auto getParentWithNode(const std::shared_ptr<Node> &current,
 
 auto Node::getIncludeAreasMask(const Workspace &ws) const -> RangeMask {
   auto params = ws.getPeriodParams(getSplitPeriodIndex());
-  return params.include_area_mask | _incl_area_mask.get(0);
+  return params.include_area_mask | _incl_area_mask.value_or(0);
 }
 
 auto Node::getExcludeAreasMask(const Workspace &ws) const -> Range {
   auto params = ws.getPeriodParams(getSplitPeriodIndex());
-  return params.exclude_area_mask | _excl_area_mask.get(0);
+  return params.exclude_area_mask | _excl_area_mask.value_or(0);
 }
 
 auto Node::traverseAndGenerateForwardOperations(Workspace &ws,
@@ -509,11 +509,15 @@ void Node::applyPreorder(const std::function<void(Node &)> &func) {
   for (auto &c : _children) { c->applyPreorder(func); }
 }
 
-auto Node::getFixedDist() const -> Option<Range> { return _fixed_dist; }
+auto Node::getFixedDist() const -> std::optional<Range> { return _fixed_dist; }
 
-auto Node::getIncludedAreas() const -> Option<Range> { return _incl_area_mask; }
+auto Node::getIncludedAreas() const -> std::optional<Range> {
+  return _incl_area_mask;
+}
 
-auto Node::getExcludedAreas() const -> Option<Range> { return _excl_area_mask; }
+auto Node::getExcludedAreas() const -> std::optional<Range> {
+  return _excl_area_mask;
+}
 
 void Node::setPeriodSegments(const PeriodTimes &periods) {
   _periods = PeriodSpan(periods, _height, _branch_length);

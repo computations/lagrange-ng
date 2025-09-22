@@ -11,10 +11,8 @@
 #define UTILS_H
 
 #include <logger.hpp>
-#include <stdexcept>
 #include <string>
 #include <vector>
-#include <bit>
 
 #include "Common.hpp"
 
@@ -161,46 +159,6 @@ void lagrange_assert(bool condition,
   }
 }
 
-template <typename T>
-class Option {
- public:
-  Option() = default;
-
-  explicit Option(const T &val) : _value{val}, _has_value{true} {}
-
-  Option(const Option<T> &o) = default;
-  Option &operator=(const Option<T> &o) = default;
-
-  auto operator=(const T &v) -> Option<T> & {
-    _value = v;
-    _has_value = true;
-    return *this;
-  }
-
-  auto get() -> T & {
-    if (_has_value) { return _value; }
-    throw std::runtime_error{"lagrange_option_t has no value when used"};
-  }
-
-  auto get() const -> const T & {
-    if (_has_value) { return _value; }
-    throw std::runtime_error{"lagrange_option_t has no value when used"};
-  }
-
-  auto get(const T &user_default) const -> T {
-    if (_has_value) { return _value; }
-    return user_default;
-  }
-
-  [[nodiscard]] auto hasValue() const -> bool { return _has_value; }
-
-  operator bool() const { return hasValue(); }
-
- private:
-  T _value;
-  bool _has_value{false};
-};
-
 class UtilDistIndexConversionException : public std::exception {};
 }  // namespace lagrange
 
@@ -215,7 +173,7 @@ struct hash<std::pair<size_t, double>> {
 template <>
 struct hash<std::pair<size_t, size_t>> {
   auto operator()(std::pair<size_t, size_t> const &p) const -> std::size_t {
-    return std::rotl(std::hash<size_t>{}(p.first),1)
+    return std::rotl(std::hash<size_t>{}(p.first), 1)
            ^ std::hash<size_t>{}(p.second);
   }
 };

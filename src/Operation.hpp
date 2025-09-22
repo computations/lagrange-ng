@@ -18,7 +18,6 @@
 
 #include "AncSplit.hpp"
 #include "Common.hpp"
-#include "Utils.hpp"
 #include "Workspace.hpp"
 #include "logger.hpp"
 
@@ -455,7 +454,7 @@ class SplitOperation {
 
   void fixDist(Range fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> Option<Range> const { return _fixed_dist; }
+  auto getFixedDist() -> std::optional<Range> const { return _fixed_dist; }
 
   void setExclAreas(Range e) { _excl_area_mask = e; }
 
@@ -482,7 +481,7 @@ class SplitOperation {
   std::shared_ptr<DispersionOperation> _lbranch_op;
   std::shared_ptr<DispersionOperation> _rbranch_op;
 
-  Option<Range> _fixed_dist;
+  std::optional<Range> _fixed_dist;
   RangeMask _excl_area_mask = 0;
   RangeMask _incl_area_mask = 0;
 
@@ -577,7 +576,7 @@ class ReverseSplitOperation {
 
   void fixDist(Range fix_dist) { _fixed_dist = fix_dist; }
 
-  auto getFixedDist() -> Option<Range> const { return _fixed_dist; }
+  auto getFixedDist() -> std::optional<Range> const { return _fixed_dist; }
 
   void setInclAreas(Range i) { _incl_area_mask = i; }
 
@@ -600,7 +599,7 @@ class ReverseSplitOperation {
 
   std::shared_ptr<DispersionOperation> _branch_op;
 
-  Option<Range> _fixed_dist;
+  std::optional<Range> _fixed_dist;
   RangeMask _incl_area_mask = 0;
   RangeMask _excl_area_mask = 0;
 
@@ -669,7 +668,7 @@ class StateLHGoal {
 
   void fixDist(Range dist) { _fixed_dist = dist; }
 
-  auto getFixedDist() -> Option<Range> { return _fixed_dist; }
+  auto getFixedDist() -> std::optional<Range> { return _fixed_dist; }
 
   void setInclAreas(Range dist) { _incl_area_mask = dist; }
 
@@ -686,7 +685,7 @@ class StateLHGoal {
 
   size_t _node_id;
 
-  Option<Range> _fixed_dist;
+  std::optional<Range> _fixed_dist;
   Range _excl_area_mask = 0;
   Range _incl_area_mask = 0;
 
@@ -728,7 +727,7 @@ class SplitLHGoal {
 
   size_t _node_id;
 
-  Option<Range> _fixed_dist;
+  std::optional<Range> _fixed_dist;
   Range _excl_area_mask = 0;
   Range _incl_area_mask = 0;
 

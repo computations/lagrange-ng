@@ -11,7 +11,6 @@
 #include "AncSplit.hpp"
 #include "Checkpoint.hpp"
 #include "Common.hpp"
-#include "ConfigFile.hpp"
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
@@ -57,8 +56,8 @@ auto Context::makeStateGoalCB() -> std::function<void(Node&)> {
 
     _state_lh_goal.back().setInclAreas(n.getIncludeAreasMask(*_workspace));
     _state_lh_goal.back().setExclAreas(n.getExcludeAreasMask(*_workspace));
-    if (n.getFixedDist().hasValue()) {
-      _state_lh_goal.back().fixDist(n.getFixedDist().get());
+    if (n.getFixedDist()) {
+      _state_lh_goal.back().fixDist(n.getFixedDist().value());
     }
   };
   return cb;
@@ -72,8 +71,8 @@ auto Context::makeSplitGoalCB() -> std::function<void(Node&)> {
                                 _workspace->getRightChildCLV(n.getId()));
     _split_lh_goal.back().setInclAreas(n.getIncludeAreasMask(*_workspace));
     _split_lh_goal.back().setExclAreas(n.getExcludeAreasMask(*_workspace));
-    if (n.getFixedDist().hasValue()) {
-      _split_lh_goal.back().fixDist(n.getFixedDist().get());
+    if (n.getFixedDist()) {
+      _split_lh_goal.back().fixDist(n.getFixedDist().value());
     }
   };
   return cb;
@@ -186,8 +185,8 @@ void Context::init(const std::vector<PeriodParams>& period_params) {
 
   auto fixed_dist = _forward_operations.back()->getFixedDist();
 
-  if (fixed_dist.hasValue()) {
-    _workspace->setBaseFrequenciesByDist(0, fixed_dist.get());
+  if (fixed_dist) {
+    _workspace->setBaseFrequenciesByDist(0, fixed_dist.value());
   }
 }
 

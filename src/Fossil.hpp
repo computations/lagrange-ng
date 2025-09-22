@@ -5,7 +5,6 @@
 
 #include "Common.hpp"
 #include "MRCA.hpp"
-#include "Utils.hpp"
 
 namespace lagrange {
 
@@ -20,7 +19,7 @@ enum class FossilType : uint8_t {
 
 struct Fossil {
   MRCALabel mrca_name;
-  Option<std::shared_ptr<MRCAEntry>> clade;
+  std::optional<std::shared_ptr<MRCAEntry>> clade;
   double age;
   Range area;
   FossilType type;

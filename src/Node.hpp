@@ -154,10 +154,10 @@ class Node {
   void assignExcludedAreas(RangeMask fixed_dist);
   void assignFixedDist(Range fixed_dist);
 
-  auto getFixedDist() const -> Option<Range>;
+  auto getFixedDist() const -> std::optional<Range>;
 
-  auto getIncludedAreas() const -> Option<RangeMask>;
-  auto getExcludedAreas() const -> Option<RangeMask>;
+  auto getIncludedAreas() const -> std::optional<RangeMask>;
+  auto getExcludedAreas() const -> std::optional<RangeMask>;
   auto getIncludeAreasMask(const Workspace &ws) const -> RangeMask;
   auto getExcludeAreasMask(const Workspace &ws) const -> RangeMask;
 
@@ -215,9 +215,9 @@ class Node {
   MRCALabel _mrca;
   std::vector<std::shared_ptr<Node>> _children;
 
-  Option<Range> _fixed_dist;
-  Option<Range> _incl_area_mask;
-  Option<Range> _excl_area_mask;
+  std::optional<Range> _fixed_dist;
+  std::optional<Range> _incl_area_mask;
+  std::optional<Range> _excl_area_mask;
 
   std::optional<std::unique_ptr<LagrangeMatrixBase[]>> _ancestral_state;
   std::optional<SplitReturn> _ancestral_split;

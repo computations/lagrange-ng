@@ -18,7 +18,6 @@
 #include "AncSplit.hpp"
 #include "Checkpoint.hpp"
 #include "Common.hpp"
-#include "ConfigFile.hpp"
 #include "Operation.hpp"
 #include "Tree.hpp"
 #include "WorkerState.hpp"
