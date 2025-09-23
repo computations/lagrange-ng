@@ -4,50 +4,29 @@
  * 2020-10-27
  */
 
+#undef NDEBUG
 #include "Operation.hpp"
 
-#include <cstdint>
-#include <string_view>
-
-#include "Periods.hpp"
-#include "logger.hpp"
-
-#undef NDEBUG
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include <tuple>
-#include <unordered_map>
+#include <string_view>
 #include <utility>
 
-#include "AncSplit.hpp"
 #include "Arnoldi.hpp"
 #include "Common.hpp"
+#include "Periods.hpp"
 #include "Utils.hpp"
 #include "Workspace.hpp"
+#include "logger.hpp"
 
 namespace lagrange {
-
-static auto operator<<(std::ostream &os,
-                       std::tuple<double *, size_t> vector_tuple)
-    -> std::ostream & {
-  double *v = nullptr;
-  size_t n = 0;
-  std::tie(v, n) = vector_tuple;
-  os << "(";
-  for (size_t i = 0; i < n; i++) {
-    os << v[i];
-    if (i != n - 1) { os << ", "; }
-  }
-  os << ")";
-  return os;
-}
 
 /* We need this funtion to make ancestral splits.
  * However, we should make sure that we use the other functions whenever
@@ -450,39 +429,6 @@ void MakeRateMatrixOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->updateRateMatrixAndAdvanceClock(_rate_matrix_index);
 }
 
-void MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                          std::ostream &os,
-                                          size_t tabLevel) const {
-  std::string tabs = make_tabs(tabLevel);
-  os << opening_line(tabs) << "\n";
-  os << tabs << "MakeRateMatrixOperation:\n"
-     << tabs << "Rate Matrix (index: " << _rate_matrix_index
-     << " update: " << ws->lastUpdateRateMatrix(_rate_matrix_index) << "):\n";
-
-  const auto &rm = ws->rateMatrix(_rate_matrix_index);
-
-  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
-    os << tabs << std::setprecision(10)
-       << std::make_tuple(rm + ws->computeMatrixIndex(i, 0),
-                          ws->restrictedStateCount())
-       << "\n";
-  }
-
-  os << tabs << "Period index: " << _period_index << "\n"
-     << tabs << ws->getPeriodParams(_period_index).toString() << "\n"
-     << tabs << "_last_execution: " << _last_execution << "\n"
-     << tabs << "_last_update: " << _last_update << "\n";
-  os << closing_line(tabs);
-}
-
-auto MakeRateMatrixOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                          size_t tabLevel) const
-    -> std::string {
-  std::ostringstream os;
-  printStatus(ws, os, tabLevel);
-  return os.str();
-}
-
 void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   if ((_rate_matrix_op != nullptr)
       && (_last_execution > _rate_matrix_op->lastUpdate())) {
@@ -726,50 +672,6 @@ void ExpmOperation::eval(const std::shared_ptr<Workspace> &ws) {
   _execution_count += 1;
 }
 
-void ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                std::ostream &os,
-                                size_t tabLevel) const {
-  if (_arnoldi_mode) { return; }
-  std::string tabs = make_tabs(tabLevel);
-  os << opening_line(tabs) << "\n";
-  os << tabs << "ExpmOperation:\n"
-     << tabs << "Rate Matrix (index: " << _rate_matrix_index << "):\n";
-
-  os << tabs << "Prob Matrix (index: " << _prob_matrix_index
-     << " update: " << ws->lastUpdateProbMatrix(_prob_matrix_index) << "):\n";
-
-  const auto &pm = ws->probMatrix(_prob_matrix_index);
-
-  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
-    os << tabs << std::setprecision(10)
-       << std::make_tuple(pm + ws->computeMatrixIndex(i, 0),
-                          ws->restrictedStateCount())
-       << "\n";
-  }
-
-  os << tabs << "t: " << std::setprecision(16) << _t << "\n";
-  os << tabs << "_last_execution: " << _last_execution;
-  if (_rate_matrix_op != nullptr) {
-    os << "\n" << _rate_matrix_op->printStatus(ws, tabLevel + 1) << "\n";
-  } else {
-    auto &rm = ws->rateMatrix(_rate_matrix_index);
-    for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
-      os << tabs << std::setprecision(10)
-         << std::make_tuple(rm + ws->computeMatrixIndex(i, 0),
-                            ws->restrictedStateCount())
-         << "\n";
-    }
-  }
-  os << closing_line(tabs);
-}
-
-auto ExpmOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                size_t tabLevel) const -> std::string {
-  std::ostringstream os;
-  printStatus(ws, os, tabLevel);
-  return os.str();
-}
-
 void DispersionOperation::perform_matvec(const std::shared_ptr<Workspace> &ws) {
   cblas_dgemv(CblasRowMajor,
               CblasNoTrans,
@@ -853,36 +755,6 @@ void DispersionOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->updateCLVClock(_top_clv);
 }
 
-void DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                      std::ostream &os,
-                                      size_t tabLevel) const {
-  std::string tabs = make_tabs(tabLevel);
-
-  os << opening_line(tabs) << "\n";
-  os << tabs << "DispersionOperation:\n";
-  os << tabs << "Top clv (index: " << _top_clv
-     << " update: " << ws->lastUpdateCLV(_top_clv)
-     << "): " << std::setprecision(10)
-     << std::make_tuple(ws->CLV(_top_clv), ws->restrictedStateCount()) << "\n";
-  os << tabs << "Bot clv (index: " << _bot_clv
-     << " update: " << ws->lastUpdateCLV(_bot_clv)
-     << "): " << std::setprecision(10)
-     << std::make_tuple(ws->CLV(_bot_clv), ws->restrictedStateCount()) << "\n";
-  os << tabs << "Last Executed: " << _last_execution << "\n";
-  os << tabs << "Prob Matrix (index: " << _prob_matrix_index << ")\n";
-
-  if (_expm_op != nullptr) { os << _expm_op->printStatus(ws, tabLevel + 1); }
-  os << "\n";
-  os << closing_line(tabs);
-}
-
-auto DispersionOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                      size_t tabLevel) const -> std::string {
-  std::ostringstream os;
-  printStatus(ws, os, tabLevel);
-  return os.str();
-}
-
 void DispersionOperation::printGraph(std::ostream &os, size_t &index) const {
   auto ptr = (size_t)(static_cast<const void *>(this));
   if (_expm_op) {
@@ -964,49 +836,6 @@ void SplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   ws->updateCLVClock(_parent_clv_index);
 }
 
-void SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                 std::ostream &os,
-                                 size_t tabLevel) const {
-  std::string tabs = make_tabs(tabLevel);
-  os << opening_line(tabs) << "\n";
-  os << tabs << "SplitOperation:\n";
-
-  os << tabs << "Lbranch clv (index: " << _lbranch_clv_index
-     << ", scalar: " << ws->CLVScalar(_lbranch_clv_index)
-     << ", update: " << ws->lastUpdateCLV(_lbranch_clv_index)
-     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_lbranch_clv_index)
-     << "\n";
-  os << tabs << "Rbranch clv (index: " << _rbranch_clv_index
-     << ", scalar: " << ws->CLVScalar(_rbranch_clv_index)
-     << ", update: " << ws->lastUpdateCLV(_rbranch_clv_index)
-     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_rbranch_clv_index)
-     << "\n";
-  os << tabs << "Parent clv (index: " << _parent_clv_index
-     << ", scalar: " << ws->CLVScalar(_parent_clv_index)
-     << ", update: " << ws->lastUpdateCLV(_parent_clv_index)
-     << "):  " << std::setprecision(10) << ws->CLVSizeTuple(_parent_clv_index)
-     << "\n";
-  os << tabs << "Last Executed: " << _last_execution << "\n";
-
-  os << tabs << "Left Branch ops:\n";
-  if (_lbranch_op != nullptr) {
-    os << _lbranch_op->printStatus(ws, tabLevel + 1);
-  }
-  os << "\n" << tabs << "Right Branch ops:\n";
-  if (_rbranch_op != nullptr) {
-    os << _rbranch_op->printStatus(ws, tabLevel + 1);
-  }
-  os << "\n";
-  os << closing_line(tabs);
-}
-
-auto SplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                 size_t tabLevel) const -> std::string {
-  std::ostringstream os;
-  printStatus(ws, os, tabLevel);
-  return os.str();
-}
-
 void SplitOperation::printGraph(std::ostream &os, size_t &index) const {
   os << std::format(R"({} [label = "Split Operation {}"];)", index, index)
      << "\n";
@@ -1063,52 +892,6 @@ void ReverseSplitOperation::eval(const std::shared_ptr<Workspace> &ws) {
   }
 }
 
-void ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                        std::ostream &os,
-                                        size_t tabLevel) const {
-  std::string tabs = make_tabs(tabLevel);
-  os << opening_line(tabs) << "\n";
-  os << tabs << "ReverseSplitOperation:\n";
-
-  os << tabs << "Bot clv (index: " << _bot_clv_index
-     << ", update: " << ws->lastUpdateCLV(_bot_clv_index)
-     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_bot_clv_index)
-     << "\n";
-  os << tabs << "Ltop clv (index: " << _ltop_clv_index
-     << ", update: " << ws->lastUpdateCLV(_ltop_clv_index)
-     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_ltop_clv_index)
-     << "\n";
-  os << tabs << "Rtop clv (index: " << _rtop_clv_index
-     << ", update: " << ws->lastUpdateCLV(_rtop_clv_index)
-     << "): " << std::setprecision(10) << ws->CLVSizeTuple(_rtop_clv_index)
-     << "\n";
-
-  /*
-  if (!_excl_dists.empty()) {
-    os << tabs << "Excluded dists:\n";
-    for (unsigned long _excl_dist : _excl_dists) {
-      os << tabs << _excl_dist << "\n";
-    }
-  }
-  */
-
-  os << tabs << "Eval CLVS: " << _eval_clvs << "\n";
-
-  if (_branch_op != nullptr) {
-    os << tabs << "Branch ops:\n";
-    if (_branch_op) { os << _branch_op->printStatus(ws, tabLevel + 1); }
-    os << "\n";
-  }
-  os << closing_line(tabs);
-}
-
-auto ReverseSplitOperation::printStatus(const std::shared_ptr<Workspace> &ws,
-                                        size_t tabLevel) const -> std::string {
-  std::ostringstream os;
-  printStatus(ws, os, tabLevel);
-  return os.str();
-}
-
 void ReverseSplitOperation::printGraph(std::ostream &os, size_t &index) const {
   auto ptr = (size_t)(static_cast<const void *>(this));
   os << std::format(R"({} [label = "Reverse Split Operation {}"];)", ptr, index)
@@ -1126,129 +909,4 @@ void ReverseSplitOperation::printGraph(std::ostream &os, size_t &index) const {
   if (_branch_op != nullptr) { _branch_op->printGraph(os, index); }
 }
 
-void LLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  double rho = cblas_ddot(ws->CLVSize(),
-                          ws->CLV(_root_clv_index),
-                          1,
-                          ws->getBaseFrequencies(_prior_index),
-                          1);
-  lagrange_assert(rho > 0.0,
-                  "Likelihood computations failed with an invalid likelihood");
-  _result = std::log(rho)
-            - lagrange_scaling_factor_log * ws->CLVScalar(_root_clv_index);
-
-  _last_execution = ws->advanceClock();
-}
-
-auto LLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->lastUpdateCLV(_root_clv_index) > _last_execution;
-}
-
-void LLHGoal::printGraph(std::ostream &os, size_t &index) const {
-  os << std::format(R"({} [label = "LLHGoal {}"];)", index, index) << "\n";
-  os << std::format("clv{} -> {};\n", _root_clv_index, index);
-  os << std::format("bf{} -> {};\n", _prior_index, index);
-
-  index++;
-}
-
-void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  if (_last_execution == 0) {
-    _result.reset(new LagrangeMatrixBase[ws->restrictedStateCount()]);
-    _states = ws->restrictedStateCount();
-    for (Range i = 0; i < _states; ++i) { _result[i] = 0.0; }
-  }
-
-  size_t tmp_scalar = 0;
-
-  weighted_combine(ws->CLV(_lchild_clv_index),
-                   ws->CLV(_rchild_clv_index),
-                   _states,
-                   ws->regions(),
-                   ws->maxAreas(),
-                   _result.get(),
-                   ws->CLVScalar(_lchild_clv_index),
-                   ws->CLVScalar(_rchild_clv_index),
-                   tmp_scalar,
-                   _fixed_dist,
-                   _excl_area_mask,
-                   _incl_area_mask);
-
-  tmp_scalar += ws->CLVScalar(_parent_clv_index);
-  auto *result = _result.get();
-
-  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
-    double tmp_val = result[i];
-    double parent_val = ws->CLV(_parent_clv_index)[i];
-    result[i] = std::log(tmp_val * parent_val)
-                - tmp_scalar * lagrange_scaling_factor_log;
-    assert(!std::isnan(result[i]));
-  }
-  _last_execution = ws->advanceClock();
-}
-
-auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
-         && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
-         && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
-}
-
-void StateLHGoal::printGraph(std::ostream &os, size_t &index) const {
-  os << std::format(R"({} [label = "State Goal {}"];)", index, index) << "\n";
-
-  os << std::format("clv{} -> {};\n", _parent_clv_index, index);
-  os << std::format("clv{} -> {};\n", _lchild_clv_index, index);
-  os << std::format("clv{} -> {};\n", _rchild_clv_index, index);
-
-  index++;
-}
-
-void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
-  std::unordered_map<Range, std::vector<AncSplit>> ret;
-
-  const auto &parent_clv = ws->CLV(_parent_clv_index);
-  const auto &lchild_clv = ws->CLV(_lchild_clv_index);
-  const auto &rchild_clv = ws->CLV(_rchild_clv_index);
-  const size_t max_areas = ws->maxAreas();
-
-  std::vector<RegionSplit> splits;
-
-  auto inv_dist_map = invert_dist_map(ws->regions(), max_areas);
-
-  size_t index = 0;
-  Range dist = 0;
-  const Range max_dist = 1ULL << ws->regions();
-  for (index = 0, dist = 0; dist < max_dist;
-       index++, dist = next_dist(dist, max_areas)) {
-    if (_fixed_dist && _fixed_dist.value() != index) { continue; }
-
-    if (!check_excl_dist(index, _excl_area_mask)) { continue; }
-    if (!check_incl_dist(index, _incl_area_mask)) { continue; }
-
-    std::vector<AncSplit> anc_split_vec;
-    generate_splits(dist, ws->regions(), splits);
-    double weight = 1.0 / splits.size();
-    for (auto sp : splits) {
-      AncSplit anc_split(dist, sp.left, sp.right, weight);
-
-      auto left_index = inv_dist_map[sp.left];
-      auto right_index = inv_dist_map[sp.right];
-
-      double lh = parent_clv[index] * lchild_clv[left_index]
-                  * rchild_clv[right_index] * weight;
-      double loglh = std::log(lh);
-      assert(!std::isnan(loglh));
-      anc_split.setLikelihood(std::log(lh));
-      anc_split_vec.push_back(anc_split);
-    }
-    ret[dist] = anc_split_vec;
-  }
-  _result = ret;
-}
-
-auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
-  return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
-         && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
-         && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
-}
 }  // namespace lagrange

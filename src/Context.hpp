@@ -119,6 +119,8 @@ class Context {
   void computeStateGoal(WorkerState& ts, WorkerContext& tc);
   void computeSplitGoal(WorkerState& ts, WorkerContext& tc);
 
+  void streamSplitGoal(WorkerState& ts, WorkerContext& tc);
+
   auto optimize(WorkerState& ts, WorkerContext& tc) -> double;
 
   void extractRateMatrixOperations();

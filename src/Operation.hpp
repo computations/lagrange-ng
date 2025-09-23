@@ -16,12 +16,27 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "AncSplit.hpp"
 #include "Common.hpp"
 #include "Workspace.hpp"
 #include "logger.hpp"
 
 namespace lagrange {
+void generate_splits(Range state,
+                     size_t regions,
+                     std::vector<RegionSplit>& results);
+
+void weighted_combine(const LagrangeConstColVector& c1,
+                      const LagrangeConstColVector& c2,
+                      size_t states,
+                      size_t regions,
+                      size_t max_areas,
+                      LagrangeColVector dest,
+                      size_t c1_scale,
+                      size_t c2_scale,
+                      size_t& scale_count,
+                      const std::optional<Range>& fixed_dist,
+                      Range excl_area_mask,
+                      Range incl_area_mask);
 
 class MakeRateMatrixOperation {
  public:
@@ -42,13 +57,6 @@ class MakeRateMatrixOperation {
   [[nodiscard]] auto rateMatrixIndex() const -> size_t {
     return _rate_matrix_index;
   }
-
-  void printStatus(const std::shared_ptr<Workspace>& ws,
-                   std::ostream& os,
-                   size_t tabLevel = 0) const;
-
-  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
-                                 size_t tabLevel = 0) const -> std::string;
 
   [[nodiscard]] auto getPeriodIndex() const -> size_t { return _period_index; }
 
@@ -97,13 +105,6 @@ class ExpmOperation {
   [[nodiscard]] auto lastExecution() const -> ClockTick {
     return _last_execution;
   }
-
-  void printStatus(const std::shared_ptr<Workspace>& ws,
-                   std::ostream& os,
-                   size_t tabLevel = 0) const;
-
-  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
-                                 size_t tabLevel = 0) const -> std::string;
 
   auto getLock() -> std::mutex& { return *_lock; }
 
@@ -257,13 +258,6 @@ class DispersionOperation {
   [[nodiscard]] auto topCLVIndex() const -> size_t { return _top_clv; }
 
   [[nodiscard]] auto botCLVIndex() const -> size_t { return _bot_clv; }
-
-  void printStatus(const std::shared_ptr<Workspace>& ws,
-                   std::ostream& os,
-                   size_t tabLevel = 0) const;
-
-  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
-                                 size_t tabLevel = 0) const -> std::string;
 
   [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws,
                            ClockTick deadline) const -> bool {
@@ -420,13 +414,6 @@ class SplitOperation {
     return _parent_clv_index;
   }
 
-  void printStatus(const std::shared_ptr<Workspace>& ws,
-                   std::ostream& os,
-                   size_t tabLevel = 0) const;
-
-  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
-                                 size_t tabLevel = 0) const -> std::string;
-
   [[nodiscard]] auto ready(const std::shared_ptr<Workspace>& ws) const -> bool {
     return _lbranch_op->ready(ws, _last_execution)
            && _rbranch_op->ready(ws, _last_execution);
@@ -537,13 +524,6 @@ class ReverseSplitOperation {
 
   void eval(const std::shared_ptr<Workspace>&);
 
-  void printStatus(const std::shared_ptr<Workspace>& ws,
-                   std::ostream& os,
-                   size_t tabLevel = 0) const;
-
-  [[nodiscard]] auto printStatus(const std::shared_ptr<Workspace>& ws,
-                                 size_t tabLevel = 0) const -> std::string;
-
   void printGraph(std::ostream& os, size_t& index) const;
 
   void makeRootOperation(size_t clv_index) {
@@ -605,135 +585,6 @@ class ReverseSplitOperation {
 
   std::mutex _lock;
   ClockTick _last_execution = 0;
-};
-
-class LLHGoal {
- public:
-  LLHGoal(size_t root_clv, size_t prior_index) :
-      _root_clv_index{root_clv},
-      _prior_index{prior_index} {}
-
-  void eval(const std::shared_ptr<Workspace>&);
-
-  [[nodiscard]] auto result() const -> double { return _result; }
-
-  size_t _root_clv_index;
-  size_t _prior_index;
-  double _result = -std::numeric_limits<double>::infinity();
-
-  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
-  void printGraph(std::ostream& os, size_t& index) const;
-
- private:
-  ClockTick _last_execution = 0;
-};
-
-class StateLHGoal {
- public:
-  StateLHGoal(size_t node_id,
-              size_t parent_clv,
-              size_t lchild_clv,
-              size_t rchild_clv) :
-      _parent_clv_index{parent_clv},
-      _lchild_clv_index{lchild_clv},
-      _rchild_clv_index{rchild_clv},
-      _node_id{node_id},
-      _result{nullptr} {}
-
-  StateLHGoal(const StateLHGoal&) = delete;
-  auto operator=(const StateLHGoal&) -> StateLHGoal& = delete;
-
-  StateLHGoal(StateLHGoal&& other) noexcept :
-      _parent_clv_index{other._parent_clv_index},
-      _lchild_clv_index{other._lchild_clv_index},
-      _rchild_clv_index{other._rchild_clv_index},
-      _node_id{other._node_id},
-      _fixed_dist{other._fixed_dist},
-      _excl_area_mask{other._excl_area_mask},
-      _incl_area_mask{other._incl_area_mask},
-      _result{std::move(other._result)},
-      _states{other._states} {}
-
-  auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
-
-  void eval(const std::shared_ptr<Workspace>&);
-
-  [[nodiscard]] auto result() const -> std::unique_ptr<LagrangeMatrixBase[]> {
-    std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
-    for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
-    return ret;
-  }
-
-  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
-
-  void fixDist(Range dist) { _fixed_dist = dist; }
-
-  auto getFixedDist() -> std::optional<Range> { return _fixed_dist; }
-
-  void setInclAreas(Range dist) { _incl_area_mask = dist; }
-
-  void setExclAreas(Range dist) { _excl_area_mask = dist; }
-
-  [[nodiscard]] auto node_id() const -> size_t { return _node_id; }
-
-  void printGraph(std::ostream& os, size_t& index) const;
-
- private:
-  size_t _parent_clv_index;
-  size_t _lchild_clv_index;
-  size_t _rchild_clv_index;
-
-  size_t _node_id;
-
-  std::optional<Range> _fixed_dist;
-  Range _excl_area_mask = 0;
-  Range _incl_area_mask = 0;
-
-  ClockTick _last_execution = 0;
-
-  std::unique_ptr<LagrangeMatrixBase[]> _result;
-  size_t _states{0};
-};
-
-class SplitLHGoal {
- public:
-  SplitLHGoal(size_t node_id,
-              size_t parent_clv,
-              size_t lchild_clv,
-              size_t rchild_clv) :
-      _parent_clv_index{parent_clv},
-      _lchild_clv_index{lchild_clv},
-      _rchild_clv_index{rchild_clv},
-      _node_id{node_id} {}
-
-  void eval(const std::shared_ptr<Workspace>&);
-
-  auto result() const -> SplitReturn { return _result; }
-
-  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
-
-  void fixDist(Range dist) { _fixed_dist = dist; }
-
-  void setInclAreas(Range dist) { _incl_area_mask = dist; }
-
-  void setExclAreas(Range dist) { _excl_area_mask = dist; }
-
-  auto node_id() const -> size_t { return _node_id; }
-
- private:
-  size_t _parent_clv_index;
-  size_t _lchild_clv_index;
-  size_t _rchild_clv_index;
-
-  size_t _node_id;
-
-  std::optional<Range> _fixed_dist;
-  Range _excl_area_mask = 0;
-  Range _incl_area_mask = 0;
-
-  ClockTick _last_execution = 0;
-
-  SplitReturn _result;
 };
 
 using PeriodRateMatrixMap =

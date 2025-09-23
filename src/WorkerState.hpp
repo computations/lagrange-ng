@@ -9,6 +9,7 @@
 #include <mutex>
 #include <vector>
 
+#include "Goal.hpp"
 #include "Operation.hpp"
 #include "Workspace.hpp"
 
@@ -47,6 +48,7 @@ enum class WorkerMode : uint8_t {
   ComputeLH,
   ComputeStateGoal,
   ComputeSplitGoal,
+  StreamSplitGoal,
   Halt,
   Unknown
 };

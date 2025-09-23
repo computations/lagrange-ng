@@ -9,6 +9,7 @@
 #include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <span>
 
 #ifndef MKL_ENABLED
   #include <complex>
@@ -32,6 +33,7 @@ using LagrangeFloat = double;
 using LagrangeComplex = lapack_complex_double;
 
 using LagrangeMatrixBase = LagrangeFloat;
+using StateReturnList = std::span<LagrangeMatrixBase>;
 
 using LagrangeMatrix = LagrangeMatrixBase *;
 using LagrangeConstMatrix = const LagrangeMatrixBase *const;
@@ -47,7 +49,6 @@ using ClockTick = uint64_t;
 using Clock = std::atomic<uint64_t>;
 
 using OpID = uint64_t;
-
 
 constexpr double lagrange_scaling_factor = 0x1p256;
 

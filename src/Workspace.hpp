@@ -457,6 +457,16 @@ class Workspace {
 #endif
   }
 
+  inline size_t expectedSplitResultSize() const {
+    auto n = regions();
+    size_t split_count = n * (n + 1) * (2 * n + 1) / 6;
+    return split_count * CLVSize() * sizeof(double) * _inner_count;
+  }
+
+  inline size_t expectedStateResultSize() const {
+    return CLVSize() * sizeof(double) * _inner_count;
+  }
+
  private:
   auto registerCLV() -> size_t { return _next_free_clv++; }
 

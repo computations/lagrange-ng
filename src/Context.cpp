@@ -404,7 +404,9 @@ auto Context::getStateResults() const
   std::unordered_map<size_t, std::unique_ptr<LagrangeMatrixBase[]>> states;
   states.reserve(_state_lh_goal.size());
 
-  for (const auto& op : _state_lh_goal) { states[op.node_id()] = op.result(); }
+  for (const auto& op : _state_lh_goal) {
+    states[op.node_id()] = op.copyResult();
+  }
 
   return states;
 }

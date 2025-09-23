@@ -149,7 +149,6 @@ static void setup_context(Context &context,
   context.setCheckpointLoad(config.loadCheckpoint());
 }
 
-
 static void handle_tree(std::shared_ptr<Tree> &tree,
                         const Alignment &data,
                         const ConfigFile &config) {
