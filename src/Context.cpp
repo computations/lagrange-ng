@@ -269,12 +269,12 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     computeBackwardOperations(ts, tc);
   }
 
-  if (states) {
+  if (states && immediateResults()) {
     LOG(INFO, "Computing ancestral states");
     computeStateGoal(ts, tc);
   }
 
-  if (splits) {
+  if (splits && immediateResults()) {
     LOG(INFO, "Computing ancestral splits");
     computeSplitGoal(ts, tc);
   }
@@ -410,6 +410,20 @@ auto Context::getStateResults() const
   }
 
   return states;
+}
+
+auto Context::getStreamingStateGoals() const
+    -> std::vector<StreamingGoal<StateLHGoal>> {
+  return _state_lh_goal
+         | std::views::transform([](auto g) { return StreamingGoal(g); })
+         | std::ranges::to<std::vector<StreamingGoal<StateLHGoal>>>();
+}
+
+auto Context::getStreamingSplitGoals() const
+    -> std::vector<StreamingGoal<SplitLHGoal>> {
+  return _split_lh_goal
+         | std::views::transform([](auto g) { return StreamingGoal(g); })
+         | std::ranges::to<std::vector<StreamingGoal<SplitLHGoal>>>();
 }
 
 auto Context::getSplitResults() const -> SplitReturnList {
@@ -549,11 +563,19 @@ void Context::setCheckpoint(std::unique_ptr<Checkpoint> ckp) {
 
 void Context::setRunMode(LagrangeOperationMode mode) { _run_mode = mode; }
 
+void Context::setResultEvalMode(LagrangeResultEvaluationMode eval_mode) {
+  _result_eval_mode = eval_mode;
+}
+
 std::vector<double> Context::getDefaultParams() {
   if (_load_checkpoint && _checkpoint->existingCheckpoint()) {
     return _checkpoint->loadCheckpoint();
   }
   return _workspace->getDefaultParams();
+}
+
+[[nodiscard]] bool Context::immediateResults() const {
+  return _result_eval_mode == LagrangeResultEvaluationMode::IMMEDIATE;
 }
 
 }  // namespace lagrange

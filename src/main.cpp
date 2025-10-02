@@ -7,6 +7,7 @@
  *      Author: Ben Bettisworth
  */
 
+#include <algorithm>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -81,20 +82,37 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
                                    const ConfigFile &config,
                                    const Context &context) {
   if (config.computeStates()) {
-    auto states = context.getStateResults();
+    auto states = context.getStreamingStateGoals();
+    // std::sort(
+    //     states.begin(), states.end(), [](const auto &a, const auto &b) ->
+    //     bool {
+    //       return a.nodeID() < b.nodeID();
+    //     });
     auto cb = [&](Node &n) {
-      if (auto result = states.find(n.getId()); result != states.end()) {
-        n.assignAncestralState(std::move(result->second));
+      if (auto result = std::find_if(
+              states.begin(),
+              states.end(),
+              [&](auto &a) -> bool { return a.nodeID() == n.getId(); });
+          result != states.end()) {
+        n.assignGoal(*result);
       }
     };
     tree->applyPreorderInternalOnly(cb);
   }
 
   if (config.computeSplits()) {
-    auto splits = context.getSplitResults();
+    auto splits = context.getStreamingSplitGoals();
+    // std::sort(
+    //     splits.begin(), splits.end(), [](const auto &a, const auto &b) -> bool {
+    //       return a.nodeID() < b.nodeID();
+    //     });
     auto cb = [&](Node &n) {
-      if (auto result = splits.find(n.getId()); result != splits.end()) {
-        n.assignAncestralSplit(std::move(result->second));
+      if (auto result = std::find_if(
+              splits.begin(),
+              splits.end(),
+              [&](auto &a) -> bool { return a.nodeID() == n.getId(); });
+          result != splits.end()) {
+        n.assignGoal(*result);
       }
     };
     tree->applyPreorderInternalOnly(cb);

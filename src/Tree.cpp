@@ -192,16 +192,6 @@ void Tree::assignMCRALabels(const MRCAMap &mrca_map) {
   }
 }
 
-void Tree::assignStateResult(std::unique_ptr<LagrangeMatrixBase[]> r,
-                             const MRCALabel &mrca_label) {
-  getNodesByMRCALabel(_root, mrca_label)->assignAncestralState(std::move(r));
-}
-
-void Tree::assignSplitResult(const SplitReturn &r,
-                             const MRCALabel &mrca_label) {
-  getNodesByMRCALabel(_root, mrca_label)->assignAncestralSplit(r);
-}
-
 auto Tree::validate() const -> bool {
   if (!_root->validateHeight()) {
     LOG_ERROR(

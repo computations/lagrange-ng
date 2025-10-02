@@ -87,10 +87,6 @@ class Tree {
 
   void assignFossils(const std::vector<Fossil> &fossils);
 
-  void assignStateResult(std::unique_ptr<LagrangeMatrixBase[]>,
-                         const MRCALabel &);
-  void assignSplitResult(const SplitReturn &, const MRCALabel &);
-
   bool validate() const;
 
  private:

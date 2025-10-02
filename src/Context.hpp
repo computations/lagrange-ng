@@ -64,6 +64,9 @@ class Context {
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
   void haltThreads(WorkerState& ts, WorkerContext& tc);
 
+  auto getStreamingStateGoals() const -> std::vector<StreamingGoal<StateLHGoal>>;
+  auto getStreamingSplitGoals() const -> std::vector<StreamingGoal<SplitLHGoal>>;
+
   [[nodiscard]] auto toString() const -> std::string;
 
   void updateRates(const std::vector<PeriodParams>& p);
@@ -108,6 +111,8 @@ class Context {
 
   void setRunMode(LagrangeOperationMode run_mode);
 
+  void setResultEvalMode(LagrangeResultEvaluationMode eval_mode);
+
   auto currentParamsVector() const -> std::vector<double>;
 
   auto getWorkspace() const -> std::shared_ptr<const Workspace> {
@@ -145,6 +150,8 @@ class Context {
   void setInitialParams();
   std::vector<double> getDefaultParams();
 
+  [[nodiscard]] bool immediateResults() const;
+
   nlopt::algorithm _opt_method;
 
   double _lh_epsilon;
@@ -160,6 +167,8 @@ class Context {
   std::vector<std::shared_ptr<MakeRateMatrixOperation>> _rate_matrix_ops;
 
   LagrangeOperationMode _run_mode;
+  LagrangeResultEvaluationMode _result_eval_mode =
+      LagrangeResultEvaluationMode::STREAMING;
   std::unique_ptr<Checkpoint> _checkpoint;
   std::optional<bool> _load_checkpoint;
 };

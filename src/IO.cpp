@@ -247,7 +247,7 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
   auto workspace = context.getWorkspace();
 
   auto cb = [&outfile, max_areas, total_states, output_threshold, workspace](
-                const Node &n) {
+                Node &n) {
     if (!n.hasAncestralState()) { return; }
     auto node_label = n.getNodeLabel();
     const auto &states = n.getAncestralState(workspace);
@@ -296,7 +296,7 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
   auto output_threshold = config.lwrOutputThreshold();
   auto workspace = context.getWorkspace();
 
-  auto cb = [&outfile, output_threshold, workspace](const Node &n) {
+  auto cb = [&outfile, output_threshold, workspace](Node &n) {
     if (!n.hasAncestralSplit()) { return; }
     auto node_label = n.getNodeLabel();
     auto splits = n.getAncestralSplit(workspace);

@@ -40,7 +40,19 @@ class StateLHGoal {
       _node_id{node_id},
       _result{nullptr} {}
 
-  StateLHGoal(const StateLHGoal&);
+  StateLHGoal(const StateLHGoal& other) :
+      _parent_clv_index{other._parent_clv_index},
+      _lchild_clv_index{other._lchild_clv_index},
+      _rchild_clv_index{other._rchild_clv_index},
+      _node_id{other._node_id},
+      _fixed_dist{other._fixed_dist},
+      _excl_area_mask{other._excl_area_mask},
+      _incl_area_mask{other._incl_area_mask},
+      _result{nullptr},
+      _states{other._states} {
+    _result = other.copyResult();
+  }
+
   auto operator=(const StateLHGoal&) -> StateLHGoal& = delete;
 
   StateLHGoal(StateLHGoal&& other) noexcept :
@@ -78,7 +90,8 @@ class StateLHGoal {
     return tmp;
   }
 
-  [[nodiscard]] auto ready(const std::shared_ptr<const Workspace>&) const -> bool;
+  [[nodiscard]] auto ready(const std::shared_ptr<const Workspace>&) const
+      -> bool;
 
   void fixDist(Range dist) { _fixed_dist = dist; }
 

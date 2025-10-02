@@ -567,29 +567,23 @@ auto Node::hasResults() const -> bool {
   return hasAncestralState() || hasAncestralSplit();
 }
 
-auto Node::hasAncestralState() const -> bool { return _state_goal != nullptr; }
+auto Node::hasAncestralState() const -> bool { return _state_goal.has_value(); }
 
-auto Node::hasAncestralSplit() const -> bool { return _split_goal != nullptr; }
+auto Node::hasAncestralSplit() const -> bool { return _split_goal.has_value(); }
 
 auto Node::getAncestralState(const std::shared_ptr<const Workspace> &ws)
     -> std::unique_ptr<LagrangeMatrixBase[]> {
-  if (_state_goal != nullptr) {
-    auto ret = getAncestralState(ws);
+  if (_state_goal.has_value()) {
+    auto ret = _state_goal->eval(ws);
     _best_state = computeTopAncestralState(ret);
     return ret;
   }
   return nullptr;
 }
 
-auto Node::getAncestralState(const std::shared_ptr<const Workspace> &ws) const
-    -> std::unique_ptr<LagrangeMatrixBase[]> {
-  if (_state_goal != nullptr) { return _state_goal->eval(ws); }
-  return nullptr;
-}
-
 auto Node::getAncestralSplit(const std::shared_ptr<const Workspace> &ws)
     -> SplitReturn {
-  if (_split_goal != nullptr) {
+  if (_split_goal.has_value()) {
     auto ret = _split_goal->eval(ws);
     _best_split = computeTopAncestralSplit(ret);
     return ret;

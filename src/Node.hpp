@@ -173,12 +173,8 @@ class Node {
 
   auto getAncestralState(const std::shared_ptr<const Workspace> &ws)
       -> std::unique_ptr<LagrangeMatrixBase[]>;
-  auto getAncestralState(const std::shared_ptr<const Workspace> &ws) const
-      -> std::unique_ptr<LagrangeMatrixBase[]>;
 
   auto getAncestralSplit(const std::shared_ptr<const Workspace> &ws)
-      -> SplitReturn;
-  auto getAncestralSplit(const std::shared_ptr<const Workspace> &ws) const
       -> SplitReturn;
 
   auto computeTopAncestralState(
@@ -189,18 +185,11 @@ class Node {
 
   auto getTopAncestralSplit() const -> AncSplit { return _best_split.value(); }
 
-  void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
-  void assignAncestralSplit(const SplitReturn &);
-
   auto assignFossil(const Fossil &) -> bool;
 
-  auto assignGoal(std::shared_ptr<StreamingGoal<StateLHGoal>> goal) {
-    _state_goal = goal;
-  }
+  auto assignGoal(StreamingGoal<StateLHGoal> goal) { _state_goal = goal; }
 
-  auto assignGoal(std::shared_ptr<StreamingGoal<SplitLHGoal>> goal) {
-    _split_goal = goal;
-  }
+  auto assignGoal(StreamingGoal<SplitLHGoal> goal) { _split_goal = goal; }
 
   auto validateHeight() const -> bool;
 
@@ -236,8 +225,8 @@ class Node {
   std::optional<Range> _incl_area_mask;
   std::optional<Range> _excl_area_mask;
 
-  std::shared_ptr<StreamingGoal<StateLHGoal>> _state_goal;
-  std::shared_ptr<StreamingGoal<SplitLHGoal>> _split_goal;
+  std::optional<StreamingGoal<StateLHGoal>> _state_goal;
+  std::optional<StreamingGoal<SplitLHGoal>> _split_goal;
 
   std::optional<Range> _best_state;
   std::optional<AncSplit> _best_split;
