@@ -184,7 +184,7 @@ size_t get_system_memory() {
   return status.ullTotalPhys;
 }
 
-#elif __unix__
+#elif defined(__unix__) || defined(__APPLE__)
 
   #include <unistd.h>
 
