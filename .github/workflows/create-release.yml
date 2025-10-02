@@ -75,5 +75,5 @@ jobs:
     - name: Create Release
       uses: ncipollo/release-action@v1.18.0
       with:
-        artifacts: ${{ steps.strings.outputs.artifacts-dir }}
+        artifacts: ${{ steps.strings.outputs.artifacts-dir }}/lagrange-ng-${{ matrix.release-name }}.xz
         allowUpdates: true
