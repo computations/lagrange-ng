@@ -567,74 +567,67 @@ auto Node::hasResults() const -> bool {
   return hasAncestralState() || hasAncestralSplit();
 }
 
-auto Node::hasAncestralState() const -> bool {
-  return _ancestral_state.has_value();
-}
+auto Node::hasAncestralState() const -> bool { return _state_goal != nullptr; }
 
-auto Node::hasAncestralSplit() const -> bool {
-  return _ancestral_split.has_value();
-}
+auto Node::hasAncestralSplit() const -> bool { return _split_goal != nullptr; }
 
-auto Node::getAncestralState() const
-    -> const std::unique_ptr<LagrangeMatrixBase[]> & {
-  return _ancestral_state.value();
-}
-
-auto Node::getAncestralState() -> std::unique_ptr<LagrangeMatrixBase[]> & {
-  return _ancestral_state.value();
-}
-
-auto Node::getAncestralSplit() const -> const SplitReturn & {
-  return _ancestral_split.value();
-}
-
-auto Node::getAncestralSplit() -> SplitReturn & {
-  return _ancestral_split.value();
-}
-
-auto Node::getTopAncestralSplit() const -> AncSplit {
-  if (_ancestral_split) {
-    auto best_state = getTopAncestralState();
-    auto split = _ancestral_split.value().at(best_state);
-    auto best_split = *std::max_element(
-        split.begin(), split.end(), [](const auto &a, const auto &b) {
-          return a.getLikelihood() < b.getLikelihood();
-        });
-    return best_split;
+auto Node::getAncestralState(const std::shared_ptr<const Workspace> &ws)
+    -> std::unique_ptr<LagrangeMatrixBase[]> {
+  if (_state_goal != nullptr) {
+    auto ret = getAncestralState(ws);
+    _best_state = computeTopAncestralState(ret);
+    return ret;
   }
-
-  throw std::runtime_error{"No ancestral splits assigned"};
+  return nullptr;
 }
 
-auto Node::getTopAncestralState() const -> Range {
-  if (_ancestral_state) {
-    const auto &state = _ancestral_state.value();
-    auto period_segment = *_periods.begin();
+auto Node::getAncestralState(const std::shared_ptr<const Workspace> &ws) const
+    -> std::unique_ptr<LagrangeMatrixBase[]> {
+  if (_state_goal != nullptr) { return _state_goal->eval(ws); }
+  return nullptr;
+}
 
-    Range cur_range;
-    size_t cur_index;
-    Range best_range = 0;
-    double best_lh = -std::numeric_limits<double>::infinity();
-    size_t max_range = 1UL << period_segment.regions;
-    for (cur_range = 0, cur_index = 0; cur_range < max_range; ++cur_index,
-        cur_range = next_dist(cur_range, period_segment.max_areas)) {
-      double cur_lwr = state[cur_index];
-      if (best_lh < cur_lwr) {
-        best_lh = cur_lwr;
-        best_range = cur_range;
-      }
+auto Node::getAncestralSplit(const std::shared_ptr<const Workspace> &ws)
+    -> SplitReturn {
+  if (_split_goal != nullptr) {
+    auto ret = _split_goal->eval(ws);
+    _best_split = computeTopAncestralSplit(ret);
+    return ret;
+  }
+  return {};
+}
+
+auto Node::computeTopAncestralSplit(const SplitReturn &splits) const
+    -> AncSplit {
+  auto best_state = _best_state.value();
+  auto split = splits.at(best_state);
+  auto best_split = *std::max_element(
+      split.begin(), split.end(), [](const auto &a, const auto &b) {
+        return a.getLikelihood() < b.getLikelihood();
+      });
+  return best_split;
+}
+
+auto Node::computeTopAncestralState(
+    const std::unique_ptr<LagrangeMatrixBase[]> &states) const -> Range {
+  auto period_segment = *_periods.begin();
+
+  Range cur_range;
+  size_t cur_index;
+  Range best_range = 0;
+  double best_lh = -std::numeric_limits<double>::infinity();
+  size_t max_range = 1UL << period_segment.regions;
+  for (cur_range = 0, cur_index = 0; cur_range < max_range; ++cur_index,
+      cur_range = next_dist(cur_range, period_segment.max_areas)) {
+    double cur_lwr = states[cur_index];
+    if (best_lh < cur_lwr) {
+      best_lh = cur_lwr;
+      best_range = cur_range;
     }
-
-    return best_range;
   }
-  throw std::runtime_error{"No ancestral states assigned"};
-}
 
-void Node::assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]> s) {
-  _ancestral_state = std::move(s);
+  return best_range;
 }
-
-void Node::assignAncestralSplit(const SplitReturn &s) { _ancestral_split = s; }
 
 auto Node::getCount() -> size_t { return getCount(0); }
 

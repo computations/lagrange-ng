@@ -104,6 +104,11 @@ class Workspace {
     return _clv_scalars[i];
   }
 
+  auto CLVScalar(size_t i) const -> size_t {
+    assert(_reserved);
+    return _clv_scalars[i];
+  }
+
   auto rateMatrix(size_t i) -> LagrangeMatrix & {
     assert(_reserved);
     if (i >= _rate_matrix.size()) {
@@ -163,7 +168,7 @@ class Workspace {
     return _rate_matrix[i]._last_update;
   }
 
-  auto CLV(size_t i) -> const LagrangeColVector & {
+  auto CLV(size_t i) const -> const LagrangeColVector & {
     assert(_reserved);
     if (i >= CLVCount()) {
       throw std::runtime_error{"CLV access out of range"};
@@ -191,7 +196,7 @@ class Workspace {
     _clvs[index]._last_update = advanceClock();
   }
 
-  auto lastUpdateCLV(size_t index) -> ClockTick {
+  auto lastUpdateCLV(size_t index) const -> ClockTick {
     return _clvs[index]._last_update;
   }
 
@@ -301,7 +306,7 @@ class Workspace {
 
   auto advanceClock() -> ClockTick { return _current_clock++; }
 
-  auto readClock() -> ClockTick { return _current_clock; }
+  auto readClock() const -> ClockTick { return _current_clock; }
 
   [[nodiscard]] auto getPeriodParams() const
       -> const std::vector<PeriodParams> & {

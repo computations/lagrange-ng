@@ -30,7 +30,7 @@ void LLHGoal::printGraph(std::ostream &os, size_t &index) const {
   index++;
 }
 
-void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+void StateLHGoal::eval(const std::shared_ptr<const Workspace> &ws) {
   if (_last_execution == 0) {
     _result.reset(new LagrangeMatrixBase[ws->restrictedStateCount()]);
     _states = ws->restrictedStateCount();
@@ -62,10 +62,11 @@ void StateLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
                 - tmp_scalar * lagrange_scaling_factor_log;
     assert(!std::isnan(result[i]));
   }
-  _last_execution = ws->advanceClock();
+  _last_execution = ws->readClock();
 }
 
-auto StateLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
+auto StateLHGoal::ready(const std::shared_ptr<const Workspace> &ws) const
+    -> bool {
   return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;
@@ -81,7 +82,7 @@ void StateLHGoal::printGraph(std::ostream &os, size_t &index) const {
   index++;
 }
 
-void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
+void SplitLHGoal::eval(const std::shared_ptr<const Workspace> &ws) {
   SplitReturn ret;
   ret.reserve(ws->restrictedStateCount());
 
@@ -125,7 +126,8 @@ void SplitLHGoal::eval(const std::shared_ptr<Workspace> &ws) {
   _result = ret;
 }
 
-auto SplitLHGoal::ready(const std::shared_ptr<Workspace> &ws) const -> bool {
+auto SplitLHGoal::ready(const std::shared_ptr<const Workspace> &ws) const
+    -> bool {
   return ws->lastUpdateCLV(_lchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_rchild_clv_index) > _last_execution
          && ws->lastUpdateCLV(_parent_clv_index) > _last_execution;

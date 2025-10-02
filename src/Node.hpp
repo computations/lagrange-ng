@@ -22,6 +22,7 @@
 #include "AncSplit.hpp"
 #include "Common.hpp"
 #include "Fossil.hpp"
+#include "Goal.hpp"
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Periods.hpp"
@@ -170,20 +171,36 @@ class Node {
   auto hasAncestralState() const -> bool;
   auto hasAncestralSplit() const -> bool;
 
-  auto getAncestralState() const
-      -> const std::unique_ptr<LagrangeMatrixBase[]> &;
-  auto getAncestralSplit() const -> const SplitReturn &;
+  auto getAncestralState(const std::shared_ptr<const Workspace> &ws)
+      -> std::unique_ptr<LagrangeMatrixBase[]>;
+  auto getAncestralState(const std::shared_ptr<const Workspace> &ws) const
+      -> std::unique_ptr<LagrangeMatrixBase[]>;
 
-  auto getTopAncestralSplit() const -> AncSplit;
-  auto getTopAncestralState() const -> Range;
+  auto getAncestralSplit(const std::shared_ptr<const Workspace> &ws)
+      -> SplitReturn;
+  auto getAncestralSplit(const std::shared_ptr<const Workspace> &ws) const
+      -> SplitReturn;
 
-  auto getAncestralState() -> std::unique_ptr<LagrangeMatrixBase[]> &;
-  auto getAncestralSplit() -> SplitReturn &;
+  auto computeTopAncestralState(
+      const std::unique_ptr<LagrangeMatrixBase[]> &) const -> Range;
+  auto computeTopAncestralSplit(const SplitReturn &) const -> AncSplit;
+
+  auto getTopAncestralState() const -> Range { return _best_state.value(); }
+
+  auto getTopAncestralSplit() const -> AncSplit { return _best_split.value(); }
 
   void assignAncestralState(std::unique_ptr<LagrangeMatrixBase[]>);
   void assignAncestralSplit(const SplitReturn &);
 
   auto assignFossil(const Fossil &) -> bool;
+
+  auto assignGoal(std::shared_ptr<StreamingGoal<StateLHGoal>> goal) {
+    _state_goal = goal;
+  }
+
+  auto assignGoal(std::shared_ptr<StreamingGoal<SplitLHGoal>> goal) {
+    _split_goal = goal;
+  }
 
   auto validateHeight() const -> bool;
 
@@ -219,8 +236,11 @@ class Node {
   std::optional<Range> _incl_area_mask;
   std::optional<Range> _excl_area_mask;
 
-  std::optional<std::unique_ptr<LagrangeMatrixBase[]>> _ancestral_state;
-  std::optional<SplitReturn> _ancestral_split;
+  std::shared_ptr<StreamingGoal<StateLHGoal>> _state_goal;
+  std::shared_ptr<StreamingGoal<SplitLHGoal>> _split_goal;
+
+  std::optional<Range> _best_state;
+  std::optional<AncSplit> _best_split;
 };
 
 auto getMRCAWithNodes(const std::shared_ptr<Node> &current,

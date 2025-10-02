@@ -28,6 +28,8 @@ class LLHGoal {
 
 class StateLHGoal {
  public:
+  using result_type = std::unique_ptr<LagrangeMatrixBase[]>;
+
   StateLHGoal(size_t node_id,
               size_t parent_clv,
               size_t lchild_clv,
@@ -38,7 +40,7 @@ class StateLHGoal {
       _node_id{node_id},
       _result{nullptr} {}
 
-  StateLHGoal(const StateLHGoal&) = delete;
+  StateLHGoal(const StateLHGoal&);
   auto operator=(const StateLHGoal&) -> StateLHGoal& = delete;
 
   StateLHGoal(StateLHGoal&& other) noexcept :
@@ -52,12 +54,15 @@ class StateLHGoal {
       _result{std::move(other._result)},
       _states{other._states} {}
 
-  auto operator=(StateLHGoal&&) -> StateLHGoal& = delete;
+  auto operator=(StateLHGoal&& other) -> StateLHGoal& {
+    std::swap(*this, other);
 
-  void eval(const std::shared_ptr<Workspace>&);
+    return *this;
+  }
 
-  [[nodiscard]] auto copyResult() const
-      -> std::unique_ptr<LagrangeMatrixBase[]> {
+  void eval(const std::shared_ptr<const Workspace>&);
+
+  [[nodiscard]] auto copyResult() const -> result_type {
     std::unique_ptr<LagrangeMatrixBase[]> ret{new LagrangeMatrixBase[_states]};
     for (size_t i = 0; i < _states; i++) { ret[i] = _result[i]; }
     return ret;
@@ -67,7 +72,13 @@ class StateLHGoal {
     return {_result.get(), _result.get() + _states};
   }
 
-  [[nodiscard]] auto ready(const std::shared_ptr<Workspace>&) const -> bool;
+  [[nodiscard]] auto result() -> result_type {
+    result_type tmp;
+    tmp.swap(_result);
+    return tmp;
+  }
+
+  [[nodiscard]] auto ready(const std::shared_ptr<const Workspace>&) const -> bool;
 
   void fixDist(Range dist) { _fixed_dist = dist; }
 
@@ -100,6 +111,8 @@ class StateLHGoal {
 
 class SplitLHGoal {
  public:
+  using result_type = SplitReturn;
+
   SplitLHGoal(size_t node_id,
               size_t parent_clv,
               size_t lchild_clv,
@@ -109,11 +122,18 @@ class SplitLHGoal {
       _rchild_clv_index{rchild_clv},
       _node_id{node_id} {}
 
-  void eval(const std::shared_ptr<Workspace>&);
+  void eval(const std::shared_ptr<const Workspace>&);
 
-  auto result() const -> SplitReturn { return _result; }
+  auto result() const -> result_type { return _result; }
 
-  auto ready(const std::shared_ptr<Workspace>&) const -> bool;
+  /* Make a copy, and then return it to trigger copy elision */
+  auto result() -> result_type {
+    result_type tmp;
+    std::swap(tmp, _result);
+    return tmp;
+  }
+
+  auto ready(const std::shared_ptr<const Workspace>&) const -> bool;
 
   void fixDist(Range dist) { _fixed_dist = dist; }
 
@@ -136,10 +156,34 @@ class SplitLHGoal {
 
   ClockTick _last_execution = 0;
 
-  SplitReturn _result;
+  result_type _result;
 };
 
 template <typename T>
 concept StreamableGoal =
     std::same_as<T, StateLHGoal> || std::same_as<T, SplitLHGoal>;
+
+template <StreamableGoal G>
+class StreamingGoal {
+ public:
+  StreamingGoal(G g) : _goal{g} {}
+
+  StreamingGoal(const StreamingGoal<G>&) = default;
+  StreamingGoal(StreamingGoal<G>&&) = default;
+
+  StreamingGoal() = default;
+
+  StreamingGoal<G>& operator=(const StreamingGoal<G>&) = default;
+  StreamingGoal<G>& operator=(StreamingGoal<G>&&) = default;
+
+  auto eval(const std::shared_ptr<const Workspace>& ws) -> G::result_type {
+    _goal.eval(ws);
+    return _goal.result();
+  }
+
+  auto nodeID() const -> size_t { return _goal.node_id(); }
+
+ private:
+  G _goal;
+};
 }  // namespace lagrange

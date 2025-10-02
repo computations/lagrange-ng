@@ -121,7 +121,7 @@ auto make_state_results_for_node(
   return node_json;
 }
 
-auto make_split_results_for_node(SplitReturn &splits,
+auto make_split_results_for_node(SplitReturn splits,
                                  const std::vector<std::string> &region_names,
                                  size_t states_len,
                                  size_t max_areas,
@@ -163,6 +163,7 @@ auto make_split_results_for_node(SplitReturn &splits,
 
 auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
                             const std::vector<std::string> &region_names,
+                            std::shared_ptr<const Workspace> ws,
                             size_t states_len,
                             size_t max_areas,
                             double lwr_threshold) -> nlohmann::json {
@@ -173,14 +174,14 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
     nlohmann::json node_json;
     node_json["number"] = n.getNodeLabel();
     if (n.hasAncestralSplit()) {
-      node_json["splits"] = make_split_results_for_node(n.getAncestralSplit(),
+      node_json["splits"] = make_split_results_for_node(n.getAncestralSplit(ws),
                                                         region_names,
                                                         states_len,
                                                         max_areas,
                                                         lwr_threshold);
     }
     if (n.hasAncestralState()) {
-      node_json["states"] = make_state_results_for_node(n.getAncestralState(),
+      node_json["states"] = make_state_results_for_node(n.getAncestralState(ws),
                                                         region_names,
                                                         states_len,
                                                         max_areas,
@@ -213,6 +214,7 @@ auto produce_json_file(const std::shared_ptr<Tree> &tree,
   root_json["node-results"] =
       make_results_for_nodes(tree,
                              config.area_names(),
+                             context.getWorkspace(),
                              context.stateCount(),
                              config.max_areas(),
                              config.lwrOutputThreshold());
@@ -242,42 +244,44 @@ void write_csv_state_file(const std::shared_ptr<Tree> &tree,
   auto max_areas = config.max_areas();
   auto total_states = context.stateCount();
   auto output_threshold = config.lwrOutputThreshold();
+  auto workspace = context.getWorkspace();
 
-  auto cb =
-      [&outfile, max_areas, total_states, output_threshold](const Node &n) {
-        if (!n.hasAncestralState()) { return; }
-        auto node_label = n.getNodeLabel();
-        const auto &states = n.getAncestralState();
+  auto cb = [&outfile, max_areas, total_states, output_threshold, workspace](
+                const Node &n) {
+    if (!n.hasAncestralState()) { return; }
+    auto node_label = n.getNodeLabel();
+    const auto &states = n.getAncestralState(workspace);
 
-        auto lwr_distribution =
-            normalize_state_distribution_by_lwr(states, total_states);
-        Range dist = 0;
-        size_t dist_index = 0;
-        Range incl_areas = n.getIncludedAreas().value_or(0);
-        Range excl_areas = n.getExcludedAreas().value_or(0);
-        while (true) {
-          {
-            auto tmp =
-                next_dist(dist, max_areas, dist_index, excl_areas, incl_areas);
-            dist = tmp.first;
-            dist_index = tmp.second;
-          }
-          if (dist_index >= total_states) { break; }
-          auto lwr = lwr_distribution.get()[dist_index];
-          if (lwr < output_threshold) { continue; }
-          write_csv_row(
-              outfile,
-              std::array{node_label,
-                         std::to_string(dist),
-                         std::to_string(states.get()[dist_index]),
-                         std::to_string(lwr_distribution.get()[dist_index])});
-        }
-      };
+    auto lwr_distribution =
+        normalize_state_distribution_by_lwr(states, total_states);
+    Range dist = 0;
+    size_t dist_index = 0;
+    Range incl_areas = n.getIncludedAreas().value_or(0);
+    Range excl_areas = n.getExcludedAreas().value_or(0);
+    while (true) {
+      {
+        auto tmp =
+            next_dist(dist, max_areas, dist_index, excl_areas, incl_areas);
+        dist = tmp.first;
+        dist_index = tmp.second;
+      }
+      if (dist_index >= total_states) { break; }
+      auto lwr = lwr_distribution.get()[dist_index];
+      if (lwr < output_threshold) { continue; }
+      write_csv_row(
+          outfile,
+          std::array{node_label,
+                     std::to_string(dist),
+                     std::to_string(states.get()[dist_index]),
+                     std::to_string(lwr_distribution.get()[dist_index])});
+    }
+  };
   tree->applyPreorderInternalOnly(cb);
 }
 
 void write_csv_split_file(const std::shared_ptr<Tree> &tree,
-                          const ConfigFile &config) {
+                          const ConfigFile &config,
+                          const Context &context) {
   LOG_INFO("Writing ancestral splits to {}",
            config.splitsCSVResultsFilename().string());
   auto fields = {
@@ -290,11 +294,12 @@ void write_csv_split_file(const std::shared_ptr<Tree> &tree,
   };
   auto outfile = init_csv(config.splitsCSVResultsFilename(), fields);
   auto output_threshold = config.lwrOutputThreshold();
+  auto workspace = context.getWorkspace();
 
-  auto cb = [&outfile, output_threshold](const Node &n) {
+  auto cb = [&outfile, output_threshold, workspace](const Node &n) {
     if (!n.hasAncestralSplit()) { return; }
     auto node_label = n.getNodeLabel();
-    auto splits = n.getAncestralSplit();
+    auto splits = n.getAncestralSplit(workspace);
 
     normalize_split_distribution_by_lwr(splits);
     for (const auto &kv : splits) {
@@ -408,7 +413,7 @@ void write_csv_result_files(const std::shared_ptr<Tree> &tree,
   write_csv_periods_file(config, context);
   write_csv_node_info_file(tree, config);
   if (config.computeStates()) { write_csv_state_file(tree, config, context); }
-  if (config.computeSplits()) { write_csv_split_file(tree, config); }
+  if (config.computeSplits()) { write_csv_split_file(tree, config, context); }
 }
 
 void write_result_files(const std::shared_ptr<Tree> &tree,
@@ -564,6 +569,8 @@ void print_run_header(const ConfigFile &config) {
 #endif
   LOG(INFO, "Using tree: {}", config.tree_filename().c_str());
   LOG(INFO, "Using data: {}", config.data_filename().c_str());
-  LOG(INFO, "This system has {} GiB of memory", get_system_memory() / 1024 / 1024/ 1024);
+  LOG(INFO,
+      "This system has {} GiB of memory",
+      get_system_memory() / 1024 / 1024 / 1024);
 }
 }  // namespace lagrange

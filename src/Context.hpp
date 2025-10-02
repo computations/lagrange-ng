@@ -18,6 +18,7 @@
 #include "AncSplit.hpp"
 #include "Checkpoint.hpp"
 #include "Common.hpp"
+#include "Goal.hpp"
 #include "Operation.hpp"
 #include "Tree.hpp"
 #include "WorkerState.hpp"
@@ -108,6 +109,10 @@ class Context {
   void setRunMode(LagrangeOperationMode run_mode);
 
   auto currentParamsVector() const -> std::vector<double>;
+
+  auto getWorkspace() const -> std::shared_ptr<const Workspace> {
+    return _workspace;
+  }
 
  private:
   void registerForwardOperations();

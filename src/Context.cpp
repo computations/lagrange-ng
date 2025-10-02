@@ -11,6 +11,7 @@
 #include "AncSplit.hpp"
 #include "Checkpoint.hpp"
 #include "Common.hpp"
+#include "Goal.hpp"
 #include "MRCA.hpp"
 #include "Operation.hpp"
 #include "Utils.hpp"
