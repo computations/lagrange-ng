@@ -149,7 +149,7 @@ void Context::updateRates(const std::vector<PeriodParams>& params) {
   }
 }
 
-void Context::updateRates(std::ranges::view auto x) {
+void Context::updateRates(const std::ranges::view auto& x) {
   auto itr = x.begin();
   for (auto& p : _workspace->getPeriodParams()) {
     itr = p.applyParameters(std::ranges::subrange{itr, x.end()});
@@ -306,15 +306,17 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     struct X_struct : std::ranges::view_interface<X_struct> {
       const double* x_ptr;
       size_t size;
-      const double* begin() { return x_ptr; }
-      const double* end() { return x_ptr + size; }
+      const double* begin() const { return x_ptr; }
+      const double* end() const { return x_ptr + size; }
     } x{.x_ptr = x_ptr, .size = size};
     static_assert(std::ranges::range<X_struct>);
 
     struct Grad_struct : std::ranges::view_interface<Grad_struct> {
       double* grad_ptr;
       size_t size;
+      double* begin() const { return grad_ptr; }
       double* begin() { return grad_ptr; }
+      double* end() const { return grad_ptr + size; }
       double* end() { return grad_ptr + size; }
     } grad{.grad_ptr = grad_ptr, .size = (grad_ptr == nullptr ? 0 : size)};
     static_assert(std::ranges::range<Grad_struct>);

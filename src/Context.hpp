@@ -64,13 +64,15 @@ class Context {
   auto computeSplitGoal(WorkerState& ts) -> SplitReturnList;
   void haltThreads(WorkerState& ts, WorkerContext& tc);
 
-  auto getStreamingStateGoals() const -> std::vector<StreamingGoal<StateLHGoal>>;
-  auto getStreamingSplitGoals() const -> std::vector<StreamingGoal<SplitLHGoal>>;
+  auto getStreamingStateGoals() const
+      -> std::vector<StreamingGoal<StateLHGoal>>;
+  auto getStreamingSplitGoals() const
+      -> std::vector<StreamingGoal<SplitLHGoal>>;
 
   [[nodiscard]] auto toString() const -> std::string;
 
   void updateRates(const std::vector<PeriodParams>& p);
-  void updateRates(std::ranges::view auto x);
+  void updateRates(const std::ranges::view auto& x);
   void applyAdjustmentMatrices(const std::vector<PeriodParams>& period_params);
   void setupPeriods(const std::vector<PeriodParams>& period_params);
   void init(const std::vector<PeriodParams>& period_params);

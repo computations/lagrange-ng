@@ -13,10 +13,10 @@
 #include <fstream>
 #include <logger.hpp>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
+#include <omp.h>
 
 #include "Alignment.hpp"
 #include "Common.hpp"
@@ -259,6 +259,7 @@ auto main(int argc, char *argv[]) -> int {
 #else
   openblas_set_num_threads(1);
 #endif
+  omp_set_num_threads(1);
 
   logger::get_log_states().add_stream(
       stdout, INFO | IMPORTANT | PROGRESS | WARNING | ERROR);

@@ -56,6 +56,7 @@ template <std::ranges::range R>
 auto write_csv_row(std::ostream& os, const R& entries) {
   for (auto e : make_csv_row(entries)) { os << e; }
   os << "\n";
+  os.flush();
 }
 
 using CSVHeaderType = std::vector<std::string>;

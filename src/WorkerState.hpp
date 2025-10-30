@@ -1,6 +1,7 @@
 #ifndef LAGRANGE_WORKER_STATE_H
 #define LAGRANGE_WORKER_STATE_H
 
+#include <omp.h>
 #include <pthread.h>
 
 #include <atomic>
@@ -147,6 +148,7 @@ class WorkerState {
 #else
     openblas_set_num_threads(_assigned_threads);
 #endif
+    omp_set_num_threads(_assigned_threads);
     while (true) {
       tc.barrier();
 
@@ -298,7 +300,7 @@ class WorkerState {
 
   size_t _tid{};
 
-  size_t _assigned_threads{0};
+  size_t _assigned_threads{1};
 };
 }  // namespace lagrange
 
