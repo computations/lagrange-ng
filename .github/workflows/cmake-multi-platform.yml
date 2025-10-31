@@ -42,7 +42,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       shell: bash
       run: |
-        brew install openblas nlopt libomp
+        brew install llvm openblas nlopt libomp
 
     - name: Configure CMake
       if: matrix.os != 'macos-latest'
