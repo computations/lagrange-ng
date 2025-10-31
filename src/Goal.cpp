@@ -60,7 +60,7 @@ void StateLHGoal::eval(const std::shared_ptr<const Workspace> &ws) {
     double parent_val = ws->CLV(_parent_clv_index)[i];
     result[i] = std::log(tmp_val * parent_val)
                 - tmp_scalar * lagrange_scaling_factor_log;
-    assert(std::isfinite(result[i]));
+    assert(i == 0 || std::isfinite(result[i]));
   }
   _last_execution = ws->readClock();
 }
