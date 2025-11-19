@@ -25,7 +25,7 @@ TEST_F(ConfigFileTest, basic) {
   EXPECT_EQ(config.tree_filename(), "foo.nwk");
   EXPECT_EQ(config.data_filename(), "foo.phy");
 
-  std::vector<std::string> expected_area_names = {"RA", "RB", "RC"};
+  std::vector<std::string> expected_area_names = {"RC", "RB", "RA"};
   ASSERT_EQ(config.area_names().size(), expected_area_names.size());
 
 #ifdef __cpp_lib_ranges_enumerate
@@ -61,7 +61,7 @@ TEST_F(ConfigFileTest, quoted_values) {
   EXPECT_EQ(config.tree_filename(), "bar foo.nwk");
   EXPECT_EQ(config.data_filename(), "bar foo.phy");
 
-  std::vector<std::string> expected_area_names = {"R A", "R' B", "R C"};
+  std::vector<std::string> expected_area_names = {"R C", "R' B", "R A"};
   ASSERT_EQ(config.area_names().size(), expected_area_names.size());
 
   for (size_t i = 0; i < expected_area_names.size(); ++i) {
