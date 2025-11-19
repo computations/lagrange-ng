@@ -7,6 +7,8 @@
  *      Author: Ben Bettisworth
  */
 
+#include <omp.h>
+
 #include <algorithm>
 #include <ctime>
 #include <filesystem>
@@ -16,7 +18,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <omp.h>
 
 #include "Alignment.hpp"
 #include "Common.hpp"
@@ -103,7 +104,8 @@ static void assign_results_to_tree(std::shared_ptr<Tree> &tree,
   if (config.computeSplits()) {
     auto splits = context.getStreamingSplitGoals();
     // std::sort(
-    //     splits.begin(), splits.end(), [](const auto &a, const auto &b) -> bool {
+    //     splits.begin(), splits.end(), [](const auto &a, const auto &b) ->
+    //     bool {
     //       return a.nodeID() < b.nodeID();
     //     });
     auto cb = [&](Node &n) {
@@ -163,6 +165,11 @@ static void setup_context(Context &context,
   set_expm_mode(context, config);
 
   context.setRunMode(config.run_mode());
+  if (!config.checkCheckpointWriteTime()) {
+    LOG_WARNING(
+        "The config file has been written to more recently than the config "
+        "file");
+  }
   context.setCheckpoint(config.checkpointFilename());
   context.setCheckpointLoad(config.loadCheckpoint());
 }
@@ -219,8 +226,7 @@ static void handle_tree(std::shared_ptr<Tree> &tree,
 }
 
 static auto read_config_file(const std::string &filename) -> ConfigFile {
-  std::ifstream infile(filename);
-  return ConfigFile{infile};
+  return ConfigFile{filename};
 }
 
 static auto read_tree_file_line_by_line(const std::filesystem::path &filename)

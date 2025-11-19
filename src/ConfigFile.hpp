@@ -37,6 +37,14 @@ class ConfigFile {
     finalize(testing);
   }
 
+  ConfigFile(const std::filesystem::path config_file, bool testing = false) {
+    std::ifstream infile(config_file);
+    auto tmp = parse_config_file(infile);
+    std::swap(*this, tmp);
+    _config_filename = config_file;
+    finalize(testing);
+  }
+
   ConfigFile(const ConfigFile&) = default;
   ConfigFile(ConfigFile&&) = default;
 
@@ -193,6 +201,13 @@ class ConfigFile {
   auto lwrOutputThreshold() const -> double;
   void lwrOutputThreshold(double);
 
+  [[nodiscard]] bool checkCheckpointWriteTime() const {
+    auto config_time = std::filesystem::last_write_time(_config_filename);
+    auto checkpoint_time =
+        std::filesystem::last_write_time(checkpointFilename());
+    return config_time < checkpoint_time;
+  }
+
   friend ConfigFileParser;
 
  private:
@@ -240,6 +255,7 @@ class ConfigFile {
           INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
     }
   }
+
 
   /*
    * This takes the period map, and turns it into a list of periods. The period
@@ -378,6 +394,7 @@ class ConfigFile {
     validate_and_make_prefix();
   }
 
+  std::filesystem::path _config_filename;
   std::filesystem::path _tree_filename;
   std::filesystem::path _data_filename;
   std::filesystem::path _log_filename;
