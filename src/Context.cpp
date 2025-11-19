@@ -302,6 +302,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
                        const double* x_ptr,
                        double* grad_ptr) mutable -> double {
     auto* obj = &oc;
+
     /* These two structs are here to wrap the pointers in  std::ranges. */
     struct X_struct : std::ranges::view_interface<X_struct> {
       const double* x_ptr;
@@ -352,6 +353,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     auto cur_time = std::chrono::high_resolution_clock::now();
     if (obj->iter % 10 == 0
         || (cur_time - obj->last_print) > print_time_threshold) {
+      obj->context.resetAdaptiveModeForward();
       LOG(PROGRESS, "Iteration: {}, Current LLH: {:.7}", obj->iter, llh);
       obj->last_print = cur_time;
       if (_checkpoint) {
@@ -496,6 +498,13 @@ void Context::useArnoldi(bool mode_set, bool adaptive) const {
       eop->setArnoldiMode(mode_set);
       eop->setAdaptive(adaptive);
     }
+  }
+}
+
+void Context::resetAdaptiveModeForward() {
+  for (const auto& op : _forward_operations) {
+    auto expm_ops = op->getExpmOperations();
+    for (auto& eop : expm_ops) { eop->resetFallback(); }
   }
 }
 

@@ -154,6 +154,8 @@ class Context {
 
   [[nodiscard]] bool immediateResults() const;
 
+  void resetAdaptiveModeForward();
+
   nlopt::algorithm _opt_method;
 
   double _lh_epsilon;

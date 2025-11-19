@@ -110,9 +110,15 @@ class ExpmOperation {
 
   void setArnoldiMode(bool d) { _arnoldi_mode = d; }
 
-  [[nodiscard]] auto isArnoldiMode() const -> bool { return _arnoldi_mode; }
+  [[nodiscard]] auto isArnoldiMode() const -> bool {
+    return _arnoldi_mode && !_arnoldi_fallback;
+  }
 
   void setAdaptive(bool m) { _adaptive_mode = m; }
+
+  void engageFallback() { _arnoldi_fallback = true; }
+
+  void resetFallback() { _arnoldi_fallback = false; }
 
   [[nodiscard]] auto isAdaptive() const -> bool { return _adaptive_mode; }
 
@@ -149,6 +155,7 @@ class ExpmOperation {
 
   bool _transposed;
   bool _arnoldi_mode = false;
+  bool _arnoldi_fallback = false;
   bool _adaptive_mode = false;
   size_t _execution_count = 0;
 };
@@ -276,7 +283,7 @@ class DispersionOperation {
     std::scoped_lock lock(_expm_op->getLock());
     LOG_WARNING("Falling back to Pade exponentiation for probability matrix {}",
                 _prob_matrix_index);
-    _expm_op->setArnoldiMode(false);
+    _expm_op->engageFallback();
   }
 
   void setChildOp(const std::shared_ptr<DispersionOperation>& op) {
