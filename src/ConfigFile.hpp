@@ -275,8 +275,18 @@ class ConfigFile {
 
     bool OllKorrect = true;
 
-    if (period_buffer.front().second.start != 0.0) { OllKorrect &= false; }
-    if (!std::isinf(period_buffer.back().second.end)) { OllKorrect &= false; }
+    if (period_buffer.front().second.start != 0.0) {
+      LOG_ERROR(
+          "There is no start period specified. Please specify a period without "
+          "a set start time.");
+      OllKorrect &= false;
+    }
+    if (!std::isinf(period_buffer.back().second.end)) {
+      LOG_ERROR(
+          "There is no end period specified. Please add an additional period "
+          "without a set end time.");
+      OllKorrect &= false;
+    }
 
 #if defined(__cpp_lib_ranges_zip) \
     && (!defined(__clang_major__) && __clang_major__ > 18)
