@@ -353,7 +353,7 @@ auto Context::optimize(WorkerState& ts, WorkerContext& tc) -> double {
     auto cur_time = std::chrono::high_resolution_clock::now();
     if (obj->iter % 10 == 0
         || (cur_time - obj->last_print) > print_time_threshold) {
-      obj->context.resetAdaptiveModeForward();
+      // obj->context.resetAdaptiveModeForward();
       LOG(PROGRESS, "Iteration: {}, Current LLH: {:.7}", obj->iter, llh);
       obj->last_print = cur_time;
       if (_checkpoint) {
