@@ -46,6 +46,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBUILD_ONLY_STATIC=ON
         -DSTRIP_BINARY=ON
+        -DPROVIDED_BUILD_VERSION=${{ github.ref_name }}
         -S ${{ github.workspace }}
 
     - name: Configure CMake
