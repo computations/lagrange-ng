@@ -171,18 +171,20 @@ find_package(OpenMP)
 
 set(LAGRANGE_BLAS_LIBS ${LAGRANGE_BLAS_LIBS} OpenMP::OpenMP_CXX)
 
-if(DEFINED PROVIDED_BUILD_VERSION)
+if(PROVIDED_BUILD_VERSION)
   SET(LAGRANGE_BUILD_VERSION ${PROVIDED_BUILD_VERSION})
 else()
   find_package(Git)
   if(GIT_FOUND)
-      if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-          execute_process(
-              COMMAND ${GIT_EXECUTABLE} describe
-              WORKING_DIRECTORY "${local_dir}"
-              OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
-              ERROR_QUIET
-              OUTPUT_STRIP_TRAILING_WHITESPACE)
+      execute_process(
+          COMMAND ${GIT_EXECUTABLE} "describe"
+          WORKING_DIRECTORY "${local_dir}"
+          RESULT_VARIABLE VERSION_FOUND
+          OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
+          ERROR_QUIET
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+      if(VERSION_FOUND EQUAL 0)
+        message(STATUS "Git describe: ${LAGRANGE_BUILD_VERSION}")
       endif()
   endif()
 endif()
