@@ -770,6 +770,7 @@ void ConfigFileParser::print_help_short() {
 
 auto ConfigFileParser::parse_line(ConfigFile& config) -> ParsingResult<void> {
   if (_lexer.peak() == ConfigLexemeType::END) { return {}; }
+  if (_lexer.peak() == ConfigLexemeType::COMMENT) { return {}; }
 
   auto parse_result = parse<std::string>();
   if (!parse_result) {

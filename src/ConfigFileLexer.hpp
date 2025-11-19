@@ -23,7 +23,7 @@ enum class ToLowerOption {
 template <typename T>
 using LexerResult = std::expected<T, LexerError>;
 
-enum class ConfigLexemeType : uint8_t { VALUE, EQUALS_SIGN, END };
+enum class ConfigLexemeType : uint8_t { VALUE, EQUALS_SIGN, COMMENT, END };
 
 class ConfigLexer {
  public:
@@ -74,6 +74,7 @@ class ConfigLexer {
     char current_char = _input[tmp_index++];
 
     if (current_char == '=') { return ConfigLexemeType::EQUALS_SIGN; }
+    if (current_char == '#') { return ConfigLexemeType::COMMENT; }
     return ConfigLexemeType::VALUE;
   }
 
