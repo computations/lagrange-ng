@@ -202,7 +202,10 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
         {
             ._action{[](ConfigFileParser& p,
                         ConfigFile& config) -> ParsingResult<void> {
-              return p.parse_and_assign(config._area_names);
+              auto r = p.parse_and_assign(config._area_names);
+              std::reverse(config._area_names.begin(),
+                           config._area_names.end());
+              return r;
             }},
             ._name{"Ares name list"},
             ._help{
