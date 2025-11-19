@@ -55,12 +55,17 @@ void StateLHGoal::eval(const std::shared_ptr<const Workspace> &ws) {
   tmp_scalar += ws->CLVScalar(_parent_clv_index);
   auto *result = _result.get();
 
-  for (size_t i = 0; i < ws->restrictedStateCount(); ++i) {
-    double tmp_val = result[i];
-    double parent_val = ws->CLV(_parent_clv_index)[i];
-    result[i] = std::log(tmp_val * parent_val)
-                - tmp_scalar * lagrange_scaling_factor_log;
-    assert(i == 0 || std::isfinite(result[i]));
+  size_t dist_index = 0;
+  size_t dist_val = 0;
+  for (dist_index = 0, dist_val = 0; dist_index < ws->restrictedStateCount();
+       dist_val = next_dist(dist_val, ws->maxAreas()), ++dist_index) {
+    double tmp_val = result[dist_index];
+    double parent_val = ws->CLV(_parent_clv_index)[dist_index];
+    result[dist_index] = std::log(tmp_val * parent_val)
+                         - tmp_scalar * lagrange_scaling_factor_log;
+    assert(dist_index == 0 || (dist_val & _incl_area_mask)
+           || !(dist_val & _excl_area_mask)
+           || std::isfinite(result[dist_index]));
   }
   _last_execution = ws->readClock();
 }
