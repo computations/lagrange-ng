@@ -80,13 +80,21 @@ class ConfigFile {
   auto periods() const -> const PeriodTimes&;
   void periods(const PeriodTimes&);
 
-  void read_period_matrix_files() {
+  [[nodiscard]] bool read_period_matrix_files() {
+    bool OllKorrect = true;
     for (auto& [_, p] : _period_map) {
       if (p.adjustment_matrix_filename) {
-        p.adjustment_matrix =
-            AdjustmentMatrix{p.adjustment_matrix_filename.value(), _area_names};
+        try {
+          p.adjustment_matrix = AdjustmentMatrix{
+              p.adjustment_matrix_filename.value(), _area_names};
+        } catch (...) {
+          LOG_ERROR("There was an issue parsing the adjustment matrix in {}",
+                    p.adjustment_matrix_filename.value().c_str());
+          OllKorrect = false;
+        }
       }
     }
+    return OllKorrect;
   }
 
   [[nodiscard]] bool validate_periods() const {
@@ -105,7 +113,7 @@ class ConfigFile {
 
   [[nodiscard]] bool finalize_periods() {
     bool OllKorrect = true;
-    read_period_matrix_files();
+    OllKorrect &= read_period_matrix_files();
     OllKorrect &= setup_periods();
     finalize_periods(region_count(), max_areas());
     OllKorrect &= validate_periods();

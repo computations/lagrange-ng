@@ -142,7 +142,11 @@ AdjustmentMatrix::AdjustmentMatrix(const std::filesystem::path& filename,
 AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
                                    const std::vector<std::string>& area_names) {
   CSVReader reader(std::move(matstream));
-  read_arcs(reader, area_names);
+  try {
+    read_arcs(reader, area_names);
+  } catch (const std::exception& err) {
+    LOG_ERROR("There was an issue parsing the arcs for an adjustment matrix");
+  }
 
   _type = determine_matrix_symmetry(_arcs, _region_count);
   if (_type == AdjustmentMatrixType::invalid) {
