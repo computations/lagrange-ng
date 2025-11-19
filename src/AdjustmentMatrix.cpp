@@ -95,13 +95,15 @@ void AdjustmentMatrix::read_arcs(CSVReader& reader,
   constexpr auto to_key = "to"sv;
   constexpr auto dist_key = "dist"sv;
 
-  for (auto& row : reader) {
-    auto from = row.get<std::string>(from_key);
-    auto to = row.get<std::string>(to_key);
-    _arcs.push_back({.from = reverse_area_name_map.at(from),
-                     .to = reverse_area_name_map.at(to),
-                     .dist = row.get<double>(dist_key)});
-  }
+  try {
+    for (auto& row : reader) {
+      auto from = row.get<std::string>(from_key);
+      auto to = row.get<std::string>(to_key);
+      _arcs.push_back({.from = reverse_area_name_map.at(from),
+                       .to = reverse_area_name_map.at(to),
+                       .dist = row.get<double>(dist_key)});
+    }
+  } catch (std::exception& err) { throw CSVValueError{err.what()}; }
 
   std::sort(
       _arcs.begin(), _arcs.end(), [](const auto& a, const auto& b) -> bool {
@@ -146,6 +148,7 @@ AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
     read_arcs(reader, area_names);
   } catch (const std::exception& err) {
     LOG_ERROR("There was an issue parsing the arcs for an adjustment matrix");
+    throw err;
   }
 
   _type = determine_matrix_symmetry(_arcs, _region_count);

@@ -87,11 +87,7 @@ class ConfigFile {
         try {
           p.adjustment_matrix = AdjustmentMatrix{
               p.adjustment_matrix_filename.value(), _area_names};
-        } catch (...) {
-          LOG_ERROR("There was an issue parsing the adjustment matrix in {}",
-                    p.adjustment_matrix_filename.value().c_str());
-          OllKorrect = false;
-        }
+        } catch (const std::exception& err) { OllKorrect = false; }
       }
     }
     return OllKorrect;
