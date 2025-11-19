@@ -202,6 +202,7 @@ class ConfigFile {
   void lwrOutputThreshold(double);
 
   [[nodiscard]] bool checkCheckpointWriteTime() const {
+    if (!std::filesystem::exists(checkpointFilename())) { return true; }
     auto config_time = std::filesystem::last_write_time(_config_filename);
     auto checkpoint_time =
         std::filesystem::last_write_time(checkpointFilename());
@@ -255,7 +256,6 @@ class ConfigFile {
           INFO | IMPORTANT | WARNING | ERROR | PROGRESS | DEBUG);
     }
   }
-
 
   /*
    * This takes the period map, and turns it into a list of periods. The period

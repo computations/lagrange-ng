@@ -167,7 +167,7 @@ static void setup_context(Context &context,
   context.setRunMode(config.run_mode());
   if (!config.checkCheckpointWriteTime()) {
     LOG_WARNING(
-        "The config file has been written to more recently than the config "
+        "The config file has been written to more recently than the checkpoint "
         "file");
   }
   context.setCheckpoint(config.checkpointFilename());
