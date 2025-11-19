@@ -339,11 +339,12 @@ void write_csv_periods_file(const ConfigFile &config, const Context &context) {
         std::array{
             std::to_string(last),
             std::to_string(last + seg.duration),
-            std::to_string(period.dispersion_rate),
-            std::to_string(period.extinction_rate),
-            std::to_string(period.adjustment_matrix != nullptr
-                               ? period.distance_penalty
-                               : std::numeric_limits<double>::quiet_NaN()),
+            std::format("{}", period.dispersion_rate),
+            std::format("{}", period.extinction_rate),
+            std::format("{}",
+                        period.adjustment_matrix != nullptr
+                            ? period.distance_penalty
+                            : std::numeric_limits<double>::quiet_NaN()),
         });
     last += seg.duration;
     ++p;
