@@ -49,10 +49,15 @@ jobs:
         -DPROVIDED_BUILD_VERSION=${{ github.ref_name }}
         -S ${{ github.workspace }}
 
+    - name: Install Deps
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        brew install llvm libomp
+
     - name: Configure CMake
       if: matrix.os == 'macos-latest'
       run: >
-        brew install llvm libomp
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
