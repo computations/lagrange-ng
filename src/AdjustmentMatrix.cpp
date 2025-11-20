@@ -67,7 +67,7 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
     return a.size() == b.size();
   });
 
-  return check_duplicates(arcs) && ((decreasing != increasing) != equal);
+  return check_duplicates(arcs) && (decreasing != equal);
 #else
   std::unordered_set<
       std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)> >
