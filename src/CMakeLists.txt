@@ -40,7 +40,7 @@ if("${CMAKE_BUILD_TYPE}" MATCHES "Release")
     -fdiagnostics-color=always)
 
     if(${BUILD_ONLY_STATIC})
-      target_link_libraries(lagrange-release-libs PUBLIC -static)
+      #target_link_libraries(lagrange-release-libs PUBLIC -static)
     else()
       set(LAGRANGE_BUILD_FLAGS 
           ${LAGRANGE_BUILD_FLAGS}

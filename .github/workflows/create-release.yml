@@ -45,6 +45,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBUILD_ONLY_STATIC=ON
+        -DBUILD_SHARED_LIBS=OFF
         -DSTRIP_BINARY=ON
         -DPROVIDED_BUILD_VERSION=${{ github.ref_name }}
         -S ${{ github.workspace }}
