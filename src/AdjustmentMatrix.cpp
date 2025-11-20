@@ -100,7 +100,8 @@ void AdjustmentMatrix::read_arcs(CSVReader& reader,
 #else
   std::unordered_map<std::string, size_t> reverse_area_name_map;
   for (size_t i = 0; i < area_names.size(); ++i) {
-    reverse_area_name_map[area_names[i]] = i;
+    size_t reverse_idx = area_names.size() - 1 - i;
+    reverse_area_name_map[area_names[reverse_idx]] = i;
   }
 #endif
 
