@@ -30,6 +30,18 @@ static bool check_duplicates(std::span<const AdjustmentArc> arcs) {
 }
 #endif
 
+void AdjustmentMatrix::normalize_arcs() {
+  if (_type == AdjustmentMatrixType::symmetric) {
+    for (auto& a : _arcs) {
+      if (a.from > a.to) { std::swap(a.from, a.to); }
+    }
+  }
+  std::sort(
+      _arcs.begin(), _arcs.end(), [](const auto& a, const auto& b) -> bool {
+        return a.from < b.from || (a.from == b.from && a.to < b.to);
+      });
+}
+
 /* assume that the matrix is sorted */
 /* need to check that:
  * - No duplicates
@@ -55,7 +67,7 @@ static bool is_valid(std::span<const AdjustmentArc> arcs) {
     return a.size() == b.size();
   });
 
-  return check_duplicates(arcs) && (decreasing != equal);
+  return check_duplicates(arcs) && ((decreasing != increasing) != equal);
 #else
   std::unordered_set<
       std::pair<decltype(AdjustmentArc::from), decltype(AdjustmentArc::to)> >
@@ -82,7 +94,8 @@ void AdjustmentMatrix::read_arcs(CSVReader& reader,
   _region_count = area_names.size();
 #ifdef __cpp_lib_ranges_zip
   auto reverse_area_name_map =
-      std::views::zip(area_names, std::views::iota(0ul, area_names.size()))
+      std::views::zip(std::views::reverse(area_names),
+                      std::views::iota(0ul, area_names.size()))
       | std::ranges::to<std::unordered_map>();
 #else
   std::unordered_map<std::string, size_t> reverse_area_name_map;
@@ -104,11 +117,6 @@ void AdjustmentMatrix::read_arcs(CSVReader& reader,
                        .dist = row.get<double>(dist_key)});
     }
   } catch (std::exception& err) { throw CSVValueError{err.what()}; }
-
-  std::sort(
-      _arcs.begin(), _arcs.end(), [](const auto& a, const auto& b) -> bool {
-        return a.from < b.from || (a.from == b.from && a.to < b.to);
-      });
 }
 
 AdjustmentMatrix::AdjustmentMatrix(const std::filesystem::path& filename,
@@ -152,6 +160,9 @@ AdjustmentMatrix::AdjustmentMatrix(std::istringstream&& matstream,
   }
 
   _type = determine_matrix_symmetry(_arcs, _region_count);
+
+  normalize_arcs();
+  if (!is_valid(_arcs)) { _type = AdjustmentMatrixType::invalid; }
   if (_type == AdjustmentMatrixType::invalid) {
     throw std::runtime_error{"Adjustment matrix is invalid"};
   }
@@ -185,9 +196,6 @@ AdjustmentMatrixType AdjustmentMatrix::determine_matrix_symmetry(
     type = AdjustmentMatrixType::symmetric;
   } else if (arcs.size() == (region_count * (region_count - 1))) {
     type = AdjustmentMatrixType::nonsymmetric;
-  }
-  if (type == AdjustmentMatrixType::invalid || !is_valid(arcs)) {
-    return AdjustmentMatrixType::invalid;
   }
   return type;
 }

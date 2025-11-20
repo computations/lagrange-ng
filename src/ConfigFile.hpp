@@ -87,7 +87,13 @@ class ConfigFile {
         try {
           p.adjustment_matrix = AdjustmentMatrix{
               p.adjustment_matrix_filename.value(), _area_names};
-        } catch (const std::exception& err) { OllKorrect = false; }
+        } catch (const std::exception& err) {
+          LOG_ERROR("Failed to read adjustment matrix {}: {}",
+                    p.adjustment_matrix_filename->c_str(),
+                    err.what());
+
+          OllKorrect = false;
+        }
       }
     }
     return OllKorrect;

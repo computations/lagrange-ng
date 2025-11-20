@@ -43,6 +43,8 @@ class AdjustmentMatrix {
 
   void read_arcs(CSVReader&, const std::vector<std::string>&);
 
+  void normalize_arcs();
+
   size_t _region_count;
   AdjustmentMatrixType _type;
   std::vector<AdjustmentArc> _arcs;

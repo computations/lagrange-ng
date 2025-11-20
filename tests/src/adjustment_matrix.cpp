@@ -4,7 +4,7 @@
 TEST(AdjustmentMatrix, simple_symmetric) {
   constexpr auto csv_string =
       "from, to, dist\na, b, 1.0\n a, c, 2.0\n b, c, 3.0";
-  std::vector<std::string> areanames = {"a", "b", "c"};
+  std::vector<std::string> areanames = {"c", "b", "a"};
   lagrange::AdjustmentMatrix adj(std::istringstream{csv_string}, areanames);
   EXPECT_EQ(adj.type(), lagrange::AdjustmentMatrixType::symmetric);
   auto matrix = adj.to_matrix();
@@ -32,7 +32,7 @@ TEST(AdjustmentMatrix, simple_nonsymmetric) {
       "b, c, 3.0\n"
       "b, a, 4.0\n"
       "c, b, 6.0";
-  std::vector<std::string> areanames = {"a", "b", "c"};
+  std::vector<std::string> areanames = {"c", "b", "a"};
   lagrange::AdjustmentMatrix adj(std::istringstream{csv_string}, areanames);
   EXPECT_EQ(adj.type(), lagrange::AdjustmentMatrixType::nonsymmetric);
   auto matrix = adj.to_matrix();
