@@ -447,7 +447,7 @@ class Workspace {
   void setPeriodRangeCounts(const R &ranges)
     requires(requires(R r) {
       requires std::ranges::range<R>;
-      { *r.begin() } -> std::same_as<size_t>;
+      { *r.begin() } -> std::unsigned_integral;
       { r.size() };
     })
   {
