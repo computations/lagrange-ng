@@ -66,6 +66,10 @@ class CSVValueError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+class CSVOpenError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 class CSVRow {
  public:
   CSVRow() = default;
@@ -190,6 +194,9 @@ class CSVReader {
   CSVReader(const std::filesystem::path& csv_filename) :
       _csv_file{new std::ifstream{csv_filename}},
       _header{new CSVHeaderType} {
+    if (!static_cast<std::ifstream*>(_csv_file.get())->is_open()) {
+      throw CSVOpenError{"Failed to open CSV file: " + csv_filename.string()};
+    }
     read_header();
   }
 
@@ -201,7 +208,7 @@ class CSVReader {
 
   CSVIter begin() { return {_csv_file, _header}; }
 
-  CSVIter end() { return {nullptr, nullptr}; }
+  CSVIter end() { return {nullptr, _header}; }
 
   CSVHeaderType const& header() const { return *_header; }
 
