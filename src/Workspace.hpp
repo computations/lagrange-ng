@@ -109,7 +109,7 @@ class Workspace {
     return _clv_scalars[i];
   }
 
-  auto rateMatrix(size_t i) -> LagrangeMatrix & {
+  auto rateMatrix(size_t i) const -> const LagrangeMatrix & {
     assert(_reserved);
     if (i >= _rate_matrix.size()) {
       throw std::runtime_error{"Rate matrix access out of range"};

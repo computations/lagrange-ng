@@ -299,10 +299,6 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
     const auto identity_func = [](Range d) -> size_t { return d; };
     for (size_t i = 0; i < states; i++) {
       fused_reverse_join_splits(i, regions, c1, c2, dest, identity_func);
-      /*
-      reverse_join_splits(
-          i, states, regions, splits, c1, c2, scale, dest, identity_func);
-      */
     }
   } else {
     const auto dist_map = invert_dist_map(regions, max_areas);
@@ -320,13 +316,9 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
       index = next_dist_index.second;
 
       if (index >= states) { break; }
-
       if (fixed_dist && fixed_dist.value() != dist) { continue; }
 
       fused_reverse_join_splits(dist, regions, c1, c2, dest, dist_map_func);
-      /*reverse_join_splits(*/
-      /*    dist, states, regions, splits, c1, c2, scale, dest,
-       * dist_map_func);*/
     }
   }
 

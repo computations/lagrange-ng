@@ -636,7 +636,7 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                   return std::unexpected{r.error()};
                 }
               } else {
-                config.dump_graph(true);
+                config.allow_ambigious(true);
               }
               return {};
             }},
