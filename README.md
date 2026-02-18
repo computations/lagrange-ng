@@ -138,6 +138,8 @@ After Lagrange-NG is finished, there should be 3 new files in `example`:
 - `example.nwk.results.json`, which is the file containing all the results; and
 - `example.nwk.scaled.tre`, which contains the scaled tree that Lagrange-NG used to infer model parameters.
 
+Don't forget to clean up the generated files to keep the git repository clean.
+
 ## Control File Options
 
 - `treefile`: Path to the newick file containing the phylogeny. Required.
