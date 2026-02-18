@@ -45,6 +45,36 @@ std::vector<std::string> read_row(std::string_view row) {
 }
 
 template <>
+std::pair<std::string_view, uint64_t> CSVRow::get(size_t index) const {
+  std::string_view header_val = (*_header)[index];
+  return {header_val, std::stoul(get_data(header_val))};
+}
+
+template <>
+std::pair<std::string_view, double> CSVRow::get(size_t index) const {
+  std::string_view header_val = (*_header)[index];
+  return {header_val, std::stod(get_data(header_val))};
+}
+
+template <>
+std::pair<std::string_view, long> CSVRow::get(size_t index) const {
+  std::string_view header_val = (*_header)[index];
+  return {header_val, std::stol(get_data(header_val))};
+}
+
+template <>
+std::pair<std::string_view, bool> CSVRow::get(size_t index) const {
+  std::string_view header_val = (*_header)[index];
+  return {header_val, std::stoi(get_data(header_val))};
+}
+
+template <>
+std::pair<std::string_view, std::string> CSVRow::get(size_t index) const {
+  std::string_view header_val = (*_header)[index];
+  return {header_val, get_data(header_val)};
+}
+
+template <>
 uint64_t CSVRow::get(const std::string_view &key) const {
   return std::stoul(get_data(key));
 }

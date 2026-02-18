@@ -110,6 +110,24 @@ class CSVRow {
 };
 
 template <>
+std::pair<std::string_view, uint64_t> CSVRow::get(size_t index) const;
+
+template <>
+std::pair<std::string_view, double> CSVRow::get(size_t index) const;
+
+template <>
+std::pair<std::string_view, long> CSVRow::get(size_t index) const;
+
+template <>
+std::pair<std::string_view, bool> CSVRow::get(size_t index) const;
+
+template <>
+std::pair<std::string_view, std::string> CSVRow::get(size_t index) const;
+
+template <>
+bool CSVRow::get(const std::string_view& key) const;
+
+template <>
 uint64_t CSVRow::get(const std::string_view& key) const;
 
 template <>
@@ -117,9 +135,6 @@ double CSVRow::get(const std::string_view& key) const;
 
 template <>
 long CSVRow::get(const std::string_view& key) const;
-
-template <>
-bool CSVRow::get(const std::string_view& key) const;
 
 std::vector<std::string> read_row(std::string_view row);
 

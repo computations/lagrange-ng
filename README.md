@@ -24,6 +24,14 @@ two important build options for the purposes of building Lagrange-NG:
   algebra computation. If it is set to `OFF`, OpenBLAS will be used instead.
 - `MKL_PREFIX_DIR`: Implies `ENABLE_MKL=ON`, and can be used to point to the MKL install directory.
 
+## Building tests
+
+To build the tests for Lagrange-NG, use the following CMake 
+
+```
+cmake -DBUILD_TEST=ON -DBUILD_ONLY_STATIC=OFF <PATH TO SOURCE ROOT>
+```
+
 ## Troubleshooting
 
 Some users have reported issues with CMake not finding NLOpt properly. In this case, I would recommend installing NLOpt
