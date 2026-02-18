@@ -151,6 +151,64 @@ void join_splits(Range splitting_dist,
   dest[dist_index] = sum;
 }
 
+namespace {
+
+auto make_dist_map_func(size_t regions, size_t max_areas)
+    -> std::function<size_t(Range)> {
+  if (max_areas == regions) {
+    return [](Range d) -> size_t { return d; };
+  } else {
+    const auto dist_map = invert_dist_map(regions, max_areas);
+    return [&dist_map](Range d) -> size_t { return dist_map.at(d); };
+  }
+}
+
+template <typename op_func_t>
+void generic_weighted_combine_impl(size_t states,
+                                   size_t regions,
+                                   size_t max_areas,
+                                   LagrangeColVector dest,
+                                   size_t c1_scale,
+                                   size_t c2_scale,
+                                   size_t &scale_count,
+                                   const std::optional<Range> &fixed_dist,
+                                   Range excl_area_mask,
+                                   Range incl_area_mask,
+                                   op_func_t &&op_func) {
+  assert(states != 0);
+  bool scale = true;
+
+  auto dist_map_func = make_dist_map_func(regions, max_areas);
+
+  Range dist = 0;
+  size_t index = 0;
+
+  while (true) {
+    auto next_dist_index =
+        next_dist(dist, max_areas, index, excl_area_mask, incl_area_mask);
+    dist = next_dist_index.first;
+    index = next_dist_index.second;
+
+    if (index >= states) { break; }
+    if (fixed_dist && fixed_dist.value() != dist) { continue; }
+
+    op_func(dist, index, dist_map_func, scale);
+  }
+
+  for (size_t i = 0; i < states; ++i) {
+    assert(std::isfinite(dest[i]));
+    scale &= dest[i] < lagrange_scale_threshold;
+  }
+
+  scale_count = c1_scale + c2_scale;
+  if (scale) {
+    for (size_t i = 0; i < states; ++i) { dest[i] *= lagrange_scaling_factor; }
+    scale_count += 1;
+  }
+}
+
+}  // namespace
+
 void join_splits_happy(Range splitting_dist,
                        size_t dist_index,
                        size_t regions,
@@ -198,41 +256,32 @@ void weighted_combine(const LagrangeConstColVector &c1,
                       const std::optional<Range> &fixed_dist,
                       Range excl_area_mask,
                       Range incl_area_mask) {
-  assert(states != 0);
-
-  bool scale = true;
-
   if (weighted_combine_check_happy_path(
           states, max_areas, fixed_dist, excl_area_mask, incl_area_mask)) {
+    bool scale = true;
     weighted_combine_happy(c1, c2, states, regions, dest, scale);
-  } else {
-    Range dist = 0;
-    size_t index = 0;
-    const auto dist_map = invert_dist_map(regions, max_areas);
-    const auto dist_map_func = [&dist_map](Range d) -> size_t {
-      return dist_map.at(d);
-    };
-
-    while (true) {
-      auto next_dist_index =
-          next_dist(dist, max_areas, index, excl_area_mask, incl_area_mask);
-      dist = next_dist_index.first;
-      index = next_dist_index.second;
-
-      if (index >= states) { break; }
-
-      if (fixed_dist && fixed_dist.value() != dist) { continue; }
-
-      join_splits(dist, index, regions, c1, c2, dest, scale, dist_map_func);
+    scale_count = c1_scale + c2_scale;
+    if (scale) {
+      for (size_t i = 0; i < states; i++) {
+        dest[i] *= lagrange_scaling_factor;
+      }
+      scale_count += 1;
     }
-  }
-
-  scale_count = c1_scale + c2_scale;
-
-  if (scale) {
-    for (size_t i = 0; i < states; i++) { dest[i] *= lagrange_scaling_factor; }
-
-    scale_count += 1;
+  } else {
+    generic_weighted_combine_impl(
+        states,
+        regions,
+        max_areas,
+        dest,
+        c1_scale,
+        c2_scale,
+        scale_count,
+        fixed_dist,
+        excl_area_mask,
+        incl_area_mask,
+        [&](Range dist, size_t index, const auto &dist_map_func, bool &scale) {
+          join_splits(dist, index, regions, c1, c2, dest, scale, dist_map_func);
+        });
   }
 }
 
@@ -290,49 +339,21 @@ void reverse_weighted_combine(const LagrangeConstColVector &c1,
                               const std::optional<Range> &fixed_dist,
                               Range excl_area_mask,
                               Range incl_area_mask) {
-  assert(states != 0);
-  bool scale = true;
-
-  std::vector<RegionSplit> splits;
-
-  if (max_areas == regions && !fixed_dist) {
-    const auto identity_func = [](Range d) -> size_t { return d; };
-    for (size_t i = 0; i < states; i++) {
-      fused_reverse_join_splits(i, regions, c1, c2, dest, identity_func);
-    }
-  } else {
-    const auto dist_map = invert_dist_map(regions, max_areas);
-    const auto dist_map_func = [&dist_map](Range d) -> size_t {
-      return dist_map.at(d);
-    };
-
-    Range dist = 0;
-    size_t index = 0;
-
-    while (true) {
-      auto next_dist_index =
-          next_dist(dist, max_areas, index, excl_area_mask, incl_area_mask);
-      dist = next_dist_index.first;
-      index = next_dist_index.second;
-
-      if (index >= states) { break; }
-      if (fixed_dist && fixed_dist.value() != dist) { continue; }
-
-      fused_reverse_join_splits(dist, regions, c1, c2, dest, dist_map_func);
-    }
-  }
-
-  for (size_t i = 0; i < states; ++i) {
-    assert(std::isfinite(dest[i]));
-    scale &= dest[i] < lagrange_scale_threshold;
-  }
-
-  scale_count = c1_scale + c2_scale;
-  if (scale) {
-    for (size_t i = 0; i < states; ++i) { dest[i] *= lagrange_scaling_factor; }
-
-    scale_count += 1;
-  }
+  generic_weighted_combine_impl(
+      states,
+      regions,
+      max_areas,
+      dest,
+      c1_scale,
+      c2_scale,
+      scale_count,
+      fixed_dist,
+      excl_area_mask,
+      incl_area_mask,
+      [&](Range dist, size_t index, const auto &dist_map_func, bool &) {
+        (void)index;
+        fused_reverse_join_splits(dist, regions, c1, c2, dest, dist_map_func);
+      });
 }
 
 auto make_tabs(size_t tabLevel) -> std::string {
