@@ -79,8 +79,7 @@ TEST(AdjustmentMatrix, simple_check_error2) {
 }
 
 TEST(AdjustmentMatrix, simple_check_error3) {
-  constexpr auto csv_string =
-      "from, to, dist\na, c, 2.0\n b, c, 3.0";
+  constexpr auto csv_string = "from, to, dist\na, c, 2.0\n b, c, 3.0";
   std::vector<std::string> areanames = {"a", "b", "c"};
   EXPECT_ANY_THROW(lagrange::AdjustmentMatrix adj(
       std::istringstream{csv_string}, areanames));

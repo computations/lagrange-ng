@@ -1,6 +1,7 @@
+#include "Workspace.hpp"
+
 #include <stdexcept>
 
-#include "Workspace.hpp"
 #include "gtest/gtest.h"
 
 using namespace lagrange;

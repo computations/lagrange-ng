@@ -21,5 +21,5 @@ void multiply_arnoldi_chebyshev(const std::shared_ptr<lagrange::Workspace> ws,
                                 size_t clv_dst,
                                 bool transposed,
                                 double t);
-}     // namespace lagrange::expm
+}  // namespace lagrange::expm
 #endif  // LAGRANGE_CPP_ARNOLDI_H

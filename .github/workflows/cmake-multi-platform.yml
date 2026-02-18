@@ -7,6 +7,15 @@ on:
     branches: [ "master" ]
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run clang-format
+        uses: jidicula/clang-format-action@v4.11.0
+        with:
+          files: src/*.cpp src/*.hpp tests/src/*.cpp
+
   build:
     runs-on: ${{ matrix.os }}
 
