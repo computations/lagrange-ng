@@ -178,7 +178,7 @@ else()
   if(GIT_FOUND)
       execute_process(
           COMMAND ${GIT_EXECUTABLE} "describe"
-          WORKING_DIRECTORY "${local_dir}"
+          WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
           RESULT_VARIABLE VERSION_FOUND
           OUTPUT_VARIABLE LAGRANGE_BUILD_VERSION
           ERROR_QUIET
