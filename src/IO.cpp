@@ -173,15 +173,15 @@ auto make_results_for_nodes(const std::shared_ptr<Tree> &tree,
     if (!n.hasResults()) { return; }
     nlohmann::json node_json;
     node_json["number"] = n.getNodeLabel();
-    if (n.hasAncestralSplit()) {
-      node_json["splits"] = make_split_results_for_node(n.getAncestralSplit(ws),
+    if (n.hasAncestralState()) {
+      node_json["states"] = make_state_results_for_node(n.getAncestralState(ws),
                                                         region_names,
                                                         states_len,
                                                         max_areas,
                                                         lwr_threshold);
     }
-    if (n.hasAncestralState()) {
-      node_json["states"] = make_state_results_for_node(n.getAncestralState(ws),
+    if (n.hasAncestralSplit()) {
+      node_json["splits"] = make_split_results_for_node(n.getAncestralSplit(ws),
                                                         region_names,
                                                         states_len,
                                                         max_areas,
