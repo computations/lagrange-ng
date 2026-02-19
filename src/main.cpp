@@ -299,7 +299,10 @@ auto main(int argc, char *argv[]) -> int {
       read_alignment(config.data_filename(), config.alignment_file_type());
 
   LOG(INFO, "Checking data...");
-  check_alignment_against_trees(data, intrees);
+  if (!check_alignment_against_trees(data, intrees)) {
+    LOG_ERROR("The tree and alignment don't match");
+    return 1;
+  }
 
   LOG_ASSERT(config.finalize_periods(), "Failed to setup periods");
   LOG_ASSERT(data.region_count != 0, "Region count cannot be zero");
