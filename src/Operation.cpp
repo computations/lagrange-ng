@@ -146,7 +146,8 @@ void join_splits(Range splitting_dist,
   double sum = fused_join_splits(splitting_dist, regions, c1, c2, dist_map);
   scale &= sum < lagrange_scale_threshold;
 
-  assert(std::isfinite(sum));
+  LOG_ASSERT(std::isfinite(sum),
+             "There was an issue when computing the CLV of a split");
 
   dest[dist_index] = sum;
 }
