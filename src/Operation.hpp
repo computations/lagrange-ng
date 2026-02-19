@@ -570,7 +570,6 @@ class ReverseSplitOperation {
   void setExclAreas(Range i) { _excl_area_mask = i; }
 
   auto evaluated(const std::shared_ptr<Workspace>& ws) const -> bool {
-    return _last_execution > 0;
     bool eval = _last_execution > ws->lastUpdateCLV(_ltop_clv_index)
                 && _last_execution > ws->lastUpdateCLV(_rtop_clv_index)
                 && ws->lastUpdateCLV(_bot_clv_index) > _last_execution;
