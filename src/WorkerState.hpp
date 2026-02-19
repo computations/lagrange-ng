@@ -8,6 +8,7 @@
 #include <logger.hpp>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 #include "Goal.hpp"
@@ -232,7 +233,7 @@ class WorkerState {
     auto lock = wc.acquireLock();
 
     for (auto& w : work_buffer) {
-      while (!w.ready(workspace)) {}
+      while (!w.ready(workspace)) { std::this_thread::yield(); }
       w.eval(workspace);
     }
   }
@@ -273,7 +274,7 @@ class WorkerState {
                 std::vector<std::shared_ptr<T>>& work_buffer,
                 const std::shared_ptr<Workspace>& workspace)
       -> std::shared_ptr<T> {
-    assert(!work_buffer.empty());
+    LOG_ASSERT(!work_buffer.empty(), "Tried to find work with an empty buffer");
     auto lock = tc.acquireLock();
 
     if (work_buffer.size() - tc._start_index == 0) { return {}; }
