@@ -16,32 +16,36 @@
 
 namespace lagrange {
 
+/**
+ * Barrier class that wraps either POSIX barriers (when available)
+ * or a custom implementation for platforms like macOS that lack them.
+ */
+class Barrier {
+ public:
+  explicit Barrier(size_t count);
+  ~Barrier();
+
+  // Non-copyable, non-movable
+  Barrier(const Barrier&) = delete;
+  Barrier& operator=(const Barrier&) = delete;
+  Barrier(Barrier&&) = delete;
+  Barrier& operator=(Barrier&&) = delete;
+
+  void wait();
+
+ private:
 #if !defined _POSIX_BARRIERS || _POSIX_BARRIERS < 0 \
     || defined LAGRANGE_USER_BARRIER
-  /**
-   * Macos doesn't have posix barriers, so we have to implement them by hand
-   * here. However, when they are available in the kernel, we will prefer those.
-   */
-  #define pthread_barrier_t barrier_t
-  #define pthread_barrier_attr_t barrier_attr_t
-  #define pthread_barrier_init(b, a, n) barrier_init(b, n)
-  #define pthread_barrier_destroy(b) barrier_destroy(b)
-  #define pthread_barrier_wait(b) barrier_wait(b)
-
-typedef struct {
-  int needed;
-  int called;
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
-} barrier_t;
-
-int barrier_init(barrier_t* barrier, int needed);
-
-int barrier_destroy(barrier_t* barrier);
-
-int barrier_wait(barrier_t* barrier);
-
+  // Custom implementation for macOS and other platforms without POSIX barriers
+  size_t _needed;
+  size_t _called;
+  pthread_mutex_t _mutex;
+  pthread_cond_t _cond;
+#else
+  // POSIX barrier for systems that support it
+  pthread_barrier_t _barrier;
 #endif
+};
 
 enum class WorkerMode : uint8_t {
   ComputeForward,
@@ -97,7 +101,7 @@ struct WorkerContext {
 
   void initBarrier() {
     auto lock = acquireLock();
-    pthread_barrier_init(&_barrier, nullptr, _total_threads);
+    _barrier = std::make_unique<Barrier>(_total_threads);
   }
 
   void startIter(WorkerMode wm) {
@@ -112,7 +116,7 @@ struct WorkerContext {
     return _mode;
   }
 
-  void barrier() { pthread_barrier_wait(&_barrier); }
+  void barrier() { _barrier->wait(); }
 
   std::vector<std::shared_ptr<SplitOperation>>& _forward_work_buffer;
   std::vector<std::shared_ptr<ReverseSplitOperation>>& _reverse_work_buffer;
@@ -124,7 +128,7 @@ struct WorkerContext {
   size_t _total_threads;
   volatile std::atomic<WorkerMode> _mode;
   std::mutex _context_lock;
-  pthread_barrier_t _barrier;
+  std::unique_ptr<Barrier> _barrier;
 };
 
 class WorkerState {
