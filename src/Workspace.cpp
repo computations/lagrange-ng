@@ -94,13 +94,6 @@ void Workspace::reserve() {
 
     for (size_t j = 0; j < restrictedStateCount(); j++) { c._clv[j] = 0.0; }
   }
-  for (auto &_clv : _clvs) {
-    delete[] _clv._clv;
-
-    _clv._clv = new LagrangeMatrixBase[CLVSize()];
-
-    for (size_t j = 0; j < restrictedStateCount(); j++) { _clv._clv[j] = 0.0; }
-  }
 
   delete[] _clv_scalars;
 
