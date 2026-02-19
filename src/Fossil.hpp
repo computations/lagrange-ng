@@ -14,7 +14,7 @@ enum class FossilType : uint8_t {
   FIXED,
   EXCLUDE,
   INCLUDE,
-  UNKOWN
+  UNKNOWN
 };
 
 struct Fossil {

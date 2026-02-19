@@ -657,7 +657,7 @@ auto Node::assignFossil(const Fossil &f) -> bool {
       case FossilType::EXCLUDE:
         assignExcludedAreas(f.area);
         break;
-      case FossilType::UNKOWN:
+      case FossilType::UNKNOWN:
         throw std::runtime_error{
             "unknown fossil type when assigning fossiles to node"};
     }

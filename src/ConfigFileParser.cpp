@@ -39,7 +39,7 @@ auto ConfigFileParser::determine_fossil_type(
   } else if (fossil_type_string == "e" || fossil_type_string == "exclude") {
     return FossilType::EXCLUDE;
   }
-  return FossilType::UNKOWN;
+  return FossilType::UNKNOWN;
 }
 
 auto ConfigFileParser::parse_fossil() -> ParsingResult<Fossil> {
