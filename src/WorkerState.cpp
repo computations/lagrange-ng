@@ -11,8 +11,8 @@ Barrier::Barrier(size_t count) : _needed(count), _called(0) {
 }
 
 Barrier::~Barrier() {
-  LOG_ASSERT(!pthread_mutex_destroy(&_mutex));
-  LOG_ASSERT(!pthread_cond_destroy(&_cond));
+  pthread_mutex_destroy(&_mutex);
+  pthread_cond_destroy(&_cond);
 }
 
 void Barrier::wait() {
@@ -30,8 +30,7 @@ void Barrier::wait() {
 #else
 
 Barrier::Barrier(size_t count) {
-  LOG_ASSERT(pthread_barrier_init(
-      &_barrier, nullptr, static_cast<unsigned int>(count)));
+  pthread_barrier_init(&_barrier, nullptr, static_cast<unsigned int>(count));
 }
 
 Barrier::~Barrier() { pthread_barrier_destroy(&_barrier); }

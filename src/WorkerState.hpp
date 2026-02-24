@@ -127,7 +127,7 @@ struct WorkerContext {
   size_t _start_index;
   size_t _finished_threads;
   size_t _total_threads;
-  std::atomic<WorkerMode> _mode;
+  volatile std::atomic<WorkerMode> _mode;
   std::mutex _context_lock;
   std::unique_ptr<Barrier> _barrier;
 };
