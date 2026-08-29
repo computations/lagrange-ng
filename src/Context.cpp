@@ -239,7 +239,10 @@ void Context::optimizeAndComputeValues(WorkerState& ts,
     return;
   }
 
-  setInitialParams();
+  if (_run_mode == LagrangeOperationMode::OPTIMIZE
+      || (_checkpoint && _checkpoint->isFinalized())) {
+    setInitialParams();
+  }
   double initial_lh = computeLLH(ts, tc);
 
   if (_run_mode == LagrangeOperationMode::EVALUATE
