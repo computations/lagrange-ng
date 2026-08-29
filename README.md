@@ -190,6 +190,10 @@ Don't forget to clean up the generated files to keep the git repository clean.
   declared before they are modified.
   - `start`: The start time for the period. If not specified, defaults to `0.0`.
   - `end`: The end time for the period. If not specified, defaults to `inf`.
+  - `dispersion`: Dispersion rate for the period. If not specified, inherits
+    the global `dispersion` value.
+  - `extinction`: Extinction rate for the period. If not specified, inherits
+    the global `extinction` value.
   - `matrix`: Adjustment matrix filename for the period. Used to specify
     region connectivities. If specified, the parameter `distance-penalty` will
     be inferred, which estimates the "strength" of the connectivity. Specified

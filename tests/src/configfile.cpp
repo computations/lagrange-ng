@@ -142,6 +142,8 @@ TEST_F(ConfigFileTest, lines) {
       "logfile = 'test a'",
       "logfile = 'test\" a'",
       "period foo\nperiod foo start = 1.0",
+      "period foo\nperiod foo dispersion = 0.1",
+      "period foo\nperiod foo extinction = 0.2",
       "period exclude\nperiod exclude exclude = 101",
       "period foo\nperiod foo matrix = 'foo bar'",
   };
@@ -150,4 +152,76 @@ TEST_F(ConfigFileTest, lines) {
     std::istringstream iss{line};
     EXPECT_NO_THROW(ConfigFile(iss, true));
   }
+}
+
+TEST_F(ConfigFileTest, period_rates_override) {
+  std::istringstream iss{R"(
+areanames = a b c
+dispersion = 2.0
+extinction = 3.0
+period early
+period early end = 1.0
+period early dispersion = 0.5
+period early extinction = 0.8
+period late
+period late start = 1.0
+)"};
+  ConfigFile config{iss, true};
+  auto periods = config.period_params();
+
+  ASSERT_EQ(periods.size(), 2);
+  EXPECT_EQ(periods[0].name, "early");
+  EXPECT_DOUBLE_EQ(periods[0].dispersion_rate, 0.5);
+  EXPECT_DOUBLE_EQ(periods[0].extinction_rate, 0.8);
+}
+
+TEST_F(ConfigFileTest, period_rates_inherit_global) {
+  std::istringstream iss{R"(
+areanames = a b c
+dispersion = 2.0
+extinction = 3.0
+period early
+period early end = 1.0
+period late
+period late start = 1.0
+)"};
+  ConfigFile config{iss, true};
+  auto periods = config.period_params();
+
+  ASSERT_EQ(periods.size(), 2);
+  EXPECT_EQ(periods[1].name, "late");
+  EXPECT_DOUBLE_EQ(periods[1].dispersion_rate, 2.0);
+  EXPECT_DOUBLE_EQ(periods[1].extinction_rate, 3.0);
+}
+
+TEST_F(ConfigFileTest, period_rates_are_independent) {
+  std::istringstream iss{R"(
+areanames = a b c
+dispersion = 2.0
+extinction = 3.0
+period early
+period early end = 1.0
+period early dispersion = 0.5
+period early extinction = 0.8
+period middle
+period middle start = 1.0
+period middle end = 2.0
+period middle dispersion = 5e-2
+period middle extinction = 8e-3
+period late
+period late start = 2.0
+)"};
+  ConfigFile config{iss, true};
+  auto periods = config.period_params();
+
+  ASSERT_EQ(periods.size(), 3);
+  EXPECT_EQ(periods[0].name, "early");
+  EXPECT_DOUBLE_EQ(periods[0].dispersion_rate, 0.5);
+  EXPECT_DOUBLE_EQ(periods[0].extinction_rate, 0.8);
+  EXPECT_EQ(periods[1].name, "middle");
+  EXPECT_DOUBLE_EQ(periods[1].dispersion_rate, 5e-2);
+  EXPECT_DOUBLE_EQ(periods[1].extinction_rate, 8e-3);
+  EXPECT_EQ(periods[2].name, "late");
+  EXPECT_DOUBLE_EQ(periods[2].dispersion_rate, 2.0);
+  EXPECT_DOUBLE_EQ(periods[2].extinction_rate, 3.0);
 }
