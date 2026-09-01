@@ -106,13 +106,20 @@ ParsingResult<void> ConfigFileParser::parse_period_sub_statement(
 
   if (!command) {
     LOG_ERROR(
-        "Expected one of [start | end | matrix | exclude | include] at {}",
+        "Expected one of [start | end | dispersion | extinction | matrix | "
+        "exclude | include] at {}",
         _lexer.describePosition());
     return std::unexpected{ParsingError::invalid_option};
   }
 
   if (command == "start") { return parse_and_assign(period.start); }
   if (command == "end") { return parse_and_assign(period.end); }
+  if (command == "dispersion") {
+    return parse_and_assign(period.dispersion);
+  }
+  if (command == "extinction") {
+    return parse_and_assign(period.extinction);
+  }
   if (command == "matrix") {
     return parse_and_assign(period.adjustment_matrix_filename);
   }
@@ -259,12 +266,14 @@ ConfigFileParser::ActionMapType ConfigFileParser::_config_action_map{
                    "if more than one period does not have start or end times, "
                    "then an error will be thrown. For more information about "
                    "periods, please see README.md"},
-            ._usage{"period <PERIOD> [(start|end|matrix|include|exclude) = "
-                    "<VALUE>]"},
+            ._usage{"period <PERIOD> [(start|end|dispersion|extinction|matrix|"
+                    "include|exclude) = <VALUE>]"},
             ._examples{
                 "period foo",
                 "period foo start = 1.0",
                 "period foo end = 2.0",
+                "period foo dispersion = 0.1",
+                "period foo extinction = 0.1",
                 "period foo include = 101",
                 "period foo exclude = 011",
                 "period foo matrix = matrix_file.csv",

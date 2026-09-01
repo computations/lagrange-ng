@@ -106,6 +106,42 @@ TEST_F(ContextTest, optimizeSimple0) {
   EXPECT_GT(llh, initial_llh);
 }
 
+TEST_F(ContextTest, evaluateUsesConfiguredRates) {
+  auto evaluate = [this](double dispersion, double extinction) {
+    auto tree = parse_tree(_basic_tree_newick);
+    tree->setPeriods(_basic_periods);
+    Context context(tree, 2, 2);
+    context.registerLHGoal();
+    context.init({{.dispersion_rate = dispersion,
+                   .extinction_rate = extinction,
+                   .distance_penalty = 1.0,
+                   .name = "",
+                   .regions = 2}});
+
+    auto worker_context = context.makeThreadContext();
+    worker_context.setTotalThreads(1);
+    worker_context.initBarrier();
+
+    WorkerState worker_state(0);
+    EXPECT_TRUE(context.registerTipClvs(_basic_tree_data)
+                == SetCLVStatus::definite);
+
+    double llh = context.computeLLH(worker_state, worker_context);
+    context.setRunMode(LagrangeOperationMode::EVALUATE);
+    context.optimizeAndComputeValues(
+        worker_state, worker_context, false, false);
+
+    auto params = context.currentParams();
+    EXPECT_DOUBLE_EQ(params[0].dispersion_rate, dispersion);
+    EXPECT_DOUBLE_EQ(params[0].extinction_rate, extinction);
+    return llh;
+  };
+
+  double first_llh = evaluate(0.1, 0.2);
+  double second_llh = evaluate(2.0, 3.0);
+  EXPECT_NE(first_llh, second_llh);
+}
+
 TEST_F(ContextTest, StateGoal0) {
   Context context(_basic_tree, 2, 2);
   context.registerLHGoal();

@@ -362,8 +362,8 @@ class ConfigFile {
         | std::views::transform([&](const auto& a) -> PeriodParams {
             auto [key, p] = a;
             return {
-                .dispersion_rate = p.dispersion.value_or(0.01),
-                .extinction_rate = p.extinction.value_or(0.01),
+                .dispersion_rate = p.dispersion.value_or(_dispersion),
+                .extinction_rate = p.extinction.value_or(_extinction),
                 .distance_penalty = 1.0,
                 .adjustment_matrix = p.adjustment_matrix
                                          ? p.adjustment_matrix->to_matrix()
