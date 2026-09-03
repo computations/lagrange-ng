@@ -10,6 +10,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <bit>
 #include <logger.hpp>
 #include <string>
 #include <vector>
