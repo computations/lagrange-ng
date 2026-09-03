@@ -18,8 +18,6 @@ jobs:
             cpp_compiler: g++-14
             build_type: Debug
           - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
             build_type: Debug
 
     steps:
@@ -42,7 +40,21 @@ jobs:
       if: matrix.os == 'macos-latest'
       shell: bash
       run: |
-        brew install llvm openblas nlopt libomp
+        brew install openblas nlopt libomp
+
+    - name: Configure Apple Clang
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        developer_dir="$(xcode-select -p)"
+        c_compiler="$(xcrun --find clang)"
+        cpp_compiler="$(xcrun --find clang++)"
+        echo "DEVELOPER_DIR=${developer_dir}" >> "$GITHUB_ENV"
+        echo "CC=${c_compiler}" >> "$GITHUB_ENV"
+        echo "CXX=${cpp_compiler}" >> "$GITHUB_ENV"
+        echo "Using Xcode developer directory: ${developer_dir}"
+        "${c_compiler}" --version
+        "${cpp_compiler}" --version
 
     - name: Configure CMake
       if: matrix.os != 'macos-latest'
@@ -54,23 +66,27 @@ jobs:
         -DBUILD_TESTS=ON
         -S ${{ github.workspace }}
 
-    - name: Configure CMake
+    - name: Configure CMake (macOS)
       if: matrix.os == 'macos-latest'
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=$(brew --prefix llvm@18)/bin/${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DOpenBLAS_INCLUDE_DIRS=$(brew --prefix openblas)/include
-        -DOpenBLAS_LIBRARY_DIRS=$(brew --prefix openblas)/lib
-        -DOpenMP_CXX_FLAG="-Xclang -fopenmp" 
-        -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include 
-        -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" 
-        -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include 
-        -DOpenMP_C_LIB_NAMES=libomp 
-        -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib
-        -DBUILD_TESTS=ON
-        -S ${{ github.workspace }}
+      shell: bash
+      run: |
+        openblas_prefix="$(brew --prefix openblas)"
+        libomp_prefix="$(brew --prefix libomp)"
+        cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
+          -DCMAKE_C_COMPILER="$CC" \
+          -DCMAKE_CXX_COMPILER="$CXX" \
+          -DCMAKE_BUILD_TYPE="${{ matrix.build_type }}" \
+          -DOpenBLAS_INCLUDE_DIRS="${openblas_prefix}/include" \
+          -DOpenBLAS_LIBRARY_DIRS="${openblas_prefix}/lib" \
+          -DOpenMP_CXX_FLAG="-Xclang -fopenmp" \
+          -DOpenMP_CXX_INCLUDE_DIR="${libomp_prefix}/include" \
+          -DOpenMP_CXX_LIB_NAMES=libomp \
+          -DOpenMP_C_FLAG="-Xclang -fopenmp" \
+          -DOpenMP_C_INCLUDE_DIR="${libomp_prefix}/include" \
+          -DOpenMP_C_LIB_NAMES=libomp \
+          -DOpenMP_libomp_LIBRARY="${libomp_prefix}/lib/libomp.dylib" \
+          -DBUILD_TESTS=ON \
+          -S "${{ github.workspace }}"
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
