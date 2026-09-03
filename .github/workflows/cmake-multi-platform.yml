@@ -40,27 +40,23 @@ jobs:
       if: matrix.os == 'macos-15'
       shell: bash
       run: |
-        brew install openblas nlopt libomp
+        brew install llvm@20 openblas nlopt libomp
 
-    # Pin Xcode because macos-latest currently resolves to an Xcode 26 toolchain
-    # whose GitHub runner packaging does not provide the libc++ <format> header.
-    - name: Select supported Xcode
-      if: matrix.os == 'macos-15'
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: '16.4'
-
-    - name: Configure Apple Clang
+    - name: Configure LLVM Clang
       if: matrix.os == 'macos-15'
       shell: bash
       run: |
         developer_dir="$(xcode-select -p)"
-        c_compiler="$(xcrun --find clang)"
-        cpp_compiler="$(xcrun --find clang++)"
+        sdk_root="$(xcrun --sdk macosx --show-sdk-path)"
+        llvm_prefix="$(brew --prefix llvm@20)"
+        c_compiler="${llvm_prefix}/bin/clang"
+        cpp_compiler="${llvm_prefix}/bin/clang++"
         echo "DEVELOPER_DIR=${developer_dir}" >> "$GITHUB_ENV"
+        echo "SDKROOT=${sdk_root}" >> "$GITHUB_ENV"
         echo "CC=${c_compiler}" >> "$GITHUB_ENV"
         echo "CXX=${cpp_compiler}" >> "$GITHUB_ENV"
         echo "Using Xcode developer directory: ${developer_dir}"
+        echo "Using macOS SDK: ${sdk_root}"
         xcodebuild -version
         "${c_compiler}" --version
         "${cpp_compiler}" --version
@@ -89,10 +85,10 @@ jobs:
           -DCMAKE_BUILD_TYPE="${{ matrix.build_type }}" \
           -DOpenBLAS_INCLUDE_DIRS="${openblas_prefix}/include" \
           -DOpenBLAS_LIBRARY_DIRS="${openblas_prefix}/lib" \
-          -DOpenMP_CXX_FLAG="-Xclang -fopenmp" \
+          -DOpenMP_CXX_FLAG="-fopenmp" \
           -DOpenMP_CXX_INCLUDE_DIR="${libomp_prefix}/include" \
           -DOpenMP_CXX_LIB_NAMES=libomp \
-          -DOpenMP_C_FLAG="-Xclang -fopenmp" \
+          -DOpenMP_C_FLAG="-fopenmp" \
           -DOpenMP_C_INCLUDE_DIR="${libomp_prefix}/include" \
           -DOpenMP_C_LIB_NAMES=libomp \
           -DOpenMP_libomp_LIBRARY="${libomp_prefix}/lib/libomp.dylib" \
