@@ -11,8 +11,10 @@ Barrier::Barrier(size_t count) : _needed(count), _called(0) {
 }
 
 Barrier::~Barrier() {
-  LOG_ASSERT(pthread_mutex_destroy(&_mutex) == 0);
-  LOG_ASSERT(pthread_cond_destroy(&_cond) == 0);;
+  LOG_ASSERT(pthread_mutex_destroy(&_mutex) == 0,
+             "Failed to destroy the pthread mutex");
+  LOG_ASSERT(pthread_cond_destroy(&_cond) == 0,
+             "Failed to destroy the pthread condition");
 }
 
 void Barrier::wait() {
@@ -30,11 +32,16 @@ void Barrier::wait() {
 #else
 
 Barrier::Barrier(size_t count) {
-  LOG_ASSERT(pthread_barrier_init(
-      &_barrier, nullptr, static_cast<unsigned int>(count)) == 0);
+  LOG_ASSERT(
+      pthread_barrier_init(&_barrier, nullptr, static_cast<unsigned int>(count))
+          == 0,
+      "Failed to init the pthread barrier");
 }
 
-Barrier::~Barrier() { pthread_barrier_destroy(&_barrier); }
+Barrier::~Barrier() {
+  LOG_ASSERT(pthread_barrier_destroy(&_barrier) == 0,
+             "Failed to destroy the pthread barrier");
+}
 
 void Barrier::wait() { pthread_barrier_wait(&_barrier); }
 
