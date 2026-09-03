@@ -17,7 +17,7 @@ jobs:
             c_compiler: gcc-14
             cpp_compiler: g++-14
             build_type: Debug
-          - os: macos-latest
+          - os: macos-15
             build_type: Debug
 
     steps:
@@ -37,21 +37,21 @@ jobs:
         sudo apt-get install libopenblas-dev liblapacke-dev
 
     - name: Install Deps
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-15'
       shell: bash
       run: |
         brew install openblas nlopt libomp
 
-    # std::format requires Xcode 15.3 or later. Select the newest stable Xcode
-    # installed on the runner before resolving the Apple Clang toolchain.
+    # Pin Xcode because macos-latest currently resolves to an Xcode 26 toolchain
+    # whose GitHub runner packaging does not provide the libc++ <format> header.
     - name: Select supported Xcode
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-15'
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: latest-stable
+        xcode-version: '16.4'
 
     - name: Configure Apple Clang
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-15'
       shell: bash
       run: |
         developer_dir="$(xcode-select -p)"
@@ -68,7 +68,7 @@ jobs:
           | "${cpp_compiler}" -std=c++23 -x c++ -c -o /dev/null -
 
     - name: Configure CMake
-      if: matrix.os != 'macos-latest'
+      if: matrix.os != 'macos-15'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -78,7 +78,7 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Configure CMake (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-15'
       shell: bash
       run: |
         openblas_prefix="$(brew --prefix openblas)"
