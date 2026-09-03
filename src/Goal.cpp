@@ -1,5 +1,7 @@
 #include "Goal.hpp"
 
+#include <format>
+
 #include "Operation.hpp"
 
 namespace lagrange {

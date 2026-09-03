@@ -11,6 +11,7 @@
 #define UTILS_H
 
 #include <bit>
+#include <format>
 #include <logger.hpp>
 #include <string>
 #include <vector>

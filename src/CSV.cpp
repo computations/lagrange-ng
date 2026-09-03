@@ -1,5 +1,6 @@
 #include "CSV.hpp"
 
+#include <format>
 #include <numeric>
 
 auto make_csv_row(const std::initializer_list<std::string_view> &fields)

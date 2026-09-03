@@ -1,6 +1,7 @@
 #include "AdjustmentMatrix.hpp"
 
 #include <algorithm>
+#include <format>
 #include <functional>
 #include <ranges>
 #include <string_view>

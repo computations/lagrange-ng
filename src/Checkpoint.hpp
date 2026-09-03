@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <optional>
 #include <ranges>
